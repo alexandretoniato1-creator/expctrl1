@@ -1795,6 +1795,11 @@ function switchSaidaTab(tab,btn){
   document.querySelectorAll('#view-saidas .saida-tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
   ['hoje','historico','analise'].forEach(t=>{const el=document.getElementById('saidaTab-'+t);if(el)el.style.display=t===tab?'block':'none';});
+  if(tab==='historico'||tab==='analise'){
+    const g=document.getElementById('saidaGalpao')?.value||'LogBox';
+    if(tab==='historico') renderSaidaHistorico(g);
+    if(tab==='analise') renderSaidaAnalise(g);
+  }
 }
 
 // ══════════════════════════════════════════════════════
@@ -2391,7 +2396,7 @@ function renderEditItens(itens){
       <div class="form-group"><label>SKU <span style="color:var(--accent);font-size:9px">↵ auto</span></label>
         <input class="form-sel" value="${item.codigo||''}" style="font-family:'DM Mono',monospace;font-size:11px" oninput="updateItem(${i},'codigo',this.value)" onblur="skuAutoItem(this,${i})" onkeydown="if(event.key==='Enter')skuAutoItem(this,${i})" placeholder="SKU-001"></div>
       <div class="form-group"><label>Descrição</label><input class="form-sel" value="${item.nome||''}" style="font-size:11px" oninput="updateItem(${i},'nome',this.value)" placeholder="Auto pelo SKU"></div>
-      <div class="form-group"><label>Funcionário</label><select class="form-sel" style="font-size:11px" onchange="updateItem(${i},'funcionario',this.value)"><option value="—">—</option>${FUNCIONARIOS.map(f=>`<option value="${f}" ${item.funcionario===f?'selected':''}>${f}</option>`).join('')}</select></div>
+      <div class="form-group"><label>Funcionário</label><select class="form-sel" style="font-size:11px" onchange="updateItem(${i},'funcionario',this.value)"><option value="—">—</option>${FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}" ${item.funcionario===f.nome?'selected':''}>${f.nome} (${f.empresa})</option>`).join('')}</select></div>
       <div class="form-group"><label>Qtde cx</label><input class="form-sel" type="number" style="font-size:11px" value="${item.qtde||''}" oninput="updateItem(${i},'qtde',this.value)" min="0"></div>
       <div class="form-group"><label>Status</label><select class="form-sel" style="font-size:11px" onchange="updateItem(${i},'status',this.value)">
         <option value="pending" ${item.status==='pending'?'selected':''}>Pendente</option>
