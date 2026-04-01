@@ -407,14 +407,13 @@ select:focus{border-color:var(--accent)}
     <div class="nav-item active" onclick="navTo(this,'dashboard')"><span class="nav-icon">▣</span>Dashboard</div>
     <div class="nav-item" onclick="navTo(this,'fulls')"><span class="nav-icon">◈</span>Fulls</div>
     <div class="nav-item" onclick="navTo(this,'volumetria')"><span class="nav-icon">◻</span>Carga</div>
+    <div class="nav-item" onclick="navTo(this,'enviados')"><span class="nav-icon">✈</span>Arquivo</div>
     <div class="nav-section">Equipe</div>
     <div class="nav-item" onclick="navTo(this,'produtividade')"><span class="nav-icon">◎</span>Produtividade</div>
     <div class="nav-section">Registro</div>
     <div class="nav-item" onclick="navTo(this,'saidas')"><span class="nav-icon">📤</span>Saídas</div>
-    <div class="nav-item" onclick="navTo(this,'historico')"><span class="nav-icon">◷</span>Relatórios</div>
     <div class="nav-item" onclick="navTo(this,'devolucoes')"><span class="nav-icon">↩</span>Devoluções</div>
     <div class="nav-section">Cadastros</div>
-    <div class="nav-item" onclick="navTo(this,'enviados')"><span class="nav-icon">✈</span>Arquivo</div>
     <div class="nav-item" onclick="navTo(this,'catalogo')"><span class="nav-icon">🗂</span>Catálogo SKUs</div>
     <div class="company-badges">
       <div class="company-badge logbox-badge">
@@ -1502,7 +1501,7 @@ let calOffset = 0;
 const BASE_MON = (()=>{ const d=new Date(); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; })();
 const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
 const DIAS_SHORT = ['Seg','Ter','Qua','Qui','Sex'];
-const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',historico:'Relatórios',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs'};
+const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs'};
 
 // ══════════════════════════════════════════════════════
 // NAVEGAÇÃO
@@ -1521,7 +1520,7 @@ function showPage(name) {
   if (name==='produtividade') renderProdutividade();
   if (name==='saidas') { renderSaidas(); setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100); }
   if (name==='dashboard') renderDashboard();
-  if (name==='historico') renderRelatorio();
+
 }
 function navTo(el,name){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
