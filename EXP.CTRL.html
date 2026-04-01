@@ -3354,36 +3354,13 @@ function abrirImpressaoEnviado(id) {
 let _saidaImpCtx = null; // { data, galpao, pedidos[] }
 
 function abrirModalSaidaImpressao(data, galpao) {
-  // Monta lista de pedidos: dia atual ou histórico
   const hoje = new Date().toLocaleDateString('pt-BR');
-  let pedidos = [];
-  if (data === hoje) {
+  const key = data + '_' + galpao;
+  // Sempre prioriza pedidos já fechados no histórico
+  let pedidos = (SAIDAS_HIST_PEDIDOS && SAIDAS_HIST_PEDIDOS[key]) || [];
+  // Só usa SAIDAS_HOJE se for hoje E não houver nada fechado ainda
+  if (!pedidos.length && data === hoje) {
     pedidos = SAIDAS_HOJE.filter(s => s.galpao === galpao);
-  } else {
-    // histórico — pedidos guardados em SAIDAS_HIST_PEDIDOS se existir, senão reconstrói
-    const key = data + '_' + galpao;
-    pedidos = (SAIDAS_HIST_PEDIDOS && SAIDAS_HIST_PEDIDOS[key]) || [];
-    if (!pedidos.length) {
-      // reconstrói dados sintéticos para o histórico sem pedidos reais
-      const h = SAIDAS_HIST.find(x => x.data === data && x.galpao === galpao);
-      if (h) {
-        const ms = [...Array(h.ml).fill('ML'), ...Array(h.amazon).fill('Amazon'), ...Array(h.shopee).fill('Shopee')];
-        const cs = [...Array(h.flex).fill('Flex'), ...Array(h.coleta).fill('Coleta')];
-        const funcs = FUNCIONARIOS;
-        for (let i = 0; i < h.total; i++) {
-          const hh = Math.min(8 + Math.floor(i / Math.max(h.total / 8, 1)), 17);
-          const mm = (i * 3 + 7) % 60;
-          pedidos.push({
-            num: String(10000000000000000 + i * 7 + 13),
-            canal: cs[i % cs.length] || 'Flex',
-            market: ms[i % ms.length] || 'ML',
-            galpao,
-            hora: hh.toString().padStart(2,'0') + ':' + mm.toString().padStart(2,'0'),
-            funcionario: funcs[i % funcs.length],
-          });
-        }
-      }
-    }
   }
 
   _saidaImpCtx = { data, galpao, pedidos };
