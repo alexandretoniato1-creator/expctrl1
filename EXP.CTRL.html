@@ -854,7 +854,7 @@ select:focus{border-color:var(--accent)}
   <div class="modal">
     <div class="modal-title">Novo Full <button class="modal-close" onclick="closeModal('modalFull')">✕</button></div>
     <div class="form-grid">
-      <div class="form-group"><label>ID Full <span style="color:var(--accent);font-size:9px">gerado auto</span></label><input class="form-sel" type="text" id="nf-id" placeholder="FULL-070" readonly style="color:var(--accent);font-family:'DM Mono',monospace"></div>
+      <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="nf-id" placeholder="FULL-070" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
       <div class="form-group"><label>Empresa</label><select class="form-sel" id="nf-empresa"><option>LogBox</option><option>Fokus</option></select></div>
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
       <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date"></div>
@@ -880,6 +880,7 @@ select:focus{border-color:var(--accent)}
     </div>
     <div id="editTab-full" class="edit-tab-panel active">
       <div class="form-grid">
+        <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="ef-id" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
         <div class="form-group"><label>Status</label><select class="form-sel" id="ef-status" onchange="checkConferenciaStatus()"><option value="Pendente">Pendente</option><option value="Produzindo">Produzindo</option><option value="Em conferência">Em conferência</option><option value="Pronto">Pronto</option></select><div id="efStatusDica" style="display:none;font-size:10px;font-family:'DM Mono',monospace;margin-top:5px;padding:5px 8px;border-radius:5px;background:rgba(0,0,0,.15)"></div></div>
         <div class="form-group"><label>Responsável</label><select class="form-sel" id="ef-responsavel"><option>Edipo</option><option>Max</option></select></div>
         <div class="form-group"><label>Destino</label><select class="form-sel" id="ef-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
@@ -2286,6 +2287,7 @@ function openEditFull(id){
   const f=FULLS_DATA[id]; if(!f) return;
   editingFullId=id;
   document.getElementById('editFullTitleId').textContent=f.id;
+  const efIdEl=document.getElementById('ef-id'); if(efIdEl) efIdEl.value=f.id;
   document.getElementById('editFullTitleEmpresa').textContent=f.empresa+' · '+f.responsavel;
   document.getElementById('ef-status').value=f.status;
   document.getElementById('ef-responsavel').value=f.responsavel;
@@ -2353,6 +2355,21 @@ function updateTempoEstimado(itens){
 async function salvarEditFull(){
   if(!editingFullId)return;
   const f=FULLS_DATA[editingFullId];
+  // — Renomear ID se alterado —
+  const efIdEl=document.getElementById('ef-id');
+  const novoId=(efIdEl?.value||'').trim().toUpperCase();
+  if(novoId && novoId!==editingFullId){
+    if(!/^FULL-\d+$/.test(novoId)){showToast('⚠️ ID deve seguir o formato FULL-000');return;}
+    if(FULLS_DATA[novoId]||FULLS_ENVIADOS.find(e=>e.id===novoId)){showToast('⚠️ ID "'+novoId+'" já existe');return;}
+    f.id=novoId;
+    FULLS_DATA[novoId]=f;
+    delete FULLS_DATA[editingFullId];
+    const cal=CAL_FULLS.find(c=>c.id===editingFullId);
+    if(cal) cal.id=novoId;
+    await db.deleteFull(editingFullId);
+    editingFullId=novoId;
+    document.getElementById('editFullTitleId').textContent=novoId;
+  }
   const novoStatus=document.getElementById('ef-status').value;
   f.status=novoStatus;
   f.responsavel=document.getElementById('ef-responsavel').value;
