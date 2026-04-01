@@ -1428,7 +1428,8 @@ let checklistFullId = null;
 let detalheDiaAtual = [];
 let calOffset = 0;
 const FUNCIONARIOS = ['Ricardo C.','Thiago L.','Felipe S.','Marcos S.','João P.','André L.'];
-const BASE_MON = new Date(2026,2,24);
+// BASE_MON: segunda-feira da semana atual, calculado dinamicamente
+const BASE_MON = (()=>{ const d=new Date(); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; })();
 const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
 const DIAS_SHORT = ['Seg','Ter','Qua','Qui','Sex'];
 const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Volumetria',produtividade:'Produtividade',saidas:'Saídas',historico:'Histórico',devolucoes:'Devoluções',enviados:'Enviados',catalogo:'Catálogo de SKUs'};
@@ -1868,92 +1869,117 @@ function renderDashboard() {
 }
 
 // ── Ducato por dia ──────────────────────────────────────
-let _ducatoDiaIdx = 0; // índice no array DIAS
+// _ducatoDiaIdx: índice global nas 15 datas (3 semanas × 5 dias)
+let _ducatoDiaIdx = 0;
 
-function calcVolFulls(dia) {
-  // pega todos os fulls do calendário agendados para este dia
-  const ids = CAL_FULLS.filter(c => c.dia === dia).map(c => c.id);
+// Retorna array de 15 objetos {date, dateKey, dia, semanaLabel} das 3 semanas visíveis
+function getDucatoDias() {
+  const result = [];
+  const semLabels = ['Esta sem.', 'Próx. sem.', 'Em 2 sem.'];
+  [0,1,2].forEach((w,wi) => {
+    getWeekDates(calOffset+w).forEach((d,di) => {
+      result.push({ date:d, dateKey:dateToStr(d), dia:DIAS[di], semLabel:semLabels[wi]+' · '+DIAS[di] });
+    });
+  });
+  return result;
+}
+
+// Ao abrir a página, aponta para o dia de hoje (ou segunda da semana atual)
+function ducatoSyncHoje() {
+  const dias = getDucatoDias();
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const idx = dias.findIndex(d => d.date.getTime()===hoje.getTime());
+  _ducatoDiaIdx = idx>=0 ? idx : 0;
+}
+
+function calcVolFullsByDateKey(dateKey) {
+  const ids = CAL_FULLS.filter(c => c.dateKey===dateKey || (!c.dateKey && c.dia===DIAS[0])).map(c=>c.id);
+  // filtra só os que têm dateKey exato
+  const idsExatos = CAL_FULLS.filter(c => c.dateKey===dateKey).map(c=>c.id);
   let totalVol = 0;
   const breakdown = [];
-  ids.forEach(id => {
+  idsExatos.forEach(id => {
     const f = FULLS_DATA[id]; if (!f) return;
     let volFull = 0;
-    // usa vol[] se preenchido, senão estima via SKU_DB
     if (f.vol && f.vol.length) {
       f.vol.forEach(v => {
         const u = ((parseFloat(v.comp)||0)*(parseFloat(v.larg)||0)*(parseFloat(v.altu)||0))/1000;
         volFull += u * (parseFloat(v.qtde)||1);
       });
     } else {
-      // estima: para cada item, busca no SKU_DB
       (f.itens||[]).forEach(item => {
-        const sku = SKU_DB.find(s => s.sku === item.codigo || s.descricao === item.nome);
-        if (sku) volFull += (sku.vol||0) * (parseInt(item.qtde)||1);
-        else volFull += 5 * (parseInt(item.qtde)||1); // fallback 5L/cx
+        const sku = SKU_DB.find(s => s.sku===item.codigo||s.descricao===item.nome);
+        if (sku) volFull += (sku.vol||0)*(parseInt(item.qtde)||1);
+        else volFull += 5*(parseInt(item.qtde)||1);
       });
     }
-    breakdown.push({ id, empresa: f.empresa, destino: f.destino, status: f.status, vol: volFull });
+    breakdown.push({ id, empresa:f.empresa, destino:f.destino, status:f.status, vol:volFull });
     totalVol += volFull;
   });
   return { totalVol, breakdown };
 }
 
 function renderDashDucato() {
-  const dia = DIAS[_ducatoDiaIdx] || 'Segunda';
-  const { totalVol, breakdown } = calcVolFulls(dia);
+  const dias = getDucatoDias();
+  const cur = dias[_ducatoDiaIdx] || dias[0];
+  const { totalVol, breakdown } = calcVolFullsByDateKey(cur.dateKey);
   const cap = 13300;
-  const pct = Math.min((totalVol / cap) * 100, 100);
-  const pctFmt = pct.toFixed(1) + '%';
+  const pct = Math.min((totalVol/cap)*100, 100);
 
-  // tabs de dias
+  // tabs — mostra os 15 dias agrupados por semana
   const tabsEl = document.getElementById('dashDucatoDiaTabs');
   if (tabsEl) {
-    tabsEl.innerHTML = DIAS.map((d, i) => {
-      const { totalVol: tv } = calcVolFulls(d);
-      const p = Math.min((tv/cap)*100, 100);
-      const ativo = i === _ducatoDiaIdx;
-      return `<button onclick="ducatoDiaSet(${i})" style="padding:4px 10px;border-radius:6px;border:1px solid ${ativo?'var(--accent)':'var(--border2)'};background:${ativo?'rgba(255,255,255,.06)':'transparent'};color:${ativo?'var(--accent)':'var(--muted)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">
-        ${d}
-        <span style="display:block;font-size:9px;font-family:'DM Mono',monospace;margin-top:1px;color:${p>90?'var(--red)':p>70?'var(--accent)':'var(--green)'}">${p.toFixed(0)}%</span>
-      </button>`;
-    }).join('');
+    let tabHtml = '';
+    [0,1,2].forEach(wi => {
+      const semLabels = ['Esta semana','Próxima semana','Em 2 semanas'];
+      tabHtml += `<div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;margin-bottom:4px">
+        <span style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);width:70px;flex-shrink:0">${semLabels[wi]}</span>`;
+      for(let di=0;di<5;di++){
+        const idx = wi*5+di;
+        const item = dias[idx];
+        const { totalVol:tv } = calcVolFullsByDateKey(item.dateKey);
+        const p = Math.min((tv/cap)*100,100);
+        const ativo = idx===_ducatoDiaIdx;
+        const isHoje = isToday(item.date);
+        tabHtml += `<button onclick="ducatoDiaSet(${idx})" style="padding:3px 8px;border-radius:6px;border:1px solid ${ativo?'var(--accent)':isHoje?'rgba(255,255,255,.2)':'var(--border2)'};background:${ativo?'rgba(255,255,255,.06)':'transparent'};color:${ativo?'var(--accent)':isHoje?'#fff':'var(--muted)'};font-family:'Syne',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s">
+          ${DIAS_SHORT[di]}${isHoje?' ·':''}
+          <span style="display:block;font-size:9px;font-family:'DM Mono',monospace;color:${p>90?'var(--red)':p>70?'var(--accent)':'var(--green)'}">${p.toFixed(0)}%</span>
+        </button>`;
+      }
+      tabHtml += '</div>';
+    });
+    tabsEl.innerHTML = tabHtml;
   }
 
-  // barra
   const bar = document.getElementById('dashDucatoBar');
-  if (bar) {
-    bar.style.width = pct + '%';
-    bar.className = 'bar-fill ' + (pct > 90 ? 'danger' : pct > 70 ? 'warn' : 'ok');
-  }
+  if (bar) { bar.style.width=pct+'%'; bar.className='bar-fill '+(pct>90?'danger':pct>70?'warn':'ok'); }
 
-  const destinos = [...new Set(breakdown.map(b => b.destino))].join(', ') || '—';
+  const destinos = [...new Set(breakdown.map(b=>b.destino))].join(', ')||'—';
   const meta = document.getElementById('dashDucatoMeta');
-  if (meta) meta.textContent = dia + ' · ' + (breakdown.length) + ' fulls · ' + destinos;
+  if (meta) meta.textContent = cur.semLabel+' · '+fmtDate(cur.date)+' · '+breakdown.length+' fulls · '+destinos;
 
   const pctEl = document.getElementById('dashDucatoPct');
-  if (pctEl) { pctEl.textContent = pctFmt; pctEl.style.color = pct > 90 ? 'var(--red)' : pct > 70 ? 'var(--accent)' : 'var(--green)'; }
+  if (pctEl) { pctEl.textContent=pct.toFixed(1)+'%'; pctEl.style.color=pct>90?'var(--red)':pct>70?'var(--accent)':'var(--green)'; }
 
   const legend = document.getElementById('dashDucatoLegend');
-  if (legend) legend.innerHTML = `<span>${totalVol.toFixed(0)} L usados</span><span>13.300 L total</span>`;
+  if (legend) legend.innerHTML=`<span>${totalVol.toFixed(0)} L usados</span><span>13.300 L total</span>`;
 
-  // breakdown por full
   const bd = document.getElementById('dashDucatoBreakdown');
   if (bd) {
     if (!breakdown.length) {
-      bd.innerHTML = '<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Nenhum full agendado para este dia</div>';
+      bd.innerHTML='<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px">Nenhum full agendado para este dia</div>';
     } else {
-      const maxVol = Math.max(...breakdown.map(b=>b.vol), 1);
-      bd.innerHTML = breakdown.map(b => {
-        const bpct = Math.min((b.vol / cap) * 100, 100);
-        const brel = Math.min((b.vol / maxVol) * 100, 100);
-        const cor = statusClass(b.status);
+      const maxVol = Math.max(...breakdown.map(b=>b.vol),1);
+      bd.innerHTML = breakdown.map(b=>{
+        const bpct=Math.min((b.vol/cap)*100,100);
+        const brel=Math.min((b.vol/maxVol)*100,100);
         return `<div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="openDetail('${b.id}')">
           <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);width:70px;flex-shrink:0">${b.id}</div>
           <div style="flex:1;background:var(--bg);border-radius:100px;height:6px;overflow:hidden">
             <div style="height:100%;border-radius:100px;background:var(--green);width:${brel}%;transition:width .4s ease"></div>
           </div>
           <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);width:55px;text-align:right;flex-shrink:0">${b.vol.toFixed(0)}L · ${bpct.toFixed(0)}%</div>
-          <span class="badge ${cor}" style="flex-shrink:0;font-size:9px">${b.status}</span>
+          <span class="badge ${statusClass(b.status)}" style="flex-shrink:0;font-size:9px">${b.status}</span>
         </div>`;
       }).join('');
     }
@@ -1961,7 +1987,8 @@ function renderDashDucato() {
 }
 
 function ducatoDiaOffset(d) {
-  _ducatoDiaIdx = Math.max(0, Math.min(4, _ducatoDiaIdx + d));
+  const dias = getDucatoDias();
+  _ducatoDiaIdx = Math.max(0, Math.min(dias.length-1, _ducatoDiaIdx+d));
   renderDashDucato();
 }
 function ducatoDiaSet(i) {
@@ -2160,6 +2187,10 @@ function isToday(d){const t=new Date();return d.getDate()===t.getDate()&&d.getMo
 // Converts Date to "DD/MM/YYYY" string
 function dateToStr(d){return d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0')+'/'+d.getFullYear();}
 
+function getWeekNum(d){
+  const jan1=new Date(d.getFullYear(),0,1);
+  return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
+}
 function renderCal(){
   const empresa = document.getElementById('calFiltroEmpresa')?.value||'';
   // Build 3 weeks of dates
@@ -2172,8 +2203,9 @@ function renderCal(){
 
   let html = '';
   weeks.forEach((weekDates, wi)=>{
-    // Week label row (span all 15 cols via separate row trick — use a div above each group)
-    const weekNum = wi===0?'Esta semana':wi===1?'Próxima semana':'Daqui a 2 semanas';
+    const wNum = getWeekNum(weekDates[0]);
+    const wLabel = wi===0?'Esta semana (Sem. '+wNum+')':wi===1?'Próxima semana (Sem. '+(wNum)+')':'Em 2 semanas (Sem. '+wNum+')';
+    const weekNum = wLabel;
     weekDates.forEach((d,di)=>{
       const dia = DIAS[di];
       const dateKey = dateToStr(d);
@@ -2225,7 +2257,7 @@ function renderCal(){
   grid.style.gridTemplateColumns = 'repeat(15,1fr)';
 }
 
-function calWeekOffset(dir){calOffset+=dir;renderCal();}
+function calWeekOffset(dir){calOffset+=dir;renderCal();renderDashDucato();}
 
 // ── DRAG & DROP ────────────────────────────────────────
 function onDragStart(event, fullId){
@@ -3506,6 +3538,7 @@ function executarImpressao() {
 // INIT
 (async () => {
   await db.load();
+  ducatoSyncHoje();
   renderDashboard();
   renderCal();
   renderDev();
