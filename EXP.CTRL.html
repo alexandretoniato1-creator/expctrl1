@@ -866,7 +866,7 @@ select:focus{border-color:var(--accent)}
 
 <!-- NOVO FULL -->
 <div class="modal-overlay" id="modalFull">
-  <div class="modal">
+  <div class="modal modal-lg">
     <div class="modal-title">Novo Full <button class="modal-close" onclick="closeModal('modalFull')">✕</button></div>
     <div class="form-grid">
       <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="nf-id" placeholder="FULL-070" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
@@ -878,6 +878,13 @@ select:focus{border-color:var(--accent)}
       <div class="form-group"><label>Status</label><select class="form-sel" id="nf-status"><option>Pendente</option><option>Produzindo</option><option>Em conferência</option><option>Pronto</option></select></div>
       <div class="form-group full"><label>Observações</label><input class="form-sel" type="text" id="nf-obs" placeholder="Opcional"></div>
     </div>
+    <div class="section-divider" style="display:flex;justify-content:space-between;align-items:center">
+      <span>SKUs do Full <span style="color:var(--muted);font-size:10px;font-weight:400">(opcional — adicione agora ou depois)</span></span>
+      <button class="btn btn-ghost btn-sm" onclick="nfAddSku()">+ SKU</button>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">SKU + Enter preenche automático do Catálogo</div>
+    <div id="nf-skus-lista" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto"></div>
+    <div id="nf-skus-total" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:8px;text-align:right"></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalFull')">Cancelar</button><button class="btn btn-primary" onclick="salvarNovoFull()">Salvar</button></div>
   </div>
 </div>
@@ -3162,15 +3169,16 @@ function calcSkuTempoun(){const t=parseFloat(document.getElementById('sk-tempo')
 function openModal(id){
   document.getElementById(id).classList.add('open');
   if(id==='modalFull'){
-    // auto-generate next Full ID from both active and enviados
     const allIds=[...Object.keys(FULLS_DATA),...FULLS_ENVIADOS.map(e=>e.id)];
     const nums=allIds.map(s=>{const m=s.match(/FULL-(\d+)/);return m?parseInt(m[1]):0;});
     const next='FULL-'+(Math.max(0,...nums)+1).toString().padStart(3,'0');
     const el=document.getElementById('nf-id');
     if(el)el.value=next;
-    // set today as creation date
     const ce=document.getElementById('nf-criadoEm');
     if(ce&&!ce.value){const d=new Date();ce.value=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');}
+    // resetar lista de SKUs
+    window._nfSkus = [];
+    nfRenderSkus();
   }
   if(id==='modalProd'){
     // Popula select de fulls dinamicamente com os fulls ativos
@@ -3203,8 +3211,13 @@ async function salvarNovoFull() {
   const status = document.getElementById('nf-status')?.value||'Pendente';
   const obs = document.getElementById('nf-obs')?.value||'';
   const dia = diaDaSemana(agendado);
-  const novoFull = { id, empresa, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens:[], dateKey };
-  const calEntry = { id, empresa, dia, destino, status, itens:'0/0', responsavel, dateKey };
+  // constrói itens a partir dos SKUs adicionados no modal
+  const itens = (window._nfSkus||[]).map(s => ({
+    codigo: s.sku, nome: s.descricao, funcionario:'—',
+    qtde: s.qtde, status:'pending', avatar:'?', cor:'av-amber'
+  }));
+  const novoFull = { id, empresa, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens, dateKey };
+  const calEntry = { id, empresa, dia, destino, status, itens:'0/'+itens.length, responsavel, dateKey };
   FULLS_DATA[id] = novoFull;
   CAL_FULLS.push(calEntry);
   await db.saveFull(novoFull);
@@ -3214,7 +3227,98 @@ async function salvarNovoFull() {
   renderCal();
   showToast('✅ '+id+' criado com sucesso!');
 }
-function closeModal(id){document.getElementById(id).classList.remove('open');if(id==='modalSku')editingSkuIdx=null;}
+// ── Novo Full: gerenciamento de SKUs ──────────────────────────
+window._nfSkus = [];
+
+function nfAddSku() {
+  window._nfSkus.push({ sku:'', descricao:'', qtde:1 });
+  nfRenderSkus();
+  // foca o último input de SKU
+  setTimeout(()=>{
+    const inputs = document.querySelectorAll('.nf-sku-input');
+    if (inputs.length) inputs[inputs.length-1].focus();
+  }, 50);
+}
+
+function nfRemoveSku(idx) {
+  window._nfSkus.splice(idx, 1);
+  nfRenderSkus();
+}
+
+function nfSkuAuto(idx, inputEl) {
+  const val = inputEl.value.trim().toUpperCase();
+  if (!val) return;
+  const found = SKU_DB.find(s => s.sku.toUpperCase() === val);
+  if (found) {
+    window._nfSkus[idx].sku = found.sku;
+    window._nfSkus[idx].descricao = found.descricao;
+    inputEl.value = found.sku;
+    nfRenderSkus();
+    // foca o campo qtde da mesma linha
+    setTimeout(()=>{
+      const qtdes = document.querySelectorAll('.nf-qtde-input');
+      if (qtdes[idx]) qtdes[idx].focus();
+    }, 50);
+    showToast('📦 '+found.descricao+' · '+found.vol+'L/cx');
+  } else {
+    window._nfSkus[idx].sku = val;
+    window._nfSkus[idx].descricao = '';
+    nfRenderSkus();
+  }
+}
+
+function nfUpdateQtde(idx, val) {
+  window._nfSkus[idx].qtde = parseInt(val)||1;
+  nfUpdateTotal();
+}
+
+function nfUpdateTotal() {
+  const total = window._nfSkus.reduce((a,s)=>a+s.qtde,0);
+  const volTotal = window._nfSkus.reduce((a,s)=>{
+    const sk = SKU_DB.find(x=>x.sku===s.sku);
+    return a + (sk ? sk.vol * s.qtde : 0);
+  }, 0);
+  const el = document.getElementById('nf-skus-total');
+  if (el) el.textContent = window._nfSkus.length
+    ? window._nfSkus.length+' SKU'+(window._nfSkus.length!==1?'s':'')+' · '+total+' caixas'+(volTotal?' · '+volTotal.toFixed(1)+'L':'')
+    : '';
+}
+
+function nfRenderSkus() {
+  const lista = document.getElementById('nf-skus-lista');
+  if (!lista) return;
+  if (!window._nfSkus.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;border:1px dashed var(--border);border-radius:8px">Clique em "+ SKU" para adicionar produtos a este full</div>';
+    nfUpdateTotal();
+    return;
+  }
+  lista.innerHTML = window._nfSkus.map((s, i) => {
+    const sk = SKU_DB.find(x=>x.sku===s.sku);
+    const volInfo = sk ? `<span style="color:var(--green);font-size:10px">${(sk.vol*s.qtde).toFixed(1)}L</span>` : '';
+    return `<div style="display:grid;grid-template-columns:130px 1fr 80px auto;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+      <div>
+        <input class="form-sel nf-sku-input" value="${s.sku||''}" placeholder="SKU-001"
+          style="font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase"
+          oninput="window._nfSkus[${i}].sku=this.value.toUpperCase();this.value=this.value.toUpperCase()"
+          onblur="nfSkuAuto(${i},this)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();nfSkuAuto(${i},this)}">
+      </div>
+      <div style="font-size:12px;color:${s.descricao?'var(--text)':'var(--muted)'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        ${s.descricao||'—'} ${volInfo}
+      </div>
+      <div>
+        <input class="form-sel nf-qtde-input" type="number" value="${s.qtde||1}" min="1"
+          style="font-size:12px;text-align:center"
+          oninput="nfUpdateQtde(${i},this.value)"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();nfAddSku()}">
+      </div>
+      <button class="remove-btn" onclick="nfRemoveSku(${i})">✕</button>
+    </div>`;
+  }).join('');
+  nfUpdateTotal();
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');if(id==='modalSku')editingSkuIdx=null;if(id==='modalFull'){window._nfSkus=[];}}
 document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open');});});
 function showToast(msg){const t=document.getElementById('toast');document.getElementById('toastMsg').textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
 function calcQuick(){
