@@ -871,7 +871,7 @@ select:focus{border-color:var(--accent)}
       <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="nf-id" placeholder="FULL-070" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
       <div class="form-group"><label>Empresa</label><select class="form-sel" id="nf-empresa"><option>LogBox</option><option>Fokus</option></select></div>
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
-      <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date"></div>
+      <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date" id="nf-agendado"></div>
       <div class="form-group"><label>Responsável</label><select class="form-sel" id="nf-responsavel"><option>Edipo</option><option>Max</option></select></div>
       <div class="form-group"><label>Destino</label><select class="form-sel" id="nf-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
       <div class="form-group"><label>Status</label><select class="form-sel" id="nf-status"><option>Pendente</option><option>Produzindo</option><option>Em conferência</option><option>Pronto</option></select></div>
@@ -2464,13 +2464,18 @@ async function salvarEditFull(){
   f.destino=document.getElementById('ef-destino').value;
   f.obs=document.getElementById('ef-obs').value;
   const ag=document.getElementById('ef-agendado').value;
-  if(ag){const p=ag.split('-');f.agendado=p[2]+'/'+p[1]+'/'+p[0];}
+  if(ag){const p=ag.split('-');f.agendado=p[2]+'/'+p[1]+'/'+p[0]; f.dateKey=f.agendado;}
   const cr=document.getElementById('ef-criadoEm').value;
   if(cr){const p=cr.split('-');f.criadoEm=p[2]+'/'+p[1]+'/'+p[0];}
   const avMap=name=>name!=='—'?name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';
   f.itens=(f.itens||[]).map(item=>({...item,avatar:avMap(item.funcionario),cor:funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}));
   const cal=CAL_FULLS.find(c=>c.id===editingFullId);
-  if(cal){cal.status=f.status;cal.destino=f.destino;cal.responsavel=f.responsavel;const done=f.itens.filter(i=>i.status==='done').length;cal.itens=done+'/'+f.itens.length;}
+  if(cal){
+    cal.status=f.status; cal.destino=f.destino; cal.responsavel=f.responsavel;
+    const done=f.itens.filter(i=>i.status==='done').length; cal.itens=done+'/'+f.itens.length;
+    // sincroniza dateKey e dia no cal entry
+    if(f.dateKey){ cal.dateKey=f.dateKey; cal.dia=diaDaSemana(f.agendado); }
+  }
   await db.saveFull(f);
   if(cal) await db.saveCalFull(cal);
   if(novoStatus==='Pronto'){
@@ -3016,16 +3021,19 @@ async function salvarNovoFull() {
   }
   const empresa = document.getElementById('nf-empresa')?.value||'LogBox';
   const criadoEm = (() => { const v=document.getElementById('nf-criadoEm')?.value; if(!v)return ''; const p=v.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; })();
-  const agendadoEl = document.querySelector('#modalFull input[type="date"]:not(#nf-criadoEm)');
-  const agendado = agendadoEl?.value ? (()=>{const p=agendadoEl.value.split('-');return p[2]+'/'+p[1]+'/'+p[0];})() : '';
+  // campo com id correto agora
+  const agendadoVal = document.getElementById('nf-agendado')?.value||'';
+  const agendado = agendadoVal ? (()=>{const p=agendadoVal.split('-');return p[2]+'/'+p[1]+'/'+p[0];})() : '';
+  // dateKey é sempre a data agendada — ancora o full a uma data específica no calendário
+  const dateKey = agendado;
   const responsavel = document.getElementById('nf-responsavel')?.value||'Edipo';
   const destino = document.getElementById('nf-destino')?.value||'ML Cajamar/SP';
   const status = document.getElementById('nf-status')?.value||'Pendente';
   const obs = document.getElementById('nf-obs')?.value||'';
-  const novoFull = { id, empresa, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens:[] };
-  FULLS_DATA[id] = novoFull;
   const dia = diaDaSemana(agendado);
-  const calEntry = { id, empresa, dia, destino, status, itens:'0/0', responsavel };
+  const novoFull = { id, empresa, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens:[], dateKey };
+  const calEntry = { id, empresa, dia, destino, status, itens:'0/0', responsavel, dateKey };
+  FULLS_DATA[id] = novoFull;
   CAL_FULLS.push(calEntry);
   await db.saveFull(novoFull);
   await db.saveCalFull(calEntry);
