@@ -1354,19 +1354,25 @@ const db = {
 
   // Fecha o dia de saídas (move para histórico)
   async fecharDia(hist, pedidos) {
+    const chave = hist.data + '_' + hist.galpao;
+    // Upsert no resumo do dia
     const row = {
       data: hist.data, galpao: hist.galpao, total: hist.total,
       flex: hist.flex, coleta: hist.coleta,
       ml: hist.ml, amazon: hist.amazon, shopee: hist.shopee
     };
-    await _sb.from('saidas_hist').upsert(row, { onConflict: 'data, galpao' });
+    const { error: eHist } = await _sb.from('saidas_hist')
+      .upsert(row, { onConflict: 'data,galpao' });
+    if (eHist) { console.error('[Supabase] fecharDia upsert:', eHist); }
+    // Deleta pedidos antigos da mesma chave antes de reinserir (evita duplicatas)
+    await _sb.from('saidas_hist_pedidos').delete().eq('data_galpao', chave);
     if (pedidos?.length) {
-      const chave = hist.data + '_' + hist.galpao;
       const rows = pedidos.map(p => ({
         data_galpao: chave, numero: p.num||'', canal: p.canal||'',
         market: p.market||'', funcionario: p.funcionario||'', hora: p.hora||''
       }));
-      await _sb.from('saidas_hist_pedidos').insert(rows);
+      const { error: ePed } = await _sb.from('saidas_hist_pedidos').insert(rows);
+      if (ePed) { console.error('[Supabase] fecharDia pedidos:', ePed); }
     }
     await this.clearSaidasHoje(hist.galpao);
   },
@@ -2694,30 +2700,34 @@ function renderSaidas(){
   document.getElementById('sBarColeta').style.width=(100-fp)+'%';
   document.getElementById('sFlexColetaLabel').textContent=flex+' Flex · '+coleta+' Coleta';
   document.getElementById('sHojeCount').textContent=lista.length+' pacotes';
+  // ── tabela hoje (sem return prematuro) ──
   const tbody=document.getElementById('saidaBody');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">📦 Nenhum pacote registrado</td></tr>';return;}
-  // cor dinâmica via FUNC_INFO
-  tbody.innerHTML=[...lista].reverse().map((s,i)=>{
-    const realIdx = SAIDAS_HOJE.indexOf(s); // índice real no array original
-    const func=s.funcionario||'—';
-    const av=func!=='—'?func.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';
-    const cor=funcCorCss(FUNC_INFO[func]?.empresa||'');
-    return `
-    <tr>
-      <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px">${lista.length-i}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:12px">${s.num}</td>
-      <td><span class="badge ${s.canal==='Flex'?'b-done':'b-blue'}">${s.canal}</span></td>
-      <td><span class="badge ${s.market==='ML'?'b-blue':s.market==='Amazon'?'b-doing':'b-shopee'}">${s.market}</span></td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.2);color:${cor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:1px solid currentColor;opacity:.8">${av}</div><span style="font-size:11px;color:var(--muted)">${func}</span></div></td>
-      <td style="font-size:11px;color:var(--muted)">${s.galpao}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.hora}</td>
-      <td><button class="btn-danger-sm" onclick="removerSaida(${realIdx})">✕</button></td>
-    </tr>`;}).join('');
+  if(!lista.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">📦 Nenhum pacote registrado hoje</td></tr>';
+  } else {
+    tbody.innerHTML=[...lista].reverse().map((s,i)=>{
+      const realIdx=SAIDAS_HOJE.indexOf(s);
+      const func=s.funcionario||'—';
+      const av=func!=='—'?func.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';
+      const cor=funcCorCss(FUNC_INFO[func]?.empresa||'');
+      return `
+      <tr>
+        <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px">${lista.length-i}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:12px">${s.num}</td>
+        <td><span class="badge ${s.canal==='Flex'?'b-done':'b-blue'}">${s.canal}</span></td>
+        <td><span class="badge ${s.market==='ML'?'b-blue':s.market==='Amazon'?'b-doing':'b-shopee'}">${s.market}</span></td>
+        <td><div style="display:flex;align-items:center;gap:6px"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.2);color:${cor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:1px solid currentColor;opacity:.8">${av}</div><span style="font-size:11px;color:var(--muted)">${func}</span></div></td>
+        <td style="font-size:11px;color:var(--muted)">${s.galpao}</td>
+        <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.hora}</td>
+        <td><button class="btn-danger-sm" onclick="removerSaida(${realIdx})">✕</button></td>
+      </tr>`;
+    }).join('');
+  }
+  // ── histórico e análise sempre renderizam ──
   renderSaidaHistorico(galpao);
   renderSaidaAnalise(galpao);
-  // wire hoje print button
-  const btnHoje = document.getElementById('btnImprimirHoje');
-  if (btnHoje) btnHoje.onclick = () => abrirModalSaidaImpressao(new Date().toLocaleDateString('pt-BR'), galpao);
+  const btnHoje=document.getElementById('btnImprimirHoje');
+  if(btnHoje) btnHoje.onclick=()=>abrirModalSaidaImpressao(new Date().toLocaleDateString('pt-BR'),galpao);
 }
 function renderSaidaHistorico(galpao){
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao);
@@ -2767,16 +2777,31 @@ function limparSaidaHoje(){if(!confirm('Limpar registros?'))return;const g=docum
 async function fecharDiaSaidas(){
   const g=document.getElementById('saidaGalpao').value;
   const lista=SAIDAS_HOJE.filter(s=>s.galpao===g);
-  if(!lista.length){showToast('⚠️ Nenhum registro');return;}
+  if(!lista.length){showToast('⚠️ Nenhum registro para fechar');return;}
+  if(!confirm('Fechar o dia de '+g+'?\n'+lista.length+' pacotes serão arquivados no histórico.'))return;
   const hoje=new Date().toLocaleDateString('pt-BR');
-  const hist={data:hoje,galpao:g,total:lista.length,flex:lista.filter(s=>s.canal==='Flex').length,coleta:lista.filter(s=>s.canal==='Coleta').length,ml:lista.filter(s=>s.market==='ML').length,amazon:lista.filter(s=>s.market==='Amazon').length,shopee:lista.filter(s=>s.market==='Shopee').length};
-  SAIDAS_HIST_PEDIDOS[hoje+'_'+g]=[...lista.map(s=>({...s}))];
-  SAIDAS_HIST.push(hist);
-  SAIDAS_HOJE=SAIDAS_HOJE.filter(s=>s.galpao!==g);
+  const hist={
+    data:hoje, galpao:g, total:lista.length,
+    flex:lista.filter(s=>s.canal==='Flex').length,
+    coleta:lista.filter(s=>s.canal==='Coleta').length,
+    ml:lista.filter(s=>s.market==='ML').length,
+    amazon:lista.filter(s=>s.market==='Amazon').length,
+    shopee:lista.filter(s=>s.market==='Shopee').length
+  };
+  const chave=hoje+'_'+g;
+  // salva no banco (delete+insert pedidos para evitar duplicatas)
   await db.fecharDia(hist, lista);
+  // atualiza memória local
+  SAIDAS_HOJE=SAIDAS_HOJE.filter(s=>s.galpao!==g);
+  // atualiza/insere no SAIDAS_HIST em memória
+  const idxExist=SAIDAS_HIST.findIndex(h=>h.data===hoje&&h.galpao===g);
+  if(idxExist>=0) SAIDAS_HIST[idxExist]=hist;
+  else SAIDAS_HIST.push(hist);
+  // atualiza pedidos em memória
+  SAIDAS_HIST_PEDIDOS[chave]=lista.map(s=>({...s}));
   renderSaidas();
   renderDashboard();
-  showToast('✅ Dia fechado! '+lista.length+' pacotes salvos');
+  showToast('✅ Dia fechado! '+hist.total+' pacotes arquivados');
 }
 
 // ══════════════════════════════════════════════════════
