@@ -646,6 +646,9 @@ select:focus{border-color:var(--accent)}
                 <button class="btn btn-primary btn-sm" onclick="openModal('modalProd')">+ Registrar</button>
               </div>
             </div>
+            <div id="prodFilterBar" style="padding:0 14px"></div>
+              </div>
+            </div>
             <div class="prod-list" id="prodList"></div>
           </div>
         </div>
@@ -954,11 +957,14 @@ select:focus{border-color:var(--accent)}
   <div class="modal">
     <div class="modal-title">Registrar Produtividade <button class="modal-close" onclick="closeModal('modalProd')">✕</button></div>
     <div class="form-grid">
-      <div class="form-group"><label>Funcionário</label><select class="form-sel" id="pFuncionario"><option value="—">—</option></select></div>
-      <div class="form-group"><label>Qtd Caixas</label><input class="form-sel" type="number" id="pCaixas" placeholder="0" min="1"></div>
-      <div class="form-group"><label>Full relacionado</label><select class="form-sel" id="pFull"><option value="">—</option></select></div>
-      <div class="form-group"><label>Item / Produto</label><input class="form-sel" type="text" id="pItem" placeholder="SKU ou nome do produto"></div>
-      <div class="form-group full"><label>Status</label><select class="form-sel" id="pStatus"><option>Concluído</option><option>Produzindo</option></select></div>
+      <div class="form-group"><label>Funcionário *</label><select class="form-sel" id="pFuncionario"><option value="—">—</option></select></div>
+      <div class="form-group"><label>Full relacionado *</label><select class="form-sel" id="pFull"><option value="">—</option></select></div>
+      <div class="form-group"><label>SKU <span style="color:var(--logbox);font-size:9px">↵ auto</span></label><input class="form-sel" type="text" id="pSku" placeholder="Ex: SKU-001" oninput="pSkuInput()" onkeydown="if(event.key==='Enter')pSkuAuto()"></div>
+      <div class="form-group"><label>Descrição</label><input class="form-sel" type="text" id="pDesc" placeholder="Preenchido pelo SKU" readonly style="color:var(--muted)"></div>
+      <div class="form-group"><label>Qtd Caixas *</label><input class="form-sel" type="number" id="pCaixas" placeholder="0" min="1" oninput="pCalcTempo()"></div>
+      <div class="form-group"><label>Qtd Produtos</label><input class="form-sel" type="number" id="pProdutos" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Tempo estimado</label><input type="text" id="pTempo" readonly style="color:var(--green);background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:9px 11px;font-size:12px;width:100%"></div>
+      <div class="form-group"><label>Status</label><select class="form-sel" id="pStatus"><option>Concluído</option><option>Produzindo</option></select></div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalProd')">Cancelar</button><button class="btn btn-primary" onclick="salvarProd()">Salvar</button></div>
   </div>
@@ -1253,7 +1259,13 @@ const db = {
       }, {});
 
       SEMANAS_HIST = semanasHist||[];
-      PROD_DATA    = prodData||[];
+      PROD_DATA = (prodData||[]).map(p => ({
+        _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
+        produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
+        full_id: p.full_id||'', sku: p.sku||'',
+        empresa: p.empresa||'', data: p.data||'',
+        status: p.status||'Concluído'
+      }));
 
       showToast('✅ Dados carregados');
     } catch(err) {
@@ -1417,8 +1429,19 @@ const db = {
 
   // Produtividade
   async saveProd(p) {
-    const { error } = await _sb.from('prod_data').insert(p);
+    const row = {
+      funcionario: p.funcionario, caixas: p.caixas||0,
+      produtos: p.produtos||0, tempo_min: p.tempo_min||0,
+      full_id: p.full_id||'', sku: p.sku||'',
+      empresa: p.empresa||'', data: p.data||'',
+      status: p.status||'Concluído'
+    };
+    const { data, error } = await _sb.from('prod_data').insert(row).select().single();
     if (error) console.error('[Supabase] saveProd:', error);
+    return data?.id||null;
+  },
+  async deleteProd(id) {
+    await _sb.from('prod_data').delete().eq('id', id);
   },
 
   // Compatibilidade — db.save() genérico que persiste o estado atual
@@ -3717,65 +3740,159 @@ function executarImpressao() {
 
 // ══════════════════════════════════════════════════════
 // PRODUTIVIDADE
+// ── Produtividade: estado de filtros ──────────────────────────────────────
+let _prodFiltroEmpresa = '';
+let _prodFiltroMes = ''; // formato YYYY-MM
+
+function prodGetMesAtual() {
+  const d = new Date();
+  return d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0');
+}
+
+function prodDataToMes(dataStr) {
+  // dataStr = DD/MM/YYYY
+  if (!dataStr) return '';
+  const p = dataStr.split('/');
+  if (p.length!==3) return '';
+  return p[2]+'-'+p[1];
+}
+
 function renderProdutividade() {
   populateFuncSelects();
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const dadosHoje = PROD_DATA.filter(p => p.data === hoje);
-  const totalCaixas = dadosHoje.reduce((a,p) => a+(parseInt(p.caixas)||0), 0);
-  const nFunc = [...new Set(dadosHoje.map(p=>p.funcionario))].length;
-  const media = nFunc ? Math.round(totalCaixas/nFunc) : 0;
+  const mesAtual = prodGetMesAtual();
+  if (!_prodFiltroMes) _prodFiltroMes = mesAtual;
+
+  // meses disponíveis
+  const mesesDisp = [...new Set(PROD_DATA.map(p=>prodDataToMes(p.data)).filter(Boolean))];
+  if (!mesesDisp.includes(_prodFiltroMes)) mesesDisp.push(_prodFiltroMes);
+  mesesDisp.sort((a,b)=>b.localeCompare(a));
+
+  // filtrar dados
+  let dados = PROD_DATA.filter(p => {
+    const mes = prodDataToMes(p.data);
+    if (_prodFiltroMes && mes !== _prodFiltroMes) return false;
+    if (_prodFiltroEmpresa && p.empresa !== _prodFiltroEmpresa) return false;
+    return true;
+  });
 
   // agrupa por funcionário
   const porFunc = {};
-  dadosHoje.forEach(p => {
-    if (!porFunc[p.funcionario]) porFunc[p.funcionario] = 0;
-    porFunc[p.funcionario] += parseInt(p.caixas)||0;
+  dados.forEach(p => {
+    const k = p.funcionario;
+    if (!porFunc[k]) porFunc[k] = { caixas:0, produtos:0, tempo_min:0, empresa: p.empresa||FUNC_INFO[k]?.empresa||'' };
+    porFunc[k].caixas    += parseInt(p.caixas)||0;
+    porFunc[k].produtos  += parseInt(p.produtos)||0;
+    porFunc[k].tempo_min += parseFloat(p.tempo_min)||0;
   });
-  const ranking = Object.entries(porFunc).sort((a,b)=>b[1]-a[1]);
+  const ranking = Object.entries(porFunc).sort((a,b)=>b[1].caixas-a[1].caixas);
   const melhor = ranking[0];
-  const maxCx = melhor ? melhor[1] : 1;
+  const maxCx = melhor ? melhor[1].caixas : 1;
+  const totalCaixas = dados.reduce((a,p)=>a+(parseInt(p.caixas)||0),0);
+  const nFunc = ranking.length;
+  const media = nFunc ? Math.round(totalCaixas/nFunc) : 0;
 
   document.getElementById('prodTotalCaixas').textContent = totalCaixas;
   document.getElementById('prodMedia').textContent = media;
   document.getElementById('prodMelhor').textContent = melhor ? melhor[0].split(' ')[0] : '—';
-  document.getElementById('prodMelhorSub').textContent = melhor ? melhor[1]+' caixas' : '—';
+  document.getElementById('prodMelhorSub').textContent = melhor ? melhor[1].caixas+' caixas' : '—';
+
+  // barra de filtros acima do ranking
+  const header = document.getElementById('prodFilterBar');
+  if (header) {
+    const mesLabel = m => { const [y,mo]=m.split('-'); const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return meses[parseInt(mo)-1]+'/'+y; };
+    header.innerHTML = `
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Mês:</span>
+        ${mesesDisp.map(m=>`<button onclick="prodSetMes('${m}')" style="padding:4px 10px;border-radius:6px;border:1px solid ${m===_prodFiltroMes?'var(--logbox)':'var(--border2)'};background:${m===_prodFiltroMes?'rgba(88,166,255,.08)':'transparent'};color:${m===_prodFiltroMes?'var(--logbox)':'var(--muted2)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">${mesLabel(m)}${m===mesAtual?' ·':''}</button>`).join('')}
+        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-left:8px">Empresa:</span>
+        ${['','LogBox','Fokus'].map(e=>`<button onclick="prodSetEmpresa('${e}')" style="padding:4px 10px;border-radius:6px;border:1px solid ${e===_prodFiltroEmpresa?'var(--logbox)':'var(--border2)'};background:${e===_prodFiltroEmpresa?'rgba(88,166,255,.08)':'transparent'};color:${e===_prodFiltroEmpresa?'var(--logbox)':'var(--muted2)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">${e||'Todos'}</button>`).join('')}
+      </div>`;
+  }
 
   const lista = document.getElementById('prodList');
   if (!ranking.length) {
-    lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Nenhum registro hoje. Clique em "+ Registrar".</div>';
+    lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Nenhum registro para este período.</div>';
     return;
   }
-  lista.innerHTML = ranking.map(([nome, cx], i) => {
+  lista.innerHTML = ranking.map(([nome, d], i) => {
     const fi = FUNC_INFO[nome];
     const av = funcAv(nome);
-    const cor = funcCor(fi?.empresa||'');
-    const pct = Math.round((cx/maxCx)*100);
-    return `<div class="prod-item">
-      <div class="prod-rank">${i+1}</div>
+    const cor = funcCor(d.empresa||fi?.empresa||'');
+    const corCss = funcCorCss(d.empresa||fi?.empresa||'');
+    const pct = Math.round((d.caixas/maxCx)*100);
+    const h = Math.floor(d.tempo_min/60), m = Math.round(d.tempo_min%60);
+    const tempoStr = d.tempo_min>0 ? (h>0?h+'h ':'')+(m>0?m+'min':'<1min') : '—';
+    const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    return `<div class="prod-item" style="padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:6px">
+      <div class="prod-rank" style="color:${i<3?'var(--logbox)':'var(--muted)'}">${medal||i+1}</div>
       <div class="prod-avatar ${cor}">${av}</div>
       <div class="prod-info">
-        <div class="prod-name">${nome} <span class="prod-empresa">${fi?.empresa||''}</span></div>
-        <div class="prod-bar-wrap"><div class="prod-bar-fill" style="width:${pct}%;background:${funcCorCss(fi?.empresa||'')}"></div></div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px">
+          <div class="prod-name">${nome} <span class="prod-empresa">${d.empresa||fi?.empresa||''}</span></div>
+          <div style="display:flex;gap:10px;font-family:'DM Mono',monospace;font-size:11px">
+            <span style="color:var(--text)">${d.caixas} <span style="color:var(--muted)">cx</span></span>
+            ${d.produtos?`<span style="color:var(--muted2)">${d.produtos} <span style="color:var(--muted)">prod</span></span>`:''}
+            <span style="color:var(--green)">${tempoStr}</span>
+          </div>
+        </div>
+        <div class="prod-bar-wrap"><div class="prod-bar-fill" style="width:${pct}%;background:${corCss}"></div></div>
       </div>
-      <div class="prod-caixas">${cx} cx</div>
     </div>`;
   }).join('');
 }
 
+function prodSetMes(mes) { _prodFiltroMes = mes; renderProdutividade(); }
+function prodSetEmpresa(e) { _prodFiltroEmpresa = e; renderProdutividade(); }
+
 async function salvarProd() {
   const func = document.getElementById('pFuncionario').value;
   const caixas = parseInt(document.getElementById('pCaixas').value)||0;
-  if (!func || func==='—' || !caixas) { showToast('⚠️ Funcionário e qtd obrigatórios'); return; }
-  const full = document.getElementById('pFull').value||'';
-  const item = document.getElementById('pItem').value||'';
+  const full_id = document.getElementById('pFull').value||'';
+  if (!func || func==='—' || !caixas || !full_id) { showToast('⚠️ Funcionário, Full e qtd obrigatórios'); return; }
+  const sku = document.getElementById('pSku').value||'';
+  const produtos = parseInt(document.getElementById('pProdutos').value)||0;
   const status = document.getElementById('pStatus').value;
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const reg = { funcionario:func, caixas, full, item, status, data:hoje };
-  await db.saveProd(reg);
+  const fi = FUNC_INFO[func];
+  const empresa = fi?.empresa||'';
+  // calcula tempo estimado pelo SKU_DB
+  const skuData = SKU_DB.find(s => s.sku.toUpperCase()===sku.toUpperCase());
+  const tempo_min = skuData ? parseFloat((skuData.tempo * caixas).toFixed(1)) : 0;
+  const reg = { funcionario:func, caixas, produtos, tempo_min, full_id, sku, empresa, status, data:hoje };
+  const newId = await db.saveProd(reg);
+  if (newId) reg._id = newId;
   PROD_DATA.push(reg);
   closeModal('modalProd');
   renderProdutividade();
   showToast('✅ Produtividade registrada!');
+}
+
+function pSkuInput() {
+  const val = document.getElementById('pSku').value.trim();
+  if (!val) { document.getElementById('pDesc').value=''; document.getElementById('pTempo').value=''; }
+}
+function pSkuAuto() {
+  const val = document.getElementById('pSku').value.trim().toUpperCase();
+  const found = SKU_DB.find(s => s.sku.toUpperCase()===val);
+  if (found) {
+    document.getElementById('pDesc').value = found.descricao;
+    document.getElementById('pSku').value = found.sku;
+    pCalcTempo();
+    showToast('📦 '+found.descricao);
+  }
+}
+function pCalcTempo() {
+  const sku = document.getElementById('pSku').value.trim().toUpperCase();
+  const caixas = parseInt(document.getElementById('pCaixas').value)||0;
+  const found = SKU_DB.find(s => s.sku.toUpperCase()===sku);
+  if (found && caixas && found.tempo) {
+    const min = found.tempo * caixas;
+    const h = Math.floor(min/60), m = min%60;
+    document.getElementById('pTempo').value = (h>0?h+'h ':'')+(m>0?m+'min':'—');
+  } else {
+    document.getElementById('pTempo').value = '—';
+  }
 }
 
 // ── Gerenciamento de Funcionários ──────────────────────
