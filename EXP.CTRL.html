@@ -2510,7 +2510,7 @@ function renderEditItens(itens){
       <div class="form-group"><label>Descrição</label><input class="form-sel" value="${item.nome||''}" style="font-size:11px" oninput="updateItem(${i},'nome',this.value)" placeholder="Auto pelo SKU"></div>
       <div class="form-group"><label>Funcionário</label><select class="form-sel" style="font-size:11px" onchange="updateItem(${i},'funcionario',this.value)"><option value="—">—</option>${FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}" ${item.funcionario===f.nome?'selected':''}>${f.nome} (${f.empresa})</option>`).join('')}</select></div>
       <div class="form-group"><label>Qtde cx</label><input class="form-sel" type="number" style="font-size:11px" value="${item.qtde||''}" oninput="updateItem(${i},'qtde',this.value)" min="0"></div>
-      <div class="form-group"><label>Status</label><select class="form-sel" style="font-size:11px" onchange="updateItem(${i},'status',this.value)">
+      <div class="form-group"><label>Status</label><select class="form-sel" style="font-size:11px" onchange="updateItemStatus(${i},this.value)">
         <option value="pending" ${item.status==='pending'?'selected':''}>Pendente</option>
         <option value="doing" ${item.status==='doing'?'selected':''}>Produzindo</option>
         <option value="done" ${item.status==='done'?'selected':''}>Concluído</option>
@@ -2520,6 +2520,38 @@ function renderEditItens(itens){
   updateTempoEstimado(itens);
 }
 function updateItem(i,field,val){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];if(f.itens[i])f.itens[i][field]=val;}
+
+async function updateItemStatus(i, novoStatus) {
+  if (!editingFullId) return;
+  const f = FULLS_DATA[editingFullId];
+  if (!f || !f.itens[i]) return;
+  const item = f.itens[i];
+  const statusAnterior = item.status;
+  item.status = novoStatus;
+
+  // Registra produtividade automaticamente ao concluir
+  if (novoStatus === 'done' && statusAnterior !== 'done') {
+    const func = item.funcionario;
+    const caixas = parseInt(item.qtde) || 0;
+    if (func && func !== '—' && caixas > 0) {
+      const fi = FUNC_INFO[func];
+      const empresa = fi?.empresa || '';
+      const skuData = SKU_DB.find(s => s.sku === item.codigo);
+      const tempo_min = skuData ? parseFloat((skuData.tempo * caixas).toFixed(1)) : 0;
+      const produtos = caixas * (skuData?.qtdecx || 1);
+      const hoje = new Date().toLocaleDateString('pt-BR');
+      const reg = {
+        funcionario: func, caixas, produtos, tempo_min,
+        full_id: editingFullId, sku: item.codigo || '',
+        empresa, status: 'Concluído', data: hoje
+      };
+      const newId = await db.saveProd(reg);
+      if (newId) reg._id = newId;
+      PROD_DATA.push(reg);
+      showToast('✅ Produtividade de ' + func.split(' ')[0] + ' registrada — ' + caixas + ' cx');
+    }
+  }
+}
 function addItemLinha(){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];f.itens=f.itens||[];f.itens.push({codigo:'',nome:'',funcionario:'—',qtde:0,status:'pending',avatar:'?',cor:'av-amber'});renderEditItens(f.itens);}
 function removeItem(i){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];f.itens.splice(i,1);renderEditItens(f.itens);}
 function skuAutoItem(inputEl,idx){
