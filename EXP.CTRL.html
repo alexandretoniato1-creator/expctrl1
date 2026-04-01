@@ -495,7 +495,7 @@ select:focus{border-color:var(--accent)}
             <!-- mini tabs de dias -->
             <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap" id="dashDucatoDiaTabs"></div>
             <div class="bar-wrap"><div id="dashDucatoBar" class="bar-fill ok" style="width:0%"></div></div>
-            <div class="bar-legend" id="dashDucatoLegend"><span>0 L usados</span><span>13.300 L total</span></div>
+            <div class="bar-legend" id="dashDucatoLegend"><span>0 L usados</span><span>12.000 L total</span></div>
             <!-- breakdown por full -->
             <div id="dashDucatoBreakdown" style="margin-top:10px;display:flex;flex-direction:column;gap:4px"></div>
           </div>
@@ -581,11 +581,11 @@ select:focus{border-color:var(--accent)}
                 </div>
                 <div style="text-align:right">
                   <div class="ducato-pct" id="volDucatoPct">0%</div>
-                  <div style="font-size:11px;color:var(--muted);margin-top:2px" id="volDucatoLitros">0 / 13.300 L</div>
+                  <div style="font-size:11px;color:var(--muted);margin-top:2px" id="volDucatoLitros">0 / 12.000 L</div>
                 </div>
               </div>
               <div class="bar-wrap" style="margin-bottom:8px"><div id="volDucatoBar" class="bar-fill ok" style="width:0%"></div></div>
-              <div class="bar-legend" style="margin-bottom:10px" id="volDucatoLegend"><span>0 L</span><span>13.300 L</span></div>
+              <div class="bar-legend" style="margin-bottom:10px" id="volDucatoLegend"><span>0 L</span><span>12.000 L</span></div>
               <!-- mini breakdown por full -->
               <div id="volDucatoBreakdown" style="display:flex;flex-direction:column;gap:5px"></div>
             </div>
@@ -1570,7 +1570,7 @@ function volCalcTotalLitros(f) {
 function renderVolDia() {
   const dia = _volDia;
   const fulls = volGetFullsDoDia(dia);
-  const CAP = 13300;
+  const CAP = 12000;
 
   // calcula total do dia
   let totalLitros = 0;
@@ -1590,8 +1590,8 @@ function renderVolDia() {
   if (meta)  meta.textContent  = fulls.length + ' full' + (fulls.length!==1?'s':'') + ' · ' + (fulls.map(f=>f.destino).join(', ')||'—');
   if (pctEl) { pctEl.textContent = pct.toFixed(1)+'%'; pctEl.style.color = pct>90?'var(--red)':pct>70?'var(--accent)':'var(--green)'; }
   if (bar)   { bar.style.width = pct+'%'; bar.className = 'bar-fill '+(pct>90?'danger':pct>70?'warn':'ok'); }
-  if (litEl) litEl.textContent = totalLitros.toFixed(0)+' / 13.300 L';
-  if (legend) legend.innerHTML = `<span>${totalLitros.toFixed(0)} L usados</span><span>13.300 L total</span>`;
+  if (litEl) litEl.textContent = totalLitros.toFixed(0)+' / 12.000 L';
+  if (legend) legend.innerHTML = `<span>${totalLitros.toFixed(0)} L usados</span><span>12.000 L total</span>`;
 
   // breakdown por full na ducato
   if (bdEl) {
@@ -1664,7 +1664,7 @@ function renderVolDia() {
 }
 
 function renderVolFullBody(f) {
-  const CAP = 13300;
+  const CAP = 12000;
   const vol = f.vol || [];
   const totalL = volCalcTotalLitros(f);
   const pct = Math.min((totalL/CAP)*100,100);
@@ -1729,7 +1729,7 @@ function renderVolFullBody(f) {
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div style="font-size:16px;font-weight:800;color:${pct>90?'var(--red)':pct>70?'var(--accent)':'var(--green)'}">${pct.toFixed(1)}%</div>
-          <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${totalL.toFixed(0)} / 13.300 L</div>
+          <div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${totalL.toFixed(0)} / 12.000 L</div>
         </div>
       </div>` : ''}
     <div id="volLinhas-${f.id}">
@@ -1997,7 +1997,7 @@ function renderDashDucato() {
   const dias = getDucatoDias();
   const cur = dias[_ducatoDiaIdx] || dias[0];
   const { totalVol, breakdown } = calcVolFullsByDateKey(cur.dateKey);
-  const cap = 13300;
+  const cap = 12000;
   const pct = Math.min((totalVol/cap)*100, 100);
 
   // tabs — mostra os 15 dias agrupados por semana
@@ -2036,7 +2036,7 @@ function renderDashDucato() {
   if (pctEl) { pctEl.textContent=pct.toFixed(1)+'%'; pctEl.style.color=pct>90?'var(--red)':pct>70?'var(--accent)':'var(--green)'; }
 
   const legend = document.getElementById('dashDucatoLegend');
-  if (legend) legend.innerHTML=`<span>${totalVol.toFixed(0)} L usados</span><span>13.300 L total</span>`;
+  if (legend) legend.innerHTML=`<span>${totalVol.toFixed(0)} L usados</span><span>12.000 L total</span>`;
 
   const bd = document.getElementById('dashDucatoBreakdown');
   if (bd) {
