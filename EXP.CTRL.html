@@ -16,6 +16,18 @@
   --logbox:#60a5fa;--logbox-bg:rgba(96,165,250,.10);--logbox-border:rgba(96,165,250,.20);
   --fokus:#fb923c;--fokus-bg:rgba(251,146,60,.10);--fokus-border:rgba(251,146,60,.20);
 }
+body.light-mode{
+  --bg:#f1f5f9;--surface:#ffffff;--surface2:#f8fafc;--border:#e2e8f0;--border2:#cbd5e1;
+  --text:#0f172a;--muted:#94a3b8;--muted2:#64748b;
+  --accent:#0f172a;
+  --green:#16a34a;--red:#dc2626;--blue:#2563eb;--orange:#ea580c;--purple:#7c3aed;
+  --logbox:#2563eb;--logbox-bg:rgba(37,99,235,.08);--logbox-border:rgba(37,99,235,.20);
+  --fokus:#ea580c;--fokus-bg:rgba(234,88,12,.08);--fokus-border:rgba(234,88,12,.20);
+}
+/* toggle theme button */
+.theme-toggle{width:36px;height:20px;border-radius:100px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;position:relative;transition:all .2s;flex-shrink:0}
+.theme-toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted2);transition:all .2s}
+body.light-mode .theme-toggle::after{left:18px;background:var(--accent)}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;display:flex;flex-direction:column}
 .app{display:grid;grid-template-columns:228px 1fr;flex:1;overflow:hidden;height:100vh}
@@ -419,6 +431,7 @@ select:focus{border-color:var(--accent)}
       <div class="topbar-title"><span id="pageTitle">Dashboard</span><small id="pageDate"></small></div>
       <div class="topbar-right">
         <div class="conn"><div class="dot"></div>local</div>
+        <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Alternar tema claro/escuro"></button>
         <button class="btn btn-ghost btn-sm" onclick="openWpp()">💬 WhatsApp</button>
         <button class="btn btn-primary btn-sm" onclick="openModal('modalFull')">+ Novo Full</button>
       </div>
@@ -2772,11 +2785,10 @@ async function fecharDiaSaidas(){
 function abrirDetalheDia(data,galpao){
   const hist=SAIDAS_HIST.find(h=>h.data===data&&h.galpao===galpao);if(!hist)return;
   const hoje=new Date().toLocaleDateString('pt-BR');
-  let pedidos=data===hoje?SAIDAS_HOJE.filter(s=>s.galpao===galpao):[];
-  if(!pedidos.length){
-    const ms=[...Array(hist.ml).fill('ML'),...Array(hist.amazon).fill('Amazon'),...Array(hist.shopee).fill('Shopee')];
-    const cs=[...Array(hist.flex).fill('Flex'),...Array(hist.coleta).fill('Coleta')];
-    for(let i=0;i<hist.total;i++){const h=8+Math.floor(i/Math.max(hist.total/8,1));const m=Math.floor(Math.random()*59).toString().padStart(2,'0');pedidos.push({num:String(Math.floor(10000000000000000+Math.random()*89999999999999999)),canal:cs[i]||'Flex',market:ms[i]||'ML',galpao,hora:Math.min(h,17).toString().padStart(2,'0')+':'+m});}
+  const chave=data+'_'+galpao;
+  let pedidos=(SAIDAS_HIST_PEDIDOS[chave]||[]).map(p=>({...p}));
+  if(!pedidos.length && data===hoje){
+    pedidos=SAIDAS_HOJE.filter(s=>s.galpao===galpao);
   }
   detalheDiaAtual=pedidos;
   document.getElementById('detalheDiaTitulo').textContent='Pedidos — '+data;
@@ -3675,6 +3687,13 @@ function removerFuncionario(idx) {
   populateFuncSelects();
   showToast('🗑 Removido');
 }
+
+function toggleTheme(){
+  const light = document.body.classList.toggle('light-mode');
+  localStorage.setItem('expctrl_theme', light?'light':'dark');
+}
+// Aplicar tema salvo ao carregar
+(()=>{ if(localStorage.getItem('expctrl_theme')==='light') document.body.classList.add('light-mode'); })();
 
 // ══════════════════════════════════════════════════════
 // INIT
