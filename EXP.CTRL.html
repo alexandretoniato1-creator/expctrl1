@@ -629,6 +629,7 @@ select:focus{border-color:var(--accent)}
             <div class="prod-header">
               <div style="font-size:13px;font-weight:700">Ranking de produtividade</div>
               <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn btn-ghost btn-sm" onclick="abrirGerenciarFuncionarios()">👥 Funcionários</button>
                 <button class="btn btn-primary btn-sm" onclick="openModal('modalProd')">+ Registrar</button>
               </div>
             </div>
@@ -642,7 +643,7 @@ select:focus{border-color:var(--accent)}
             <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
             <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option></select></div>
-            <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="Ricardo C.">Ricardo C.</option><option value="Thiago L.">Thiago L.</option><option value="Felipe S.">Felipe S.</option><option value="Marcos S.">Marcos S.</option><option value="João P.">João P.</option><option value="André L.">André L.</option></select></div>
+            <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
           <div style="background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
@@ -650,8 +651,8 @@ select:focus{border-color:var(--accent)}
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
                 <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:.8px">📦 Bipe ou digite o número da venda — Enter para registrar</div>
                 <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">
-                  <div id="bipeFuncAvatar" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.08);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">RC</div>
-                  <span id="bipeFuncNome">Ricardo C.</span>
+                  <div id="bipeFuncAvatar" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.08);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">?</div>
+                  <span id="bipeFuncNome">—</span>
                 </div>
               </div>
               <input type="text" id="saidaBipe" placeholder="Ex: 12345678901234567" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:11px 13px;outline:none;transition:border-color .15s" onkeydown="if(event.key==='Enter')registrarSaida()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
@@ -921,12 +922,26 @@ select:focus{border-color:var(--accent)}
   </div>
 </div>
 
+<!-- GERENCIAR FUNCIONÁRIOS -->
+<div class="modal-overlay" id="modalFuncionarios">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">👥 Funcionários <button class="modal-close" onclick="closeModal('modalFuncionarios')">✕</button></div>
+    <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:14px;align-items:end">
+      <div class="form-group" style="margin:0"><label>Nome</label><input class="form-sel" id="funcNome" type="text" placeholder="Ex: Carlos M." onkeydown="if(event.key==='Enter')adicionarFuncionario()"></div>
+      <div class="form-group" style="margin:0"><label>Empresa</label><select class="form-sel" id="funcEmpresa"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
+      <button class="btn btn-primary" onclick="adicionarFuncionario()" style="height:36px;padding:0 14px;align-self:end">+ Add</button>
+    </div>
+    <div id="funcLista" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalFuncionarios')">Fechar</button></div>
+  </div>
+</div>
+
 <!-- PRODUTIVIDADE -->
 <div class="modal-overlay" id="modalProd">
   <div class="modal">
     <div class="modal-title">Registrar Produtividade <button class="modal-close" onclick="closeModal('modalProd')">✕</button></div>
     <div class="form-grid">
-      <div class="form-group"><label>Funcionário</label><select class="form-sel" id="pFuncionario"><option>Ricardo C.</option><option>Marcos S.</option><option>Thiago L.</option><option>João P.</option><option>Felipe S.</option><option>André L.</option></select></div>
+      <div class="form-group"><label>Funcionário</label><select class="form-sel" id="pFuncionario"><option value="—">—</option></select></div>
       <div class="form-group"><label>Qtd Caixas</label><input class="form-sel" type="number" id="pCaixas" placeholder="0" min="1"></div>
       <div class="form-group"><label>Full relacionado</label><select class="form-sel" id="pFull"><option value="">—</option></select></div>
       <div class="form-group"><label>Item / Produto</label><input class="form-sel" type="text" id="pItem" placeholder="SKU ou nome do produto"></div>
@@ -1413,21 +1428,38 @@ const CHECKLIST_ITEMS = [
   'Nenhuma caixa aberta ou com avaria visível',
 ];
 
-const FUNC_INFO = {
-  'Ricardo C.': {empresa:'LogBox', av:'RC', cor:'av-blue',  corCss:'var(--logbox)'},
-  'Thiago L.':  {empresa:'LogBox', av:'TL', cor:'av-blue',  corCss:'var(--logbox)'},
-  'Felipe S.':  {empresa:'LogBox', av:'FS', cor:'av-blue',  corCss:'var(--logbox)'},
-  'Marcos S.':  {empresa:'Fokus',  av:'MS', cor:'av-green', corCss:'var(--fokus)'},
-  'João P.':    {empresa:'Fokus',  av:'JP', cor:'av-green', corCss:'var(--fokus)'},
-  'André L.':   {empresa:'Fokus',  av:'AL', cor:'av-red',   corCss:'var(--red)'},
-};
+// Funcionários dinâmicos — persistidos no localStorage
+// Estrutura: [{nome, empresa}]
+let FUNCIONARIOS_DATA = JSON.parse(localStorage.getItem('expctrl_funcionarios')||'[]');
+
+function funcAv(nome){return nome&&nome!=='—'?nome.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';}
+function funcCor(empresa){return empresa==='LogBox'?'av-blue':empresa==='Fokus'?'av-green':'av-amber';}
+function funcCorCss(empresa){return empresa==='LogBox'?'var(--logbox)':empresa==='Fokus'?'var(--fokus)':'var(--muted)';}
+function funcCorBg(empresa){return empresa==='LogBox'?'var(--logbox-bg)':empresa==='Fokus'?'var(--fokus-bg)':'rgba(255,255,255,.06)';}
+
+// Compat: array de nomes para código que usa FUNCIONARIOS[]
+const FUNCIONARIOS = { get length(){return FUNCIONARIOS_DATA.length;}, map:(fn)=>FUNCIONARIOS_DATA.map((f,i)=>fn(f.nome,i)), [Symbol.iterator]:function*(){for(const f of FUNCIONARIOS_DATA)yield f.nome;} };
+
+function saveFuncionarios(){localStorage.setItem('expctrl_funcionarios',JSON.stringify(FUNCIONARIOS_DATA));}
+
+function populateFuncSelects(){
+  const opts = '<option value="—">—</option>'+FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}">${f.nome} (${f.empresa})</option>`).join('');
+  ['pFuncionario','saidaFuncionario'].forEach(id=>{
+    const el=document.getElementById(id); if(!el)return;
+    const cur=el.value; el.innerHTML=opts;
+    if(cur&&[...el.options].find(o=>o.value===cur)) el.value=cur;
+  });
+}
+
+const FUNC_INFO = new Proxy({},{
+  get(_,nome){ const f=FUNCIONARIOS_DATA.find(x=>x.nome===nome); if(!f)return {empresa:'',av:funcAv(nome),cor:'av-amber',corCss:'var(--muted)'}; return {empresa:f.empresa,av:funcAv(nome),cor:funcCor(f.empresa),corCss:funcCorCss(f.empresa)}; }
+});
 
 let editingFullId = null;
 let editingSkuIdx = null;
 let checklistFullId = null;
 let detalheDiaAtual = [];
 let calOffset = 0;
-const FUNCIONARIOS = ['Ricardo C.','Thiago L.','Felipe S.','Marcos S.','João P.','André L.'];
 // BASE_MON: segunda-feira da semana atual, calculado dinamicamente
 const BASE_MON = (()=>{ const d=new Date(); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; })();
 const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
@@ -2411,9 +2443,8 @@ async function salvarEditFull(){
   if(ag){const p=ag.split('-');f.agendado=p[2]+'/'+p[1]+'/'+p[0];}
   const cr=document.getElementById('ef-criadoEm').value;
   if(cr){const p=cr.split('-');f.criadoEm=p[2]+'/'+p[1]+'/'+p[0];}
-  const corMap={'Ricardo C.':'av-blue','Thiago L.':'av-blue','Felipe S.':'av-blue','Marcos S.':'av-green','João P.':'av-green','André L.':'av-red'};
   const avMap=name=>name!=='—'?name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';
-  f.itens=(f.itens||[]).map(item=>({...item,avatar:avMap(item.funcionario),cor:corMap[item.funcionario]||'av-blue'}));
+  f.itens=(f.itens||[]).map(item=>({...item,avatar:avMap(item.funcionario),cor:funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}));
   const cal=CAL_FULLS.find(c=>c.id===editingFullId);
   if(cal){cal.status=f.status;cal.destino=f.destino;cal.responsavel=f.responsavel;const done=f.itens.filter(i=>i.status==='done').length;cal.itens=done+'/'+f.itens.length;}
   await db.saveFull(f);
@@ -2538,7 +2569,6 @@ function openEnviadoDetail(id) {
   if (!f) return;
   document.getElementById('detailTitle').textContent = f.id + ' ✈';
   document.getElementById('detailSub').innerHTML = f.empresa + ' · ' + f.destino + ' · Enviado em ' + f.enviadoEm;
-  const corMap = {'Ricardo C.':'av-blue','Thiago L.':'av-blue','Felipe S.':'av-blue','Marcos S.':'av-green','João P.':'av-green','André L.':'av-red'};
   document.getElementById('detailBody').innerHTML = `
     <div class="detail-stats">
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--green)">${f.totalItens}</div><div class="detail-stat-label">Itens</div></div>
@@ -2553,7 +2583,7 @@ function openEnviadoDetail(id) {
       const av=item.funcionario&&item.funcionario!=='—'?item.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2):'?';
       return `<div class="item-card done">
         <div class="item-top"><div><div class="item-name">${item.nome}</div><div class="item-code">${item.codigo||'—'}</div></div><div class="sdot dot-done"></div></div>
-        <div class="item-bottom"><div class="item-func"><div class="prod-avatar ${corMap[item.funcionario]||'av-amber'}" style="width:20px;height:20px;font-size:9px">${av}</div><span class="item-func-name">${item.funcionario||'—'}</span></div><div class="item-qty">${item.qtde} cx</div></div>
+        <div class="item-bottom"><div class="item-func"><div class="prod-avatar ${funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}" style="width:20px;height:20px;font-size:9px">${av}</div><span class="item-func-name">${item.funcionario||'—'}</span></div><div class="item-qty">${item.qtde} cx</div></div>
       </div>`;}).join('')}
     </div>
     <button class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;padding:8px;margin-top:8px;color:var(--accent);border-color:rgba(255,255,255,.12)" onclick="closeDetail();abrirImpressao('${f.id}')">🖨 Imprimir Comprovante</button>
@@ -2570,7 +2600,7 @@ async function reverterEnviado(id) {
     id: f.id, empresa: f.empresa, destino: f.destino,
     agendado: f.agendado, responsavel: f.responsavel, criadoEm: f.criadoEm||'',
     status: 'Pronto', obs: '', vol: [],
-    itens: (f.itens||[]).map(i=>({...i, avatar: i.funcionario&&i.funcionario!=='—'?i.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?', cor: ({'Ricardo C.':'av-blue','Thiago L.':'av-blue','Felipe S.':'av-blue','Marcos S.':'av-green','João P.':'av-green','André L.':'av-red'})[i.funcionario]||'av-blue' })),
+    itens: (f.itens||[]).map(i=>({...i, avatar: i.funcionario&&i.funcionario!=='—'?i.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?', cor: funcCor(FUNC_INFO[i.funcionario]?.empresa||'') })),
   };
   FULLS_DATA[f.id] = fullRevertido;
   const dia = diaDaSemana(f.agendado);
@@ -2602,9 +2632,7 @@ function atualizarBipeFuncionario() {
   const av = func ? func.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase() : '?';
   const el = document.getElementById('bipeFuncAvatar');
   const nm = document.getElementById('bipeFuncNome');
-  const corMap = {'Ricardo C.':'rgba(255,255,255,.08)','Thiago L.':'var(--logbox-bg)','Felipe S.':'var(--logbox-bg)','Marcos S.':'rgba(255,255,255,.08)','João P.':'rgba(255,255,255,.08)','André L.':'rgba(245,95,95,.15)'};
-  const clrMap = {'Ricardo C.':'var(--logbox)','Thiago L.':'var(--logbox)','Felipe S.':'var(--logbox)','Marcos S.':'var(--fokus)','João P.':'var(--fokus)','André L.':'var(--red)'};
-  if(el){el.textContent=av;el.style.background=corMap[func]||'rgba(255,255,255,.08)';el.style.color=clrMap[func]||'var(--accent)';}
+  if(el){el.textContent=av;el.style.background=funcCorBg(FUNC_INFO[func]?.empresa||'');el.style.color=funcCorCss(FUNC_INFO[func]?.empresa||'');}
   if(nm)nm.textContent=func||'—';
 }
 // bind funcionario change
@@ -2650,13 +2678,12 @@ function renderSaidas(){
   document.getElementById('sHojeCount').textContent=lista.length+' pacotes';
   const tbody=document.getElementById('saidaBody');
   if(!lista.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">📦 Nenhum pacote registrado</td></tr>';return;}
-  const corMap={'Ricardo C.':'av-blue','Thiago L.':'av-blue','Felipe S.':'av-blue','Marcos S.':'av-green','João P.':'av-green','André L.':'av-red'};
-  const clrMap={'Ricardo C.':'var(--logbox)','Thiago L.':'var(--logbox)','Felipe S.':'var(--logbox)','Marcos S.':'var(--fokus)','João P.':'var(--fokus)','André L.':'var(--red)'};
+  // cor dinâmica via FUNC_INFO
   tbody.innerHTML=[...lista].reverse().map((s,i)=>{
     const realIdx = SAIDAS_HOJE.indexOf(s); // índice real no array original
     const func=s.funcionario||'—';
     const av=func!=='—'?func.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';
-    const cor=clrMap[func]||'var(--muted)';
+    const cor=funcCorCss(FUNC_INFO[func]?.empresa||'');
     return `
     <tr>
       <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px">${lista.length-i}</td>
@@ -3535,10 +3562,122 @@ function executarImpressao() {
 }
 
 // ══════════════════════════════════════════════════════
+// PRODUTIVIDADE
+function renderProdutividade() {
+  populateFuncSelects();
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const dadosHoje = PROD_DATA.filter(p => p.data === hoje);
+  const totalCaixas = dadosHoje.reduce((a,p) => a+(parseInt(p.caixas)||0), 0);
+  const nFunc = [...new Set(dadosHoje.map(p=>p.funcionario))].length;
+  const media = nFunc ? Math.round(totalCaixas/nFunc) : 0;
+
+  // agrupa por funcionário
+  const porFunc = {};
+  dadosHoje.forEach(p => {
+    if (!porFunc[p.funcionario]) porFunc[p.funcionario] = 0;
+    porFunc[p.funcionario] += parseInt(p.caixas)||0;
+  });
+  const ranking = Object.entries(porFunc).sort((a,b)=>b[1]-a[1]);
+  const melhor = ranking[0];
+  const maxCx = melhor ? melhor[1] : 1;
+
+  document.getElementById('prodTotalCaixas').textContent = totalCaixas;
+  document.getElementById('prodMedia').textContent = media;
+  document.getElementById('prodMelhor').textContent = melhor ? melhor[0].split(' ')[0] : '—';
+  document.getElementById('prodMelhorSub').textContent = melhor ? melhor[1]+' caixas' : '—';
+
+  const lista = document.getElementById('prodList');
+  if (!ranking.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">Nenhum registro hoje. Clique em "+ Registrar".</div>';
+    return;
+  }
+  lista.innerHTML = ranking.map(([nome, cx], i) => {
+    const fi = FUNC_INFO[nome];
+    const av = funcAv(nome);
+    const cor = funcCor(fi?.empresa||'');
+    const pct = Math.round((cx/maxCx)*100);
+    return `<div class="prod-item">
+      <div class="prod-rank">${i+1}</div>
+      <div class="prod-avatar ${cor}">${av}</div>
+      <div class="prod-info">
+        <div class="prod-name">${nome} <span class="prod-empresa">${fi?.empresa||''}</span></div>
+        <div class="prod-bar-wrap"><div class="prod-bar-fill" style="width:${pct}%;background:${funcCorCss(fi?.empresa||'')}"></div></div>
+      </div>
+      <div class="prod-caixas">${cx} cx</div>
+    </div>`;
+  }).join('');
+}
+
+async function salvarProd() {
+  const func = document.getElementById('pFuncionario').value;
+  const caixas = parseInt(document.getElementById('pCaixas').value)||0;
+  if (!func || func==='—' || !caixas) { showToast('⚠️ Funcionário e qtd obrigatórios'); return; }
+  const full = document.getElementById('pFull').value||'';
+  const item = document.getElementById('pItem').value||'';
+  const status = document.getElementById('pStatus').value;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const reg = { funcionario:func, caixas, full, item, status, data:hoje };
+  await db.saveProd(reg);
+  PROD_DATA.push(reg);
+  closeModal('modalProd');
+  renderProdutividade();
+  showToast('✅ Produtividade registrada!');
+}
+
+// ── Gerenciamento de Funcionários ──────────────────────
+function abrirGerenciarFuncionarios() {
+  renderFuncList();
+  openModal('modalFuncionarios');
+}
+
+function renderFuncList() {
+  const lista = document.getElementById('funcLista');
+  if (!lista) return;
+  if (!FUNCIONARIOS_DATA.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Nenhum funcionário cadastrado.</div>';
+    return;
+  }
+  lista.innerHTML = FUNCIONARIOS_DATA.map((f,i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+      <div class="prod-avatar ${funcCor(f.empresa)}" style="width:28px;height:28px;font-size:10px">${funcAv(f.nome)}</div>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600">${f.nome}</div>
+        <div style="font-size:10px;color:var(--muted)">${f.empresa}</div>
+      </div>
+      <button class="btn-danger-sm" onclick="removerFuncionario(${i})">✕</button>
+    </div>`).join('');
+}
+
+function adicionarFuncionario() {
+  const nome = (document.getElementById('funcNome')?.value||'').trim();
+  const empresa = document.getElementById('funcEmpresa')?.value||'';
+  if (!nome || !empresa) { showToast('⚠️ Nome e empresa obrigatórios'); return; }
+  if (FUNCIONARIOS_DATA.find(f=>f.nome.toLowerCase()===nome.toLowerCase())) { showToast('⚠️ Funcionário já existe'); return; }
+  FUNCIONARIOS_DATA.push({nome, empresa});
+  saveFuncionarios();
+  document.getElementById('funcNome').value='';
+  renderFuncList();
+  populateFuncSelects();
+  showToast('✅ '+nome+' adicionado!');
+}
+
+function removerFuncionario(idx) {
+  const f = FUNCIONARIOS_DATA[idx];
+  if (!confirm('Remover '+f.nome+'?')) return;
+  FUNCIONARIOS_DATA.splice(idx,1);
+  saveFuncionarios();
+  renderFuncList();
+  populateFuncSelects();
+  showToast('🗑 Removido');
+}
+
+// ══════════════════════════════════════════════════════
 // INIT
 (async () => {
   await db.load();
   ducatoSyncHoje();
+  populateFuncSelects();
+  atualizarBipeFuncionario();
   renderDashboard();
   renderCal();
   renderDev();
