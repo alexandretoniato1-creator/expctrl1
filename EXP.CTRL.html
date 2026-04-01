@@ -1738,63 +1738,57 @@ function renderVolDia() {
   }).join('');
 }
 
+function volCalcItensAgrupados(f) {
+  const itens = f.itens || [];
+  const grupos = {};
+  itens.forEach(item => {
+    if (!item.codigo) return;
+    if (!grupos[item.codigo]) {
+      const sku = SKU_DB.find(s => s.sku === item.codigo);
+      grupos[item.codigo] = {
+        codigo: item.codigo,
+        descricao: item.nome || sku?.descricao || '',
+        comp: sku?.comp || 0, larg: sku?.larg || 0, altu: sku?.altu || 0,
+        vol: sku?.vol || 0, qtde: 0
+      };
+    }
+    grupos[item.codigo].qtde += parseInt(item.qtde) || 0;
+  });
+  return Object.values(grupos);
+}
+
 function renderVolFullBody(f) {
   const CAP = 12000;
-  const vol = f.vol || [];
+  const grupos = volCalcItensAgrupados(f);
   const totalL = volCalcTotalLitros(f);
   const pct = Math.min((totalL/CAP)*100,100);
+  const totalCx = grupos.reduce((a,g)=>a+g.qtde,0);
 
-  const linhas = vol.map((v, i) => {
-    const vun = ((parseFloat(v.comp)||0)*(parseFloat(v.larg)||0)*(parseFloat(v.altu)||0))/1000;
-    const vtot = vun * (parseFloat(v.qtde)||1);
-    return `<div class="vol-linha">
-      <div class="form-group" style="margin-bottom:0">
-        <label style="font-size:9px">SKU</label>
-        <input class="form-sel" value="${v.codigo||''}" style="font-size:11px;font-family:'DM Mono',monospace"
-          placeholder="SKU"
-          oninput="volUpdateCaixa('${f.id}',${i},'codigo',this.value)"
-          onblur="volSkuAuto('${f.id}',${i},this)"
-          onkeydown="if(event.key==='Enter')volSkuAuto('${f.id}',${i},this)">
+  const linhas = grupos.map((g, i) => {
+    const vun = ((parseFloat(g.comp)||0)*(parseFloat(g.larg)||0)*(parseFloat(g.altu)||0))/1000;
+    const vtot = vun * g.qtde;
+    const temDim = g.comp && g.larg && g.altu;
+    return `<div style="display:grid;grid-template-columns:1fr 2fr 60px 60px auto;gap:8px;align-items:center;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
+      <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--logbox)">${g.codigo}</div>
+      <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.descricao||'—'}</div>
+      <div style="text-align:center">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:2px">CAIXAS</div>
+        <div style="font-size:14px;font-weight:700;color:var(--text)">${g.qtde}</div>
       </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label style="font-size:9px">Descrição</label>
-        <input class="form-sel" value="${v.descricao||''}" style="font-size:11px"
-          placeholder="Produto"
-          oninput="volUpdateCaixa('${f.id}',${i},'descricao',this.value)">
+      <div style="text-align:center">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:2px">VOL</div>
+        <div style="font-size:12px;font-weight:600;color:${temDim?'var(--green)':'var(--muted)'}">${temDim?vtot.toFixed(1)+'L':'—'}</div>
       </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label style="font-size:9px">C (cm)</label>
-        <input class="form-sel" type="number" value="${v.comp||''}" style="font-size:11px"
-          oninput="volUpdateCaixa('${f.id}',${i},'comp',this.value);volRefreshCard('${f.id}')">
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label style="font-size:9px">L (cm)</label>
-        <input class="form-sel" type="number" value="${v.larg||''}" style="font-size:11px"
-          oninput="volUpdateCaixa('${f.id}',${i},'larg',this.value);volRefreshCard('${f.id}')">
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label style="font-size:9px">A (cm)</label>
-        <input class="form-sel" type="number" value="${v.altu||''}" style="font-size:11px"
-          oninput="volUpdateCaixa('${f.id}',${i},'altu',this.value);volRefreshCard('${f.id}')">
-      </div>
-      <div class="form-group" style="margin-bottom:0">
-        <label style="font-size:9px">Qtde</label>
-        <input class="form-sel" type="number" value="${v.qtde||1}" min="1" style="font-size:11px"
-          oninput="volUpdateCaixa('${f.id}',${i},'qtde',this.value);volRefreshCard('${f.id}')">
-      </div>
-      <button class="remove-btn" onclick="volRemoverCaixa('${f.id}',${i})" title="Remover">✕</button>
-    </div>
-    <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:6px;padding-left:2px">
-      ${v.comp&&v.larg&&v.altu ? `Vol/cx: <span style="color:var(--accent)">${vun.toFixed(2)} L</span> · Total: <span style="color:var(--green)">${vtot.toFixed(2)} L</span>` : '<span style="color:var(--muted);opacity:.5">preencha as dimensões</span>'}
+      <button class="remove-btn" onclick="volRemoverSku('${f.id}','${g.codigo}')" title="Remover SKU do full">✕</button>
     </div>`;
   }).join('');
 
   return `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-      <div style="font-size:12px;font-weight:600">Caixas deste full</div>
-      <button class="btn btn-primary btn-sm" onclick="volAdicionarCaixa('${f.id}')">+ Adicionar caixa</button>
+      <div style="font-size:12px;font-weight:600">SKUs deste full <span style="color:var(--muted);font-weight:400;font-size:11px">(somado por SKU)</span></div>
+      <button class="btn btn-primary btn-sm" onclick="volAdicionarSku('${f.id}')">+ Adicionar SKU</button>
     </div>
-    ${vol.length ? `
+    ${grupos.length ? `
       <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:12px">
         <div style="flex:1">
           <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:4px">OCUPAÇÃO DA DUCATO — este full</div>
@@ -1808,11 +1802,11 @@ function renderVolFullBody(f) {
         </div>
       </div>` : ''}
     <div id="volLinhas-${f.id}">
-      ${linhas || '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Nenhuma caixa cadastrada. Clique em "+ Adicionar caixa" ou use a calculadora rápida ao lado.</div>'}
+      ${linhas || '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Nenhum item neste full. Adicione itens na aba Fulls ou clique em &quot;+ Adicionar SKU&quot;.</div>'}
     </div>
-    ${vol.length ? `
+    ${grupos.length ? `
       <div class="vol-linha-total">
-        <span style="color:var(--muted)">Total · ${vol.length} tipo${vol.length!==1?'s':''} · ${vol.reduce((a,v)=>a+(parseInt(v.qtde)||0),0)} caixas</span>
+        <span style="color:var(--muted)">${grupos.length} SKU${grupos.length!==1?'s':''} · ${totalCx} caixas</span>
         <span style="color:var(--green);font-weight:700">${totalL.toFixed(2)} L</span>
       </div>` : ''}`;
 }
@@ -1827,35 +1821,28 @@ function volToggleCard(id) {
   if (chev) { chev.textContent = open ? '⌄' : '›'; chev.style.transform = open ? 'rotate(0deg)' : ''; }
 }
 
-async function volAdicionarCaixa(fullId) {
+function volAdicionarSku(fullId) {
   const f = FULLS_DATA[fullId]; if (!f) return;
-  f.vol = f.vol || [];
-  f.vol.push({codigo:'', descricao:'', comp:0, larg:0, altu:0, qtde:1});
+  const skuVal = prompt('SKU para adicionar ao '+fullId+':');
+  if (!skuVal) return;
+  const sku = SKU_DB.find(s => s.sku.toUpperCase() === skuVal.trim().toUpperCase());
+  if (!sku) { showToast('⚠️ SKU "'+skuVal+'" não encontrado no Catálogo'); return; }
+  const qtdeStr = prompt('Quantidade de caixas de '+sku.descricao+':');
+  const qtde = parseInt(qtdeStr)||0;
+  if (!qtde) return;
+  f.itens = f.itens || [];
+  f.itens.push({codigo:sku.sku, nome:sku.descricao, funcionario:'—', qtde, status:'pending', avatar:'?', cor:'av-amber'});
+  db.saveFull(f).then(()=>volRefreshCard(fullId));
+  showToast('✅ '+sku.descricao+' adicionado ao '+fullId);
+}
+
+async function volRemoverSku(fullId, skuCodigo) {
+  if (!confirm('Remover todos os itens com SKU "'+skuCodigo+'" do '+fullId+'?')) return;
+  const f = FULLS_DATA[fullId]; if (!f) return;
+  f.itens = (f.itens||[]).filter(item => item.codigo !== skuCodigo);
   await db.saveFull(f);
   volRefreshCard(fullId);
-}
-
-async function volRemoverCaixa(fullId, idx) {
-  const f = FULLS_DATA[fullId]; if (!f || !f.vol) return;
-  f.vol.splice(idx, 1);
-  await db.saveFull(f);
-  volRefreshCard(fullId);
-}
-
-function volUpdateCaixa(fullId, idx, field, val) {
-  const f = FULLS_DATA[fullId]; if (!f || !f.vol || !f.vol[idx]) return;
-  f.vol[idx][field] = parseFloat(val)||val;
-  clearTimeout(volUpdateCaixa._t);
-  volUpdateCaixa._t = setTimeout(() => db.saveFull(f), 800);
-}
-
-function volSkuAuto(fullId, idx, inputEl) {
-  const found = SKU_DB.find(s => s.sku.toUpperCase() === inputEl.value.trim().toUpperCase());
-  if (!found) return;
-  const f = FULLS_DATA[fullId]; if (!f || !f.vol || !f.vol[idx]) return;
-  f.vol[idx] = {...f.vol[idx], codigo:found.sku, descricao:found.descricao, comp:found.comp, larg:found.larg, altu:found.altu};
-  volRefreshCard(fullId);
-  showToast('📦 '+found.descricao+' carregado!');
+  showToast('🗑 '+skuCodigo+' removido do '+fullId);
 }
 
 function volRefreshCard(fullId) {
@@ -1887,9 +1874,8 @@ function calcRapidaAdicionarAoFull() {
   const a = parseFloat(document.getElementById('cA')?.value)||0;
   const q = parseInt(document.getElementById('cQ')?.value)||1;
   if (!c || !l || !a) { showToast('⚠️ Preencha as dimensões'); return; }
-  f.vol = f.vol || [];
-  f.vol.push({codigo:sku, descricao:desc||sku, comp:c, larg:l, altu:a, qtde:q});
-  // abre o card do full automaticamente
+  f.itens = f.itens || [];
+  f.itens.push({codigo:sku||'', nome:desc||sku||'', funcionario:'—', qtde:q, status:'pending', avatar:'?', cor:'av-amber'});
   const bodyEl = document.getElementById('volBody-'+fullId);
   if (bodyEl && !bodyEl.classList.contains('open')) volToggleCard(fullId);
   volRefreshCard(fullId);
@@ -2556,7 +2542,13 @@ function addItemLinha(){if(!editingFullId)return;const f=FULLS_DATA[editingFullI
 function removeItem(i){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];f.itens.splice(i,1);renderEditItens(f.itens);}
 function skuAutoItem(inputEl,idx){
   const found=SKU_DB.find(s=>s.sku.toUpperCase()===inputEl.value.trim().toUpperCase());
-  if(found&&editingFullId){const f=FULLS_DATA[editingFullId];if(f.itens[idx]){f.itens[idx].nome=found.descricao;}const linha=document.getElementById('item-linha-'+idx);if(linha){const desc=linha.querySelectorAll('input')[1];if(desc)desc.value=found.descricao;}showToast('📦 '+found.descricao+' carregado!');}
+  if(found&&editingFullId){
+    const f=FULLS_DATA[editingFullId];
+    if(f.itens[idx]){ f.itens[idx].nome=found.descricao; f.itens[idx].codigo=found.sku; }
+    const linha=document.getElementById('item-linha-'+idx);
+    if(linha){const desc=linha.querySelectorAll('input')[1];if(desc)desc.value=found.descricao;}
+    showToast('📦 '+found.descricao+' · '+found.comp+'×'+found.larg+'×'+found.altu+'cm · '+found.vol+'L/cx');
+  }
 }
 function updateTempoEstimado(itens){
   let min=0;
