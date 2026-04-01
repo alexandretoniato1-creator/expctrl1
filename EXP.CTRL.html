@@ -1245,6 +1245,7 @@ const db = {
       SAIDAS_HIST_PEDIDOS = (saidasHistPedidos||[]).reduce((acc, row) => {
         if (!acc[row.data_galpao]) acc[row.data_galpao] = [];
         acc[row.data_galpao].push({
+          _id: row.id,
           num: row.numero, canal: row.canal, market: row.market,
           funcionario: row.funcionario, hora: row.hora
         });
@@ -1355,8 +1356,18 @@ const db = {
   // Fecha o dia de saídas (move para histórico)
   async fecharDia(hist, pedidos) {
     const chave = hist.data + '_' + hist.galpao;
-    // Upsert no resumo do dia
-    const row = {
+    // Busca resumo existente para ACUMULAR (não substituir)
+    const { data: existing } = await _sb.from('saidas_hist')
+      .select('*').eq('data', hist.data).eq('galpao', hist.galpao).maybeSingle();
+    const row = existing ? {
+      data: hist.data, galpao: hist.galpao,
+      total:   (existing.total||0)   + hist.total,
+      flex:    (existing.flex||0)    + hist.flex,
+      coleta:  (existing.coleta||0)  + hist.coleta,
+      ml:      (existing.ml||0)      + hist.ml,
+      amazon:  (existing.amazon||0)  + hist.amazon,
+      shopee:  (existing.shopee||0)  + hist.shopee,
+    } : {
       data: hist.data, galpao: hist.galpao, total: hist.total,
       flex: hist.flex, coleta: hist.coleta,
       ml: hist.ml, amazon: hist.amazon, shopee: hist.shopee
@@ -1364,8 +1375,7 @@ const db = {
     const { error: eHist } = await _sb.from('saidas_hist')
       .upsert(row, { onConflict: 'data,galpao' });
     if (eHist) { console.error('[Supabase] fecharDia upsert:', eHist); }
-    // Deleta pedidos antigos da mesma chave antes de reinserir (evita duplicatas)
-    await _sb.from('saidas_hist_pedidos').delete().eq('data_galpao', chave);
+    // Acrescenta os novos pedidos sem deletar os anteriores
     if (pedidos?.length) {
       const rows = pedidos.map(p => ({
         data_galpao: chave, numero: p.num||'', canal: p.canal||'',
@@ -1375,6 +1385,14 @@ const db = {
       if (ePed) { console.error('[Supabase] fecharDia pedidos:', ePed); }
     }
     await this.clearSaidasHoje(hist.galpao);
+    // Retorna o resumo acumulado para o frontend atualizar a memória
+    return row;
+  },
+
+  async deletePedidoHist(id) {
+    const { error } = await _sb.from('saidas_hist_pedidos').delete().eq('id', id);
+    if (error) console.error('[Supabase] deletePedidoHist:', error);
+    return !error;
   },
 
   // Devolução
@@ -2748,7 +2766,10 @@ function renderSaidaHistorico(galpao){
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.ml}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.amazon}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.shopee}</td>
-      <td><button class="action-btn" style="font-size:10px;color:var(--accent);white-space:nowrap" onclick="event.stopPropagation();abrirModalSaidaImpressao('${h.data}','${h.galpao}')">🖨 Imprimir</button></td>
+      <td style="display:flex;gap:5px">
+        <button class="action-btn" style="font-size:10px;color:var(--accent);white-space:nowrap" onclick="event.stopPropagation();abrirModalSaidaImpressao('${h.data}','${h.galpao}')">🖨 Imprimir</button>
+        <button class="btn-danger-sm" style="font-size:10px" onclick="event.stopPropagation();excluirDiaHist('${h.data}','${h.galpao}')">🗑</button>
+      </td>
     </tr>`).join('');
 }
 function renderSaidaAnalise(galpao){
@@ -2794,16 +2815,17 @@ async function fecharDiaSaidas(){
     shopee:lista.filter(s=>s.market==='Shopee').length
   };
   const chave=hoje+'_'+g;
-  // salva no banco (delete+insert pedidos para evitar duplicatas)
-  await db.fecharDia(hist, lista);
+  // salva no banco acumulando — retorna o resumo já somado
+  const histAcumulado = await db.fecharDia(hist, lista);
   // atualiza memória local
   SAIDAS_HOJE=SAIDAS_HOJE.filter(s=>s.galpao!==g);
-  // atualiza/insere no SAIDAS_HIST em memória
+  // atualiza/insere SAIDAS_HIST em memória com o total acumulado
   const idxExist=SAIDAS_HIST.findIndex(h=>h.data===hoje&&h.galpao===g);
-  if(idxExist>=0) SAIDAS_HIST[idxExist]=hist;
-  else SAIDAS_HIST.push(hist);
-  // atualiza pedidos em memória
-  SAIDAS_HIST_PEDIDOS[chave]=lista.map(s=>({...s}));
+  if(idxExist>=0) SAIDAS_HIST[idxExist]={...SAIDAS_HIST[idxExist], ...histAcumulado};
+  else SAIDAS_HIST.push(histAcumulado);
+  // acrescenta os novos pedidos em memória (sem apagar os anteriores)
+  if(!SAIDAS_HIST_PEDIDOS[chave]) SAIDAS_HIST_PEDIDOS[chave]=[];
+  lista.forEach(s=>SAIDAS_HIST_PEDIDOS[chave].push({...s}));
   renderSaidas();
   renderDashboard();
   showToast('✅ Dia fechado! '+hist.total+' pacotes arquivados');
@@ -2836,7 +2858,7 @@ function abrirDetalheDia(data,galpao){
 }
 function renderDetalheTabela(lista){
   const tbody=document.getElementById('detalheBody');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
+  if(!lista.length){tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
   tbody.innerHTML=lista.map((p,i)=>`
     <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${i+1}</td>
@@ -2844,8 +2866,59 @@ function renderDetalheTabela(lista){
       <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
       <td style="padding:8px 11px"><span class="badge ${p.market==='ML'?'b-blue':p.market==='Amazon'?'b-doing':'b-shopee'}">${p.market}</span></td>
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${p.hora}</td>
+      <td style="padding:4px 8px">${p._id?`<button class="btn-danger-sm" style="font-size:10px" onclick="excluirPedidoHist(${p._id})">✕</button>`:''}</td>
     </tr>`).join('');
 }
+async function excluirPedidoHist(pedidoId){
+  if(!confirm('Excluir este pedido do histórico?')) return;
+  const ok = await db.deletePedidoHist(pedidoId);
+  if(!ok){ showToast('⚠️ Erro ao excluir'); return; }
+  // remove da memória
+  for(const chave of Object.keys(SAIDAS_HIST_PEDIDOS)){
+    const idx = SAIDAS_HIST_PEDIDOS[chave].findIndex(p=>p._id===pedidoId);
+    if(idx!==-1){
+      SAIDAS_HIST_PEDIDOS[chave].splice(idx,1);
+      // recalcula totais em SAIDAS_HIST
+      const lista = SAIDAS_HIST_PEDIDOS[chave];
+      const [data, galpao] = chave.split(/_(?=[^_]+$)/); // split na última _
+      const hIdx = SAIDAS_HIST.findIndex(h=>h.data===data&&h.galpao===galpao);
+      if(hIdx>=0){
+        SAIDAS_HIST[hIdx].total  = lista.length;
+        SAIDAS_HIST[hIdx].flex   = lista.filter(p=>p.canal==='Flex').length;
+        SAIDAS_HIST[hIdx].coleta = lista.filter(p=>p.canal==='Coleta').length;
+        SAIDAS_HIST[hIdx].ml     = lista.filter(p=>p.market==='ML').length;
+        SAIDAS_HIST[hIdx].amazon = lista.filter(p=>p.market==='Amazon').length;
+        SAIDAS_HIST[hIdx].shopee = lista.filter(p=>p.market==='Shopee').length;
+        // persiste resumo atualizado no banco
+        const h = SAIDAS_HIST[hIdx];
+        await _sb.from('saidas_hist').upsert(
+          {data:h.data,galpao:h.galpao,total:h.total,flex:h.flex,coleta:h.coleta,ml:h.ml,amazon:h.amazon,shopee:h.shopee},
+          {onConflict:'data,galpao'}
+        );
+      }
+      // atualiza a tabela do modal sem fechar
+      detalheDiaAtual = lista;
+      renderDetalheTabela(lista);
+      renderSaidaHistorico(document.getElementById('saidaGalpao')?.value||'LogBox');
+      showToast('🗑 Pedido removido');
+      return;
+    }
+  }
+}
+
+async function excluirDiaHist(data, galpao){
+  if(!confirm('Excluir TODOS os pedidos de '+data+' ('+galpao+')?\nEsta ação não pode ser desfeita.')) return;
+  const chave = data+'_'+galpao;
+  await _sb.from('saidas_hist_pedidos').delete().eq('data_galpao', chave);
+  await _sb.from('saidas_hist').delete().eq('data', data).eq('galpao', galpao);
+  delete SAIDAS_HIST_PEDIDOS[chave];
+  const idx = SAIDAS_HIST.findIndex(h=>h.data===data&&h.galpao===galpao);
+  if(idx!==-1) SAIDAS_HIST.splice(idx,1);
+  renderSaidaHistorico(galpao);
+  renderSaidaAnalise(galpao);
+  showToast('🗑 Dia '+data+' removido do histórico');
+}
+
 function filtrarDetalheDia(){
   const busca=document.getElementById('detalheBusca').value.trim().toLowerCase();
   const filtrado=busca?detalheDiaAtual.filter(p=>p.num.toLowerCase().includes(busca)):detalheDiaAtual;
