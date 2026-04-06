@@ -643,7 +643,6 @@ select:focus{border-color:var(--accent)}
               <div style="font-size:13px;font-weight:700">Ranking de produtividade</div>
               <div style="display:flex;gap:8px;align-items:center">
                 <button class="btn btn-ghost btn-sm" onclick="abrirGerenciarFuncionarios()">👥 Funcionários</button>
-                <button class="btn btn-primary btn-sm" onclick="openModal('modalProd')">+ Registrar</button>
               </div>
             </div>
             <div id="prodFilterBar" style="padding:0 14px"></div>
@@ -1435,6 +1434,7 @@ const db = {
   // Produtividade
   async saveProd(p) {
     const row = {
+      semana: '',
       funcionario: p.funcionario, caixas: p.caixas||0,
       produtos: p.produtos||0, tempo_min: p.tempo_min||0,
       full_id: p.full_id||'', sku: p.sku||'',
@@ -1635,10 +1635,13 @@ function volGetFullsDoDia(dateKey) {
 }
 
 function volCalcTotalLitros(f) {
-  if (!f || !f.vol || !f.vol.length) return 0;
-  return f.vol.reduce((sum, v) => {
-    const u = ((parseFloat(v.comp)||0) * (parseFloat(v.larg)||0) * (parseFloat(v.altu)||0)) / 1000;
-    return sum + u * (parseFloat(v.qtde)||1);
+  const itens = f.itens || [];
+  if (!itens.length) return 0;
+  return itens.reduce((sum, item) => {
+    const sku = SKU_DB.find(s => s.sku === item.codigo);
+    if (!sku) return sum;
+    const u = ((parseFloat(sku.comp)||0) * (parseFloat(sku.larg)||0) * (parseFloat(sku.altu)||0)) / 1000;
+    return sum + u * (parseInt(item.qtde)||0);
   }, 0);
 }
 
@@ -1719,7 +1722,7 @@ function renderVolDia() {
   container.innerHTML = fulls.map((f, idx) => {
     const fl = volCalcTotalLitros(f);
     const fp = Math.min((fl/CAP)*100,100);
-    const nCaixas = (f.vol||[]).reduce((a,v)=>a+(parseInt(v.qtde)||0),0);
+    const nCaixas = (f.itens||[]).reduce((a,v)=>a+(parseInt(v.qtde)||0),0);
     return `<div class="vol-full-card" id="volCard-${f.id}">
       <div class="vol-full-header" onclick="volToggleCard('${f.id}')">
         <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
@@ -2043,18 +2046,13 @@ function calcVolFullsByDateKey(dateKey) {
   idsExatos.forEach(id => {
     const f = FULLS_DATA[id]; if (!f) return;
     let volFull = 0;
-    if (f.vol && f.vol.length) {
-      f.vol.forEach(v => {
-        const u = ((parseFloat(v.comp)||0)*(parseFloat(v.larg)||0)*(parseFloat(v.altu)||0))/1000;
-        volFull += u * (parseFloat(v.qtde)||1);
-      });
-    } else {
-      (f.itens||[]).forEach(item => {
-        const sku = SKU_DB.find(s => s.sku===item.codigo||s.descricao===item.nome);
-        if (sku) volFull += (sku.vol||0)*(parseInt(item.qtde)||1);
-        else volFull += 5*(parseInt(item.qtde)||1);
-      });
-    }
+    (f.itens||[]).forEach(item => {
+      const sku = SKU_DB.find(s => s.sku===item.codigo);
+      if (sku) {
+        const u = ((parseFloat(sku.comp)||0)*(parseFloat(sku.larg)||0)*(parseFloat(sku.altu)||0))/1000;
+        volFull += u * (parseInt(item.qtde)||0);
+      }
+    });
     breakdown.push({ id, empresa:f.empresa, destino:f.destino, status:f.status, vol:volFull });
     totalVol += volFull;
   });
