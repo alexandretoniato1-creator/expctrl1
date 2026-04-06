@@ -1191,7 +1191,7 @@ const db = {
         _sb.from('saidas_hist').select('*').order('data'),
         _sb.from('saidas_hist_pedidos').select('*'),
         _sb.from('semanas_hist').select('*').order('inserted_at', { ascending: false }),
-        _sb.from('prod_data').select('*').order('created_at', { ascending: true }),
+        _sb.from('prod_data').select('*').order('inserted_at', { ascending: true }),
         _sb.from('funcionarios').select('*').order('nome'),
       ]);
 
@@ -1271,7 +1271,7 @@ const db = {
         produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
         full_id: p.full_id||'', sku: p.sku||'',
         empresa: p.empresa||'', data: p.data||'',
-        status: p.status||'Concluído'
+        status: p.fulls||p.status||'Concluído'
       }));
 
       showToast('✅ Dados carregados');
@@ -1442,7 +1442,7 @@ const db = {
       produtos: p.produtos||0, tempo_min: p.tempo_min||0,
       full_id: p.full_id||'', sku: p.sku||'',
       empresa: p.empresa||'', data: p.data||'',
-      status: p.status||'Concluído'
+      fulls: p.status||'Concluído'
     };
     const { data, error } = await _sb.from('prod_data').insert(row).select().single();
     if (error) { console.error('[Supabase] saveProd:', error); showToast('⚠️ Erro ao salvar produtividade'); }
