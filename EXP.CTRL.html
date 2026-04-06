@@ -707,7 +707,7 @@ select:focus{border-color:var(--accent)}
           <div id="saidaTab-historico" style="display:none">
             <div class="full-table-wrap">
               <div class="table-head"><div class="table-head-title">Histórico por dia</div><span style="font-size:10px;color:var(--muted)">clique para ver pedidos · 🖨 para imprimir comprovante</span></div>
-              <table><thead><tr><th>Data</th><th>Galpão</th><th>Total</th><th>Flex</th><th>Coleta</th><th>ML</th><th>Amazon</th><th>Shopee</th><th></th></tr></thead>
+              <table><thead><tr><th>Data</th><th>Galpão</th><th>Total</th><th>Flex</th><th>Coleta</th><th>ML</th><th>Amazon</th><th>Shopee</th><th>Funcionários</th><th></th></tr></thead>
               <tbody id="saidaHistBody"></tbody></table>
             </div>
           </div>
@@ -1055,6 +1055,7 @@ select:focus{border-color:var(--accent)}
       <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">COLETA</div><div style="font-size:20px;font-weight:800;color:var(--logbox)" id="ddColeta">0</div></div>
       <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">MARKETS</div><div style="font-size:11px;font-weight:700;margin-top:4px" id="ddMkt">—</div></div>
     </div>
+    <div id="ddFuncRanking" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;margin-bottom:12px"></div>
     <div style="position:relative;margin-bottom:12px">
       <input type="text" id="detalheBusca" placeholder="🔍  Buscar número do pedido..." oninput="filtrarDetalheDia()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
       <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)" id="detalheContador">0 resultados</div>
@@ -1067,6 +1068,7 @@ select:focus{border-color:var(--accent)}
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Canal</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Marketplace</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Hora</th>
+          <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Funcionário</th>
         </tr></thead>
         <tbody id="detalheBody"></tbody>
       </table>
@@ -2872,8 +2874,18 @@ function renderSaidas(){
 function renderSaidaHistorico(galpao){
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao);
   const tbody=document.getElementById('saidaHistBody');
-  if(!hist.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--muted)">Sem histórico</td></tr>';return;}
-  tbody.innerHTML=hist.map(h=>`
+  if(!hist.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--muted)">Sem histórico</td></tr>';return;}
+  tbody.innerHTML=hist.map(h=>{
+    const chave=h.data+'_'+h.galpao;
+    const pedidos=SAIDAS_HIST_PEDIDOS[chave]||[];
+    // monta resumo compacto de funcionários: "Edipo 45 · Max 38"
+    const porFunc={};
+    pedidos.forEach(p=>{ const f=p.funcionario||'—'; porFunc[f]=(porFunc[f]||0)+1; });
+    const funcResumo=Object.entries(porFunc)
+      .sort((a,b)=>b[1]-a[1])
+      .map(([f,n])=>`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2)">${f.split(' ')[0]} <span style="color:var(--accent);font-weight:700">${n}</span></span>`)
+      .join('<span style="color:var(--border2);margin:0 3px">·</span>');
+    return `
     <tr class="full-row">
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.data} <span style="font-size:9px;color:var(--accent)">↗</span></td>
       <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')"><span class="badge ${h.galpao==='LogBox'?'b-blue':'b-done'}">${h.galpao}</span></td>
@@ -2883,11 +2895,13 @@ function renderSaidaHistorico(galpao){
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.ml}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.amazon}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.shopee}</td>
+      <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')" style="max-width:160px">${funcResumo||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
       <td style="display:flex;gap:5px">
         <button class="action-btn" style="font-size:10px;color:var(--accent);white-space:nowrap" onclick="event.stopPropagation();abrirModalSaidaImpressao('${h.data}','${h.galpao}')">🖨 Imprimir</button>
         <button class="btn-danger-sm" style="font-size:10px" onclick="event.stopPropagation();excluirDiaHist('${h.data}','${h.galpao}')">🗑</button>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 }
 function renderSaidaAnalise(galpao){
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao);
@@ -2969,6 +2983,30 @@ function abrirDetalheDia(data,galpao){
   document.getElementById('ddMkt').textContent=[ml?'ML:'+ml:'',amz?'AMZ:'+amz:'',shp?'SHP:'+shp:''].filter(Boolean).join(' · ')||'—';
   document.getElementById('detalheBusca').value='';
   document.getElementById('detalheContador').textContent=pedidos.length+' pedidos';
+  // mini-ranking de funcionários
+  const porFunc={};
+  pedidos.forEach(p=>{ const f=p.funcionario||'—'; porFunc[f]=(porFunc[f]||0)+1; });
+  const rankingHtml=Object.entries(porFunc).sort((a,b)=>b[1]-a[1]).map(([f,n])=>{
+    const fi=FUNC_INFO[f];
+    const av=funcAv(f);
+    const cor=fi?.cor||'av-amber';
+    const corCss=fi?.corCss||'var(--muted)';
+    const pct=pedidos.length?Math.round((n/pedidos.length)*100):0;
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+      <div class="prod-avatar ${cor}" style="width:26px;height:26px;font-size:9px;flex-shrink:0">${av}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
+          <span style="font-size:11px;font-weight:600">${f.split(' ')[0]}</span>
+          <span style="font-size:11px;font-family:'DM Mono',monospace;color:${corCss};font-weight:700">${n} <span style="color:var(--muted);font-weight:400;font-size:10px">pac.</span></span>
+        </div>
+        <div style="background:var(--bg);border-radius:100px;height:4px;overflow:hidden">
+          <div style="height:100%;border-radius:100px;background:${corCss};width:${pct}%;transition:width .4s ease"></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+  const rankEl=document.getElementById('ddFuncRanking');
+  if(rankEl) rankEl.innerHTML=rankingHtml||'<span style="color:var(--muted);font-size:11px">—</span>';
   renderDetalheTabela(pedidos);
   openModal('modalDetalheDia');
   setTimeout(()=>document.getElementById('detalheBusca').focus(),200);
@@ -2983,6 +3021,7 @@ function renderDetalheTabela(lista){
       <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
       <td style="padding:8px 11px"><span class="badge ${p.market==='ML'?'b-blue':p.market==='Amazon'?'b-doing':'b-shopee'}">${p.market}</span></td>
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${p.hora}</td>
+      <td style="padding:8px 11px;font-size:11px;color:var(--muted2)">${p.funcionario||'—'}</td>
       <td style="padding:4px 8px">${p._id?`<button class="btn-danger-sm" style="font-size:10px" onclick="excluirPedidoHist(${p._id})">✕</button>`:''}</td>
     </tr>`).join('');
 }
