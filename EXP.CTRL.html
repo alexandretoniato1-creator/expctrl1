@@ -1180,6 +1180,7 @@ const db = {
         { data: saidasHistPedidos, error: e8 },
         { data: semanasHist,       error: e9 },
         { data: prodData,          error: e10 },
+        { data: funcionariosDb,    error: e11 },
       ] = await Promise.all([
         _sb.from('fulls').select('*'),
         _sb.from('cal_fulls').select('*'),
@@ -1190,10 +1191,11 @@ const db = {
         _sb.from('saidas_hist').select('*').order('data'),
         _sb.from('saidas_hist_pedidos').select('*'),
         _sb.from('semanas_hist').select('*').order('inserted_at', { ascending: false }),
-        _sb.from('prod_data').select('*'),
+        _sb.from('prod_data').select('*').order('created_at', { ascending: true }),
+        _sb.from('funcionarios').select('*').order('nome'),
       ]);
 
-      const erros = [e1,e2,e3,e4,e5,e6,e7,e8,e9,e10].filter(Boolean);
+      const erros = [e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11].filter(Boolean);
       if (erros.length) {
         console.error('[OUTBOX] Erros ao carregar:', erros);
         showToast('⚠️ Erro ao conectar com o banco — verifique o console');
@@ -1263,6 +1265,7 @@ const db = {
       }, {});
 
       SEMANAS_HIST = semanasHist||[];
+      FUNCIONARIOS_DATA = (funcionariosDb||[]).map(f => ({ _id: f.id, nome: f.nome, empresa: f.empresa }));
       PROD_DATA = (prodData||[]).map(p => ({
         _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
         produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
@@ -1449,6 +1452,16 @@ const db = {
     await _sb.from('prod_data').delete().eq('id', id);
   },
 
+  async saveFuncionario(f) {
+    const { data, error } = await _sb.from('funcionarios').insert({ nome: f.nome, empresa: f.empresa }).select().single();
+    if (error) { console.error('[Supabase] saveFuncionario:', error); showToast('⚠️ Erro ao salvar funcionário'); return null; }
+    return data?.id||null;
+  },
+
+  async deleteFuncionario(id) {
+    await _sb.from('funcionarios').delete().eq('id', id);
+  },
+
   // Compatibilidade — db.save() genérico que persiste o estado atual
   async save() {
     // Persiste todos os fulls ativos e cal_fulls em paralelo
@@ -1495,7 +1508,7 @@ const CHECKLIST_ITEMS = [
 
 // Funcionários dinâmicos — persistidos no localStorage
 // Estrutura: [{nome, empresa}]
-let FUNCIONARIOS_DATA = JSON.parse(localStorage.getItem('expctrl_funcionarios')||'[]');
+let FUNCIONARIOS_DATA = []; // preenchido pelo db.load() via Supabase
 
 function funcAv(nome){return nome&&nome!=='—'?nome.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';}
 function funcCor(empresa){return empresa==='LogBox'?'av-blue':empresa==='Fokus'?'av-green':'av-amber';}
@@ -1505,7 +1518,7 @@ function funcCorBg(empresa){return empresa==='LogBox'?'var(--logbox-bg)':empresa
 // Compat: array de nomes para código que usa FUNCIONARIOS[]
 const FUNCIONARIOS = { get length(){return FUNCIONARIOS_DATA.length;}, map:(fn)=>FUNCIONARIOS_DATA.map((f,i)=>fn(f.nome,i)), [Symbol.iterator]:function*(){for(const f of FUNCIONARIOS_DATA)yield f.nome;} };
 
-function saveFuncionarios(){localStorage.setItem('expctrl_funcionarios',JSON.stringify(FUNCIONARIOS_DATA));}
+function saveFuncionarios(){ /* Migrado para Supabase — uso db.saveFuncionario/deleteFuncionario */ }
 
 function populateFuncSelects(){
   const opts = '<option value="—">—</option>'+FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}">${f.nome} (${f.empresa})</option>`).join('');
@@ -4043,24 +4056,27 @@ function renderFuncList() {
     </div>`).join('');
 }
 
-function adicionarFuncionario() {
+async function adicionarFuncionario() {
   const nome = (document.getElementById('funcNome')?.value||'').trim();
   const empresa = document.getElementById('funcEmpresa')?.value||'';
   if (!nome || !empresa) { showToast('⚠️ Nome e empresa obrigatórios'); return; }
   if (FUNCIONARIOS_DATA.find(f=>f.nome.toLowerCase()===nome.toLowerCase())) { showToast('⚠️ Funcionário já existe'); return; }
-  FUNCIONARIOS_DATA.push({nome, empresa});
-  saveFuncionarios();
+  const novoFunc = {nome, empresa};
+  const newId = await db.saveFuncionario(novoFunc);
+  if (!newId) return; // erro já exibido pelo db.saveFuncionario
+  novoFunc._id = newId;
+  FUNCIONARIOS_DATA.push(novoFunc);
   document.getElementById('funcNome').value='';
   renderFuncList();
   populateFuncSelects();
   showToast('✅ '+nome+' adicionado!');
 }
 
-function removerFuncionario(idx) {
+async function removerFuncionario(idx) {
   const f = FUNCIONARIOS_DATA[idx];
   if (!confirm('Remover '+f.nome+'?')) return;
   FUNCIONARIOS_DATA.splice(idx,1);
-  saveFuncionarios();
+  if (f?._id) await db.deleteFuncionario(f._id);
   renderFuncList();
   populateFuncSelects();
   showToast('🗑 Removido');
@@ -4077,6 +4093,17 @@ function toggleTheme(){
 // INIT
 (async () => {
   await db.load();
+  // Migração única: se havia funcionários no localStorage e o banco veio vazio, migra automaticamente
+  const localFuncs = JSON.parse(localStorage.getItem('expctrl_funcionarios')||'[]');
+  if (localFuncs.length > 0 && FUNCIONARIOS_DATA.length === 0) {
+    showToast('⏳ Migrando funcionários para o banco...');
+    for (const f of localFuncs) {
+      const newId = await db.saveFuncionario({nome: f.nome||f, empresa: f.empresa||''});
+      if (newId) FUNCIONARIOS_DATA.push({_id: newId, nome: f.nome||f, empresa: f.empresa||''});
+    }
+    localStorage.removeItem('expctrl_funcionarios');
+    showToast('✅ Funcionários migrados para o banco!');
+  }
   ducatoSyncHoje();
   volSyncHoje();
   populateFuncSelects();
