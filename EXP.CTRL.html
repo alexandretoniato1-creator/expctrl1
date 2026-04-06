@@ -1435,14 +1435,14 @@ const db = {
   async saveProd(p) {
     const row = {
       semana: '',
-      funcionario: p.funcionario, caixas: p.caixas||0,
+      funcionario: p.funcionario||'', caixas: p.caixas||0,
       produtos: p.produtos||0, tempo_min: p.tempo_min||0,
       full_id: p.full_id||'', sku: p.sku||'',
       empresa: p.empresa||'', data: p.data||'',
       status: p.status||'Concluído'
     };
     const { data, error } = await _sb.from('prod_data').insert(row).select().single();
-    if (error) console.error('[Supabase] saveProd:', error);
+    if (error) { console.error('[Supabase] saveProd:', error); showToast('⚠️ Erro ao salvar produtividade'); }
     return data?.id||null;
   },
   async deleteProd(id) {
