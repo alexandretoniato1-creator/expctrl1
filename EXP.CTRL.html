@@ -2584,7 +2584,7 @@ async function salvarEditFull(){
   const efIdEl=document.getElementById('ef-id');
   const novoId=(efIdEl?.value||'').trim().toUpperCase();
   if(novoId && novoId!==editingFullId){
-    if(!/^FULL-\d+$/.test(novoId)){showToast('⚠️ ID deve seguir o formato FULL-000');return;}
+    if(!/^[A-Z0-9][A-Z0-9.\/\-]{0,19}$/.test(novoId)){showToast('⚠️ ID inválido — use apenas letras, números, pontos e hífens');return;}
     if(FULLS_DATA[novoId]||FULLS_ENVIADOS.find(e=>e.id===novoId)){showToast('⚠️ ID "'+novoId+'" já existe');return;}
     f.id=novoId;
     FULLS_DATA[novoId]=f;
