@@ -424,7 +424,7 @@ select:focus{border-color:var(--accent)}
         <span>Fokus — Max</span>
         <span class="badge-dot" style="background:var(--fokus)"></span>
       </div>
-      <button onclick="db.reset()" style="margin-top:8px;width:100%;background:transparent;border:1px solid rgba(248,113,113,.15);color:rgba(248,113,113,.4);border-radius:6px;padding:6px;font-size:10px;font-family:'DM Mono',monospace;cursor:pointer;transition:all .15s" onmouseover="this.style.color='var(--red)';this.style.borderColor='rgba(248,113,113,.4)'" onmouseout="this.style.color='rgba(248,113,113,.4)';this.style.borderColor='rgba(248,113,113,.15)'">🗑 Limpar todos os dados</button>
+      
     </div>
   </div>
 
@@ -3550,6 +3550,7 @@ function doLogin() {
   const overlay = document.getElementById('loginOverlay');
 
   if (input.value.trim() === SENHA_CORRETA) {
+    sessionStorage.setItem('outbox_auth', '1');
     errorEl.classList.remove('show');
     overlay.classList.add('fade-out');
     setTimeout(() => {
@@ -4268,11 +4269,92 @@ function toggleTheme(){
 }
 // Aplicar tema salvo ao carregar
 (()=>{ if(localStorage.getItem('expctrl_theme')==='light') document.body.classList.add('light-mode'); })();
+// Pula tela de login se sessão ainda ativa (mesmo F5, mesma aba)
+(()=>{ if(sessionStorage.getItem('outbox_auth')==='1'){ const o=document.getElementById('loginOverlay'); if(o) o.style.display='none'; } })();
+
+// ══════════════════════════════════════════════════════
+// REALTIME — escuta mudanças ao vivo no Supabase
+function initRealtime() {
+
+  // ── 1. saidas_hoje ─────────────────────────────────
+  _sb.channel('rt-saidas-hoje')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'saidas_hoje' }, (payload) => {
+      const row = payload.new;
+      // Evita duplicata caso o INSERT veio do próprio cliente
+      if (SAIDAS_HOJE.some(s => s._id === row.id)) return;
+      SAIDAS_HOJE.push({
+        _id: row.id,
+        num: row.numero, canal: row.canal, market: row.market,
+        funcionario: row.funcionario, hora: row.hora,
+        galpao: row.galpao, conta: row.conta||''
+      });
+      renderSaidas();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'saidas_hoje' }, (payload) => {
+      const id = payload.old.id;
+      const idx = SAIDAS_HOJE.findIndex(s => s._id === id);
+      if (idx !== -1) { SAIDAS_HOJE.splice(idx, 1); renderSaidas(); }
+    })
+    .subscribe();
+
+  // ── 2. fulls ───────────────────────────────────────
+  _sb.channel('rt-fulls')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fulls' }, (payload) => {
+      const f = payload.new;
+      if (FULLS_DATA[f.id]) return; // já existe localmente
+      FULLS_DATA[f.id] = {
+        id: f.id, empresa: f.empresa, destino: f.destino,
+        agendado: f.agendado, criadoEm: f.criado_em,
+        responsavel: f.responsavel, status: f.status,
+        obs: f.obs, vol: f.vol||[], itens: f.itens||[],
+        dateKey: f.date_key||''
+      };
+      renderDashboard(); renderCal();
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'fulls' }, (payload) => {
+      const f = payload.new;
+      // Só aplica se a versão remota for diferente da local (evita loop)
+      const local = FULLS_DATA[f.id];
+      if (local && JSON.stringify(local.itens) === JSON.stringify(f.itens) && local.status === f.status) return;
+      FULLS_DATA[f.id] = {
+        id: f.id, empresa: f.empresa, destino: f.destino,
+        agendado: f.agendado, criadoEm: f.criado_em,
+        responsavel: f.responsavel, status: f.status,
+        obs: f.obs, vol: f.vol||[], itens: f.itens||[],
+        dateKey: f.date_key||''
+      };
+      renderDashboard(); renderCal();
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'fulls' }, (payload) => {
+      const id = payload.old.id;
+      if (FULLS_DATA[id]) { delete FULLS_DATA[id]; renderDashboard(); renderCal(); }
+    })
+    .subscribe();
+
+  // ── 3. prod_data ───────────────────────────────────
+  _sb.channel('rt-prod-data')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'prod_data' }, (payload) => {
+      const p = payload.new;
+      if (PROD_DATA.some(x => x._id === p.id)) return;
+      PROD_DATA.push({
+        _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
+        produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
+        full_id: p.full_id||'', sku: p.sku||'',
+        empresa: p.empresa||'', data: p.data||'',
+        status: p.status||'Concluído'
+      });
+      renderProdutividade();
+    })
+    .subscribe();
+
+  console.log('[OUTBOX] Realtime ativo — saidas_hoje, fulls, prod_data');
+}
 
 // ══════════════════════════════════════════════════════
 // INIT
 (async () => {
   await db.load();
+  initRealtime();
   // Arquiva pedidos com mais de 2 meses automaticamente
   await arquivarPedidosAntigos();
   // Migração única: se havia funcionários no localStorage e o banco veio vazio, migra automaticamente
