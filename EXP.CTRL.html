@@ -770,29 +770,82 @@ select:focus{border-color:var(--accent)}
 
         <!-- ══ DEVOLUÇÕES ══ -->
         <div class="view" id="view-devolucoes">
-          <div class="dev-toolbar">
-            <div class="dev-toolbar-left">
-              <select id="devFiltroMarket" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todos os marketplaces</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option></select>
-              <select id="devFiltroSit" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todas as situações</option><option value="Revender">Revender</option><option value="Descarte">Descarte</option><option value="Reparo">Reparo</option></select>
+
+          <!-- Sub-abas -->
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px">
+            <button class="saida-tab active" id="devTab-registros" onclick="switchDevTab('registros',this)">📋 Registros</button>
+            <button class="saida-tab" id="devTab-analise" onclick="switchDevTab('analise',this)">📊 Análise</button>
+          </div>
+
+          <!-- ── SUB-ABA: REGISTROS ── -->
+          <div id="devPane-registros">
+          <div class="dev-toolbar" style="flex-wrap:wrap;gap:8px">
+            <div class="dev-toolbar-left" style="flex-wrap:wrap;gap:6px">
+              <input type="text" id="devFiltroBusca" placeholder="🔍 SKU, venda, cliente..." oninput="renderDev()" style="width:190px;font-size:11px;padding:5px 9px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+              <select id="devFiltroMes" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todos os meses</option></select>
+              <select id="devFiltroMarket" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todos markets</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option></select>
+              <select id="devFiltroConta" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todas as contas</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select>
+              <select id="devFiltroTipo" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Full + Flex</option><option value="Full">Full</option><option value="Flex">Flex</option></select>
+              <select id="devFiltroSit" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todas situações</option><option value="Revender">Revender</option><option value="Descarte">Descarte</option><option value="Reparo">Reparo</option></select>
               <select id="devFiltroResp" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todos responsáveis</option><option value="Edipo">Edipo</option><option value="Max">Max</option></select>
               <input type="date" id="devFiltroDe" onchange="renderDev()" style="font-size:11px;padding:5px 8px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none" title="Data inicial">
               <input type="date" id="devFiltroAte" onchange="renderDev()" style="font-size:11px;padding:5px 8px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none" title="Data final">
             </div>
             <div style="display:flex;gap:8px;align-items:center">
-              <button class="btn-excel" onclick="exportarExcel()">📥 Exportar Excel</button>
+              <button class="btn-excel" onclick="exportarExcel()">📥 Exportar</button>
               <button class="btn-danger-sm" onclick="limparDev()">🗑 Limpar</button>
-              <button class="btn btn-primary btn-sm" onclick="openModal('modalDev')">+ Nova devolução</button>
+              <button class="btn btn-primary btn-sm" onclick="abrirNovaDev()">+ Nova devolução</button>
             </div>
           </div>
-          <div class="cards" style="grid-template-columns:repeat(3,1fr)">
-            <div class="card c-red"><div class="card-label">Total devoluções</div><div class="card-value" id="devTotal">3</div><div class="card-sub">registradas</div></div>
-            <div class="card c-green"><div class="card-label">Para revender</div><div class="card-value" id="devRevender">1</div><div class="card-sub">itens</div></div>
-            <div class="card c-accent"><div class="card-label">Descarte / Reparo</div><div class="card-value" id="devDescarte">2</div><div class="card-sub">itens</div></div>
+          <div class="cards" style="grid-template-columns:repeat(4,1fr)">
+            <div class="card c-red"><div class="card-label">Total devoluções</div><div class="card-value" id="devTotal">0</div><div class="card-sub">registradas</div></div>
+            <div class="card c-green"><div class="card-label">Para revender</div><div class="card-value" id="devRevender">0</div><div class="card-sub">itens</div></div>
+            <div class="card c-accent"><div class="card-label">Descarte / Reparo</div><div class="card-value" id="devDescarte">0</div><div class="card-sub">itens</div></div>
+            <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Gasto total</div><div class="card-value" id="devGastoTotal" style="font-size:18px;color:var(--red)">R$ 0,00</div><div class="card-sub">custo + frete</div></div>
           </div>
           <div class="full-table-wrap">
-            <div class="table-head"><div class="table-head-title">Registro de Devoluções</div><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="devCount">3 registros</span></div>
-            <div style="overflow-x:auto"><table id="devTable"><thead><tr><th>Chegada</th><th>SKU</th><th>Descrição</th><th>Qtde</th><th>Market</th><th>Motivo</th><th>Situação</th><th>Venda</th><th>Cliente</th><th>NF</th><th>Total</th><th>Cobrou?</th><th>Por</th><th></th></tr></thead><tbody id="devBody"></tbody></table></div>
+            <div class="table-head"><div class="table-head-title">Registro de Devoluções</div><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="devCount">0 registros</span></div>
+            <div style="overflow-x:auto"><table id="devTable"><thead><tr><th>Chegada</th><th>Envio</th><th>SKU</th><th>Descrição</th><th>Qtde</th><th>Market</th><th>Conta</th><th>Tipo</th><th>Recebido</th><th>Reputação</th><th>Mediação</th><th>Situação</th><th>Venda</th><th>Total</th><th>Cobrou?</th><th>Por</th><th></th></tr></thead><tbody id="devBody"></tbody></table></div>
           </div>
+          </div><!-- /devPane-registros -->
+
+          <!-- ── SUB-ABA: ANÁLISE ── -->
+          <div id="devPane-analise" style="display:none">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
+              <select id="analFiltroMes" onchange="renderDevAnalise()" style="font-size:11px;padding:5px 8px"><option value="">Todos os meses</option></select>
+              <select id="analFiltroConta" onchange="renderDevAnalise()" style="font-size:11px;padding:5px 8px"><option value="">Todas as contas</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select>
+            </div>
+            <!-- Cards macro -->
+            <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+              <div class="card c-red"><div class="card-label">Total devoluções</div><div class="card-value" id="analTotal">0</div><div class="card-sub">no período</div></div>
+              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Gasto total</div><div class="card-value" id="analGasto" style="font-size:17px;color:var(--red)">R$ 0</div><div class="card-sub">custo + frete</div></div>
+              <div class="card c-green"><div class="card-label">Cobrado dos clientes</div><div class="card-value" id="analCobrou" style="font-size:22px">0</div><div class="card-sub">devoluções cobradas</div></div>
+              <div class="card c-accent"><div class="card-label">Reputação afetada</div><div class="card-value" id="analReput" style="font-size:22px;color:var(--orange)">0</div><div class="card-sub">pedidos</div></div>
+            </div>
+            <!-- Por conta -->
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
+                <div style="font-size:12px;font-weight:700;margin-bottom:12px">Devoluções por conta</div>
+                <div id="analPorConta"></div>
+              </div>
+              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
+                <div style="font-size:12px;font-weight:700;margin-bottom:12px">Situação do produto</div>
+                <div id="analPorSituacao"></div>
+              </div>
+            </div>
+            <!-- Por mês -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
+              <div style="font-size:12px;font-weight:700;margin-bottom:12px">Volume mensal</div>
+              <div id="analBarMes" style="display:flex;align-items:flex-end;gap:10px;height:100px"></div>
+              <div id="analBarMesLabel" style="display:flex;gap:10px;margin-top:6px"></div>
+            </div>
+            <!-- Por motivo -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
+              <div style="font-size:12px;font-weight:700;margin-bottom:12px">Motivos mais frequentes</div>
+              <div id="analPorMotivo"></div>
+            </div>
+          </div><!-- /devPane-analise -->
+
         </div>
 
         <!-- ══ CATÁLOGO SKUs ══ -->
@@ -1012,10 +1065,10 @@ select:focus{border-color:var(--accent)}
   </div>
 </div>
 
-<!-- NOVA DEVOLUÇÃO -->
+<!-- NOVA / EDITAR DEVOLUÇÃO -->
 <div class="modal-overlay" id="modalDev">
   <div class="modal modal-lg">
-    <div class="modal-title">Nova Devolução <button class="modal-close" onclick="closeModal('modalDev')">✕</button></div>
+    <div class="modal-title"><span id="modalDevTitulo">Nova Devolução</span> <button class="modal-close" onclick="closeModal('modalDev')">✕</button></div>
     <div class="section-divider">Produto</div>
     <div class="form-grid-3">
       <div class="form-group"><label>SKU *</label><input class="form-sel" id="dSku" type="text"></div>
@@ -1028,16 +1081,29 @@ select:focus{border-color:var(--accent)}
     </div>
     <div class="section-divider">Pedido</div>
     <div class="form-grid-3">
+      <div class="form-group"><label>Conta</label><select class="form-sel" id="dConta"><option value="">—</option><option>FW</option><option>BTMX</option><option>Falcom</option><option>Octo</option></select></div>
+      <div class="form-group"><label>Tipo de envio</label><select class="form-sel" id="dTipoEnvio"><option value="">—</option><option>Full</option><option>Flex</option></select></div>
+      <div class="form-group"><label>Motivo plataforma</label><input class="form-sel" id="dMotivo" type="text"></div>
+    </div>
+    <div class="form-grid-3">
       <div class="form-group"><label>Nº Venda</label><input class="form-sel" id="dVenda" type="text"></div>
       <div class="form-group"><label>Cliente</label><input class="form-sel" id="dCliente" type="text"></div>
       <div class="form-group"><label>Nº da NF</label><input class="form-sel" id="dNf" type="text"></div>
     </div>
     <div class="form-grid-3">
       <div class="form-group"><label>Data da venda</label><input class="form-sel" id="dDataVenda" type="date"></div>
+      <div class="form-group"><label>Data de envio</label><input class="form-sel" id="dDataEnvio" type="date"></div>
       <div class="form-group"><label>Data de chegada</label><input class="form-sel" id="dDataChegada" type="date"></div>
-      <div class="form-group"><label>Motivo plataforma</label><input class="form-sel" id="dMotivo" type="text"></div>
     </div>
-    <div class="section-divider">Financeiro & Status</div>
+    <div class="form-grid-3">
+      <div class="form-group"><label>Recebido</label><select class="form-sel" id="dRecebido"><option value="">—</option><option>Estoque Full</option><option>Estoque Empresa</option><option>A Caminho</option><option>Resolvido</option><option>Descartou</option><option>Danificado</option><option>Revisando</option><option>Retirada</option></select></div>
+      <div class="form-group"><label>Reputação</label><select class="form-sel" id="dReputacao"><option value="">—</option><option>OK</option><option>Afetada</option></select></div>
+      <div class="form-group"><label>Mediação</label><select class="form-sel" id="dMediacao"><option value="">—</option><option>Sem</option><option>Aberta</option><option>Fechada</option></select></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label>Registrado por</label><select class="form-sel" id="dResponsavel"><option value="">—</option><option>Edipo</option><option>Max</option></select></div>
+    </div>
+    <div class="section-divider">Financeiro</div>
     <div class="form-grid-3">
       <div class="form-group"><label>Custo (R$)</label><input class="form-sel" id="dCusto" type="number" step="0.01" oninput="calcDevTotal()"></div>
       <div class="form-group"><label>Frete (R$)</label><input class="form-sel" id="dFrete" type="number" step="0.01" oninput="calcDevTotal()"></div>
@@ -1045,9 +1111,9 @@ select:focus{border-color:var(--accent)}
     </div>
     <div class="form-grid">
       <div class="form-group"><label>Cobrou?</label><select class="form-sel" id="dCobrou"><option value="">—</option><option>Sim</option><option>Não</option></select></div>
-      <div class="form-group"><label>Registrado por</label><select class="form-sel" id="dResponsavel"><option value="">—</option><option>Edipo</option><option>Max</option></select></div>
+      <div class="form-group"><label>Observações</label><input class="form-sel" id="dObs" type="text" placeholder="Opcional"></div>
     </div>
-    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalDev')">Cancelar</button><button class="btn btn-primary" onclick="salvarDev()">Salvar Devolução</button></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalDev')">Cancelar</button><button class="btn btn-primary" id="btnSalvarDev" onclick="salvarDev()">Salvar Devolução</button></div>
   </div>
 </div>
 
@@ -1270,10 +1336,17 @@ const db = {
 
       DEVS = (devs||[]).map(d => ({
         _id: d.id,
-        dataChegada: d.data, sku: d.numero, descricao: d.motivo,
-        qtde: 1, marketplace: d.empresa, motivo: d.obs,
-        situacao: '', cobrou: '', custo: 0, frete: 0, total: 0,
-        venda: '', cliente: '', nf: '', responsavel: '', dataVenda: ''
+        sku: d.sku||'', descricao: d.descricao||'', qtde: d.qtde||1,
+        marketplace: d.marketplace||'', conta: d.conta||'',
+        tipoEnvio: d.tipo_envio||'', numVenda: d.num_venda||'',
+        cliente: d.cliente||'', numNf: d.num_nf||'',
+        dataVenda: d.data_venda||'', dataChegada: d.data_chegada||'',
+        dataEnvio: d.data_envio||'',
+        motivo: d.motivo||'', recebido: d.recebido||'',
+        reputacao: d.reputacao||'', mediacao: d.mediacao||'',
+        custo: d.custo||0, frete: d.frete||0,
+        total: d.total||0, cobrou: d.cobrou||'',
+        situacao: d.situacao||'', responsavel: d.responsavel||'', obs: d.obs||''
       }));
 
       SKU_DB = (skuDb||[]).map(s => ({
@@ -1463,17 +1536,27 @@ const db = {
   // Devolução
   async saveDev(d) {
     const row = {
-      numero: d.sku||'', motivo: d.descricao||'',
-      empresa: d.marketplace||'', data: d.dataChegada||'',
-      obs: [d.motivo, d.situacao, d.cobrou?'Cobrou:'+d.cobrou:'',
-            d.venda?'Venda:'+d.venda:'', d.cliente?'Cliente:'+d.cliente:'',
-            d.nf?'NF:'+d.nf:'', d.responsavel?'Resp:'+d.responsavel:'',
-            d.custo?'Custo:'+d.custo:'', d.frete?'Frete:'+d.frete:'']
-           .filter(Boolean).join(' | ')
+      sku: d.sku||'', descricao: d.descricao||'', qtde: parseInt(d.qtde)||1,
+      marketplace: d.marketplace||'', conta: d.conta||'',
+      tipo_envio: d.tipoEnvio||'', num_venda: d.numVenda||'',
+      cliente: d.cliente||'', num_nf: d.numNf||'',
+      data_venda: d.dataVenda||'', data_chegada: d.dataChegada||'',
+      data_envio: d.dataEnvio||'',
+      motivo: d.motivo||'', recebido: d.recebido||'',
+      reputacao: d.reputacao||'', mediacao: d.mediacao||'', custo: parseFloat(d.custo)||0,
+      frete: parseFloat(d.frete)||0, total: parseFloat(d.total)||0,
+      cobrou: d.cobrou||'', situacao: d.situacao||'',
+      responsavel: d.responsavel||'', obs: d.obs||''
     };
-    const { data, error } = await _sb.from('devolucoes').insert(row).select().single();
-    if (error) { console.error('[Supabase] saveDev:', error); return null; }
-    return data?.id;
+    if (d._id) {
+      const { error } = await _sb.from('devolucoes').update(row).eq('id', d._id);
+      if (error) { console.error('[Supabase] updateDev:', error); showToast('⚠️ Erro ao atualizar devolução'); return null; }
+      return d._id;
+    } else {
+      const { data, error } = await _sb.from('devolucoes').insert(row).select().single();
+      if (error) { console.error('[Supabase] insertDev:', error); showToast('⚠️ Erro ao salvar devolução'); return null; }
+      return data?.id;
+    }
   },
 
   async deleteDev(id) {
@@ -3139,69 +3222,415 @@ function filtrarDetalheDia(){
 // ══════════════════════════════════════════════════════
 // DEVOLUÇÕES
 // ══════════════════════════════════════════════════════
+
+// helpers reutilizáveis
+const _devContaColor = c => ({FW:'var(--logbox)',BTMX:'var(--purple)',Falcom:'var(--orange)',Octo:'var(--green)'}[c]||'var(--muted)');
+const _devRecebidoStyle = r => ({
+  'Estoque Full':  'background:#238636;color:#fff',
+  'Estoque Empresa':'background:#8250df;color:#fff',
+  'A Caminho':     'background:#d29922;color:#000',
+  'Resolvido':     'background:#1a7f37;color:#fff',
+  'Descartou':     'background:#cf222e;color:#fff',
+  'Danificado':    'background:#953800;color:#fff',
+  'Revisando':     'background:#0969da;color:#fff',
+  'Retirada':      'background:#6e7681;color:#fff',
+}[r]||'background:var(--surface2);color:var(--muted)');
+
+function _devMesLabel(mesStr) {
+  if (!mesStr) return '';
+  const [y,m] = mesStr.split('-');
+  const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return (nomes[parseInt(m)-1]||m) + '/' + y;
+}
+
+function _devDataToMes(dataStr) {
+  // dataStr = DD/MM/YYYY
+  if (!dataStr) return '';
+  const p = dataStr.includes('/') ? dataStr.split('/') : dataStr.split('-');
+  if (p.length < 3) return '';
+  return dataStr.includes('/') ? p[2]+'-'+p[1] : p[0]+'-'+p[1];
+}
+
+function _devPopularFiltroMes() {
+  const sels = ['devFiltroMes','analFiltroMes'].map(id => document.getElementById(id)).filter(Boolean);
+  const meses = [...new Set(DEVS.map(d => _devDataToMes(d.dataChegada)).filter(Boolean))].sort().reverse();
+  sels.forEach(sel => {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Todos os meses</option>' +
+      meses.map(m => `<option value="${m}" ${m===cur?'selected':''}>${_devMesLabel(m)}</option>`).join('');
+  });
+}
+
+function switchDevTab(tab, btn) {
+  document.querySelectorAll('#devTab-registros,#devTab-analise').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('devPane-registros').style.display = tab==='registros' ? '' : 'none';
+  document.getElementById('devPane-analise').style.display   = tab==='analise'   ? '' : 'none';
+  if (tab === 'analise') renderDevAnalise();
+}
+
 function renderDev(){
-  const market=document.getElementById('devFiltroMarket')?.value||'';
-  const sit=document.getElementById('devFiltroSit')?.value||'';
-  const resp=document.getElementById('devFiltroResp')?.value||'';
-  const de=document.getElementById('devFiltroDe')?.value||'';
-  const ate=document.getElementById('devFiltroAte')?.value||'';
-  const parseDate=str=>{if(!str)return null;const p=str.includes('-')?str.split('-'):str.split('/').reverse();return new Date(p[0],p[1]-1,p[2]);};
-  const deDate=parseDate(de), ateDate=parseDate(ate);
-  const lista=DEVS.filter(d=>{
-    if(market && d.marketplace!==market) return false;
-    if(sit && d.situacao!==sit) return false;
-    if(resp && d.responsavel!==resp) return false;
-    if(deDate||ateDate){
-      const dc=parseDate(d.dataChegada);
-      if(dc){if(deDate&&dc<deDate)return false;if(ateDate&&dc>ateDate)return false;}
+  _devPopularFiltroMes();
+  const busca   = (document.getElementById('devFiltroBusca')?.value||'').toLowerCase().trim();
+  const mes     = document.getElementById('devFiltroMes')?.value||'';
+  const market  = document.getElementById('devFiltroMarket')?.value||'';
+  const conta   = document.getElementById('devFiltroConta')?.value||'';
+  const tipo    = document.getElementById('devFiltroTipo')?.value||'';
+  const sit     = document.getElementById('devFiltroSit')?.value||'';
+  const resp    = document.getElementById('devFiltroResp')?.value||'';
+  const de      = document.getElementById('devFiltroDe')?.value||'';
+  const ate     = document.getElementById('devFiltroAte')?.value||'';
+
+  const parseDate = str => {
+    if (!str) return null;
+    const p = str.includes('-') ? str.split('-') : str.split('/').reverse();
+    return new Date(p[0], p[1]-1, p[2]);
+  };
+  const deDate = parseDate(de), ateDate = parseDate(ate);
+
+  const lista = DEVS.filter(d => {
+    if (mes    && _devDataToMes(d.dataChegada) !== mes) return false;
+    if (market && d.marketplace !== market)              return false;
+    if (conta  && d.conta !== conta)                     return false;
+    if (tipo   && d.tipoEnvio !== tipo)                  return false;
+    if (sit    && d.situacao !== sit)                    return false;
+    if (resp   && d.responsavel !== resp)                return false;
+    if (busca && ![d.sku, d.descricao, d.numVenda, d.cliente, d.numNf]
+        .some(v => (v||'').toLowerCase().includes(busca))) return false;
+    if (deDate || ateDate) {
+      const dc = parseDate(d.dataChegada);
+      if (dc) { if (deDate && dc < deDate) return false; if (ateDate && dc > ateDate) return false; }
     }
     return true;
   });
-  document.getElementById('devTotal').textContent=DEVS.length;
-  document.getElementById('devRevender').textContent=DEVS.filter(d=>d.situacao==='Revender').length;
-  document.getElementById('devDescarte').textContent=DEVS.filter(d=>d.situacao==='Descarte'||d.situacao==='Reparo').length;
-  document.getElementById('devCount').textContent=lista.length+' registros';
-  const tbody=document.getElementById('devBody');
-  const sc={Revender:'badge-rev',Descarte:'badge-desc',Reparo:'badge-rep'};
-  const mc={ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee'};
-  tbody.innerHTML=lista.map((d,i)=>{
-    const idxReal=DEVS.indexOf(d);
-    return `
-    <tr>
+
+  const gastoTotal = lista.reduce((a,d) => a + (parseFloat(d.total)||0), 0);
+
+  document.getElementById('devTotal').textContent    = DEVS.length;
+  document.getElementById('devRevender').textContent = DEVS.filter(d => d.situacao==='Revender').length;
+  document.getElementById('devDescarte').textContent = DEVS.filter(d => d.situacao==='Descarte'||d.situacao==='Reparo').length;
+  document.getElementById('devGastoTotal').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('devCount').textContent    = lista.length + ' registro' + (lista.length!==1?'s':'');
+
+  const sc = { Revender:'badge-rev', Descarte:'badge-desc', Reparo:'badge-rep' };
+  const mc = { ML:'b-blue', Amazon:'b-doing', Shopee:'b-shopee' };
+
+  const tbody = document.getElementById('devBody');
+  tbody.innerHTML = lista.map((d) => {
+    const idxReal = DEVS.indexOf(d);
+    const recBadge = d.recebido
+      ? `<span style="padding:2px 8px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;font-weight:600;white-space:nowrap;${_devRecebidoStyle(d.recebido)}">${d.recebido}</span>`
+      : '—';
+    const reputBadge = d.reputacao === 'Afetada'
+      ? `<span style="padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;background:rgba(248,81,73,.18);color:var(--red);border:1px solid rgba(248,81,73,.3)">Afetada</span>`
+      : d.reputacao === 'OK'
+        ? `<span style="font-size:11px;color:var(--green);font-weight:700">✓ OK</span>`
+        : '—';
+    const medBadge = d.mediacao && d.mediacao !== 'Sem'
+      ? `<span style="padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;background:${d.mediacao==='Aberta'?'rgba(210,153,34,.2)':'rgba(63,185,80,.15)'};color:${d.mediacao==='Aberta'?'var(--orange)':'var(--green)'}">${d.mediacao}</span>`
+      : `<span style="font-size:10px;color:var(--muted)">Sem</span>`;
+    return `<tr class="full-row" onclick="abrirDevDetalhe(${idxReal})" style="cursor:pointer">
       <td style="font-size:11px;white-space:nowrap">${d.dataChegada||'—'}</td>
+      <td style="font-size:11px;white-space:nowrap;color:var(--muted)">${d.dataEnvio||'—'}</td>
       <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${d.sku||'—'}</td>
-      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.descricao||'—'}</td>
+      <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${d.descricao||''}">${d.descricao||'—'}</td>
       <td style="font-family:'DM Mono',monospace;text-align:center;font-size:11px">${d.qtde||'—'}</td>
       <td><span class="badge ${mc[d.marketplace]||''}">${d.marketplace||'—'}</span></td>
-      <td style="font-size:11px;color:var(--muted);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.motivo||'—'}</td>
+      <td><span style="font-size:11px;font-weight:700;color:${_devContaColor(d.conta)}">${d.conta||'—'}</span></td>
+      <td style="font-size:11px">${d.tipoEnvio==='Full'?'📦 Full':d.tipoEnvio==='Flex'?'🏍 Flex':'—'}</td>
+      <td>${recBadge}</td>
+      <td>${reputBadge}</td>
+      <td>${medBadge}</td>
       <td><span class="badge ${sc[d.situacao]||''}">${d.situacao||'—'}</span></td>
-      <td style="font-family:'DM Mono',monospace;font-size:10px">${d.venda||'—'}</td>
-      <td style="font-size:11px;white-space:nowrap">${d.cliente||'—'}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:10px">${d.nf||'—'}</td>
-      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--red)">R$${(d.total||0).toFixed(2)}</td>
-      <td style="text-align:center;font-size:12px">${d.cobrou==='Sim'?'✅':'❌'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px">${d.numVenda||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--red)">${d.total?'R$'+parseFloat(d.total).toFixed(2):'—'}</td>
+      <td style="text-align:center;font-size:12px">${d.cobrou==='Sim'?'✅':d.cobrou==='Não'?'❌':'—'}</td>
       <td style="font-size:11px;color:var(--muted)">${d.responsavel||'—'}</td>
-      <td><button class="btn-danger-sm" onclick="removerDev(${idxReal})">✕</button></td>
+      <td><button class="btn-danger-sm" onclick="event.stopPropagation();removerDev(${idxReal})">✕</button></td>
     </tr>`;
-  }).join('')||'<tr><td colspan="14" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma devolução registrada</td></tr>';
+  }).join('') || '<tr><td colspan="17" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma devolução encontrada</td></tr>';
 }
+
+function renderDevAnalise() {
+  _devPopularFiltroMes();
+  const mes   = document.getElementById('analFiltroMes')?.value||'';
+  const conta = document.getElementById('analFiltroConta')?.value||'';
+
+  const base = DEVS.filter(d => {
+    if (mes   && _devDataToMes(d.dataChegada) !== mes)   return false;
+    if (conta && d.conta !== conta)                       return false;
+    return true;
+  });
+
+  const total      = base.length;
+  const gasto      = base.reduce((a,d) => a+(parseFloat(d.total)||0), 0);
+  const cobrou     = base.filter(d => d.cobrou==='Sim').length;
+  const reputAfet  = base.filter(d => d.reputacao==='Afetada').length;
+
+  document.getElementById('analTotal').textContent = total;
+  document.getElementById('analGasto').textContent = 'R$ '+gasto.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  document.getElementById('analCobrou').textContent = cobrou;
+  document.getElementById('analReput').textContent  = reputAfet;
+
+  // Por conta
+  const contas = ['FW','BTMX','Falcom','Octo'];
+  const porConta = contas.map(c => ({ label:c, qtd: base.filter(d=>d.conta===c).length, gasto: base.filter(d=>d.conta===c).reduce((a,d)=>a+(parseFloat(d.total)||0),0) }));
+  const maxConta = Math.max(...porConta.map(x=>x.qtd), 1);
+  document.getElementById('analPorConta').innerHTML = porConta.map(({label,qtd,gasto}) => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:700;color:${_devContaColor(label)}">${label}</span>
+        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${qtd} dev · R$${gasto.toFixed(2)}</span>
+      </div>
+      <div style="background:var(--bg);border-radius:100px;height:6px">
+        <div style="height:6px;border-radius:100px;background:${_devContaColor(label)};width:${Math.round((qtd/maxConta)*100)}%;transition:width .4s"></div>
+      </div>
+    </div>`).join('');
+
+  // Por situação
+  const situacoes = ['Revender','Descarte','Reparo'];
+  const porSit = situacoes.map(s => ({ label:s, qtd: base.filter(d=>d.situacao===s).length }));
+  const maxSit = Math.max(...porSit.map(x=>x.qtd), 1);
+  const sitColors = {Revender:'var(--green)',Descarte:'var(--red)',Reparo:'var(--orange)'};
+  document.getElementById('analPorSituacao').innerHTML = porSit.map(({label,qtd}) => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:600">${label}</span>
+        <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted)">${qtd}</span>
+      </div>
+      <div style="background:var(--bg);border-radius:100px;height:6px">
+        <div style="height:6px;border-radius:100px;background:${sitColors[label]||'var(--accent)'};width:${Math.round((qtd/maxSit)*100)}%;transition:width .4s"></div>
+      </div>
+    </div>`).join('');
+
+  // Volume mensal (barras)
+  const mesesDisp = [...new Set(DEVS.map(d=>_devDataToMes(d.dataChegada)).filter(Boolean))].sort();
+  const porMes = mesesDisp.map(m => ({ m, qtd: base.filter(d=>_devDataToMes(d.dataChegada)===m).length }));
+  const maxMes = Math.max(...porMes.map(x=>x.qtd), 1);
+  const barW = porMes.length ? Math.max(24, Math.floor(280/porMes.length)) : 32;
+  document.getElementById('analBarMes').innerHTML = porMes.map(({m,qtd}) => {
+    const h = Math.round((qtd/maxMes)*90);
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+      <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--logbox)">${qtd||''}</span>
+      <div style="width:${barW}px;height:${Math.max(h,2)}px;background:var(--logbox);border-radius:4px 4px 0 0;opacity:.85"></div>
+    </div>`;
+  }).join('');
+  document.getElementById('analBarMesLabel').innerHTML = porMes.map(({m}) =>
+    `<div style="width:${barW}px;text-align:center;font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)">${_devMesLabel(m)}</div>`
+  ).join('');
+
+  // Motivos frequentes
+  const motivoMap = {};
+  base.forEach(d => { if(d.motivo){motivoMap[d.motivo]=(motivoMap[d.motivo]||0)+1;} });
+  const motivoSort = Object.entries(motivoMap).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  const maxMot = motivoSort[0]?.[1]||1;
+  document.getElementById('analPorMotivo').innerHTML = motivoSort.length
+    ? motivoSort.map(([m,qtd]) => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="flex:1;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${m}">${m}</div>
+        <div style="width:120px;background:var(--bg);border-radius:100px;height:5px;flex-shrink:0">
+          <div style="height:5px;border-radius:100px;background:var(--accent);width:${Math.round((qtd/maxMot)*100)}%"></div>
+        </div>
+        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);width:16px;text-align:right">${qtd}</span>
+      </div>`).join('')
+    : '<div style="font-size:12px;color:var(--muted)">Nenhum motivo registrado ainda.</div>';
+}
+
+function abrirNovaDev() {
+  _devEditandoIdx = null;
+  document.getElementById('modalDevTitulo').textContent = 'Nova Devolução';
+  document.getElementById('btnSalvarDev').textContent = 'Salvar Devolução';
+  ['dSku','dDesc','dVenda','dCliente','dNf','dMotivo','dObs'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('dQtde').value = '';
+  ['dMarket','dSit','dConta','dTipoEnvio','dCobrou','dResponsavel','dRecebido','dReputacao','dMediacao'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  ['dCusto','dFrete'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  document.getElementById('dTotal').value = '';
+  ['dDataVenda','dDataChegada','dDataEnvio'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
+  openModal('modalDev');
+}
+
+let _devEditandoIdx = null;
+
+function abrirDevDetalhe(idx) {
+  const d = DEVS[idx];
+  if (!d) return;
+  _devEditandoIdx = idx;
+
+  const sc = { Revender:'badge-rev', Descarte:'badge-desc', Reparo:'badge-rep' };
+  const mc = { ML:'b-blue', Amazon:'b-doing', Shopee:'b-shopee' };
+
+  document.getElementById('detailTitle').textContent = d.sku || 'Devolução';
+  document.getElementById('detailSub').textContent   = d.descricao || '—';
+
+  const recBadge = d.recebido
+    ? `<span style="padding:3px 10px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;font-weight:600;${_devRecebidoStyle(d.recebido)}">${d.recebido}</span>`
+    : '';
+
+  document.getElementById('detailBody').innerHTML = `
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px">
+      ${d.marketplace?`<span class="badge ${mc[d.marketplace]||''}">${d.marketplace}</span>`:''}
+      ${d.conta?`<span style="padding:3px 9px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;color:${_devContaColor(d.conta)};background:${_devContaColor(d.conta)}18;border:1px solid ${_devContaColor(d.conta)}44">${d.conta}</span>`:''}
+      ${d.tipoEnvio?`<span style="padding:3px 9px;border-radius:100px;font-size:11px;font-weight:600;background:var(--surface2);border:1px solid var(--border2)">${d.tipoEnvio==='Full'?'📦 Full':'🏍 Flex'}</span>`:''}
+      ${d.situacao?`<span class="badge ${sc[d.situacao]||''}">${d.situacao}</span>`:''}
+      ${recBadge}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Qtde</div>
+        <div style="font-size:20px;font-weight:800">${d.qtde||'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Gasto total</div>
+        <div style="font-size:16px;font-weight:800;color:var(--red)">${d.total?'R$ '+parseFloat(d.total).toFixed(2):'—'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Cobrou?</div>
+        <div style="font-size:18px">${d.cobrou==='Sim'?'✅':d.cobrou==='Não'?'❌':'—'}</div>
+      </div>
+    </div>
+
+    <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px">Detalhes</div>
+    <div style="display:flex;flex-direction:column;gap:5px;margin-bottom:14px">
+      ${[
+        ['Nº Venda',      d.numVenda],
+        ['Cliente',       d.cliente],
+        ['NF',            d.numNf],
+        ['Data venda',    d.dataVenda],
+        ['Data envio',    d.dataEnvio],
+        ['Data chegada',  d.dataChegada],
+        ['Motivo',        d.motivo],
+        ['Reputação',     d.reputacao],
+        ['Mediação',      d.mediacao],
+        ['Responsável',   d.responsavel],
+      ].filter(([,v]) => v).map(([l,v]) => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border)">
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${l}</span>
+          <span style="font-size:12px;font-weight:600">${v}</span>
+        </div>`).join('')}
+    </div>
+
+    ${d.obs ? `<div style="background:var(--fokus-bg);border:1px solid var(--fokus-border);border-radius:8px;padding:10px;font-size:12px;margin-bottom:14px">💬 ${d.obs}</div>` : ''}
+
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-primary btn-sm" style="flex:1" onclick="editarDevModal(${idx})">✏️ Editar</button>
+      <button class="btn-danger-sm" onclick="removerDev(${idx});closeDetail()">🗑 Remover</button>
+    </div>
+  `;
+  document.getElementById('detailPanel').classList.add('open');
+}
+
+function editarDevModal(idx) {
+  const d = DEVS[idx];
+  if (!d) return;
+  _devEditandoIdx = idx;
+  document.getElementById('modalDevTitulo').textContent = 'Editar Devolução';
+  document.getElementById('btnSalvarDev').textContent = 'Salvar alterações';
+
+  document.getElementById('dSku').value         = d.sku||'';
+  document.getElementById('dDesc').value        = d.descricao||'';
+  document.getElementById('dQtde').value        = d.qtde||'';
+  document.getElementById('dMarket').value      = d.marketplace||'';
+  document.getElementById('dSit').value         = d.situacao||'';
+  document.getElementById('dConta').value       = d.conta||'';
+  document.getElementById('dTipoEnvio').value   = d.tipoEnvio||'';
+  document.getElementById('dMotivo').value      = d.motivo||'';
+  document.getElementById('dRecebido').value    = d.recebido||'';
+  document.getElementById('dReputacao').value   = d.reputacao||'';
+  document.getElementById('dMediacao').value    = d.mediacao||'';
+  document.getElementById('dVenda').value       = d.numVenda||'';
+  document.getElementById('dCliente').value     = d.cliente||'';
+  document.getElementById('dNf').value          = d.numNf||'';
+  document.getElementById('dDataVenda').value   = d.dataVenda||'';
+  document.getElementById('dDataEnvio').value   = d.dataEnvio||'';
+  document.getElementById('dDataChegada').value = d.dataChegada||'';
+  document.getElementById('dResponsavel').value = d.responsavel||'';
+  document.getElementById('dCusto').value       = d.custo||'';
+  document.getElementById('dFrete').value       = d.frete||'';
+  document.getElementById('dTotal').value       = d.total ? 'R$ '+parseFloat(d.total).toFixed(2) : '';
+  document.getElementById('dCobrou').value      = d.cobrou||'';
+  document.getElementById('dObs').value         = d.obs||'';
+  openModal('modalDev');
+}
+
 async function salvarDev(){
-  const sku=document.getElementById('dSku').value.trim(),desc=document.getElementById('dDesc').value.trim(),qtde=document.getElementById('dQtde').value;
-  if(!sku||!desc||!qtde){showToast('⚠️ SKU, descrição e quantidade obrigatórios');return;}
-  const custo=parseFloat(document.getElementById('dCusto').value)||0,frete=parseFloat(document.getElementById('dFrete').value)||0;
-  const newDev={dataChegada:document.getElementById('dDataChegada').value||new Date().toLocaleDateString('pt-BR'),sku,descricao:desc,qtde:parseInt(qtde),marketplace:document.getElementById('dMarket').value,motivo:document.getElementById('dMotivo').value,situacao:document.getElementById('dSit').value,cobrou:document.getElementById('dCobrou').value,custo,frete,total:custo+frete,venda:document.getElementById('dVenda').value,cliente:document.getElementById('dCliente').value,nf:document.getElementById('dNf').value,responsavel:document.getElementById('dResponsavel').value,dataVenda:document.getElementById('dDataVenda').value};
-  const devId=await db.saveDev(newDev);
-  if(devId) newDev._id=devId;
-  DEVS.push(newDev);
-  closeModal('modalDev');showToast('✅ Devolução registrada!');renderDev();
+  const sku  = document.getElementById('dSku').value.trim();
+  const desc = document.getElementById('dDesc').value.trim();
+  const qtde = document.getElementById('dQtde').value;
+  if (!sku || !desc || !qtde) { showToast('⚠️ SKU, descrição e quantidade obrigatórios'); return; }
+
+  const custo = parseFloat(document.getElementById('dCusto').value)||0;
+  const frete = parseFloat(document.getElementById('dFrete').value)||0;
+
+  const obj = {
+    sku, descricao: desc, qtde: parseInt(qtde),
+    marketplace:  document.getElementById('dMarket').value,
+    conta:        document.getElementById('dConta').value,
+    tipoEnvio:    document.getElementById('dTipoEnvio').value,
+    motivo:       document.getElementById('dMotivo').value,
+    recebido:     document.getElementById('dRecebido').value,
+    reputacao:    document.getElementById('dReputacao').value,
+    mediacao:     document.getElementById('dMediacao').value,
+    numVenda:     document.getElementById('dVenda').value,
+    cliente:      document.getElementById('dCliente').value,
+    numNf:        document.getElementById('dNf').value,
+    dataVenda:    document.getElementById('dDataVenda').value,
+    dataEnvio:    document.getElementById('dDataEnvio').value,
+    dataChegada:  document.getElementById('dDataChegada').value || new Date().toLocaleDateString('pt-BR'),
+    custo, frete, total: custo + frete,
+    cobrou:       document.getElementById('dCobrou').value,
+    situacao:     document.getElementById('dSit').value,
+    responsavel:  document.getElementById('dResponsavel').value,
+    obs:          document.getElementById('dObs').value,
+  };
+
+  if (_devEditandoIdx !== null) {
+    obj._id = DEVS[_devEditandoIdx]._id;
+    const savedId = await db.saveDev(obj);
+    if (!savedId) return;
+    DEVS[_devEditandoIdx] = obj;
+    showToast('✅ Devolução atualizada!');
+    abrirDevDetalhe(_devEditandoIdx);
+  } else {
+    const newId = await db.saveDev(obj);
+    if (!newId) return;
+    obj._id = newId;
+    DEVS.push(obj);
+    showToast('✅ Devolução registrada!');
+  }
+  closeModal('modalDev');
+  renderDev();
+  _devEditandoIdx = null;
 }
-async function removerDev(idx){if(!confirm('Remover?'))return;const d=DEVS[idx];DEVS.splice(idx,1);if(d?._id) await db.deleteDev(d._id);renderDev();showToast('🗑 Removido');}
-async function limparDev(){if(!confirm('Limpar tudo?'))return;const ids=DEVS.map(d=>d._id).filter(Boolean);DEVS=[];await Promise.all(ids.map(id=>db.deleteDev(id)));renderDev();showToast('🗑 Lista limpa');}
-function calcDevTotal(){const c=parseFloat(document.getElementById('dCusto').value)||0,f=parseFloat(document.getElementById('dFrete').value)||0;document.getElementById('dTotal').value=(c+f)?'R$ '+(c+f).toFixed(2):'';}
+
+async function removerDev(idx){
+  if(!confirm('Remover esta devolução?')) return;
+  const d = DEVS[idx];
+  DEVS.splice(idx, 1);
+  if (d?._id) await db.deleteDev(d._id);
+  renderDev();
+  showToast('🗑 Removido');
+}
+
+async function limparDev(){
+  if(!confirm('Limpar todas as devoluções?')) return;
+  const ids = DEVS.map(d => d._id).filter(Boolean);
+  DEVS = [];
+  await Promise.all(ids.map(id => db.deleteDev(id)));
+  renderDev();
+  showToast('🗑 Lista limpa');
+}
+
+function calcDevTotal(){
+  const c=parseFloat(document.getElementById('dCusto').value)||0;
+  const f=parseFloat(document.getElementById('dFrete').value)||0;
+  document.getElementById('dTotal').value=(c+f)?'R$ '+(c+f).toFixed(2):'';
+}
+
 function exportarExcel(){
   if(!DEVS.length){showToast('⚠️ Nenhuma devolução');return;}
-  const headers=['VENDA','CLIENTE','DATA','DATA DE CHEGADA','SKU','DESCRIÇÃO','MOTIVO PLATAFORMA','SITUAÇÃO DO PRODUTO','COBROU?','CUSTO PRODUTO','FRETE','GASTO TOTAL','Nº DA NF','REGISTRADO POR','MARKETPLACE','QTD'];
-  const rows=DEVS.map(d=>[d.venda,d.cliente,d.dataVenda,d.dataChegada,d.sku,d.descricao,d.motivo,d.situacao,d.cobrou,d.custo,d.frete,d.total,d.nf,d.responsavel,d.marketplace,d.qtde]);
+  const headers=['DATA CHEGADA','DATA ENVIO','SKU','DESCRIÇÃO','QTDE','MARKETPLACE','CONTA','TIPO ENVIO','RECEBIDO','REPUTAÇÃO','MEDIAÇÃO','Nº VENDA','CLIENTE','NF','DATA VENDA','MOTIVO','SITUAÇÃO','COBROU?','CUSTO','FRETE','TOTAL','RESPONSÁVEL','OBS'];
+  const rows=DEVS.map(d=>[d.dataChegada,d.dataEnvio,d.sku,d.descricao,d.qtde,d.marketplace,d.conta,d.tipoEnvio,d.recebido,d.reputacao,d.mediacao,d.numVenda,d.cliente,d.numNf,d.dataVenda,d.motivo,d.situacao,d.cobrou,d.custo,d.frete,d.total,d.responsavel,d.obs]);
   const bom='\uFEFF';
   const csv=bom+[headers,...rows].map(r=>r.map(v=>'"'+(v??'').toString().replace(/"/g,'""')+'"').join(',')).join('\r\n');
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -4273,88 +4702,9 @@ function toggleTheme(){
 (()=>{ if(sessionStorage.getItem('outbox_auth')==='1'){ const o=document.getElementById('loginOverlay'); if(o) o.style.display='none'; } })();
 
 // ══════════════════════════════════════════════════════
-// REALTIME — escuta mudanças ao vivo no Supabase
-function initRealtime() {
-
-  // ── 1. saidas_hoje ─────────────────────────────────
-  _sb.channel('rt-saidas-hoje')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'saidas_hoje' }, (payload) => {
-      const row = payload.new;
-      // Evita duplicata caso o INSERT veio do próprio cliente
-      if (SAIDAS_HOJE.some(s => s._id === row.id)) return;
-      SAIDAS_HOJE.push({
-        _id: row.id,
-        num: row.numero, canal: row.canal, market: row.market,
-        funcionario: row.funcionario, hora: row.hora,
-        galpao: row.galpao, conta: row.conta||''
-      });
-      renderSaidas();
-    })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'saidas_hoje' }, (payload) => {
-      const id = payload.old.id;
-      const idx = SAIDAS_HOJE.findIndex(s => s._id === id);
-      if (idx !== -1) { SAIDAS_HOJE.splice(idx, 1); renderSaidas(); }
-    })
-    .subscribe();
-
-  // ── 2. fulls ───────────────────────────────────────
-  _sb.channel('rt-fulls')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'fulls' }, (payload) => {
-      const f = payload.new;
-      if (FULLS_DATA[f.id]) return; // já existe localmente
-      FULLS_DATA[f.id] = {
-        id: f.id, empresa: f.empresa, destino: f.destino,
-        agendado: f.agendado, criadoEm: f.criado_em,
-        responsavel: f.responsavel, status: f.status,
-        obs: f.obs, vol: f.vol||[], itens: f.itens||[],
-        dateKey: f.date_key||''
-      };
-      renderDashboard(); renderCal();
-    })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'fulls' }, (payload) => {
-      const f = payload.new;
-      // Só aplica se a versão remota for diferente da local (evita loop)
-      const local = FULLS_DATA[f.id];
-      if (local && JSON.stringify(local.itens) === JSON.stringify(f.itens) && local.status === f.status) return;
-      FULLS_DATA[f.id] = {
-        id: f.id, empresa: f.empresa, destino: f.destino,
-        agendado: f.agendado, criadoEm: f.criado_em,
-        responsavel: f.responsavel, status: f.status,
-        obs: f.obs, vol: f.vol||[], itens: f.itens||[],
-        dateKey: f.date_key||''
-      };
-      renderDashboard(); renderCal();
-    })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'fulls' }, (payload) => {
-      const id = payload.old.id;
-      if (FULLS_DATA[id]) { delete FULLS_DATA[id]; renderDashboard(); renderCal(); }
-    })
-    .subscribe();
-
-  // ── 3. prod_data ───────────────────────────────────
-  _sb.channel('rt-prod-data')
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'prod_data' }, (payload) => {
-      const p = payload.new;
-      if (PROD_DATA.some(x => x._id === p.id)) return;
-      PROD_DATA.push({
-        _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
-        produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
-        full_id: p.full_id||'', sku: p.sku||'',
-        empresa: p.empresa||'', data: p.data||'',
-        status: p.status||'Concluído'
-      });
-      renderProdutividade();
-    })
-    .subscribe();
-
-  console.log('[OUTBOX] Realtime ativo — saidas_hoje, fulls, prod_data');
-}
-
-// ══════════════════════════════════════════════════════
 // INIT
 (async () => {
   await db.load();
-  initRealtime();
   // Arquiva pedidos com mais de 2 meses automaticamente
   await arquivarPedidosAntigos();
   // Migração única: se havia funcionários no localStorage e o banco veio vazio, migra automaticamente
