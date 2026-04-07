@@ -1171,6 +1171,20 @@ const db = {
   async load() {
     showToast('⏳ Carregando dados...');
     try {
+      // Busca paginada para saidas_hist_pedidos (pode ter mais de 1000 registros)
+      async function fetchAllPedidos() {
+        let all = [], from = 0, batchSize = 1000;
+        while (true) {
+          const { data, error } = await _sb.from('saidas_hist_pedidos')
+            .select('*').range(from, from + batchSize - 1);
+          if (error) return { data: null, error };
+          all = all.concat(data || []);
+          if (!data || data.length < batchSize) break;
+          from += batchSize;
+        }
+        return { data: all, error: null };
+      }
+
       const [
         { data: fulls,             error: e1 },
         { data: calFulls,          error: e2 },
@@ -1179,7 +1193,6 @@ const db = {
         { data: skuDb,             error: e5 },
         { data: saidasHoje,        error: e6 },
         { data: saidasHist,        error: e7 },
-        { data: saidasHistPedidos, error: e8 },
         { data: semanasHist,       error: e9 },
         { data: prodData,          error: e10 },
         { data: funcionariosDb,    error: e11 },
@@ -1191,11 +1204,13 @@ const db = {
         _sb.from('sku_db').select('*').order('sku'),
         _sb.from('saidas_hoje').select('*').order('hora'),
         _sb.from('saidas_hist').select('*').order('data'),
-        _sb.from('saidas_hist_pedidos').select('*'),
         _sb.from('semanas_hist').select('*').order('inserted_at', { ascending: false }),
         _sb.from('prod_data').select('*').order('inserted_at', { ascending: true }),
         _sb.from('funcionarios').select('*').order('nome'),
       ]);
+
+      // busca paginada separada
+      const { data: saidasHistPedidos, error: e8 } = await fetchAllPedidos();
 
       const erros = [e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11].filter(Boolean);
       if (erros.length) {
