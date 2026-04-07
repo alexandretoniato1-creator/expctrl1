@@ -2812,8 +2812,7 @@ async function registrarSaida(){
   // Extrai número da venda de QR codes complexos (ex: Shopee `^id^Ç^46804468970^,...`)
   // Tenta capturar o valor após 'id' + qualquer separador + o número
   const qrMatch = raw.match(/id[^0-9]*([0-9]{8,})/i);
-  const num = qrMatch ? qrMatch[1] : raw.replace(/[
-	]/g,'').trim();
+  const num = qrMatch ? qrMatch[1] : raw.replace(/[\r\n\t]/g,'').trim();
   const canal=document.getElementById('saidaCanal').value;
   const market=document.getElementById('saidaMarket').value;
   const galpao=document.getElementById('saidaGalpao').value;
