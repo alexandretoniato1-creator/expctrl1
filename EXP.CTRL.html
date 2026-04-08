@@ -656,7 +656,7 @@ select:focus{border-color:var(--accent)}
             <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
             <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option></select></div>
-            <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="OCTO">OCTO</option></select></div>
+            <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select></div>
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
@@ -2936,15 +2936,42 @@ document.addEventListener('DOMContentLoaded', () => {
 async function registrarSaida(){
   const input=document.getElementById('saidaBipe');
   const raw=input.value.trim();if(!raw)return;
-  // Extrai número da venda de QR codes complexos (ex: Shopee `^id^Ç^46804468970^,...`)
-  // Tenta capturar o valor após 'id' + qualquer separador + o número
+
+  // ── Mapa de sender_id → conta ML ──────────────────
+  const SENDER_CONTA = {
+    '334627891':  'FW',
+    '1507363246': 'BTMX',
+    '765039361':  'Falcom',
+    // Octo: adicionar quando sender_id disponível
+  };
+
+  // Extrai número do pedido (id)
   const qrMatch = raw.match(/id[^0-9]*([0-9]{8,})/i);
   const num = qrMatch ? qrMatch[1] : raw.replace(/[\r\n\t]/g,'').trim();
+
+  // Tenta extrair sender_id do QR code ML
+  const senderMatch = raw.match(/sender_id[^0-9]*([0-9]{6,})/i);
+  const senderConta = senderMatch ? (SENDER_CONTA[senderMatch[1]] || '') : null;
+
   const canal=document.getElementById('saidaCanal').value;
-  const market=document.getElementById('saidaMarket').value;
+  let market=document.getElementById('saidaMarket').value;
+  let conta=market==='ML'?(document.getElementById('saidaConta')?.value||''):'';
+
+  // Se detectou sender_id: força ML e preenche a conta automaticamente
+  if (senderConta !== null) {
+    market = 'ML';
+    conta  = senderConta;
+    // Atualiza os selects visuais para refletir
+    const mktEl   = document.getElementById('saidaMarket');
+    const contaEl = document.getElementById('saidaConta');
+    const wrapEl  = document.getElementById('saidaContaWrap');
+    if (mktEl)   mktEl.value   = 'ML';
+    if (contaEl) contaEl.value = senderConta;
+    if (wrapEl)  wrapEl.style.display = '';
+  }
+
   const galpao=document.getElementById('saidaGalpao').value;
   const funcionario=document.getElementById('saidaFuncionario')?.value||'—';
-  const conta=market==='ML'?(document.getElementById('saidaConta')?.value||''):'';
   const now=new Date();
   const hora=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
   const saida={num,canal,market,galpao,hora,funcionario,conta};
@@ -2953,7 +2980,8 @@ async function registrarSaida(){
   if(newId) saida._id=newId;
   SAIDAS_HOJE.push(saida);
   renderSaidas();
-  showToast('✅ '+canal+' — '+num.substring(0,8)+'... ('+funcionario+')');
+  const contaLabel = conta ? ' · '+conta : '';
+  showToast('✅ '+canal+' — '+num.substring(0,8)+'...'+contaLabel+' ('+funcionario+')');
 }
 function renderSaidas(){
   const galpao=document.getElementById('saidaGalpao')?.value||'LogBox';
