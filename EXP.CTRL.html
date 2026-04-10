@@ -3156,13 +3156,14 @@ function renderSaidaHistorico(galpao){
       .sort((a,b)=>b[1]-a[1])
       .map(([f,n])=>`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2)">${f.split(' ')[0]} <span style="color:var(--accent);font-weight:700">${n}</span></span>`)
       .join('<span style="color:var(--border2);margin:0 3px">·</span>');
-    // mini-badges por conta
+    // mini-badges por conta — compacto, sem quebra
     const todosOsPedidos = SAIDAS_HIST_PEDIDOS[chave]||[];
-    const contaBadges = CONTAS.map(c => {
-      const n = todosOsPedidos.filter(p=>p.conta===c).length;
-      if (!n) return '';
-      return `<span style="padding:1px 7px;border-radius:100px;font-size:10px;font-family:'DM Mono',monospace;font-weight:700;color:${CONTA_COLOR[c]};background:${CONTA_COLOR[c]}18;border:1px solid ${CONTA_COLOR[c]}33">${c} ${n}</span>`;
-    }).filter(Boolean).join(' ');
+    const contaBadges = CONTAS
+      .filter(c => todosOsPedidos.some(p=>p.conta===c))
+      .map(c => {
+        const n = todosOsPedidos.filter(p=>p.conta===c).length;
+        return `<span style="padding:1px 6px;border-radius:4px;font-size:10px;font-family:'DM Mono',monospace;font-weight:700;color:${CONTA_COLOR[c]};white-space:nowrap">${c}&nbsp;${n}</span>`;
+      }).join('<span style="color:var(--border2)"> · </span>');
     return `
     <tr class="full-row">
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.data} <span style="font-size:9px;color:var(--accent)">↗</span></td>
@@ -3173,7 +3174,7 @@ function renderSaidaHistorico(galpao){
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.ml}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.amazon}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.shopee}</td>
-      <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')" style="min-width:120px">${contaBadges||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
+      <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')" style="white-space:nowrap">${contaBadges||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
       <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')" style="max-width:160px">${funcResumo||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
       <td style="display:flex;gap:5px">
         <button class="action-btn" style="font-size:10px;color:var(--accent);white-space:nowrap" onclick="event.stopPropagation();abrirModalSaidaImpressao('${h.data}','${h.galpao}')">🖨 Imprimir</button>
