@@ -6,6 +6,7 @@
 <title>OUTBOX</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -149,6 +150,28 @@ tr:last-child td{border-bottom:none}
 .b-doing{background:var(--fokus-bg);color:var(--fokus);border:1px solid var(--fokus-border)}
 .b-purple{background:rgba(167,139,250,.10);color:var(--purple);border:1px solid rgba(167,139,250,.22)}
 .b-red{background:rgba(248,113,113,.10);color:var(--red);border:1px solid rgba(248,113,113,.22)}
+/* ── INSUMOS ─────────────────────────────────── */
+.ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px}
+.ins-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px;position:relative;transition:border-color .15s}
+.ins-card.alerta{border-color:rgba(248,113,113,.4)}
+.ins-card.ok{border-color:rgba(63,185,80,.2)}
+.ins-card-nome{font-size:12px;font-weight:700;margin-bottom:8px;padding-right:20px}
+.ins-card-val{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1}
+.ins-card-label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;margin-bottom:10px}
+.ins-card-actions{display:flex;gap:5px}
+.ins-card-btn{flex:1;padding:5px 0;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:600;transition:all .12s}
+.ins-card-btn:hover{background:var(--surface2);color:var(--text)}
+.ins-card-btn.entrada{border-color:rgba(63,185,80,.3);color:var(--green)}
+.ins-card-btn.entrada:hover{background:rgba(63,185,80,.08)}
+.ins-card-btn.saida{border-color:rgba(248,113,113,.3);color:var(--red)}
+.ins-card-btn.saida:hover{background:rgba(248,113,113,.08)}
+.ins-alerta-dot{position:absolute;top:10px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+.ins-ok-dot{position:absolute;top:10px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--green)}
+.ins-tab-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all .12s}
+.ins-tab-btn.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.ins-mov-row{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.ins-mov-row:last-child{border-bottom:none}
+.ins-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:20px}
 .b-shopee{background:rgba(240,90,40,.10);color:#f05a28;border:1px solid rgba(240,90,40,.2)}
 .click-hint{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-left:6px;opacity:.5}
 
@@ -413,6 +436,7 @@ select:focus{border-color:var(--accent)}
     <div class="nav-section">Registro</div>
     <div class="nav-item" onclick="navTo(this,'saidas')"><span class="nav-icon">📤</span>Saídas</div>
     <div class="nav-item" onclick="navTo(this,'devolucoes')"><span class="nav-icon">↩</span>Devoluções</div>
+    <div class="nav-item" onclick="navTo(this,'insumos')"><span class="nav-icon">🗂</span>Insumos</div>
     <div class="nav-section">Cadastros</div>
     <div class="nav-item" onclick="navTo(this,'catalogo')"><span class="nav-icon">🗂</span>Catálogo SKUs</div>
     <div class="company-badges">
@@ -467,6 +491,18 @@ select:focus{border-color:var(--accent)}
             </div>
             <div class="card" style="border-color:var(--logbox-border)">
               <div class="card-label">Flex / Coleta</div><div class="card-value" id="dSaidasFlexColeta" style="font-size:16px;margin-top:4px">—</div><div class="card-sub" id="dSaidasMkt">—</div>
+            </div>
+          </div>
+
+          <!-- CARD INSUMOS -->
+          <div id="dashInsumosCard" class="card" style="margin-bottom:20px;border-color:rgba(63,185,80,.2);cursor:pointer" onclick="navTo(document.querySelector('.nav-item[onclick*=insumos]'),'insumos')" title="Ver insumos">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div>
+                <div class="card-label">🗂 Insumos — Estoque</div>
+                <div class="card-value" style="color:var(--green);font-size:22px">0</div>
+                <div class="card-sub">verificando…</div>
+              </div>
+              <div style="flex:1;margin-left:20px;max-width:340px" id="dashInsumosLista"></div>
             </div>
           </div>
 
@@ -791,6 +827,74 @@ select:focus{border-color:var(--accent)}
           </div>
           <div id="histTab-relatorio" style="display:none" id="histRelatorio">
             <div id="relatorioContainer"></div>
+          </div>
+        </div>
+
+        <!-- ══ INSUMOS ══ -->
+        <div class="view" id="view-insumos">
+
+          <!-- Sub-abas -->
+          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+            <div style="display:flex;gap:4px">
+              <button class="ins-tab-btn active" id="insTab-estoque" onclick="insSwitchTab('estoque',this)">📦 Estoque</button>
+              <button class="ins-tab-btn" id="insTab-movimentacoes" onclick="insSwitchTab('movimentacoes',this)">📋 Movimentações</button>
+              <button class="ins-tab-btn" id="insTab-historico" onclick="insSwitchTab('historico',this)">📊 Histórico</button>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <select id="insMesSelect" onchange="insCarregarMes()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif"></select>
+              <button class="btn btn-ghost btn-sm" onclick="insAbrirModalFecharMes()">↪ Fechar mês</button>
+              <button class="btn btn-primary btn-sm" onclick="insAbrirModalProduto(null)">+ Produto</button>
+            </div>
+          </div>
+
+          <!-- TAB: ESTOQUE -->
+          <div id="insTab-estoque-body">
+            <div id="insAlertasBanner"></div>
+            <div class="ins-grid" id="insGrid"></div>
+          </div>
+
+          <!-- TAB: MOVIMENTAÇÕES -->
+          <div id="insTab-movimentacoes-body" style="display:none">
+            <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
+              <select id="insMovFiltroTipo" onchange="insRenderMovimentacoes()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif">
+                <option value="">Entrada + Saída</option>
+                <option value="entrada">Só Entradas</option>
+                <option value="saida">Só Saídas</option>
+              </select>
+              <select id="insMovFiltroProd" onchange="insRenderMovimentacoes()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif">
+                <option value="">Todos os produtos</option>
+              </select>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border)">
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Produto</span>
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Tipo</span>
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Qtde</span>
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Funcionário / Data</span>
+              </div>
+              <div id="insMovLista"></div>
+            </div>
+          </div>
+
+          <!-- TAB: HISTÓRICO -->
+          <div id="insTab-historico-body" style="display:none">
+            <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
+              <label style="font-size:12px;color:var(--muted2)">Produto:</label>
+              <select id="insHistProdSelect" onchange="insRenderHistorico()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;min-width:180px"></select>
+            </div>
+            <div class="ins-chart-wrap">
+              <div style="font-size:13px;font-weight:700;margin-bottom:14px" id="insHistTitle">Evolução do estoque</div>
+              <canvas id="insHistChart" height="90"></canvas>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border)">
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Mês</span>
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Inicial</span>
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Moviment.</span>
+                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Final</span>
+              </div>
+              <div id="insHistTabela"></div>
+            </div>
           </div>
         </div>
 
@@ -1252,6 +1356,71 @@ select:focus{border-color:var(--accent)}
   </div>
 </div>
 
+<!-- MODAL: Movimentação de Insumo -->
+<div class="modal-overlay" id="modalInsMov">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title"><span id="modalInsMovTitulo">Registrar Saída</span> <button class="modal-close" onclick="closeModal('modalInsMov')">✕</button></div>
+    <input type="hidden" id="insMovProdId">
+    <input type="hidden" id="insMovTipo">
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Produto</label>
+      <div id="insMovProdNome" style="font-size:13px;font-weight:700;padding:8px 12px;background:var(--surface2);border-radius:7px;border:1px solid var(--border)"></div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Quantidade</label>
+      <input id="insMovQtde" type="number" min="1" class="form-sel" style="width:100%;font-size:14px" placeholder="Ex: 500">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Funcionário</label>
+      <select id="insMovFunc" class="form-sel" style="width:100%;font-size:12px"></select>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalInsMov')">Cancelar</button>
+      <button class="btn btn-primary" id="insMovBtnConfirm" onclick="insConfirmarMov()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Produto de Insumo (criar/editar) -->
+<div class="modal-overlay" id="modalInsProduto">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-title"><span id="modalInsProdTitulo">Novo Produto</span> <button class="modal-close" onclick="closeModal('modalInsProduto')">✕</button></div>
+    <input type="hidden" id="insProdId">
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Nome do produto</label>
+      <input id="insProdNome" class="form-sel" style="width:100%;font-size:13px" placeholder="Ex: SACOLA 20X30">
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Estoque mínimo</label>
+      <input id="insProdMin" type="number" min="0" class="form-sel" style="width:100%;font-size:13px" placeholder="Ex: 5000">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Estoque inicial do mês atual</label>
+      <input id="insProdInicial" type="number" min="0" class="form-sel" style="width:100%;font-size:13px" placeholder="Ex: 10000">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace">Apenas para produtos novos</div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:space-between;align-items:center">
+      <button id="insProdBtnExcluir" class="btn btn-ghost btn-sm" style="color:var(--red);border-color:rgba(248,113,113,.3);display:none" onclick="insExcluirProduto()">🗑 Excluir</button>
+      <div style="display:flex;gap:8px;margin-left:auto">
+        <button class="btn btn-ghost" onclick="closeModal('modalInsProduto')">Cancelar</button>
+        <button class="btn btn-primary" onclick="insSalvarProduto()">Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Fechar mês -->
+<div class="modal-overlay" id="modalInsFecharMes">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">↪ Fechar Mês <button class="modal-close" onclick="closeModal('modalInsFecharMes')">✕</button></div>
+    <div id="insFecharMesBody" style="font-size:13px;line-height:1.6;color:var(--muted2);margin-bottom:16px"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeModal('modalInsFecharMes')">Cancelar</button>
+      <button class="btn btn-primary" onclick="insConfirmarFecharMes()">✅ Confirmar abertura</button>
+    </div>
+  </div>
+</div>
+
 <!-- DOCUMENTO DE IMPRESSÃO (oculto, ativado no print) -->
 <div id="printDoc"></div>
 
@@ -1325,6 +1494,7 @@ const db = {
         { data: semanasHist,       error: e9 },
         { data: prodData,          error: e10 },
         { data: funcionariosDb,    error: e11 },
+        { data: insProdutosDb,     error: e12 },
       ] = await Promise.all([
         _sb.from('fulls').select('*'),
         _sb.from('cal_fulls').select('*'),
@@ -1336,12 +1506,13 @@ const db = {
         _sb.from('semanas_hist').select('*').order('inserted_at', { ascending: false }),
         _sb.from('prod_data').select('*').order('inserted_at', { ascending: true }),
         _sb.from('funcionarios').select('*').order('nome'),
+        _sb.from('insumos_produtos').select('*').eq('ativo',true).order('nome'),
       ]);
 
       // busca paginada separada
       const { data: saidasHistPedidos, error: e8 } = await fetchAllPedidos();
 
-      const erros = [e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11].filter(Boolean);
+      const erros = [e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12].filter(Boolean);
       if (erros.length) {
         console.error('[OUTBOX] Erros ao carregar:', erros);
         showToast('⚠️ Erro ao conectar com o banco — verifique o console');
@@ -1421,6 +1592,7 @@ const db = {
 
       SEMANAS_HIST = semanasHist||[];
       FUNCIONARIOS_DATA = (funcionariosDb||[]).map(f => ({ _id: f.id, nome: f.nome, empresa: f.empresa }));
+      INS_PRODUTOS = (insProdutosDb||[]).map(p => ({ _id: p.id, nome: p.nome, estoqueMinimo: p.estoque_minimo||0, ativo: p.ativo }));
       PROD_DATA = (prodData||[]).map(p => ({
         _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
         produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
@@ -1428,6 +1600,12 @@ const db = {
         empresa: p.empresa||'', data: p.data||'',
         status: p.status||'Concluído'
       }));
+
+      // carrega meses do mês atual para o card do dashboard
+      const _mesDash = (()=>{ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); })();
+      INS_MES_ATUAL = _mesDash;
+      const { data: _insMeses } = await _sb.from('insumos_meses').select('*').eq('mes', _mesDash);
+      INS_MESES = _insMeses || [];
 
       showToast('✅ Dados carregados');
     } catch(err) {
@@ -1661,6 +1839,13 @@ let SAIDAS_HIST_PEDIDOS = {};
 let SEMANAS_HIST        = [];
 let PROD_DATA           = [];
 
+// INSUMOS
+let INS_PRODUTOS        = []; // catálogo completo (insumos_produtos)
+let INS_MESES           = []; // registros mensais (insumos_meses) do mês atual
+let INS_MOVS            = []; // movimentações (insumos_movimentacoes) do mês atual
+let INS_MES_ATUAL       = ''; // 'YYYY-MM' selecionado
+let _insHistChart       = null; // instância Chart.js
+
 // ══════════════════════════════════════════════════════
 // CONSTANTES DE CONFIGURAÇÃO (não são dados — não vão pro banco)
 // ══════════════════════════════════════════════════════
@@ -1709,7 +1894,7 @@ let calOffset = 0;
 const BASE_MON = (()=>{ const d=new Date(); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; })();
 const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
 const DIAS_SHORT = ['Seg','Ter','Qua','Qui','Sex'];
-const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs'};
+const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs',insumos:'Insumos'};
 
 // ══════════════════════════════════════════════════════
 // NAVEGAÇÃO
@@ -1728,7 +1913,7 @@ function showPage(name) {
   if (name==='produtividade') renderProdutividade();
   if (name==='saidas') { renderSaidas(); setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100); }
   if (name==='dashboard') renderDashboard();
-
+  if (name==='insumos') insInit();
 }
 function navTo(el,name){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
@@ -2191,6 +2376,8 @@ function renderDashboard() {
 
   // ducato
   renderDashDucato();
+  // insumos
+  insRenderDashCard();
 }
 
 // ── Ducato por dia ──────────────────────────────────────
@@ -4924,6 +5111,403 @@ function toggleTheme(){
   renderEnviados();
   renderProdutividade();
 })();
+
+// ══════════════════════════════════════════════════════
+// INSUMOS
+// ══════════════════════════════════════════════════════
+
+// ── Helpers ──────────────────────────────────────────
+function insMesLabel(ym) {
+  const [y, m] = ym.split('-');
+  const nomes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return nomes[parseInt(m)-1] + ' ' + y;
+}
+function insMesAtual() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function insMesAnterior(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m-1, 1);
+  d.setMonth(d.getMonth()-1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function insMesProximo(ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const d = new Date(y, m-1, 1);
+  d.setMonth(d.getMonth()+1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+// ── Init ─────────────────────────────────────────────
+async function insInit() {
+  // Monta select de meses (últimos 12 meses + mês atual)
+  const select = document.getElementById('insMesSelect');
+  const atual = insMesAtual();
+  if (!INS_MES_ATUAL) INS_MES_ATUAL = atual;
+  select.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = insMesLabel(ym);
+    if (ym === INS_MES_ATUAL) opt.selected = true;
+    select.appendChild(opt);
+  }
+  await insCarregarMes();
+  insPopularFiltros();
+}
+
+async function insCarregarMes() {
+  INS_MES_ATUAL = document.getElementById('insMesSelect').value || insMesAtual();
+  const [{ data: meses }, { data: movs }] = await Promise.all([
+    _sb.from('insumos_meses').select('*').eq('mes', INS_MES_ATUAL),
+    _sb.from('insumos_movimentacoes').select('*').eq('mes', INS_MES_ATUAL).order('created_at', { ascending: false }),
+  ]);
+  INS_MESES = meses || [];
+  INS_MOVS  = movs  || [];
+  insRenderEstoque();
+  insRenderMovimentacoes();
+  insPopularFiltros();
+}
+
+// ── Tabs ─────────────────────────────────────────────
+function insSwitchTab(tab, btn) {
+  ['estoque','movimentacoes','historico'].forEach(t => {
+    document.getElementById('insTab-'+t+'-body').style.display = t===tab?'block':'none';
+    document.getElementById('insTab-'+t).classList.toggle('active', t===tab);
+  });
+  if (tab==='historico') insRenderHistorico();
+}
+
+// ── Estoque ───────────────────────────────────────────
+function insEstoqueAtual(prodId) {
+  const reg = INS_MESES.find(m => m.produto_id === prodId);
+  if (reg) return reg.estoque_atual;
+  // fallback: calcular pela inicial + movs
+  const inicialReg = INS_MESES.find(m => m.produto_id === prodId);
+  const inicial = inicialReg ? inicialReg.estoque_inicial : 0;
+  const entradas = INS_MOVS.filter(m => m.produto_id===prodId && m.tipo==='entrada').reduce((a,b)=>a+b.quantidade,0);
+  const saidas   = INS_MOVS.filter(m => m.produto_id===prodId && m.tipo==='saida').reduce((a,b)=>a+b.quantidade,0);
+  return inicial + entradas - saidas;
+}
+
+function insRenderEstoque() {
+  const grid = document.getElementById('insGrid');
+  const banner = document.getElementById('insAlertasBanner');
+  if (!INS_PRODUTOS.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:30px">Nenhum produto cadastrado. Clique em "+ Produto" para começar.</div>';
+    banner.innerHTML = '';
+    return;
+  }
+  const alertas = [];
+  grid.innerHTML = INS_PRODUTOS.map(p => {
+    const reg     = INS_MESES.find(m => m.produto_id === p._id);
+    const atual   = reg ? reg.estoque_atual : 0;
+    const min     = p.estoqueMinimo;
+    const baixo   = min > 0 && atual < min;
+    if (baixo) alertas.push(p.nome);
+    const cls     = baixo ? 'alerta' : 'ok';
+    const dot     = baixo ? '<div class="ins-alerta-dot"></div>' : '<div class="ins-ok-dot"></div>';
+    return `<div class="ins-card ${cls}">
+      ${dot}
+      <div class="ins-card-nome">${p.nome}</div>
+      <div class="ins-card-val" style="color:${baixo?'var(--red)':'var(--text)'}">${atual.toLocaleString('pt-BR')}</div>
+      <div class="ins-card-label">unidades em estoque</div>
+      <div class="ins-card-actions">
+        <button class="ins-card-btn entrada" onclick="insAbrirMov(${p._id},'entrada','${p.nome.replace(/'/g,"\\'")}')">+ Entrada</button>
+        <button class="ins-card-btn saida" onclick="insAbrirMov(${p._id},'saida','${p.nome.replace(/'/g,"\\'")}')">− Saída</button>
+        <button class="ins-card-btn" onclick="insAbrirModalProduto(${p._id})" title="Editar">✎</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  banner.innerHTML = alertas.length
+    ? `<div class="alert alert-red" style="margin-bottom:14px">⚠️ Estoque baixo: <strong>${alertas.join(', ')}</strong></div>`
+    : '';
+}
+
+// ── Movimentações ─────────────────────────────────────
+function insPopularFiltros() {
+  // filtro por produto em Movimentações
+  const selProd = document.getElementById('insMovFiltroProd');
+  if (selProd) {
+    const cur = selProd.value;
+    selProd.innerHTML = '<option value="">Todos os produtos</option>' +
+      INS_PRODUTOS.map(p=>`<option value="${p._id}"${String(p._id)===cur?'selected':''}>${p.nome}</option>`).join('');
+  }
+  // select do histórico
+  const selHist = document.getElementById('insHistProdSelect');
+  if (selHist) {
+    const curH = selHist.value;
+    selHist.innerHTML = INS_PRODUTOS.map(p=>`<option value="${p._id}"${String(p._id)===curH?'selected':''}>${p.nome}</option>`).join('');
+  }
+  // select de funcionário nos modais
+  const selFunc = document.getElementById('insMovFunc');
+  if (selFunc) {
+    selFunc.innerHTML = '<option value="">Selecione…</option>' +
+      FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}">${f.nome} (${f.empresa})</option>`).join('');
+  }
+}
+
+function insRenderMovimentacoes() {
+  const filtroTipo = document.getElementById('insMovFiltroTipo')?.value || '';
+  const filtroProd = document.getElementById('insMovFiltroProd')?.value || '';
+  const lista = document.getElementById('insMovLista');
+  let movs = [...INS_MOVS];
+  if (filtroTipo) movs = movs.filter(m => m.tipo === filtroTipo);
+  if (filtroProd) movs = movs.filter(m => String(m.produto_id) === filtroProd);
+  if (!movs.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Nenhuma movimentação registrada</div>';
+    return;
+  }
+  lista.innerHTML = movs.map(m => {
+    const prod = INS_PRODUTOS.find(p => p._id === m.produto_id);
+    const cor  = m.tipo==='entrada' ? 'var(--green)' : 'var(--red)';
+    const sinal= m.tipo==='entrada' ? '+' : '−';
+    const dt   = new Date(m.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+    return `<div class="ins-mov-row">
+      <span style="font-weight:600">${prod?prod.nome:'—'}</span>
+      <span class="badge ${m.tipo==='entrada'?'b-done':'b-red'}">${m.tipo}</span>
+      <span style="font-family:'DM Mono',monospace;color:${cor};font-weight:700">${sinal}${m.quantidade.toLocaleString('pt-BR')}</span>
+      <span style="font-size:11px;color:var(--muted2);text-align:right">${m.funcionario}<br><span style="font-size:10px;color:var(--muted)">${dt}</span></span>
+    </div>`;
+  }).join('');
+}
+
+// ── Modal: Movimentação ───────────────────────────────
+function insAbrirMov(prodId, tipo, nome) {
+  document.getElementById('insMovProdId').value = prodId;
+  document.getElementById('insMovTipo').value   = tipo;
+  document.getElementById('insMovProdNome').textContent = nome;
+  document.getElementById('modalInsMovTitulo').textContent = tipo==='entrada'?'Registrar Entrada':'Registrar Saída';
+  document.getElementById('insMovBtnConfirm').style.background = tipo==='entrada'?'var(--green)':'var(--red)';
+  document.getElementById('insMovQtde').value = '';
+  // popular funcionários
+  const selFunc = document.getElementById('insMovFunc');
+  selFunc.innerHTML = '<option value="">Selecione…</option>' +
+    FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}">${f.nome} (${f.empresa})</option>`).join('');
+  openModal('modalInsMov');
+  setTimeout(() => document.getElementById('insMovQtde').focus(), 100);
+}
+
+async function insConfirmarMov() {
+  const prodId = parseInt(document.getElementById('insMovProdId').value);
+  const tipo   = document.getElementById('insMovTipo').value;
+  const qtde   = parseInt(document.getElementById('insMovQtde').value);
+  const func   = document.getElementById('insMovFunc').value;
+  if (!qtde || qtde <= 0) { showToast('⚠️ Informe uma quantidade válida'); return; }
+  if (!func)               { showToast('⚠️ Selecione o funcionário');       return; }
+
+  // Registra movimentação
+  const { error: e1 } = await _sb.from('insumos_movimentacoes').insert({
+    mes: INS_MES_ATUAL, produto_id: prodId, tipo, quantidade: qtde, funcionario: func
+  });
+  if (e1) { showToast('⚠️ Erro ao registrar movimentação'); console.error(e1); return; }
+
+  // Atualiza ou cria registro do mês
+  const reg = INS_MESES.find(m => m.produto_id === prodId);
+  if (reg) {
+    const novoAtual = tipo==='entrada' ? reg.estoque_atual + qtde : reg.estoque_atual - qtde;
+    const { error: e2 } = await _sb.from('insumos_meses')
+      .update({ estoque_atual: novoAtual, updated_at: new Date().toISOString() })
+      .eq('id', reg.id);
+    if (e2) { showToast('⚠️ Erro ao atualizar estoque'); console.error(e2); return; }
+  } else {
+    // primeiro movimento do mês: cria registro com inicial=0
+    const novoAtual = tipo==='entrada' ? qtde : -qtde;
+    const { error: e3 } = await _sb.from('insumos_meses').insert({
+      mes: INS_MES_ATUAL, produto_id: prodId, estoque_inicial: 0, estoque_atual: novoAtual
+    });
+    if (e3) { showToast('⚠️ Erro ao criar registro do mês'); console.error(e3); return; }
+  }
+
+  closeModal('modalInsMov');
+  showToast('✅ Movimentação registrada');
+  await insCarregarMes();
+}
+
+// ── Modal: Produto ────────────────────────────────────
+function insAbrirModalProduto(id) {
+  const p = id ? INS_PRODUTOS.find(x => x._id === id) : null;
+  document.getElementById('insProdId').value           = id || '';
+  document.getElementById('modalInsProdTitulo').textContent = p ? 'Editar Produto' : 'Novo Produto';
+  document.getElementById('insProdNome').value          = p ? p.nome : '';
+  document.getElementById('insProdMin').value           = p ? p.estoqueMinimo : '';
+  document.getElementById('insProdInicial').value       = '';
+  document.getElementById('insProdInicial').disabled    = !!p;
+  document.getElementById('insProdBtnExcluir').style.display = p ? 'inline-flex' : 'none';
+  openModal('modalInsProduto');
+}
+
+async function insSalvarProduto() {
+  const id     = document.getElementById('insProdId').value;
+  const nome   = document.getElementById('insProdNome').value.trim().toUpperCase();
+  const min    = parseInt(document.getElementById('insProdMin').value) || 0;
+  const inicial= parseInt(document.getElementById('insProdInicial').value) || 0;
+  if (!nome) { showToast('⚠️ Informe o nome do produto'); return; }
+
+  if (id) {
+    // Editar
+    const { error } = await _sb.from('insumos_produtos').update({ nome, estoque_minimo: min }).eq('id', parseInt(id));
+    if (error) { showToast('⚠️ Erro ao salvar'); return; }
+    const p = INS_PRODUTOS.find(x => x._id === parseInt(id));
+    if (p) { p.nome = nome; p.estoqueMinimo = min; }
+  } else {
+    // Criar
+    const { data, error } = await _sb.from('insumos_produtos').insert({ nome, estoque_minimo: min, ativo: true }).select().single();
+    if (error) { showToast('⚠️ Erro ao criar produto'); return; }
+    INS_PRODUTOS.push({ _id: data.id, nome, estoqueMinimo: min, ativo: true });
+    // cria registro do mês com estoque inicial
+    if (inicial > 0) {
+      await _sb.from('insumos_meses').insert({ mes: INS_MES_ATUAL, produto_id: data.id, estoque_inicial: inicial, estoque_atual: inicial });
+    }
+  }
+  closeModal('modalInsProduto');
+  showToast('✅ Produto salvo');
+  await insCarregarMes();
+}
+
+async function insExcluirProduto() {
+  const id = parseInt(document.getElementById('insProdId').value);
+  if (!id) return;
+  const p = INS_PRODUTOS.find(x => x._id === id);
+  if (!confirm(`Desativar "${p?.nome}"? O histórico será preservado.`)) return;
+  const { error } = await _sb.from('insumos_produtos').update({ ativo: false }).eq('id', id);
+  if (error) { showToast('⚠️ Erro ao excluir'); return; }
+  INS_PRODUTOS = INS_PRODUTOS.filter(x => x._id !== id);
+  closeModal('modalInsProduto');
+  showToast('🗑 Produto removido');
+  insRenderEstoque();
+}
+
+// ── Modal: Fechar Mês ─────────────────────────────────
+function insAbrirModalFecharMes() {
+  const proximo = insMesProximo(INS_MES_ATUAL);
+  const body = document.getElementById('insFecharMesBody');
+  const resumo = INS_PRODUTOS.map(p => {
+    const reg = INS_MESES.find(m => m.produto_id === p._id);
+    const atual = reg ? reg.estoque_atual : 0;
+    return `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+      <span>${p.nome}</span>
+      <span style="font-family:'DM Mono',monospace;font-weight:700">${atual.toLocaleString('pt-BR')} unid.</span>
+    </div>`;
+  }).join('');
+  body.innerHTML = `<div style="margin-bottom:12px">O estoque final de <strong>${insMesLabel(INS_MES_ATUAL)}</strong> se tornará o estoque inicial de <strong>${insMesLabel(proximo)}</strong>.</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">${resumo}</div>`;
+  openModal('modalInsFecharMes');
+}
+
+async function insConfirmarFecharMes() {
+  const proximo = insMesProximo(INS_MES_ATUAL);
+  for (const p of INS_PRODUTOS) {
+    const reg = INS_MESES.find(m => m.produto_id === p._id);
+    const final = reg ? reg.estoque_atual : 0;
+    // verifica se já existe registro no próximo mês
+    const { data: existe } = await _sb.from('insumos_meses').select('id').eq('mes', proximo).eq('produto_id', p._id).single();
+    if (!existe) {
+      await _sb.from('insumos_meses').insert({ mes: proximo, produto_id: p._id, estoque_inicial: final, estoque_atual: final });
+    }
+  }
+  closeModal('modalInsFecharMes');
+  showToast(`✅ ${insMesLabel(proximo)} aberto com estoque inicial definido`);
+  // muda para o novo mês
+  INS_MES_ATUAL = proximo;
+  await insInit();
+}
+
+// ── Histórico ─────────────────────────────────────────
+async function insRenderHistorico() {
+  insPopularFiltros();
+  const prodId = parseInt(document.getElementById('insHistProdSelect')?.value);
+  if (!prodId) return;
+  const prod = INS_PRODUTOS.find(p => p._id === prodId);
+  document.getElementById('insHistTitle').textContent = prod ? 'Evolução — ' + prod.nome : 'Evolução do estoque';
+
+  // Busca todos os meses disponíveis para esse produto
+  const { data: todos } = await _sb.from('insumos_meses').select('*').eq('produto_id', prodId).order('mes', { ascending: true });
+  const { data: allMovs } = await _sb.from('insumos_movimentacoes').select('*').eq('produto_id', prodId);
+
+  const registros = todos || [];
+  const labels  = registros.map(r => insMesLabel(r.mes));
+  const iniciais = registros.map(r => r.estoque_inicial);
+  const finais   = registros.map(r => r.estoque_atual);
+
+  // Tabela
+  const tabela = document.getElementById('insHistTabela');
+  tabela.innerHTML = registros.length ? registros.map(r => {
+    const movsM = (allMovs||[]).filter(m => m.mes === r.mes);
+    const ent = movsM.filter(m=>m.tipo==='entrada').reduce((a,b)=>a+b.quantidade,0);
+    const sai = movsM.filter(m=>m.tipo==='saida').reduce((a,b)=>a+b.quantidade,0);
+    const mov = (ent ? `+${ent.toLocaleString('pt-BR')} ent` : '') + (ent&&sai?' / ':'') + (sai ? `−${sai.toLocaleString('pt-BR')} saí` : '');
+    return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px">
+      <span style="font-family:'DM Mono',monospace;font-weight:600">${insMesLabel(r.mes)}</span>
+      <span style="color:var(--muted2)">${r.estoque_inicial.toLocaleString('pt-BR')}</span>
+      <span style="font-size:11px;color:var(--muted2)">${mov||'—'}</span>
+      <span style="font-weight:700">${r.estoque_atual.toLocaleString('pt-BR')}</span>
+    </div>`;
+  }).join('') : '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Sem histórico para este produto</div>';
+
+  // Gráfico
+  if (_insHistChart) { _insHistChart.destroy(); _insHistChart = null; }
+  const ctx = document.getElementById('insHistChart').getContext('2d');
+  const isDark = !document.body.classList.contains('light-mode');
+  const gridColor = isDark ? 'rgba(255,255,255,.06)' : 'rgba(0,0,0,.06)';
+  const textColor = isDark ? '#6e7681' : '#656d76';
+  _insHistChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Estoque Final', data: finais, borderColor: '#3fb950', backgroundColor: 'rgba(63,185,80,.12)', tension: .3, fill: true, pointRadius: 4, pointBackgroundColor: '#3fb950' },
+        { label: 'Estoque Inicial', data: iniciais, borderColor: '#58a6ff', backgroundColor: 'transparent', tension: .3, borderDash: [4,3], pointRadius: 3, pointBackgroundColor: '#58a6ff' },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend: { labels: { color: textColor, font: { family: "'Syne',sans-serif", size: 11 } } } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 } } },
+        y: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 }, callback: v => v.toLocaleString('pt-BR') } }
+      }
+    }
+  });
+}
+
+// ── Dashboard card insumos ────────────────────────────
+function insRenderDashCard() {
+  const el = document.getElementById('dashInsumosCard');
+  if (!el || !INS_PRODUTOS.length) return;
+  // garante dados do mês atual
+  const mesSel = insMesAtual();
+  const alertas = INS_PRODUTOS.filter(p => {
+    const reg = INS_MESES.find(m => m.produto_id === p._id && m.mes === mesSel);
+    const atual = reg ? reg.estoque_atual : 0;
+    return p.estoqueMinimo > 0 && atual < p.estoqueMinimo;
+  });
+  const totalAlerta = alertas.length;
+  const cor = totalAlerta > 0 ? 'var(--red)' : 'var(--green)';
+  const borderCor = totalAlerta > 0 ? 'rgba(248,113,113,.3)' : 'rgba(63,185,80,.2)';
+  el.style.borderColor = borderCor;
+  el.querySelector('.card-value').style.color = cor;
+  el.querySelector('.card-value').textContent  = totalAlerta;
+  el.querySelector('.card-sub').textContent    = totalAlerta ? 'produto(s) em alerta' : 'todos ok';
+  const lista = document.getElementById('dashInsumosLista');
+  if (lista) {
+    lista.innerHTML = totalAlerta
+      ? alertas.slice(0,4).map(p => {
+          const reg = INS_MESES.find(m => m.produto_id === p._id && m.mes === mesSel);
+          const atual = reg ? reg.estoque_atual : 0;
+          return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)">
+            <span style="color:var(--text)">${p.nome}</span>
+            <span style="font-family:'DM Mono',monospace;color:var(--red)">${atual.toLocaleString('pt-BR')}</span>
+          </div>`;
+        }).join('') + (alertas.length > 4 ? `<div style="font-size:10px;color:var(--muted);text-align:center;padding-top:4px">+${alertas.length-4} outros</div>` : '')
+      : '<div style="font-size:11px;color:var(--muted);text-align:center;padding:6px 0">Estoque OK em todos os insumos ✓</div>';
+  }
+}
 </script>
 </body>
 </html>
