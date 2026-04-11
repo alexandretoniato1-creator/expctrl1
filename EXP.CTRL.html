@@ -151,27 +151,78 @@ tr:last-child td{border-bottom:none}
 .b-purple{background:rgba(167,139,250,.10);color:var(--purple);border:1px solid rgba(167,139,250,.22)}
 .b-red{background:rgba(248,113,113,.10);color:var(--red);border:1px solid rgba(248,113,113,.22)}
 /* ── INSUMOS ─────────────────────────────────── */
-.ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:20px}
-.ins-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px;position:relative;transition:border-color .15s}
-.ins-card.alerta{border-color:rgba(248,113,113,.4)}
-.ins-card.ok{border-color:rgba(63,185,80,.2)}
-.ins-card-nome{font-size:12px;font-weight:700;margin-bottom:8px;padding-right:20px}
-.ins-card-val{font-size:28px;font-weight:800;letter-spacing:-.5px;line-height:1}
-.ins-card-label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px;margin-bottom:10px}
-.ins-card-actions{display:flex;gap:5px}
-.ins-card-btn{flex:1;padding:5px 0;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:600;transition:all .12s}
-.ins-card-btn:hover{background:var(--surface2);color:var(--text)}
-.ins-card-btn.entrada{border-color:rgba(63,185,80,.3);color:var(--green)}
-.ins-card-btn.entrada:hover{background:rgba(63,185,80,.08)}
-.ins-card-btn.saida{border-color:rgba(248,113,113,.3);color:var(--red)}
-.ins-card-btn.saida:hover{background:rgba(248,113,113,.08)}
-.ins-alerta-dot{position:absolute;top:10px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--red)}
-.ins-ok-dot{position:absolute;top:10px;right:10px;width:7px;height:7px;border-radius:50%;background:var(--green)}
-.ins-tab-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all .12s}
-.ins-tab-btn.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
-.ins-mov-row{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--border);font-size:12px}
+.ins-tabs-bar{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;width:fit-content}
+.ins-tab-btn{padding:7px 18px;border-radius:7px;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all .18s;letter-spacing:.01em}
+.ins-tab-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.35)}
+body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+/* Cards de estoque */
+.ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:24px}
+.ins-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 16px 14px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s,box-shadow .2s;cursor:default}
+.ins-card:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.ins-card.alerta{border-color:rgba(248,113,113,.35);background:linear-gradient(135deg,var(--surface) 70%,rgba(248,113,113,.04))}
+.ins-card.ok{border-color:rgba(63,185,80,.18)}
+.ins-card-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0}
+.ins-card.alerta .ins-card-accent{background:linear-gradient(90deg,#f85149,rgba(248,81,73,0))}
+.ins-card.ok .ins-card-accent{background:linear-gradient(90deg,#3fb950,rgba(63,185,80,0))}
+.ins-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+.ins-card-nome{font-size:11px;font-weight:700;color:var(--muted2);text-transform:uppercase;letter-spacing:.8px;line-height:1.3;flex:1;padding-right:8px}
+.ins-status-pip{width:6px;height:6px;border-radius:50%;flex-shrink:0;margin-top:3px}
+.ins-status-pip.pip-ok{background:var(--green);box-shadow:0 0 6px rgba(63,185,80,.5)}
+.ins-status-pip.pip-alerta{background:var(--red);box-shadow:0 0 6px rgba(248,81,73,.5);animation:pipPulse 1.8s ease-in-out infinite}
+@keyframes pipPulse{0%,100%{opacity:1;box-shadow:0 0 6px rgba(248,81,73,.5)}50%{opacity:.5;box-shadow:0 0 12px rgba(248,81,73,.8)}}
+.ins-card-val{font-size:32px;font-weight:800;letter-spacing:-1.5px;line-height:1;margin-bottom:2px}
+.ins-card-val.val-ok{color:var(--text)}
+.ins-card-val.val-alerta{color:var(--red)}
+.ins-card-sublabel{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:14px}
+.ins-card-divider{height:1px;background:var(--border);margin-bottom:12px}
+.ins-card-actions{display:grid;grid-template-columns:1fr 1fr auto;gap:5px}
+.ins-card-btn{padding:6px 0;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:700;transition:all .15s;letter-spacing:.01em}
+.ins-card-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
+.ins-card-btn.entrada{border-color:rgba(63,185,80,.25);color:var(--green)}
+.ins-card-btn.entrada:hover{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.4)}
+.ins-card-btn.saida{border-color:rgba(248,113,113,.25);color:var(--red)}
+.ins-card-btn.saida:hover{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.4)}
+.ins-card-btn.edit{width:30px;padding:6px 0;font-size:12px;color:var(--muted)}
+.ins-card-btn.edit:hover{color:var(--text)}
+
+/* Banner de alertas */
+.ins-alertas-banner{border-radius:9px;padding:11px 15px;font-size:12px;margin-bottom:16px;display:flex;align-items:center;gap:10px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);color:var(--red);font-weight:600}
+
+/* Tabela movimentações */
+.ins-mov-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.ins-mov-header{display:grid;grid-template-columns:1fr 90px 90px 160px;gap:0;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.ins-mov-header span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.7px}
+.ins-mov-row{display:grid;grid-template-columns:1fr 90px 90px 160px;gap:0;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);transition:background .1s}
 .ins-mov-row:last-child{border-bottom:none}
-.ins-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:16px;margin-bottom:20px}
+.ins-mov-row:hover{background:var(--surface2)}
+.ins-mov-nome{font-size:12px;font-weight:600;color:var(--text)}
+.ins-mov-qtde{font-size:12px;font-family:'DM Mono',monospace;font-weight:700}
+.ins-mov-meta{font-size:11px;color:var(--muted2);line-height:1.5}
+.ins-mov-meta small{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;display:block}
+
+/* Filtros toolbar */
+.ins-toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.ins-select{font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;outline:none;cursor:pointer}
+.ins-select:focus{border-color:var(--border2)}
+
+/* Histórico */
+.ins-hist-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.ins-hist-header{display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:0;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
+.ins-hist-header span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.7px}
+.ins-hist-row{display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:0;padding:11px 16px;border-bottom:1px solid var(--border);font-size:12px;transition:background .1s}
+.ins-hist-row:last-child{border-bottom:none}
+.ins-hist-row:hover{background:var(--surface2)}
+.ins-hist-mes{font-family:'DM Mono',monospace;font-weight:700;font-size:11px;color:var(--text)}
+.ins-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.ins-chart-title{font-size:13px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.ins-chart-title span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);font-weight:400;letter-spacing:.5px;text-transform:uppercase}
+
+/* Top bar da view */
+.ins-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.ins-topbar-left{display:flex;align-items:center;gap:10px}
+.ins-topbar-right{display:flex;gap:6px;align-items:center}
+.ins-mes-select{font-size:12px;padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-weight:600;outline:none;cursor:pointer}
 .b-shopee{background:rgba(240,90,40,.10);color:#f05a28;border:1px solid rgba(240,90,40,.2)}
 .click-hint{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-left:6px;opacity:.5}
 
@@ -833,15 +884,17 @@ select:focus{border-color:var(--accent)}
         <!-- ══ INSUMOS ══ -->
         <div class="view" id="view-insumos">
 
-          <!-- Sub-abas -->
-          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-            <div style="display:flex;gap:4px">
-              <button class="ins-tab-btn active" id="insTab-estoque" onclick="insSwitchTab('estoque',this)">📦 Estoque</button>
-              <button class="ins-tab-btn" id="insTab-movimentacoes" onclick="insSwitchTab('movimentacoes',this)">📋 Movimentações</button>
-              <button class="ins-tab-btn" id="insTab-historico" onclick="insSwitchTab('historico',this)">📊 Histórico</button>
+          <!-- Top bar -->
+          <div class="ins-topbar">
+            <div class="ins-topbar-left">
+              <div class="ins-tabs-bar">
+                <button class="ins-tab-btn active" id="insTab-estoque" onclick="insSwitchTab('estoque',this)">Estoque</button>
+                <button class="ins-tab-btn" id="insTab-movimentacoes" onclick="insSwitchTab('movimentacoes',this)">Movimentações</button>
+                <button class="ins-tab-btn" id="insTab-historico" onclick="insSwitchTab('historico',this)">Histórico</button>
+              </div>
+              <select id="insMesSelect" class="ins-mes-select" onchange="insCarregarMes()"></select>
             </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <select id="insMesSelect" onchange="insCarregarMes()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif"></select>
+            <div class="ins-topbar-right">
               <button class="btn btn-ghost btn-sm" onclick="insAbrirModalFecharMes()">↪ Fechar mês</button>
               <button class="btn btn-primary btn-sm" onclick="insAbrirModalProduto(null)">+ Produto</button>
             </div>
@@ -855,22 +908,22 @@ select:focus{border-color:var(--accent)}
 
           <!-- TAB: MOVIMENTAÇÕES -->
           <div id="insTab-movimentacoes-body" style="display:none">
-            <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
-              <select id="insMovFiltroTipo" onchange="insRenderMovimentacoes()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif">
+            <div class="ins-toolbar">
+              <select id="insMovFiltroTipo" class="ins-select" onchange="insRenderMovimentacoes()">
                 <option value="">Entrada + Saída</option>
                 <option value="entrada">Só Entradas</option>
                 <option value="saida">Só Saídas</option>
               </select>
-              <select id="insMovFiltroProd" onchange="insRenderMovimentacoes()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif">
+              <select id="insMovFiltroProd" class="ins-select" onchange="insRenderMovimentacoes()">
                 <option value="">Todos os produtos</option>
               </select>
             </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden">
-              <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:8px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border)">
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Produto</span>
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Tipo</span>
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Qtde</span>
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px">Funcionário / Data</span>
+            <div class="ins-mov-table">
+              <div class="ins-mov-header">
+                <span>Produto</span>
+                <span>Tipo</span>
+                <span>Qtde</span>
+                <span>Funcionário / Data</span>
               </div>
               <div id="insMovLista"></div>
             </div>
@@ -878,20 +931,20 @@ select:focus{border-color:var(--accent)}
 
           <!-- TAB: HISTÓRICO -->
           <div id="insTab-historico-body" style="display:none">
-            <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap">
-              <label style="font-size:12px;color:var(--muted2)">Produto:</label>
-              <select id="insHistProdSelect" onchange="insRenderHistorico()" style="font-size:11px;padding:5px 9px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;min-width:180px"></select>
+            <div class="ins-toolbar" style="margin-bottom:16px">
+              <label style="font-size:11px;color:var(--muted2);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:.6px">Produto</label>
+              <select id="insHistProdSelect" class="ins-select" onchange="insRenderHistorico()" style="min-width:200px"></select>
             </div>
             <div class="ins-chart-wrap">
-              <div style="font-size:13px;font-weight:700;margin-bottom:14px" id="insHistTitle">Evolução do estoque</div>
+              <div class="ins-chart-title">Evolução do estoque <span id="insHistTitle"></span></div>
               <canvas id="insHistChart" height="90"></canvas>
             </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden">
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:8px 12px;background:var(--surface2);border-bottom:1px solid var(--border)">
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Mês</span>
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Inicial</span>
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Moviment.</span>
-                <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase">Final</span>
+            <div class="ins-hist-table">
+              <div class="ins-hist-header">
+                <span>Mês</span>
+                <span>Inicial</span>
+                <span>Moviment.</span>
+                <span>Final</span>
               </div>
               <div id="insHistTabela"></div>
             </div>
@@ -5198,34 +5251,39 @@ function insRenderEstoque() {
   const grid = document.getElementById('insGrid');
   const banner = document.getElementById('insAlertasBanner');
   if (!INS_PRODUTOS.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:30px">Nenhum produto cadastrado. Clique em "+ Produto" para começar.</div>';
+    grid.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:40px">Nenhum produto cadastrado. Clique em "+ Produto" para começar.</div>';
     banner.innerHTML = '';
     return;
   }
   const alertas = [];
   grid.innerHTML = INS_PRODUTOS.map(p => {
-    const reg     = INS_MESES.find(m => m.produto_id === p._id);
-    const atual   = reg ? reg.estoque_atual : 0;
-    const min     = p.estoqueMinimo;
-    const baixo   = min > 0 && atual < min;
+    const reg   = INS_MESES.find(m => m.produto_id === p._id);
+    const atual = reg ? reg.estoque_atual : 0;
+    const min   = p.estoqueMinimo;
+    const baixo = min > 0 && atual < min;
     if (baixo) alertas.push(p.nome);
-    const cls     = baixo ? 'alerta' : 'ok';
-    const dot     = baixo ? '<div class="ins-alerta-dot"></div>' : '<div class="ins-ok-dot"></div>';
+    const cls      = baixo ? 'alerta' : 'ok';
+    const pipCls   = baixo ? 'pip-alerta' : 'pip-ok';
+    const valCls   = baixo ? 'val-alerta' : 'val-ok';
     return `<div class="ins-card ${cls}">
-      ${dot}
-      <div class="ins-card-nome">${p.nome}</div>
-      <div class="ins-card-val" style="color:${baixo?'var(--red)':'var(--text)'}">${atual.toLocaleString('pt-BR')}</div>
-      <div class="ins-card-label">unidades em estoque</div>
+      <div class="ins-card-accent"></div>
+      <div class="ins-card-header">
+        <div class="ins-card-nome">${p.nome}</div>
+        <div class="ins-status-pip ${pipCls}"></div>
+      </div>
+      <div class="ins-card-val ${valCls}">${atual.toLocaleString('pt-BR')}</div>
+      <div class="ins-card-sublabel">unidades em estoque</div>
+      <div class="ins-card-divider"></div>
       <div class="ins-card-actions">
         <button class="ins-card-btn entrada" onclick="insAbrirMov(${p._id},'entrada','${p.nome.replace(/'/g,"\\'")}')">+ Entrada</button>
         <button class="ins-card-btn saida" onclick="insAbrirMov(${p._id},'saida','${p.nome.replace(/'/g,"\\'")}')">− Saída</button>
-        <button class="ins-card-btn" onclick="insAbrirModalProduto(${p._id})" title="Editar">✎</button>
+        <button class="ins-card-btn edit" onclick="insAbrirModalProduto(${p._id})" title="Editar produto">✎</button>
       </div>
     </div>`;
   }).join('');
 
   banner.innerHTML = alertas.length
-    ? `<div class="alert alert-red" style="margin-bottom:14px">⚠️ Estoque baixo: <strong>${alertas.join(', ')}</strong></div>`
+    ? `<div class="ins-alertas-banner">⚠ Estoque abaixo do mínimo: <strong>${alertas.join(' · ')}</strong></div>`
     : '';
 }
 
@@ -5260,7 +5318,7 @@ function insRenderMovimentacoes() {
   if (filtroTipo) movs = movs.filter(m => m.tipo === filtroTipo);
   if (filtroProd) movs = movs.filter(m => String(m.produto_id) === filtroProd);
   if (!movs.length) {
-    lista.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Nenhuma movimentação registrada</div>';
+    lista.innerHTML = '<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px">Nenhuma movimentação registrada</div>';
     return;
   }
   lista.innerHTML = movs.map(m => {
@@ -5269,10 +5327,10 @@ function insRenderMovimentacoes() {
     const sinal= m.tipo==='entrada' ? '+' : '−';
     const dt   = new Date(m.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
     return `<div class="ins-mov-row">
-      <span style="font-weight:600">${prod?prod.nome:'—'}</span>
-      <span class="badge ${m.tipo==='entrada'?'b-done':'b-red'}">${m.tipo}</span>
-      <span style="font-family:'DM Mono',monospace;color:${cor};font-weight:700">${sinal}${m.quantidade.toLocaleString('pt-BR')}</span>
-      <span style="font-size:11px;color:var(--muted2);text-align:right">${m.funcionario}<br><span style="font-size:10px;color:var(--muted)">${dt}</span></span>
+      <span class="ins-mov-nome">${prod?prod.nome:'—'}</span>
+      <span><span class="badge ${m.tipo==='entrada'?'b-done':'b-red'}">${m.tipo}</span></span>
+      <span class="ins-mov-qtde" style="color:${cor}">${sinal}${m.quantidade.toLocaleString('pt-BR')}</span>
+      <span class="ins-mov-meta">${m.funcionario}<small>${dt}</small></span>
     </div>`;
   }).join('');
 }
@@ -5424,16 +5482,16 @@ async function insRenderHistorico() {
   const prodId = parseInt(document.getElementById('insHistProdSelect')?.value);
   if (!prodId) return;
   const prod = INS_PRODUTOS.find(p => p._id === prodId);
-  document.getElementById('insHistTitle').textContent = prod ? 'Evolução — ' + prod.nome : 'Evolução do estoque';
+  document.getElementById('insHistTitle').textContent = prod ? prod.nome : '';
 
   // Busca todos os meses disponíveis para esse produto
   const { data: todos } = await _sb.from('insumos_meses').select('*').eq('produto_id', prodId).order('mes', { ascending: true });
   const { data: allMovs } = await _sb.from('insumos_movimentacoes').select('*').eq('produto_id', prodId);
 
   const registros = todos || [];
-  const labels  = registros.map(r => insMesLabel(r.mes));
-  const iniciais = registros.map(r => r.estoque_inicial);
-  const finais   = registros.map(r => r.estoque_atual);
+  const labels   = registros.map(r => insMesLabel(r.mes));
+  const iniciais  = registros.map(r => r.estoque_inicial);
+  const finais    = registros.map(r => r.estoque_atual);
 
   // Tabela
   const tabela = document.getElementById('insHistTabela');
@@ -5441,14 +5499,14 @@ async function insRenderHistorico() {
     const movsM = (allMovs||[]).filter(m => m.mes === r.mes);
     const ent = movsM.filter(m=>m.tipo==='entrada').reduce((a,b)=>a+b.quantidade,0);
     const sai = movsM.filter(m=>m.tipo==='saida').reduce((a,b)=>a+b.quantidade,0);
-    const mov = (ent ? `+${ent.toLocaleString('pt-BR')} ent` : '') + (ent&&sai?' / ':'') + (sai ? `−${sai.toLocaleString('pt-BR')} saí` : '');
-    return `<div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;padding:9px 12px;border-bottom:1px solid var(--border);font-size:12px">
-      <span style="font-family:'DM Mono',monospace;font-weight:600">${insMesLabel(r.mes)}</span>
+    const mov = (ent ? `+${ent.toLocaleString('pt-BR')}` : '') + (ent&&sai?' / ':'') + (sai ? `−${sai.toLocaleString('pt-BR')}` : '');
+    return `<div class="ins-hist-row">
+      <span class="ins-hist-mes">${insMesLabel(r.mes)}</span>
       <span style="color:var(--muted2)">${r.estoque_inicial.toLocaleString('pt-BR')}</span>
       <span style="font-size:11px;color:var(--muted2)">${mov||'—'}</span>
-      <span style="font-weight:700">${r.estoque_atual.toLocaleString('pt-BR')}</span>
+      <span style="font-weight:700;color:var(--text)">${r.estoque_atual.toLocaleString('pt-BR')}</span>
     </div>`;
-  }).join('') : '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Sem histórico para este produto</div>';
+  }).join('') : '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">Sem histórico para este produto</div>';
 
   // Gráfico
   if (_insHistChart) { _insHistChart.destroy(); _insHistChart = null; }
