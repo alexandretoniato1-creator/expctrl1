@@ -643,6 +643,40 @@ select:focus{border-color:var(--accent)}
             </div>
           </div>
           <div class="cal-grid" id="calGrid"></div>
+
+          <!-- DETALHE INLINE DO FULL (abre abaixo do calendário) -->
+          <div id="fullDetalheInline" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface2)">
+              <div>
+                <div style="font-size:15px;font-weight:800;letter-spacing:-.3px" id="fdTitle">—</div>
+                <div style="font-size:11px;color:var(--muted2);margin-top:2px" id="fdSub">—</div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center">
+                <button class="btn btn-primary btn-sm" id="fdBtnEditar" onclick="">✏️ Editar</button>
+                <button class="btn btn-ghost btn-sm" id="fdBtnConferencia" onclick="">◎ Conferência</button>
+                <button onclick="fecharFullDetalhe()" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
+              <!-- Coluna esq: stats + itens agrupados por SKU -->
+              <div style="padding:16px 18px;border-right:1px solid var(--border)">
+                <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:16px" id="fdStats"></div>
+                <div style="margin-bottom:10px">
+                  <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">SKUs do Full</div>
+                  <div id="fdSkuList" style="display:flex;flex-direction:column;gap:6px"></div>
+                </div>
+              </div>
+              <!-- Coluna dir: produtividade por funcionário nesse full -->
+              <div style="padding:16px 18px">
+                <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Produção registrada</div>
+                <div id="fdProdList" style="display:flex;flex-direction:column;gap:6px"></div>
+              </div>
+            </div>
+            <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-ghost btn-sm" onclick="fecharFullDetalhe();abrirImpressao(window._fdFullId)">🖨 Imprimir</button>
+              <button class="btn-danger-sm" style="font-size:11px;padding:5px 12px" onclick="excluirFull(window._fdFullId)">🗑 Excluir</button>
+            </div>
+          </div>
         </div>
 
         <!-- ══ VOLUMETRIA ══ -->
@@ -721,9 +755,9 @@ select:focus{border-color:var(--accent)}
         <!-- ══ PRODUTIVIDADE ══ -->
         <div class="view" id="view-produtividade">
           <div class="cards" style="grid-template-columns:repeat(3,1fr)">
-            <div class="card c-accent"><div class="card-label">Total caixas hoje</div><div class="card-value" id="prodTotalCaixas">0</div><div class="card-sub">toda a equipe</div></div>
+            <div class="card c-accent"><div class="card-label" id="prodLabelTotal">Total caixas</div><div class="card-value" id="prodTotalCaixas">0</div><div class="card-sub">toda a equipe</div></div>
             <div class="card c-green"><div class="card-label">Média por pessoa</div><div class="card-value" id="prodMedia">0</div><div class="card-sub">caixas / funcionário</div></div>
-            <div class="card"><div class="card-label">Melhor do dia</div><div class="card-value" id="prodMelhor" style="font-size:18px;margin-top:4px">—</div><div class="card-sub" id="prodMelhorSub">—</div></div>
+            <div class="card"><div class="card-label" id="prodLabelMelhor">Melhor do período</div><div class="card-value" id="prodMelhor" style="font-size:18px;margin-top:4px">—</div><div class="card-sub" id="prodMelhorSub">—</div></div>
           </div>
           <div class="prod-section">
             <div class="prod-header">
@@ -743,7 +777,7 @@ select:focus{border-color:var(--accent)}
             <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
             <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option></select></div>
-            <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option><option value="Logbox">Logbox</option></select></div>
+            <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select></div>
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
@@ -816,7 +850,6 @@ select:focus{border-color:var(--accent)}
                     <option value="BTMX">BTMX</option>
                     <option value="Falcom">Falcom</option>
                     <option value="Octo">Octo</option>
-                    <option value="Logbox">Logbox</option>
                   </select>
                   <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="sHojeCount">8 pacotes</span>
                   <button class="btn btn-ghost btn-sm" id="btnImprimirHoje" style="color:var(--accent);border-color:rgba(255,255,255,.12)">🖨 Imprimir</button>
@@ -1342,7 +1375,6 @@ select:focus{border-color:var(--accent)}
         <option value="BTMX">BTMX</option>
         <option value="Falcom">Falcom</option>
         <option value="Octo">Octo</option>
-        <option value="Logbox">Logbox</option>
       </select>
     </div>
     <div style="max-height:340px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)">
@@ -1960,7 +1992,7 @@ function showPage(name) {
   if (el) el.classList.add('active');
   document.getElementById('pageTitle').textContent = PAGE_TITLES[name]||name;
   closeDetail();
-  if (name==='fulls') renderCal();
+  if (name==='fulls') { renderCal(); fecharFullDetalhe?.(); }
   if (name==='volumetria') renderVolDia();
   if (name==='devolucoes') renderDev();
   if (name==='catalogo') renderCatalogo();
@@ -2614,11 +2646,26 @@ function dashFecharFiltro() {
 // ══════════════════════════════════════════════════════
 function openDetail(id) {
   const f = FULLS_DATA[id]; if(!f) return;
+
+  // Se estiver na aba Fulls → abre inline abaixo do calendário
+  const naAbaFulls = document.getElementById('view-fulls')?.classList.contains('active');
+  if (naAbaFulls) {
+    openFullDetalheInline(id);
+    return;
+  }
+
+  // Caso contrário → painel lateral (comportamento original)
+  _openDetailPanel(id);
+}
+
+function _openDetailPanel(id) {
+  const f = FULLS_DATA[id]; if(!f) return;
   const itens = f.itens || [];
   const done=itens.filter(i=>i.status==='done').length;
   const doing=itens.filter(i=>i.status==='doing').length;
   const pending=itens.filter(i=>i.status==='pending').length;
   const total=itens.length;
+  const totalCaixas = itens.reduce((a,i)=>a+(parseInt(i.qtde)||0),0);
   const pct=total?Math.round((done/total)*100):0;
   document.getElementById('detailTitle').textContent=f.id;
   document.getElementById('detailSub').innerHTML=f.empresa+' · '+f.destino+' · '+f.agendado;
@@ -2627,7 +2674,11 @@ function openDetail(id) {
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--green)">${done}</div><div class="detail-stat-label">Prontos</div></div>
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--orange)">${doing}</div><div class="detail-stat-label">Prod.</div></div>
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--muted)">${pending}</div><div class="detail-stat-label">Pend.</div></div>
-      <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${total}</div><div class="detail-stat-label">Total</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${total}</div><div class="detail-stat-label">SKUs</div></div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL CAIXAS</span>
+      <span style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px">${totalCaixas}</span>
     </div>
     ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
     <div class="progress-wrap">
@@ -2667,6 +2718,95 @@ function openDetail(id) {
     </div>`;
   document.getElementById('detailPanel').classList.add('open');
 }
+
+function openFullDetalheInline(id) {
+  const f = FULLS_DATA[id]; if(!f) return;
+  window._fdFullId = id;
+  const itens = f.itens || [];
+  const done    = itens.filter(i=>i.status==='done').length;
+  const doing   = itens.filter(i=>i.status==='doing').length;
+  const pending = itens.filter(i=>i.status==='pending').length;
+  const total   = itens.length;
+  const totalCaixas = itens.reduce((a,i)=>a+(parseInt(i.qtde)||0),0);
+  const pct = total ? Math.round((done/total)*100) : 0;
+
+  document.getElementById('fdTitle').textContent = f.id;
+  document.getElementById('fdSub').innerHTML = `${f.empresa} · ${f.destino} · ${f.agendado} <span class="badge ${statusClass(f.status)}" style="margin-left:6px">${statusIcon(f.status)} ${f.status}</span>`;
+
+  document.getElementById('fdBtnEditar').onclick = () => openEditFull(id);
+  const btnConf = document.getElementById('fdBtnConferencia');
+  if (f.status === 'Pronto') { btnConf.style.display = 'none'; } else { btnConf.style.display = ''; btnConf.onclick = () => abrirChecklist(id); }
+
+  // Stats: prontos, produzindo, pendentes, SKUs, total caixas
+  document.getElementById('fdStats').innerHTML = `
+    <div class="detail-stat"><div class="detail-stat-val" style="color:var(--green)">${done}</div><div class="detail-stat-label">Prontos</div></div>
+    <div class="detail-stat"><div class="detail-stat-val" style="color:var(--orange)">${doing}</div><div class="detail-stat-label">Prod.</div></div>
+    <div class="detail-stat"><div class="detail-stat-val" style="color:var(--muted)">${pending}</div><div class="detail-stat-label">Pend.</div></div>
+    <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${total}</div><div class="detail-stat-label">SKUs</div></div>
+    <div class="detail-stat" style="border:1px solid rgba(63,185,80,.2);border-radius:8px;background:rgba(63,185,80,.04)">
+      <div class="detail-stat-val" style="color:var(--green)">${totalCaixas}</div>
+      <div class="detail-stat-label">Total cx</div>
+    </div>`;
+
+  // SKUs agrupados
+  const skuMap = {};
+  itens.forEach(item => {
+    const k = item.codigo || item.nome || '—';
+    if (!skuMap[k]) skuMap[k] = { nome: item.nome||'', codigo: item.codigo||k, qtde: 0, status: item.status, funcionarios: [] };
+    skuMap[k].qtde += parseInt(item.qtde)||0;
+    if (item.funcionario && item.funcionario !== '—') skuMap[k].funcionarios.push(item.funcionario);
+  });
+  document.getElementById('fdSkuList').innerHTML = Object.values(skuMap).map(s => {
+    const dotCls = s.status==='done'?'dot-done':s.status==='doing'?'dot-doing':s.status==='conferencia'?'dot-conferencia':'dot-pending';
+    const funcs = [...new Set(s.funcionarios)].join(', ') || '—';
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:7px">
+          <div class="sdot ${dotCls}"></div>
+          <span style="font-size:12px;font-weight:700">${s.nome||s.codigo}</span>
+        </div>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--text)">${s.qtde} <span style="font-size:10px;font-weight:400;color:var(--muted)">cx</span></span>
+      </div>
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${s.codigo} · ${funcs}</div>
+    </div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--muted);text-align:center;padding:12px">Sem itens</div>';
+
+  // Produção registrada no Supabase para este full
+  const prodDoFull = PROD_DATA.filter(p => p.full_id === id);
+  const prodPorFunc = {};
+  prodDoFull.forEach(p => {
+    const k = p.funcionario;
+    if (!prodPorFunc[k]) prodPorFunc[k] = { caixas:0, empresa: p.empresa||'' };
+    prodPorFunc[k].caixas += parseInt(p.caixas)||0;
+  });
+  const prodEntries = Object.entries(prodPorFunc).sort((a,b)=>b[1].caixas-a[1].caixas);
+  document.getElementById('fdProdList').innerHTML = prodEntries.length
+    ? prodEntries.map(([nome, d]) => {
+        const av = funcAv(nome);
+        const cor = funcCor(d.empresa||FUNC_INFO[nome]?.empresa||'');
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+          <div class="prod-avatar ${cor}" style="width:28px;height:28px;font-size:10px;flex-shrink:0">${av}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</div>
+            <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${d.empresa||FUNC_INFO[nome]?.empresa||''}</div>
+          </div>
+          <div style="font-family:'DM Mono',monospace;font-size:14px;font-weight:800;color:var(--green);flex-shrink:0">${d.caixas}<span style="font-size:10px;font-weight:400;color:var(--muted)"> cx</span></div>
+        </div>`;
+      }).join('')
+    : '<div style="font-size:12px;color:var(--muted);text-align:center;padding:20px">Nenhuma produção registrada</div>';
+
+  // Barra de progresso
+  const panel = document.getElementById('fullDetalheInline');
+  panel.style.display = '';
+  // Scroll suave até o painel
+  setTimeout(() => panel.scrollIntoView({ behavior:'smooth', block:'nearest' }), 50);
+}
+
+function fecharFullDetalhe() {
+  document.getElementById('fullDetalheInline').style.display = 'none';
+  window._fdFullId = null;
+}
+
 function closeDetail(){document.getElementById('detailPanel').classList.remove('open');}
 
 async function excluirFull(id) {
@@ -3223,7 +3363,6 @@ async function registrarSaida(){
     '1507363246': 'BTMX',
     '765039361':  'Falcom',
     '758791711':  'Octo',
-    '2607113369': 'Logbox',
   };
 
   // Extrai número do pedido (id)
@@ -3249,14 +3388,6 @@ async function registrarSaida(){
     if (mktEl)   mktEl.value   = 'ML';
     if (contaEl) contaEl.value = senderConta;
     if (wrapEl)  wrapEl.style.display = '';
-  }
-
-  // Se é padrão Shopee (BR + dígitos + letra): força Shopee, canal já selecionado pelo funcionário
-  const shopeeMatch = raw.match(/^(BR[0-9]{12,}[A-Z])$/i);
-  if (shopeeMatch && senderConta === null) {
-    market = 'Shopee';
-    const mktEl = document.getElementById('saidaMarket');
-    if (mktEl) { mktEl.value = 'Shopee'; toggleContaField(); }
   }
 
   const galpao=document.getElementById('saidaGalpao').value;
@@ -3309,8 +3440,8 @@ function renderSaidas(){
     : listaFull.length+' pacotes';
 
   // ── Painel por conta ──────────────────────────────
-  const CONTAS = ['FW','BTMX','Falcom','Octo','Logbox'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
+  const CONTAS = ['FW','BTMX','Falcom','Octo'];
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
   const mlTotal = listaFull.filter(s => s.market==='ML').length;
   const porConta = CONTAS.map(c => ({
     label: c,
@@ -3391,8 +3522,8 @@ function filtrarContaHoje(conta) {
 }
 function renderSaidaHistorico(galpao){
   const filtroConta=document.getElementById('histFiltroConta')?.value||'';
-  const CONTAS = ['FW','BTMX','Falcom','Octo','Logbox'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
+  const CONTAS = ['FW','BTMX','Falcom','Octo'];
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao);
   const tbody=document.getElementById('saidaHistBody');
   if(!hist.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--muted)">Sem histórico</td></tr>';return;}
@@ -3506,8 +3637,8 @@ function abrirDetalheDia(data,galpao){
   }
   detalheDiaAtual=pedidos;
 
-  const CONTAS = ['FW','BTMX','Falcom','Octo','Logbox'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
+  const CONTAS = ['FW','BTMX','Falcom','Octo'];
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
 
   document.getElementById('detalheDiaTitulo').textContent='Pedidos — '+data;
   document.getElementById('detalheDiaSub').textContent=galpao+' · '+pedidos.length+' pacotes';
@@ -3591,7 +3722,7 @@ function filtrarDetalheDia(){
 }
 
 function renderDetalheTabela(lista){
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
   const tbody=document.getElementById('detalheBody');
   if(!lista.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
   tbody.innerHTML=lista.map((p,i)=>{
@@ -4847,6 +4978,7 @@ function executarImpressao() {
 // ── Produtividade: estado de filtros ──────────────────────────────────────
 let _prodFiltroEmpresa = '';
 let _prodFiltroMes = ''; // formato YYYY-MM
+let _prodFiltroPeriodo = 'mes'; // 'dia' | 'semana' | 'mes'
 
 function prodGetMesAtual() {
   const d = new Date();
@@ -4861,23 +4993,66 @@ function prodDataToMes(dataStr) {
   return p[2]+'-'+p[1];
 }
 
+// Retorna YYYY-Www (semana ISO) de uma string DD/MM/YYYY
+function prodDataToSemana(dataStr) {
+  if (!dataStr) return '';
+  const p = dataStr.split('/');
+  if (p.length !== 3) return '';
+  const d = new Date(parseInt(p[2]), parseInt(p[1])-1, parseInt(p[0]));
+  const jan4 = new Date(d.getFullYear(), 0, 4);
+  const startOfWeek = new Date(jan4);
+  startOfWeek.setDate(jan4.getDate() - ((jan4.getDay()||7) - 1));
+  const weekNum = Math.ceil(((d - startOfWeek) / 86400000 + 1) / 7);
+  return d.getFullYear()+'-W'+weekNum.toString().padStart(2,'0');
+}
+
+// Semana corrente ISO
+function prodSemanaAtual() {
+  return prodDataToSemana(new Date().toLocaleDateString('pt-BR'));
+}
+
+// Label legível para semana: "Sem. 17 (21/04 – 27/04)"
+function prodSemanaLabel(semStr) {
+  // semStr = YYYY-Www
+  const [ano, ww] = semStr.split('-W');
+  const w = parseInt(ww);
+  // Calcular segunda-feira da semana
+  const jan4 = new Date(parseInt(ano), 0, 4);
+  const seg = new Date(jan4);
+  seg.setDate(jan4.getDate() - ((jan4.getDay()||7) - 1) + (w-1)*7);
+  const sex = new Date(seg); sex.setDate(seg.getDate()+4);
+  const fmt = d => d.getDate().toString().padStart(2,'0')+'/'+(d.getMonth()+1).toString().padStart(2,'0');
+  return `Sem. ${w} (${fmt(seg)} – ${fmt(sex)})`;
+}
+
 function renderProdutividade() {
   populateFuncSelects();
   const hoje = new Date().toLocaleDateString('pt-BR');
   const mesAtual = prodGetMesAtual();
+  const semAtual = prodSemanaAtual();
   if (!_prodFiltroMes) _prodFiltroMes = mesAtual;
 
   // meses disponíveis
   const mesesDisp = [...new Set(PROD_DATA.map(p=>prodDataToMes(p.data)).filter(Boolean))];
-  if (!mesesDisp.includes(_prodFiltroMes)) mesesDisp.push(_prodFiltroMes);
+  if (!mesesDisp.includes(mesAtual)) mesesDisp.push(mesAtual);
   mesesDisp.sort((a,b)=>b.localeCompare(a));
 
-  // filtrar dados
+  // semanas disponíveis
+  const semanasDisp = [...new Set(PROD_DATA.map(p=>prodDataToSemana(p.data)).filter(Boolean))];
+  if (!semanasDisp.includes(semAtual)) semanasDisp.push(semAtual);
+  semanasDisp.sort((a,b)=>b.localeCompare(a));
+
+  // filtrar dados pelo período selecionado
   let dados = PROD_DATA.filter(p => {
-    const mes = prodDataToMes(p.data);
-    if (_prodFiltroMes && mes !== _prodFiltroMes) return false;
     if (_prodFiltroEmpresa && p.empresa !== _prodFiltroEmpresa) return false;
-    return true;
+    if (_prodFiltroPeriodo === 'dia') {
+      return p.data === hoje;
+    } else if (_prodFiltroPeriodo === 'semana') {
+      return prodDataToSemana(p.data) === semAtual;
+    } else {
+      // mes
+      return prodDataToMes(p.data) === _prodFiltroMes;
+    }
   });
 
   // agrupa por funcionário
@@ -4896,21 +5071,52 @@ function renderProdutividade() {
   const nFunc = ranking.length;
   const media = nFunc ? Math.round(totalCaixas/nFunc) : 0;
 
+  // Labels dos cards conforme período
+  const periodoLabel = _prodFiltroPeriodo === 'dia' ? 'hoje' : _prodFiltroPeriodo === 'semana' ? 'esta semana' : 'este mês';
+  document.getElementById('prodLabelTotal').textContent = 'Total caixas ' + periodoLabel;
+  document.getElementById('prodLabelMelhor').textContent = 'Melhor ' + periodoLabel;
   document.getElementById('prodTotalCaixas').textContent = totalCaixas;
   document.getElementById('prodMedia').textContent = media;
   document.getElementById('prodMelhor').textContent = melhor ? melhor[0].split(' ')[0] : '—';
   document.getElementById('prodMelhorSub').textContent = melhor ? melhor[1].caixas+' caixas' : '—';
 
-  // barra de filtros acima do ranking
+  // barra de filtros
   const header = document.getElementById('prodFilterBar');
   if (header) {
     const mesLabel = m => { const [y,mo]=m.split('-'); const meses=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']; return meses[parseInt(mo)-1]+'/'+y; };
+    const btnPeriodo = (key, label) => {
+      const ativo = _prodFiltroPeriodo === key;
+      return `<button onclick="prodSetPeriodo('${key}')" style="padding:4px 12px;border-radius:6px;border:1px solid ${ativo?'var(--logbox)':'var(--border2)'};background:${ativo?'rgba(88,166,255,.08)':'transparent'};color:${ativo?'var(--logbox)':'var(--muted2)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">${label}</button>`;
+    };
+    const btnMes = m => {
+      const ativo = _prodFiltroPeriodo === 'mes' && m === _prodFiltroMes;
+      return `<button onclick="prodSetMes('${m}')" style="padding:4px 10px;border-radius:6px;border:1px solid ${ativo?'var(--logbox)':'var(--border2)'};background:${ativo?'rgba(88,166,255,.08)':'transparent'};color:${ativo?'var(--logbox)':'var(--muted2)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">${mesLabel(m)}${m===mesAtual?' ·':''}</button>`;
+    };
+    const btnEmpresa = e => {
+      const ativo = e === _prodFiltroEmpresa;
+      return `<button onclick="prodSetEmpresa('${e}')" style="padding:4px 10px;border-radius:6px;border:1px solid ${ativo?'var(--logbox)':'var(--border2)'};background:${ativo?'rgba(88,166,255,.08)':'transparent'};color:${ativo?'var(--logbox)':'var(--muted2)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">${e||'Todos'}</button>`;
+    };
+
+    const mesSelector = _prodFiltroPeriodo === 'mes'
+      ? `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px">
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Mês:</span>
+          ${mesesDisp.map(btnMes).join('')}
+        </div>` : '';
+
+    const semLabel = _prodFiltroPeriodo === 'semana'
+      ? `<div style="margin-top:8px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${prodSemanaLabel(semAtual)}</div>` : '';
+
     header.innerHTML = `
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
-        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Mês:</span>
-        ${mesesDisp.map(m=>`<button onclick="prodSetMes('${m}')" style="padding:4px 10px;border-radius:6px;border:1px solid ${m===_prodFiltroMes?'var(--logbox)':'var(--border2)'};background:${m===_prodFiltroMes?'rgba(88,166,255,.08)':'transparent'};color:${m===_prodFiltroMes?'var(--logbox)':'var(--muted2)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">${mesLabel(m)}${m===mesAtual?' ·':''}</button>`).join('')}
-        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-left:8px">Empresa:</span>
-        ${['','LogBox','Fokus'].map(e=>`<button onclick="prodSetEmpresa('${e}')" style="padding:4px 10px;border-radius:6px;border:1px solid ${e===_prodFiltroEmpresa?'var(--logbox)':'var(--border2)'};background:${e===_prodFiltroEmpresa?'rgba(88,166,255,.08)':'transparent'};color:${e===_prodFiltroEmpresa?'var(--logbox)':'var(--muted2)'};font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s">${e||'Todos'}</button>`).join('')}
+      <div style="display:flex;flex-direction:column;gap:0;margin-bottom:14px">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">Período:</span>
+          ${btnPeriodo('dia','Hoje')}
+          ${btnPeriodo('semana','Esta semana')}
+          ${btnPeriodo('mes','Mensal')}
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-left:8px">Empresa:</span>
+          ${['','LogBox','Fokus'].map(btnEmpresa).join('')}
+        </div>
+        ${mesSelector}${semLabel}
       </div>`;
   }
 
@@ -5033,7 +5239,8 @@ async function arquivarPedidosAntigos(){
   console.log('[OUTBOX] Arquivados '+antigos.length+' pedidos com mais de 2 meses');
 }
 
-function prodSetMes(mes) { _prodFiltroMes = mes; renderProdutividade(); }
+function prodSetPeriodo(p) { _prodFiltroPeriodo = p; renderProdutividade(); }
+function prodSetMes(mes) { _prodFiltroMes = mes; _prodFiltroPeriodo = 'mes'; renderProdutividade(); }
 function prodSetEmpresa(e) { _prodFiltroEmpresa = e; renderProdutividade(); }
 
 async function salvarProd() {
