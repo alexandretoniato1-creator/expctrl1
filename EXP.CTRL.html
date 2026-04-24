@@ -743,7 +743,7 @@ select:focus{border-color:var(--accent)}
             <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
             <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option></select></div>
-            <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select></div>
+            <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option><option value="Logbox">Logbox</option></select></div>
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
@@ -816,6 +816,7 @@ select:focus{border-color:var(--accent)}
                     <option value="BTMX">BTMX</option>
                     <option value="Falcom">Falcom</option>
                     <option value="Octo">Octo</option>
+                    <option value="Logbox">Logbox</option>
                   </select>
                   <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="sHojeCount">8 pacotes</span>
                   <button class="btn btn-ghost btn-sm" id="btnImprimirHoje" style="color:var(--accent);border-color:rgba(255,255,255,.12)">🖨 Imprimir</button>
@@ -1341,6 +1342,7 @@ select:focus{border-color:var(--accent)}
         <option value="BTMX">BTMX</option>
         <option value="Falcom">Falcom</option>
         <option value="Octo">Octo</option>
+        <option value="Logbox">Logbox</option>
       </select>
     </div>
     <div style="max-height:340px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)">
@@ -3221,6 +3223,7 @@ async function registrarSaida(){
     '1507363246': 'BTMX',
     '765039361':  'Falcom',
     '758791711':  'Octo',
+    '2607113369': 'Logbox',
   };
 
   // Extrai número do pedido (id)
@@ -3246,6 +3249,14 @@ async function registrarSaida(){
     if (mktEl)   mktEl.value   = 'ML';
     if (contaEl) contaEl.value = senderConta;
     if (wrapEl)  wrapEl.style.display = '';
+  }
+
+  // Se é padrão Shopee (BR + dígitos + letra): força Shopee, canal já selecionado pelo funcionário
+  const shopeeMatch = raw.match(/^(BR[0-9]{12,}[A-Z])$/i);
+  if (shopeeMatch && senderConta === null) {
+    market = 'Shopee';
+    const mktEl = document.getElementById('saidaMarket');
+    if (mktEl) { mktEl.value = 'Shopee'; toggleContaField(); }
   }
 
   const galpao=document.getElementById('saidaGalpao').value;
@@ -3298,8 +3309,8 @@ function renderSaidas(){
     : listaFull.length+' pacotes';
 
   // ── Painel por conta ──────────────────────────────
-  const CONTAS = ['FW','BTMX','Falcom','Octo'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTAS = ['FW','BTMX','Falcom','Octo','Logbox'];
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
   const mlTotal = listaFull.filter(s => s.market==='ML').length;
   const porConta = CONTAS.map(c => ({
     label: c,
@@ -3380,8 +3391,8 @@ function filtrarContaHoje(conta) {
 }
 function renderSaidaHistorico(galpao){
   const filtroConta=document.getElementById('histFiltroConta')?.value||'';
-  const CONTAS = ['FW','BTMX','Falcom','Octo'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTAS = ['FW','BTMX','Falcom','Octo','Logbox'];
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao);
   const tbody=document.getElementById('saidaHistBody');
   if(!hist.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--muted)">Sem histórico</td></tr>';return;}
@@ -3495,8 +3506,8 @@ function abrirDetalheDia(data,galpao){
   }
   detalheDiaAtual=pedidos;
 
-  const CONTAS = ['FW','BTMX','Falcom','Octo'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTAS = ['FW','BTMX','Falcom','Octo','Logbox'];
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
 
   document.getElementById('detalheDiaTitulo').textContent='Pedidos — '+data;
   document.getElementById('detalheDiaSub').textContent=galpao+' · '+pedidos.length+' pacotes';
@@ -3580,7 +3591,7 @@ function filtrarDetalheDia(){
 }
 
 function renderDetalheTabela(lista){
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)', Logbox:'var(--red)' };
   const tbody=document.getElementById('detalheBody');
   if(!lista.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
   tbody.innerHTML=lista.map((p,i)=>{
