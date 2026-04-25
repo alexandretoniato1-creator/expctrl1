@@ -1542,7 +1542,7 @@ select:focus{border-color:var(--accent)}
       </div>
     </div>
     <div class="scanner-result-flash" id="scannerFlash"></div>
-    <div class="scanner-hint">Aponte a câmera para o QR Code do pedido</div>
+    <div class="scanner-hint">Bipe contínuo — cada QR lido é registrado automaticamente</div>
   </div>
   <div class="scanner-status" id="scannerStatus">Iniciando câmera…</div>
 </div>
@@ -6422,8 +6422,6 @@ async function abrirScanner() {
 
     status.textContent = 'Aponte para o QR Code…';
     _tickScan(video);
-
-  } catch(err) {
     if(err.name === 'NotAllowedError'){
       status.textContent = '❌ Permissão de câmera negada. Libere nas configurações do browser.';
     } else {
@@ -6457,31 +6455,52 @@ function _tickScan(video) {
 
 function onCodigoLido(codigo) {
   if(!_scannerActive) return;
-  _scannerActive = false;
+  _scannerActive = false; // pausa leitura durante processamento
 
   // Flash visual
   const flash = document.getElementById('scannerFlash');
   flash.classList.add('flash');
-  setTimeout(()=>flash.classList.remove('flash'), 300);
-
-  document.getElementById('scannerStatus').textContent = '✅ QR lido: ' + codigo;
+  setTimeout(()=>flash.classList.remove('flash'), 200);
 
   // Vibração haptica
-  if(navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  if(navigator.vibrate) navigator.vibrate(80);
 
+  // Preenche campo e registra
+  const campo = document.getElementById('saidaBipe');
+  if(campo) campo.value = codigo;
+
+  // Chama registrarSaida e aguarda resultado
+  const sucesso = _registrarSaidaSilencioso(codigo);
+
+  const status = document.getElementById('scannerStatus');
+  if(sucesso !== false) {
+    status.textContent = '✅ ' + codigo.slice(-8) + ' — registrado!';
+    status.style.color = 'var(--green)';
+  } else {
+    status.textContent = '⚠️ ' + codigo.slice(-8) + ' — verifique o pedido';
+    status.style.color = 'var(--orange)';
+  }
+
+  // Reativa leitura após 1.2s — tempo suficiente pra ver o feedback
   setTimeout(()=>{
-    fecharScanner();
+    status.style.color = '';
+    status.textContent = 'Aponte para o próximo QR Code…';
+    _scannerActive = true;
+    const video = document.getElementById('scannerVideo');
+    if(video && _scannerStream) _tickScan(video);
+  }, 1200);
+}
 
+// Registra sem fechar scanner, retorna false se falhou
+function _registrarSaidaSilencioso(num) {
+  try {
     const campo = document.getElementById('saidaBipe');
-    if(campo) {
-      campo.value = codigo;
-      campo.style.borderColor = 'var(--green)';
-      setTimeout(()=>{ campo.style.borderColor='var(--border2)'; }, 1200);
-    }
-
-    showToast('📷 QR lido — registrando…');
-    setTimeout(()=>registrarSaida(), 200);
-  }, 500);
+    if(campo) campo.value = num;
+    registrarSaida();
+    return true;
+  } catch(e) {
+    return false;
+  }
 }
 
 function fecharScanner() {
