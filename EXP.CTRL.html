@@ -1300,6 +1300,10 @@ select:focus{border-color:var(--accent)}
                 <button class="ins-tab-btn" id="insTab-movimentacoes" onclick="insSwitchTab('movimentacoes',this)">Movimentações</button>
                 <button class="ins-tab-btn" id="insTab-historico" onclick="insSwitchTab('historico',this)">Histórico</button>
               </div>
+              <select id="insGalpaoSelect" class="ins-mes-select" onchange="insRenderEstoque();insRenderMovimentacoes();insPopularFiltros()">
+                <option value="LogBox">LogBox</option>
+                <option value="Fokus">Fokus</option>
+              </select>
               <select id="insMesSelect" class="ins-mes-select" onchange="insCarregarMes()"></select>
             </div>
             <div class="ins-topbar-right">
@@ -1869,6 +1873,13 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title"><span id="modalInsProdTitulo">Novo Produto</span> <button class="modal-close" onclick="closeModal('modalInsProduto')">✕</button></div>
     <input type="hidden" id="insProdId">
     <div class="form-group" style="margin-bottom:12px">
+      <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Galpão</label>
+      <select id="insProdGalpao" class="form-sel" style="width:100%;font-size:13px">
+        <option value="LogBox">LogBox</option>
+        <option value="Fokus">Fokus</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:12px">
       <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Nome do produto</label>
       <input id="insProdNome" class="form-sel" style="width:100%;font-size:13px" placeholder="Ex: SACOLA 20X30">
     </div>
@@ -2074,7 +2085,7 @@ const db = {
 
       SEMANAS_HIST = semanasHist||[];
       FUNCIONARIOS_DATA = (funcionariosDb||[]).map(f => ({ _id: f.id, nome: f.nome, empresa: f.empresa }));
-      INS_PRODUTOS = (insProdutosDb||[]).map(p => ({ _id: p.id, nome: p.nome, estoqueMinimo: p.estoque_minimo||0, ativo: p.ativo }));
+      INS_PRODUTOS = (insProdutosDb||[]).map(p => ({ _id: p.id, nome: p.nome, estoqueMinimo: p.estoque_minimo||0, ativo: p.ativo, galpao: p.galpao||'Fokus' }));
       PROD_DATA = (prodData||[]).map(p => ({
         _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
         produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
@@ -6105,13 +6116,16 @@ function insEstoqueAtual(prodId) {
 function insRenderEstoque() {
   const grid = document.getElementById('insGrid');
   const banner = document.getElementById('insAlertasBanner');
-  if (!INS_PRODUTOS.length) {
-    grid.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:40px">Nenhum produto cadastrado. Clique em "+ Produto" para começar.</div>';
+  const galpao = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
+  const produtos = INS_PRODUTOS.filter(p => p.galpao === galpao);
+
+  if (!produtos.length) {
+    grid.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:40px">Nenhum produto cadastrado para '+galpao+'. Clique em "+ Produto" para começar.</div>';
     banner.innerHTML = '';
     return;
   }
   const alertas = [];
-  grid.innerHTML = INS_PRODUTOS.map(p => {
+  grid.innerHTML = produtos.map(p => {
     const reg   = INS_MESES.find(m => m.produto_id === p._id);
     const atual = reg ? reg.estoque_atual : 0;
     const min   = p.estoqueMinimo;
@@ -6144,18 +6158,21 @@ function insRenderEstoque() {
 
 // ── Movimentações ─────────────────────────────────────
 function insPopularFiltros() {
+  const galpao = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
+  const produtosFiltrados = INS_PRODUTOS.filter(p => p.galpao === galpao);
+
   // filtro por produto em Movimentações
   const selProd = document.getElementById('insMovFiltroProd');
   if (selProd) {
     const cur = selProd.value;
     selProd.innerHTML = '<option value="">Todos os produtos</option>' +
-      INS_PRODUTOS.map(p=>`<option value="${p._id}"${String(p._id)===cur?'selected':''}>${p.nome}</option>`).join('');
+      produtosFiltrados.map(p=>`<option value="${p._id}"${String(p._id)===cur?'selected':''}>${p.nome}</option>`).join('');
   }
   // select do histórico
   const selHist = document.getElementById('insHistProdSelect');
   if (selHist) {
     const curH = selHist.value;
-    selHist.innerHTML = INS_PRODUTOS.map(p=>`<option value="${p._id}"${String(p._id)===curH?'selected':''}>${p.nome}</option>`).join('');
+    selHist.innerHTML = produtosFiltrados.map(p=>`<option value="${p._id}"${String(p._id)===curH?'selected':''}>${p.nome}</option>`).join('');
   }
   // select de funcionário nos modais
   const selFunc = document.getElementById('insMovFunc');
@@ -6166,10 +6183,12 @@ function insPopularFiltros() {
 }
 
 function insRenderMovimentacoes() {
+  const galpao     = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
   const filtroTipo = document.getElementById('insMovFiltroTipo')?.value || '';
   const filtroProd = document.getElementById('insMovFiltroProd')?.value || '';
-  const lista = document.getElementById('insMovLista');
-  let movs = [...INS_MOVS];
+  const lista      = document.getElementById('insMovLista');
+  const idsGalpao  = new Set(INS_PRODUTOS.filter(p => p.galpao === galpao).map(p => p._id));
+  let movs = INS_MOVS.filter(m => idsGalpao.has(m.produto_id));
   if (filtroTipo) movs = movs.filter(m => m.tipo === filtroTipo);
   if (filtroProd) movs = movs.filter(m => String(m.produto_id) === filtroProd);
   if (!movs.length) {
@@ -6245,12 +6264,16 @@ async function insConfirmarMov() {
 // ── Modal: Produto ────────────────────────────────────
 function insAbrirModalProduto(id) {
   const p = id ? INS_PRODUTOS.find(x => x._id === id) : null;
-  document.getElementById('insProdId').value           = id || '';
+  // pré-seleciona galpão atual se novo produto
+  const galpaoAtual = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
+  document.getElementById('insProdId').value             = id || '';
   document.getElementById('modalInsProdTitulo').textContent = p ? 'Editar Produto' : 'Novo Produto';
-  document.getElementById('insProdNome').value          = p ? p.nome : '';
-  document.getElementById('insProdMin').value           = p ? p.estoqueMinimo : '';
-  document.getElementById('insProdInicial').value       = '';
-  document.getElementById('insProdInicial').disabled    = !!p;
+  document.getElementById('insProdGalpao').value         = p ? p.galpao : galpaoAtual;
+  document.getElementById('insProdGalpao').disabled      = !!p; // não deixa mudar galpão de produto existente
+  document.getElementById('insProdNome').value           = p ? p.nome : '';
+  document.getElementById('insProdMin').value            = p ? p.estoqueMinimo : '';
+  document.getElementById('insProdInicial').value        = '';
+  document.getElementById('insProdInicial').disabled     = !!p;
   document.getElementById('insProdBtnExcluir').style.display = p ? 'inline-flex' : 'none';
   openModal('modalInsProduto');
 }
@@ -6260,20 +6283,20 @@ async function insSalvarProduto() {
   const nome   = document.getElementById('insProdNome').value.trim().toUpperCase();
   const min    = parseInt(document.getElementById('insProdMin').value) || 0;
   const inicial= parseInt(document.getElementById('insProdInicial').value) || 0;
+  const galpao = document.getElementById('insProdGalpao').value || 'Fokus';
   if (!nome) { showToast('⚠️ Informe o nome do produto'); return; }
 
   if (id) {
-    // Editar
+    // Editar — galpão não muda
     const { error } = await _sb.from('insumos_produtos').update({ nome, estoque_minimo: min }).eq('id', parseInt(id));
     if (error) { showToast('⚠️ Erro ao salvar'); return; }
     const p = INS_PRODUTOS.find(x => x._id === parseInt(id));
     if (p) { p.nome = nome; p.estoqueMinimo = min; }
   } else {
-    // Criar
-    const { data, error } = await _sb.from('insumos_produtos').insert({ nome, estoque_minimo: min, ativo: true }).select().single();
+    // Criar com galpão
+    const { data, error } = await _sb.from('insumos_produtos').insert({ nome, estoque_minimo: min, ativo: true, galpao }).select().single();
     if (error) { showToast('⚠️ Erro ao criar produto'); return; }
-    INS_PRODUTOS.push({ _id: data.id, nome, estoqueMinimo: min, ativo: true });
-    // cria registro do mês com estoque inicial
+    INS_PRODUTOS.push({ _id: data.id, nome, estoqueMinimo: min, ativo: true, galpao });
     if (inicial > 0) {
       await _sb.from('insumos_meses').insert({ mes: INS_MES_ATUAL, produto_id: data.id, estoque_inicial: inicial, estoque_atual: inicial });
     }
@@ -6393,8 +6416,8 @@ async function insRenderHistorico() {
 function insRenderDashCard() {
   const el = document.getElementById('dashInsumosCard');
   if (!el || !INS_PRODUTOS.length) return;
-  // garante dados do mês atual
   const mesSel = insMesAtual();
+  // Dashboard mostra alertas de todos os galpões
   const alertas = INS_PRODUTOS.filter(p => {
     const reg = INS_MESES.find(m => m.produto_id === p._id && m.mes === mesSel);
     const atual = reg ? reg.estoque_atual : 0;
@@ -6413,8 +6436,9 @@ function insRenderDashCard() {
       ? alertas.slice(0,4).map(p => {
           const reg = INS_MESES.find(m => m.produto_id === p._id && m.mes === mesSel);
           const atual = reg ? reg.estoque_atual : 0;
-          return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border)">
-            <span style="color:var(--text)">${p.nome}</span>
+          const galpaoCor = p.galpao==='LogBox' ? 'var(--logbox)' : 'var(--fokus)';
+          return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border);align-items:center">
+            <span style="color:var(--text)">${p.nome} <span style="font-size:9px;color:${galpaoCor};font-family:'DM Mono',monospace">${p.galpao}</span></span>
             <span style="font-family:'DM Mono',monospace;color:var(--red)">${atual.toLocaleString('pt-BR')}</span>
           </div>`;
         }).join('') + (alertas.length > 4 ? `<div style="font-size:10px;color:var(--muted);text-align:center;padding-top:4px">+${alertas.length-4} outros</div>` : '')
