@@ -6422,6 +6422,8 @@ async function abrirScanner() {
 
     status.textContent = 'Aponte para o QR Code…';
     _tickScan(video);
+
+  } catch(err) {
     if(err.name === 'NotAllowedError'){
       status.textContent = '❌ Permissão de câmera negada. Libere nas configurações do browser.';
     } else {
