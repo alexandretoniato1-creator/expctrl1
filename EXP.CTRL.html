@@ -412,8 +412,8 @@ select:focus{border-color:var(--accent)}
 .hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);background:var(--text)}
 
 /* ── SIDEBAR OVERLAY ──────────────────────────── */
-.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:299;backdrop-filter:blur(2px);opacity:0;transition:opacity .25s ease}
-.sidebar-overlay.visible{opacity:1}
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:299;backdrop-filter:blur(2px);opacity:0;transition:opacity .25s ease;pointer-events:none}
+.sidebar-overlay.visible{opacity:1;pointer-events:auto}
 
 /* ── MOBILE TOPBAR TITLE (full name) ─────────── */
 .topbar-mobile-title{display:none;font-size:14px;font-weight:800;letter-spacing:-.3px;color:var(--text)}
@@ -490,7 +490,7 @@ select:focus{border-color:var(--accent)}
     box-shadow:4px 0 24px rgba(0,0,0,.5);
   }
   .sidebar.mobile-open{transform:translateX(0)}
-  .sidebar-overlay{display:block}
+  .sidebar-overlay{display:block;pointer-events:none}
 
   /* ── Main: tela toda ──────────────────────── */
   .main{
