@@ -2334,7 +2334,6 @@ function renderCalMobile(){
   const fulls = Object.values(FULLS_DATA || {});
   const filtroEmpresa = document.getElementById('calFiltroEmpresa')?.value||'';
 
-  // Status filter bar
   const statuses = ['', 'Pendente', 'Produzindo', 'Em conferência', 'Pronto', 'Atrasado'];
   const statusLabels = {'':'Todos','Pendente':'Pendente','Produzindo':'Produzindo','Em conferência':'Conferência','Pronto':'Pronto','Atrasado':'Atrasado'};
 
@@ -2342,57 +2341,130 @@ function renderCalMobile(){
   if(filtroEmpresa) filtered = filtered.filter(f=>f.empresa===filtroEmpresa);
   if(_calMobileFilter) filtered = filtered.filter(f=>f.status===_calMobileFilter);
 
-  // Sort: atrasados e produzindo primeiro
+  // ── Helpers de data ───────────────────────────────
+  // agendado pode ser "DD/MM/YYYY" ou "YYYY-MM-DD" ou ""
+  function parseAgendado(ag) {
+    if(!ag) return null;
+    if(ag.includes('-')) {
+      // YYYY-MM-DD
+      const [y,m,d] = ag.split('-');
+      if(!y||!m||!d) return null;
+      return new Date(+y, +m-1, +d);
+    } else if(ag.includes('/')) {
+      // DD/MM/YYYY
+      const [d,m,y] = ag.split('/');
+      if(!d||!m||!y) return null;
+      return new Date(+y, +m-1, +d);
+    }
+    return null;
+  }
+
+  function fmtAgendado(ag) {
+    const dt = parseAgendado(ag);
+    if(!dt) return '—';
+    const dias = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+    return `${dias[dt.getDay()]} ${String(dt.getDate()).padStart(2,'0')}/${String(dt.getMonth()+1).padStart(2,'0')}`;
+  }
+
+  function agendadoTimestamp(ag) {
+    const dt = parseAgendado(ag);
+    return dt ? dt.getTime() : Infinity;
+  }
+
+  function agendadoGroupKey(ag) {
+    const dt = parseAgendado(ag);
+    if(!dt) return 'sem-data';
+    return dt.toISOString().slice(0,10); // YYYY-MM-DD para ordenar
+  }
+
+  function agendadoGroupLabel(ag) {
+    const dt = parseAgendado(ag);
+    if(!dt) return 'Sem data definida';
+    const hoje = new Date(); hoje.setHours(0,0,0,0);
+    const amanha = new Date(hoje); amanha.setDate(hoje.getDate()+1);
+    const dtOnly = new Date(dt); dtOnly.setHours(0,0,0,0);
+    const diasSemana = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+    const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const diff = Math.round((dtOnly-hoje)/(1000*60*60*24));
+    let prefixo = '';
+    if(diff < 0)        prefixo = '⚠️ Atrasado · ';
+    else if(diff === 0) prefixo = '📍 Hoje · ';
+    else if(diff === 1) prefixo = '🔜 Amanhã · ';
+    return `${prefixo}${diasSemana[dt.getDay()]}, ${String(dt.getDate()).padStart(2,'0')} ${meses[dt.getMonth()]}`;
+  }
+
+  // Sort por data
+  const orderStatus = {Atrasado:0,Produzindo:1,'Em conferência':2,Pendente:3,Pronto:4};
   filtered.sort((a,b)=>{
-    const order = {Atrasado:0,Produzindo:1,'Em conferência':2,Pendente:3,Pronto:4};
-    const oa = order[a.status]??5, ob = order[b.status]??5;
-    if(oa!==ob) return oa-ob;
-    return (a.agendado||'').localeCompare(b.agendado||'');
+    const ta = agendadoTimestamp(a.agendado), tb = agendadoTimestamp(b.agendado);
+    if(ta !== tb) return ta - tb;
+    const oa = orderStatus[a.status]??5, ob = orderStatus[b.status]??5;
+    return oa - ob;
   });
 
+  // Filtros
   const filtersHtml = `<div class="cal-mobile-filters">
     ${statuses.map(s=>`<button class="cal-mobile-filter-btn${_calMobileFilter===s?' active':''}" onclick="setCalMobileFilter('${s}')">${statusLabels[s]}</button>`).join('')}
   </div>`;
 
-  const statusSlug = s => s.toLowerCase().replace(/\s/g,'-').replace(/ê/,'e');
-  
   if(!filtered.length){
     container.innerHTML = filtersHtml + '<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;font-family:\'DM Mono\',monospace">Nenhum full encontrado</div>';
     return;
   }
 
-  const cards = filtered.map(f => {
-    const itens = f.itens||[];
-    const done = itens.filter(i=>i.status==='done').length;
-    const total = itens.length;
-    const pct = total>0 ? Math.round(done/total*100) : 0;
-    const progClass = pct===100?'done':pct>0?'warn':'ok';
-    const slug = statusSlug(f.status||'pendente');
-    const empresa = f.empresa||'';
-    const empClass = empresa==='LogBox'?'empresa-logbox':'empresa-fokus';
-    const agendado = f.agendado ? (() => {
-      const [y,m,d] = f.agendado.split('-');
-      return `${d}/${m}`;
-    })() : '—';
-    return `<div class="cal-mobile-card status-${slug}" onclick="calMobileOpenFull('${f.id}')">
-      <div class="cal-mobile-card-top">
-        <div class="cal-mobile-card-id">${f.id}</div>
-        <div class="cal-mobile-card-date">📅 ${agendado}</div>
-      </div>
-      <div class="cal-mobile-card-info">
-        <span class="cal-full-empresa ${empClass}">${empresa}</span>
-        <span class="cal-mobile-card-dest">${f.destino||'—'}</span>
-      </div>
-      <div class="cal-mobile-card-meta">
-        <div class="cal-mobile-prog">
-          <div class="cal-mobile-prog-fill ${progClass}" style="width:${pct}%"></div>
-        </div>
-        <span class="cal-mobile-qty">${done}/${total} itens · <span class="badge b-${slug==='pronto'?'done':slug==='atrasado'?'red':slug==='produzindo'?'doing':slug==='em-conferencia'?'purple':'pending'}">${f.status||'Pendente'}</span></span>
-      </div>
-    </div>`;
-  }).join('');
+  // Agrupa por dia
+  const groups = {};
+  const groupOrder = [];
+  filtered.forEach(f => {
+    const key = agendadoGroupKey(f.agendado);
+    if(!groups[key]) { groups[key] = []; groupOrder.push(key); }
+    groups[key].push(f);
+  });
 
-  container.innerHTML = filtersHtml + cards;
+  const statusSlug = s => (s||'pendente').toLowerCase().replace(/\s/g,'-').replace(/[êéè]/g,'e').replace(/[ã]/g,'a');
+  const badgeClass = slug => slug==='pronto'?'b-done':slug==='atrasado'?'b-red':slug==='produzindo'?'b-doing':slug==='em-conferencia'||slug==='em-confer-ncia'?'b-purple':'b-pending';
+
+  let html = filtersHtml;
+
+  groupOrder.forEach(key => {
+    const group = groups[key];
+    const label = agendadoGroupLabel(group[0].agendado);
+    const isAtrasado = label.includes('Atrasado');
+    const isHoje = label.includes('Hoje');
+
+    html += `<div class="cal-mobile-day-header" style="${isAtrasado?'color:var(--red);border-color:rgba(248,81,73,.3)':isHoje?'color:var(--accent);border-color:rgba(255,255,255,.2)':''}">${label} <span style="font-size:10px;opacity:.6">${group.length} full${group.length>1?'s':''}</span></div>`;
+
+    group.forEach(f => {
+      const itens = f.itens||[];
+      const done  = itens.filter(i=>i.status==='done').length;
+      const total = itens.length;
+      const pct   = total>0 ? Math.round(done/total*100) : 0;
+      const progClass = pct===100?'done':pct>0?'warn':'ok';
+      const slug  = statusSlug(f.status||'Pendente');
+      const empresa = f.empresa||'';
+      const empClass = empresa==='LogBox'?'empresa-logbox':'empresa-fokus';
+      const dataFmt = fmtAgendado(f.agendado);
+
+      html += `<div class="cal-mobile-card status-${slug}" onclick="calMobileOpenFull('${f.id}')">
+        <div class="cal-mobile-card-top">
+          <div class="cal-mobile-card-id">${f.id}</div>
+          <div class="cal-mobile-card-date">📅 ${dataFmt}</div>
+        </div>
+        <div class="cal-mobile-card-info">
+          <span class="cal-full-empresa ${empClass}">${empresa}</span>
+          <span class="cal-mobile-card-dest">${f.destino||'—'}</span>
+        </div>
+        <div class="cal-mobile-card-meta">
+          <div class="cal-mobile-prog">
+            <div class="cal-mobile-prog-fill ${progClass}" style="width:${pct}%"></div>
+          </div>
+          <span class="cal-mobile-qty">${done}/${total} itens · <span class="badge ${badgeClass(slug)}">${f.status||'Pendente'}</span></span>
+        </div>
+      </div>`;
+    });
+  });
+
+  container.innerHTML = html;
 }
 
 function setCalMobileFilter(status){
