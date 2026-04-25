@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -1160,7 +1160,7 @@ select:focus{border-color:var(--accent)}
               </div>
               <div style="display:flex;gap:8px;align-items:center">
                 <input type="text" id="saidaBipe" placeholder="Ex: 12345678901234567" style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:11px 13px;outline:none;transition:border-color .15s" onkeydown="if(event.key==='Enter')registrarSaida()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-                <button class="btn-camera" onclick="abrirScanner()" title="Escanear código de barras">📷</button>
+                <button class="btn-camera" onclick="abrirScanner()" title="Escanear QR Code">📷</button>
               </div>
             </div>
             <button class="btn btn-primary" onclick="registrarSaida()" style="height:44px;padding:0 18px">Registrar</button>
@@ -1529,7 +1529,7 @@ select:focus{border-color:var(--accent)}
 <!-- ══ SCANNER DE CÂMERA ══ -->
 <div class="scanner-overlay" id="scannerOverlay">
   <div class="scanner-header">
-    <div class="scanner-title">📷 Escanear código de barras</div>
+    <div class="scanner-title">📷 Escanear QR Code</div>
     <button class="scanner-close" onclick="fecharScanner()">✕</button>
   </div>
   <div class="scanner-viewport">
@@ -1542,7 +1542,7 @@ select:focus{border-color:var(--accent)}
       </div>
     </div>
     <div class="scanner-result-flash" id="scannerFlash"></div>
-    <div class="scanner-hint">Aponte a câmera para o código de barras do pedido</div>
+    <div class="scanner-hint">Aponte a câmera para o QR Code do pedido</div>
   </div>
   <div class="scanner-status" id="scannerStatus">Iniciando câmera…</div>
 </div>
@@ -6386,11 +6386,13 @@ function insRenderDashCard() {
 }
 
 // ══════════════════════════════════════════════════════
-// SCANNER DE CÂMERA — ZXing
+// SCANNER DE QR CODE — jsQR (canvas polling)
 // ══════════════════════════════════════════════════════
-let _scannerReader = null;
-let _scannerStream = null;
-let _scannerActive = false;
+let _scannerStream   = null;
+let _scannerAnimId   = null;
+let _scannerActive   = false;
+let _scannerCanvas   = null;
+let _scannerCtx      = null;
 
 async function abrirScanner() {
   const overlay = document.getElementById('scannerOverlay');
@@ -6398,55 +6400,31 @@ async function abrirScanner() {
   overlay.classList.add('open');
   _scannerActive = true;
 
-  // Verifica suporte
   if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
-    status.textContent = '❌ Câmera não suportada neste browser. Use Chrome ou Safari.';
+    status.textContent = '❌ Câmera não suportada. Use Chrome ou Safari atualizado.';
     return;
   }
 
   try {
     status.textContent = 'Iniciando câmera…';
 
-    // Pede câmera traseira
     _scannerStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width:{ideal:1280}, height:{ideal:720} }
+      video: { facingMode: { ideal:'environment' }, width:{ideal:1280}, height:{ideal:720} }
     });
 
     const video = document.getElementById('scannerVideo');
     video.srcObject = _scannerStream;
     await video.play();
 
-    status.textContent = 'Câmera ativa — aponte para o código';
+    // Canvas oculto para captura de frames
+    _scannerCanvas = document.createElement('canvas');
+    _scannerCtx    = _scannerCanvas.getContext('2d', { willReadFrequently: true });
 
-    // Inicia leitura com ZXing
-    if(window.ZXing) {
-      const hints = new Map();
-      const formats = [
-        ZXing.BarcodeFormat.CODE_128,
-        ZXing.BarcodeFormat.CODE_39,
-        ZXing.BarcodeFormat.EAN_13,
-        ZXing.BarcodeFormat.EAN_8,
-        ZXing.BarcodeFormat.QR_CODE,
-        ZXing.BarcodeFormat.ITF,
-        ZXing.BarcodeFormat.DATA_MATRIX,
-      ];
-      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
-      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-
-      _scannerReader = new ZXing.BrowserMultiFormatReader(hints);
-      _scannerReader.decodeFromVideoElement(video, (result, err) => {
-        if(!_scannerActive) return;
-        if(result) {
-          onCodigoLido(result.getText());
-        }
-      });
-    } else {
-      // Fallback: polling manual com canvas
-      _scannerPollCanvas();
-    }
+    status.textContent = 'Aponte para o QR Code…';
+    _tickScan(video);
 
   } catch(err) {
-    if(err.name === 'NotAllowedError') {
+    if(err.name === 'NotAllowedError'){
       status.textContent = '❌ Permissão de câmera negada. Libere nas configurações do browser.';
     } else {
       status.textContent = '❌ Erro ao acessar câmera: ' + err.message;
@@ -6454,32 +6432,46 @@ async function abrirScanner() {
   }
 }
 
-function _scannerPollCanvas() {
-  // Fallback sem ZXing: apenas mostra aviso
-  document.getElementById('scannerStatus').textContent =
-    '⚠️ Biblioteca de leitura não carregou. Digite o código manualmente.';
+function _tickScan(video) {
+  if(!_scannerActive) return;
+
+  if(video.readyState === video.HAVE_ENOUGH_DATA) {
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if(w && h) {
+      _scannerCanvas.width  = w;
+      _scannerCanvas.height = h;
+      _scannerCtx.drawImage(video, 0, 0, w, h);
+      const imageData = _scannerCtx.getImageData(0, 0, w, h);
+
+      const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
+      if(code && code.data) {
+        onCodigoLido(code.data);
+        return; // para o loop
+      }
+    }
+  }
+
+  _scannerAnimId = requestAnimationFrame(() => _tickScan(video));
 }
 
 function onCodigoLido(codigo) {
   if(!_scannerActive) return;
-  _scannerActive = false; // evita leitura dupla
+  _scannerActive = false;
 
   // Flash visual
   const flash = document.getElementById('scannerFlash');
   flash.classList.add('flash');
   setTimeout(()=>flash.classList.remove('flash'), 300);
 
-  // Feedback de status
-  document.getElementById('scannerStatus').textContent = '✅ Lido: ' + codigo;
+  document.getElementById('scannerStatus').textContent = '✅ QR lido: ' + codigo;
 
-  // Vibração haptica se suportado
+  // Vibração haptica
   if(navigator.vibrate) navigator.vibrate([80, 40, 80]);
 
-  // Pequeno delay para o usuário ver o feedback, depois fecha e registra
   setTimeout(()=>{
     fecharScanner();
 
-    // Preenche o campo de bipe
     const campo = document.getElementById('saidaBipe');
     if(campo) {
       campo.value = codigo;
@@ -6487,36 +6479,27 @@ function onCodigoLido(codigo) {
       setTimeout(()=>{ campo.style.borderColor='var(--border2)'; }, 1200);
     }
 
-    // Registra automaticamente
-    showToast('📷 Código lido — registrando…');
+    showToast('📷 QR lido — registrando…');
     setTimeout(()=>registrarSaida(), 200);
-
-  }, 600);
+  }, 500);
 }
 
 function fecharScanner() {
   _scannerActive = false;
-  const overlay = document.getElementById('scannerOverlay');
-  overlay.classList.remove('open');
 
-  // Para a câmera
-  if(_scannerReader) {
-    try { _scannerReader.reset(); } catch(e){}
-    _scannerReader = null;
-  }
-  if(_scannerStream) {
-    _scannerStream.getTracks().forEach(t=>t.stop());
-    _scannerStream = null;
-  }
+  if(_scannerAnimId){ cancelAnimationFrame(_scannerAnimId); _scannerAnimId = null; }
+  if(_scannerStream){ _scannerStream.getTracks().forEach(t=>t.stop()); _scannerStream = null; }
+
   const video = document.getElementById('scannerVideo');
-  if(video) { video.srcObject = null; }
+  if(video) video.srcObject = null;
+
+  const overlay = document.getElementById('scannerOverlay');
+  if(overlay) overlay.classList.remove('open');
+
   document.getElementById('scannerStatus').textContent = 'Iniciando câmera…';
 }
 
-// Fecha scanner com botão voltar do celular
-document.addEventListener('keydown', e => {
-  if(e.key === 'Escape') fecharScanner();
-});
+document.addEventListener('keydown', e => { if(e.key==='Escape') fecharScanner(); });
 
 // ══════════════════════════════════════════════════════
 // SAÍDAS MOBILE — lista de cards no lugar da tabela
