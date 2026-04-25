@@ -3370,7 +3370,7 @@ function _openDetailPanel(id) {
       </div>
       <div style="display:flex;gap:8px">
         <button class="btn btn-primary" style="flex:1;justify-content:center;display:flex" onclick="openEditFull('${f.id}')">✏️ Editar</button>
-        ${f.status!=='Pronto'?`<button class="btn btn-ghost" style="flex:1;justify-content:center;display:flex" onclick="abrirChecklist('${f.id}')">◎ Conferência</button>`:''}
+        ${f.status!=='Pronto'?`<button class="btn btn-ghost" style="flex:1;justify-content:center;display:flex" onclick="confIniciarPorFullId('${f.id}')">📦 Conferência</button>`:''}
       </div>
       <button class="btn btn-ghost" style="width:100%;margin-top:8px;justify-content:center;display:flex;padding:8px;color:var(--accent);border-color:rgba(255,255,255,.12)" onclick="closeDetail();abrirImpressao('${f.id}')">🖨 Imprimir Comprovante de Envio</button>
       <button class="btn-danger-sm" style="width:100%;margin-top:8px;justify-content:center;display:flex;padding:8px" onclick="excluirFull('${f.id}')">🗑 Excluir este Full</button>
@@ -3394,7 +3394,11 @@ function openFullDetalheInline(id) {
 
   document.getElementById('fdBtnEditar').onclick = () => openEditFull(id);
   const btnConf = document.getElementById('fdBtnConferencia');
-  if (f.status === 'Pronto') { btnConf.style.display = 'none'; } else { btnConf.style.display = ''; btnConf.onclick = () => abrirChecklist(id); }
+  if (f.status === 'Pronto') { btnConf.style.display = 'none'; } else {
+    btnConf.style.display = '';
+    btnConf.textContent = '📦 Conferência';
+    btnConf.onclick = () => confAbrirScanner(id, totalCaixas);
+  }
 
   // Stats
   document.getElementById('fdStats').innerHTML = `
@@ -3836,7 +3840,7 @@ async function salvarEditFull(){
   closeModal('modalEditFull');
   showToast('✅ Full atualizado!');
   if(novoStatus==='Em conferência'){
-    setTimeout(()=>{if(confirm('Full marcado como "Em conferência".\nDeseja abrir o checklist agora?')){abrirChecklist(editingFullId);}},300);
+    setTimeout(()=>{if(confirm('Deseja abrir a conferência de embarque agora?')){confIniciarPorFullId(editingFullId);}},300);
   }
   renderDashboard();
   renderCal();
@@ -7114,6 +7118,18 @@ async function confResetar(fullId, totalEsperado) {
   _confAtual.aut_bipada = false; _confAtual.aut_numero = null;
   showToast('🗑 Conferência resetada');
   confRenderSecao(fullId, totalEsperado);
+}
+
+// Helper: inicia conferência a partir do ID do Full (sem precisar passar totalCaixas)
+async function confIniciarPorFullId(fullId) {
+  const f = FULLS_DATA[fullId];
+  if (!f) return;
+  const totalCaixas = (f.itens||[]).reduce((a,i)=>a+(parseInt(i.qtde)||0),0);
+  // Garante que a conferência está carregada
+  if (!_confAtual || _confAtual.full_id !== fullId) {
+    await confCarregar(fullId, totalCaixas);
+  }
+  confAbrirScanner(fullId, totalCaixas);
 }
 
 // ── Patch: fecharScanner reseta modo conferência ──────
