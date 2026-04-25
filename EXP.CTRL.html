@@ -493,6 +493,34 @@ select:focus{border-color:var(--accent)}
 .saida-card-del{width:28px;height:28px;border-radius:6px;border:1px solid rgba(248,81,73,.2);background:rgba(248,81,73,.06);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .saida-card-del:hover{background:rgba(248,81,73,.15)}
 
+/* ── CONFERÊNCIA DE EMBARQUE ─────────────────── */
+.conf-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
+.conf-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.conf-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.conf-badge{font-size:10px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:100px}
+.conf-badge-ok{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.25)}
+.conf-badge-warn{background:rgba(248,81,73,.10);color:var(--red);border:1px solid rgba(248,81,73,.22)}
+.conf-badge-pend{background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.12)}
+.conf-body{padding:14px 16px}
+.conf-progress-wrap{margin-bottom:12px}
+.conf-progress-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.conf-progress-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
+.conf-progress-count{font-size:13px;font-weight:800;color:var(--text)}
+.conf-bar{background:var(--bg);border-radius:100px;height:8px;overflow:hidden}
+.conf-bar-fill{height:100%;border-radius:100px;transition:width .4s ease;background:linear-gradient(90deg,var(--green),#5de6a8)}
+.conf-bar-fill.warn{background:var(--orange)}
+.conf-volumes-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;max-height:120px;overflow-y:auto}
+.conf-vol-chip{font-size:10px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:5px;font-weight:600}
+.conf-vol-ok{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.2)}
+.conf-vol-miss{background:rgba(248,81,73,.10);color:var(--red);border:1px solid rgba(248,81,73,.18)}
+.conf-doc-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px}
+.conf-doc-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted2)}
+.conf-doc-val{font-size:11px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace}
+.conf-doc-status{font-size:10px;padding:2px 8px;border-radius:100px}
+.conf-btn-scan{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.conf-btn-scan:hover{background:var(--logbox-bg);border-color:var(--logbox);color:var(--logbox)}
+.conf-btn-scan.active{background:var(--logbox-bg);border-color:var(--logbox);color:var(--logbox)}
+
 /* ── SCANNER ─────────────────────────────────── */
 .hamburger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;border-radius:8px;border:1px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;transition:all .15s;z-index:301}
 .hamburger:hover{background:var(--surface2)}
@@ -1035,10 +1063,12 @@ select:focus{border-color:var(--accent)}
                   <div id="fdSkuList" style="display:flex;flex-direction:column;gap:6px"></div>
                 </div>
               </div>
-              <!-- Coluna dir: produtividade por funcionário nesse full -->
+              <!-- Coluna dir: produtividade + conferência -->
               <div style="padding:16px 18px">
                 <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Produção registrada</div>
-                <div id="fdProdList" style="display:flex;flex-direction:column;gap:6px"></div>
+                <div id="fdProdList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px"></div>
+                <!-- Seção de conferência de embarque -->
+                <div id="fdConferenciaSecao"></div>
               </div>
             </div>
             <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
@@ -3366,7 +3396,7 @@ function openFullDetalheInline(id) {
   const btnConf = document.getElementById('fdBtnConferencia');
   if (f.status === 'Pronto') { btnConf.style.display = 'none'; } else { btnConf.style.display = ''; btnConf.onclick = () => abrirChecklist(id); }
 
-  // Stats: prontos, produzindo, pendentes, SKUs, total caixas
+  // Stats
   document.getElementById('fdStats').innerHTML = `
     <div class="detail-stat"><div class="detail-stat-val" style="color:var(--green)">${done}</div><div class="detail-stat-label">Prontos</div></div>
     <div class="detail-stat"><div class="detail-stat-val" style="color:var(--orange)">${doing}</div><div class="detail-stat-label">Prod.</div></div>
@@ -3376,6 +3406,9 @@ function openFullDetalheInline(id) {
       <div class="detail-stat-val" style="color:var(--green)">${totalCaixas}</div>
       <div class="detail-stat-label">Total cx</div>
     </div>`;
+
+  // Renderiza seção de conferência (carrega do Supabase)
+  confCarregar(id, totalCaixas);
 
   // SKUs agrupados
   const skuMap = {};
@@ -6705,8 +6738,390 @@ function renderSaidasMobile(saidas) {
 const _origRenderSaidas = window.renderSaidas;
 
 // ══════════════════════════════════════════════════════
-// MOBILE — resize handler & init
+// CONFERÊNCIA DE EMBARQUE — persistência no Supabase
 // ══════════════════════════════════════════════════════
+let _confAtual = null;      // objeto da conferência ativa
+let _confVolumes = new Set(); // volumes já bipados (nums)
+let _confScannerMode = false; // scanner está em modo conferência?
+
+// ── Carrega ou cria conferência para um Full ──────────
+async function confCarregar(fullId, totalEsperado) {
+  // Busca conferência em aberto
+  const { data } = await _sb
+    .from('full_conferencia')
+    .select('*')
+    .eq('full_id', fullId)
+    .eq('status', 'em_andamento')
+    .single();
+
+  if (data) {
+    _confAtual = data;
+    // Carrega volumes já bipados
+    const { data: vols } = await _sb
+      .from('full_conferencia_volumes')
+      .select('volume_num')
+      .eq('conferencia_id', data.id);
+    _confVolumes = new Set((vols||[]).map(v => v.volume_num));
+  } else {
+    // Cria nova conferência
+    const { data: nova } = await _sb
+      .from('full_conferencia')
+      .insert({ full_id: fullId, total_esperado: totalEsperado })
+      .select()
+      .single();
+    _confAtual = nova;
+    _confVolumes = new Set();
+  }
+  confRenderSecao(fullId, totalEsperado);
+}
+
+// ── Renderiza a seção de conferência no detalhe ───────
+function confRenderSecao(fullId, totalEsperado) {
+  const el = document.getElementById('fdConferenciaSecao');
+  if (!el) return;
+
+  const conf = _confAtual;
+  const bipados = _confVolumes.size;
+  const pct = totalEsperado > 0 ? Math.round((bipados / totalEsperado) * 100) : 0;
+  const completo = bipados >= totalEsperado && totalEsperado > 0;
+  const concluida = conf?.status === 'concluida';
+
+  // Chips de volumes
+  const todosNums = Array.from({length: totalEsperado}, (_,i) => i+1);
+  const chipsHtml = totalEsperado <= 100
+    ? `<div class="conf-volumes-grid">
+        ${todosNums.map(n => `
+          <span class="conf-vol-chip ${_confVolumes.has(n) ? 'conf-vol-ok' : 'conf-vol-miss'}">${n}</span>
+        `).join('')}
+       </div>`
+    : `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:8px">
+        Bipados: ${[..._confVolumes].sort((a,b)=>a-b).join(', ') || '—'}
+       </div>`;
+
+  // Faltantes
+  const faltando = todosNums.filter(n => !_confVolumes.has(n));
+  const faltandoHtml = faltando.length && faltando.length <= 20
+    ? `<div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--red);margin-bottom:8px">
+        Faltando: ${faltando.join(', ')}
+       </div>`
+    : '';
+
+  // Docs
+  const nfOk = conf?.nf_bipada;
+  const autOk = conf?.aut_bipada;
+
+  el.innerHTML = `
+    <div class="conf-section">
+      <div class="conf-header">
+        <div class="conf-title">
+          📦 Conferência de Embarque
+          <span class="conf-badge ${concluida ? 'conf-badge-ok' : completo ? 'conf-badge-ok' : 'conf-badge-pend'}">
+            ${concluida ? '✓ Concluída' : completo ? '✓ Caixas OK' : 'Em andamento'}
+          </span>
+        </div>
+      </div>
+      <div class="conf-body">
+        <!-- Progresso caixas -->
+        <div class="conf-progress-wrap">
+          <div class="conf-progress-row">
+            <span class="conf-progress-label">Caixas bipadas</span>
+            <span class="conf-progress-count" style="color:${completo?'var(--green)':'var(--text)'}">${bipados}/${totalEsperado}</span>
+          </div>
+          <div class="conf-bar">
+            <div class="conf-bar-fill ${completo?'':'warn'}" style="width:${pct}%"></div>
+          </div>
+        </div>
+
+        ${chipsHtml}
+        ${faltandoHtml}
+
+        <!-- Documentos -->
+        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Documentos</div>
+        <div class="conf-doc-row">
+          <span class="conf-doc-label">NF</span>
+          <span class="conf-doc-val">${conf?.nf_numero || '—'}</span>
+          <span class="conf-doc-status ${nfOk ? 'conf-badge-ok' : 'conf-badge-pend'}">${nfOk ? '✓ bipada' : 'pendente'}</span>
+        </div>
+        <div class="conf-doc-row">
+          <span class="conf-doc-label">Autorização</span>
+          <span class="conf-doc-val">${conf?.aut_numero ? 'Frete '+conf.aut_numero : '—'}</span>
+          <span class="conf-doc-status ${autOk ? 'conf-badge-ok' : 'conf-badge-pend'}">${autOk ? '✓ bipada' : 'pendente'}</span>
+        </div>
+
+        <!-- Botões -->
+        ${!concluida ? `
+          <button class="conf-btn-scan ${_confScannerMode ? 'active' : ''}"
+            onclick="${_confScannerMode ? 'confFecharScanner()' : `confAbrirScanner('${fullId}',${totalEsperado})`}">
+            ${_confScannerMode ? '⏹ Parar scanner' : '📷 Escanear caixas e documentos'}
+          </button>
+          ${bipados > 0 ? `
+            <button class="conf-btn-scan" style="margin-top:6px;border-color:rgba(248,81,73,.3);color:var(--red)"
+              onclick="confResetar('${fullId}',${totalEsperado})">
+              🗑 Resetar conferência
+            </button>
+          ` : ''}
+          ${completo && nfOk && autOk ? `
+            <button class="conf-btn-scan" style="margin-top:6px;background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.3);color:var(--green)"
+              onclick="confConcluir('${fullId}',${totalEsperado})">
+              ✅ Concluir conferência
+            </button>
+          ` : (completo || nfOk || autOk) ? `
+            <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-align:center;margin-top:8px;padding:6px;background:var(--surface2);border-radius:6px">
+              ${!completo ? '⚠ Caixas incompletas · ' : ''}${!nfOk ? '⚠ NF não bipada · ' : ''}${!autOk ? '⚠ Autorização não bipada' : ''}
+            </div>
+            <button class="conf-btn-scan" style="margin-top:6px;opacity:.6"
+              onclick="confConcluir('${fullId}',${totalEsperado})">
+              ✅ Concluir mesmo assim
+            </button>
+          ` : ''}
+        ` : `
+          <div style="text-align:center;padding:10px;font-size:12px;color:var(--green);font-family:'DM Mono',monospace">
+            ✓ Conferência concluída
+          </div>
+          <button class="conf-btn-scan" style="margin-top:6px;border-color:rgba(248,81,73,.3);color:var(--red)"
+            onclick="confReabrir('${fullId}',${totalEsperado})">
+            ↩ Reabrir conferência
+          </button>
+        `}
+      </div>
+    </div>`;
+}
+
+// ── Abre scanner em modo conferência ──────────────────
+async function confAbrirScanner(fullId, totalEsperado) {
+  _confScannerMode = true;
+  confRenderSecao(fullId, totalEsperado);
+
+  const overlay = document.getElementById('scannerOverlay');
+  const status  = document.getElementById('scannerStatus');
+  // Muda título para indicar modo conferência
+  const titulo = overlay.querySelector('.scanner-title');
+  if (titulo) titulo.textContent = '📦 Conferência de Embarque';
+  const hint = overlay.querySelector('.scanner-hint');
+  if (hint) hint.textContent = 'Bipe as caixas, a NF e a Autorização de Entrada';
+
+  overlay.classList.add('open');
+  _scannerActive = true;
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    status.textContent = '❌ Câmera não suportada.';
+    return;
+  }
+  try {
+    status.textContent = 'Iniciando câmera…';
+    _scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal:'environment' }, width:{ideal:1280}, height:{ideal:720} }
+    });
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = _scannerStream;
+    await video.play();
+    _scannerCanvas = document.createElement('canvas');
+    _scannerCtx    = _scannerCanvas.getContext('2d', { willReadFrequently: true });
+    status.textContent = 'Bipe as caixas, NF e Autorização…';
+    _confTickScan(video, fullId, totalEsperado);
+  } catch(err) {
+    status.textContent = err.name === 'NotAllowedError'
+      ? '❌ Permissão negada.' : '❌ Erro: ' + err.message;
+  }
+}
+
+function _confTickScan(video, fullId, totalEsperado) {
+  if (!_scannerActive) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (w && h) {
+      _scannerCanvas.width = w; _scannerCanvas.height = h;
+      _scannerCtx.drawImage(video, 0, 0, w, h);
+      const imageData = _scannerCtx.getImageData(0, 0, w, h);
+      const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
+      if (code?.data) {
+        confOnCodigoLido(code.data, fullId, totalEsperado);
+        return;
+      }
+    }
+  }
+  _scannerAnimId = requestAnimationFrame(() => _confTickScan(video, fullId, totalEsperado));
+}
+
+// ── Processa QR lido na conferência ───────────────────
+async function confOnCodigoLido(raw, fullId, totalEsperado) {
+  if (!_scannerActive) return;
+  _scannerActive = false;
+
+  const flash  = document.getElementById('scannerFlash');
+  const status = document.getElementById('scannerStatus');
+
+  // ── Detecta tipo do QR ────────────────────────────
+  // 1. Volume de caixa: contém "envio:" ou padrão NNNNNNN/N
+  const volMatch = raw.match(/(\d{6,})\s*\/\s*(\d+)/i)
+    || raw.match(/envio[:\s]+(\d+)\s*\/\s*(\d+)/i);
+
+  // 2. Autorização de Entrada: contém "Frete" ou número de frete
+  const autMatch = raw.match(/frete\s*[:\s]?(\d+)/i)
+    || (raw.match(/^\d{8,}$/) && raw.length <= 12);
+
+  // 3. NF-e: chave com 44 dígitos
+  const nfMatch = raw.replace(/\s/g,'').match(/^(\d{44})$/);
+
+  // ── Volume de caixa ───────────────────────────────
+  if (volMatch) {
+    const envioId  = volMatch[1];
+    const volNum   = parseInt(volMatch[2]);
+
+    if (_confVolumes.has(volNum)) {
+      // Duplicata
+      flash.style.background = 'rgba(248,81,73,.3)';
+      flash.classList.add('flash');
+      setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
+      _somDuplicata();
+      if (navigator.vibrate) navigator.vibrate([100,80,100]);
+      status.textContent = `⚠️ Volume ${volNum} já conferido!`;
+      status.style.color = 'var(--red)';
+    } else {
+      // Novo volume
+      await _sb.from('full_conferencia_volumes').insert({
+        conferencia_id: _confAtual.id,
+        full_id: fullId,
+        envio_id: envioId,
+        volume_num: volNum
+      });
+      _confVolumes.add(volNum);
+
+      flash.style.background = 'rgba(63,185,80,.2)';
+      flash.classList.add('flash');
+      setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
+      _somSucesso();
+      if (navigator.vibrate) navigator.vibrate(80);
+      status.textContent = `✅ Volume ${volNum} — ${_confVolumes.size}/${totalEsperado} conferidos`;
+      status.style.color = 'var(--green)';
+      confRenderSecao(fullId, totalEsperado);
+    }
+
+  // ── NF-e ──────────────────────────────────────────
+  } else if (nfMatch) {
+    const chave = nfMatch[1];
+    // Extrai número da NF da chave (posições 25-34)
+    const nfNum = chave.substring(22, 31).replace(/^0+/,'');
+
+    if (_confAtual.nf_bipada) {
+      _somDuplicata();
+      if (navigator.vibrate) navigator.vibrate([100,80,100]);
+      status.textContent = '⚠️ NF já foi bipada!';
+      status.style.color = 'var(--orange)';
+    } else {
+      await _sb.from('full_conferencia').update({
+        nf_numero: nfNum,
+        nf_bipada: true,
+        nf_bipada_em: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }).eq('id', _confAtual.id);
+      _confAtual.nf_numero = nfNum;
+      _confAtual.nf_bipada = true;
+
+      _somSucesso();
+      if (navigator.vibrate) navigator.vibrate(80);
+      status.textContent = `✅ NF ${nfNum} — confirmada`;
+      status.style.color = 'var(--green)';
+      confRenderSecao(fullId, totalEsperado);
+    }
+
+  // ── Autorização de Entrada ────────────────────────
+  } else if (autMatch || raw.toLowerCase().includes('frete')) {
+    const autNum = autMatch ? (autMatch[1] || raw.match(/\d{6,}/)?.[0] || raw) : raw.match(/\d{6,}/)?.[0] || raw;
+
+    if (_confAtual.aut_bipada) {
+      _somDuplicata();
+      if (navigator.vibrate) navigator.vibrate([100,80,100]);
+      status.textContent = '⚠️ Autorização já foi bipada!';
+      status.style.color = 'var(--orange)';
+    } else {
+      await _sb.from('full_conferencia').update({
+        aut_numero: String(autNum),
+        aut_bipada: true,
+        aut_bipada_em: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }).eq('id', _confAtual.id);
+      _confAtual.aut_numero = String(autNum);
+      _confAtual.aut_bipada = true;
+
+      _somSucesso();
+      if (navigator.vibrate) navigator.vibrate(80);
+      status.textContent = `✅ Autorização Frete ${autNum} — confirmada`;
+      status.style.color = 'var(--green)';
+      confRenderSecao(fullId, totalEsperado);
+    }
+
+  // ── QR não reconhecido ────────────────────────────
+  } else {
+    _somDuplicata();
+    status.textContent = '❓ QR não reconhecido — tente novamente';
+    status.style.color = 'var(--orange)';
+  }
+
+  // Reativa após delay
+  setTimeout(()=>{
+    status.style.color = '';
+    status.textContent = 'Bipe as caixas, NF e Autorização…';
+    _scannerActive = true;
+    const video = document.getElementById('scannerVideo');
+    if (video && _scannerStream) _confTickScan(video, fullId, totalEsperado);
+  }, 1400);
+}
+
+function confFecharScanner() {
+  _confScannerMode = false;
+  fecharScanner();
+  // Re-renderiza seção sem o scanner ativo
+  if (_confAtual) {
+    const f = FULLS_DATA[_confAtual.full_id];
+    if (f) {
+      const total = (f.itens||[]).reduce((a,i)=>a+(parseInt(i.qtde)||0),0);
+      confRenderSecao(_confAtual.full_id, total);
+    }
+  }
+}
+
+async function confConcluir(fullId, totalEsperado) {
+  if (!_confAtual) return;
+  await _sb.from('full_conferencia')
+    .update({ status: 'concluida', updated_at: new Date().toISOString() })
+    .eq('id', _confAtual.id);
+  _confAtual.status = 'concluida';
+  showToast('✅ Conferência concluída!');
+  confRenderSecao(fullId, totalEsperado);
+}
+
+async function confReabrir(fullId, totalEsperado) {
+  if (!_confAtual) return;
+  await _sb.from('full_conferencia')
+    .update({ status: 'em_andamento', updated_at: new Date().toISOString() })
+    .eq('id', _confAtual.id);
+  _confAtual.status = 'em_andamento';
+  confRenderSecao(fullId, totalEsperado);
+}
+
+async function confResetar(fullId, totalEsperado) {
+  if (!_confAtual) return;
+  if (!confirm('Apagar todos os bipes desta conferência e recomeçar?')) return;
+  await _sb.from('full_conferencia_volumes').delete().eq('conferencia_id', _confAtual.id);
+  await _sb.from('full_conferencia').update({
+    nf_bipada: false, nf_numero: null, nf_bipada_em: null,
+    aut_bipada: false, aut_numero: null, aut_bipada_em: null,
+    updated_at: new Date().toISOString()
+  }).eq('id', _confAtual.id);
+  _confVolumes = new Set();
+  _confAtual.nf_bipada = false; _confAtual.nf_numero = null;
+  _confAtual.aut_bipada = false; _confAtual.aut_numero = null;
+  showToast('🗑 Conferência resetada');
+  confRenderSecao(fullId, totalEsperado);
+}
+
+// ── Patch: fecharScanner reseta modo conferência ──────
+const _origFecharScanner = fecharScanner;
+fecharScanner = function() {
+  _confScannerMode = false;
+  _origFecharScanner();
+};// ══════════════════════════════════════════════════════
 window.addEventListener('resize', ()=>{
   if(!isMobile()) {
     closeSidebar();
