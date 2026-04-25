@@ -6455,35 +6455,102 @@ function _tickScan(video) {
   _scannerAnimId = requestAnimationFrame(() => _tickScan(video));
 }
 
+// ── Sons via Web Audio API (sem arquivos externos) ────
+function _audioCtx() {
+  if(!window._ctx) window._ctx = new (window.AudioContext||window.webkitAudioContext)();
+  return window._ctx;
+}
+function _somSucesso() {
+  try {
+    const ctx = _audioCtx();
+    [0, 120].forEach((delay, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = i === 0 ? 880 : 1100;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.25, ctx.currentTime + delay/1000);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay/1000 + 0.12);
+      osc.start(ctx.currentTime + delay/1000);
+      osc.stop(ctx.currentTime + delay/1000 + 0.13);
+    });
+  } catch(e) {}
+}
+function _somDuplicata() {
+  try {
+    const ctx = _audioCtx();
+    [0, 160].forEach((delay, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.frequency.value = i === 0 ? 440 : 330;
+      osc.type = 'sawtooth';
+      gain.gain.setValueAtTime(0.18, ctx.currentTime + delay/1000);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay/1000 + 0.15);
+      osc.start(ctx.currentTime + delay/1000);
+      osc.stop(ctx.currentTime + delay/1000 + 0.16);
+    });
+  } catch(e) {}
+}
+
+// ── Extrai número do pedido do QR (mesma lógica do registrarSaida) ──
+function _extrairNumPedido(raw) {
+  const qrMatch = raw.match(/id[^0-9]*([0-9]{8,})/i);
+  return qrMatch ? qrMatch[1] : raw.replace(/[\r\n\t]/g,'').trim();
+}
+
+// ── Checa se pedido já foi bipado hoje ──
+function _isDuplicata(raw) {
+  const num = _extrairNumPedido(raw);
+  const galpao = document.getElementById('saidaGalpao')?.value || 'LogBox';
+  return SAIDAS_HOJE.some(s => s.galpao === galpao && s.num === num);
+}
+
 function onCodigoLido(codigo) {
   if(!_scannerActive) return;
-  _scannerActive = false; // pausa leitura durante processamento
+  _scannerActive = false;
 
-  // Flash visual
-  const flash = document.getElementById('scannerFlash');
-  flash.classList.add('flash');
-  setTimeout(()=>flash.classList.remove('flash'), 200);
-
-  // Vibração haptica
-  if(navigator.vibrate) navigator.vibrate(80);
-
-  // Preenche campo e registra
-  const campo = document.getElementById('saidaBipe');
-  if(campo) campo.value = codigo;
-
-  // Chama registrarSaida e aguarda resultado
-  const sucesso = _registrarSaidaSilencioso(codigo);
-
+  const flash  = document.getElementById('scannerFlash');
   const status = document.getElementById('scannerStatus');
-  if(sucesso !== false) {
-    status.textContent = '✅ ' + codigo.slice(-8) + ' — registrado!';
-    status.style.color = 'var(--green)';
-  } else {
-    status.textContent = '⚠️ ' + codigo.slice(-8) + ' — verifique o pedido';
-    status.style.color = 'var(--orange)';
+  const num    = _extrairNumPedido(codigo);
+
+  // ── Duplicata ──────────────────────────────────────
+  if(_isDuplicata(codigo)) {
+    flash.style.background = 'rgba(248,81,73,.3)';
+    flash.classList.add('flash');
+    setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
+
+    _somDuplicata();
+    if(navigator.vibrate) navigator.vibrate([120, 80, 120]);
+
+    status.textContent = '⚠️ ' + num.slice(-10) + ' — já bipado hoje!';
+    status.style.color = 'var(--red)';
+
+    setTimeout(()=>{
+      status.style.color = '';
+      status.textContent = 'Aponte para o próximo QR Code…';
+      _scannerActive = true;
+      const video = document.getElementById('scannerVideo');
+      if(video && _scannerStream) _tickScan(video);
+    }, 1500);
+    return;
   }
 
-  // Reativa leitura após 1.2s — tempo suficiente pra ver o feedback
+  // ── Pedido novo ────────────────────────────────────
+  flash.style.background = 'rgba(63,185,80,.2)';
+  flash.classList.add('flash');
+  setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
+
+  _somSucesso();
+  if(navigator.vibrate) navigator.vibrate(80);
+
+  const campo = document.getElementById('saidaBipe');
+  if(campo) campo.value = codigo;
+  _registrarSaidaSilencioso(codigo);
+
+  status.textContent = '✅ ' + num.slice(-10) + ' — registrado!';
+  status.style.color = 'var(--green)';
+
   setTimeout(()=>{
     status.style.color = '';
     status.textContent = 'Aponte para o próximo QR Code…';
@@ -6493,16 +6560,14 @@ function onCodigoLido(codigo) {
   }, 1200);
 }
 
-// Registra sem fechar scanner, retorna false se falhou
+// Registra sem fechar scanner
 function _registrarSaidaSilencioso(num) {
   try {
     const campo = document.getElementById('saidaBipe');
     if(campo) campo.value = num;
     registrarSaida();
     return true;
-  } catch(e) {
-    return false;
-  }
+  } catch(e) { return false; }
 }
 
 function fecharScanner() {
