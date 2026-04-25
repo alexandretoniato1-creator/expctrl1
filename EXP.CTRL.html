@@ -403,7 +403,22 @@ select:focus{border-color:var(--accent)}
 .imp-tipo-btn .imp-label{font-size:13px;font-weight:700;display:block}
 .imp-tipo-btn .imp-desc{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:2px;display:block}
 
-/* PRINT STYLES */
+/* ── MOBILE HAMBURGER BUTTON ─────────────────── */
+.hamburger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;border-radius:8px;border:1px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;transition:all .15s;z-index:301}
+.hamburger:hover{background:var(--surface2)}
+.hamburger span{display:block;width:16px;height:1.5px;background:var(--muted2);border-radius:2px;transition:all .25s ease}
+.hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);background:var(--text)}
+.hamburger.open span:nth-child(2){opacity:0;transform:scaleX(0)}
+.hamburger.open span:nth-child(3){transform:translateY(-6.5px) rotate(-45deg);background:var(--text)}
+
+/* ── SIDEBAR OVERLAY ──────────────────────────── */
+.sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:299;backdrop-filter:blur(2px);opacity:0;transition:opacity .25s ease}
+.sidebar-overlay.visible{opacity:1}
+
+/* ── MOBILE TOPBAR TITLE (full name) ─────────── */
+.topbar-mobile-title{display:none;font-size:14px;font-weight:800;letter-spacing:-.3px;color:var(--text)}
+
+/* ── PRINT STYLES ────────────────────────────── */
 @media print {
   body * { visibility: hidden !important; }
   #printDoc, #printDoc * { visibility: visible !important; }
@@ -447,6 +462,260 @@ select:focus{border-color:var(--accent)}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
 @keyframes fadeOut{0%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(.97)}}
 .login-overlay.fade-out{animation:fadeOut .35s ease forwards}
+
+/* ══════════════════════════════════════════════
+   MOBILE RESPONSIVE — ≤ 768px
+   ══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── Layout base ──────────────────────────── */
+  html,body{height:auto;min-height:100%}
+  .app{
+    display:flex;
+    flex-direction:column;
+    height:auto;
+    min-height:100vh;
+    overflow:visible;
+  }
+
+  /* ── Sidebar: drawer overlay ──────────────── */
+  .sidebar{
+    position:fixed;
+    top:0;left:0;bottom:0;
+    width:260px;
+    z-index:300;
+    transform:translateX(-100%);
+    transition:transform .28s cubic-bezier(.4,0,.2,1);
+    overflow-y:auto;
+    box-shadow:4px 0 24px rgba(0,0,0,.5);
+  }
+  .sidebar.mobile-open{transform:translateX(0)}
+  .sidebar-overlay{display:block}
+
+  /* ── Main: tela toda ──────────────────────── */
+  .main{
+    display:flex;
+    flex-direction:column;
+    width:100%;
+    overflow:visible;
+  }
+
+  /* ── Topbar ───────────────────────────────── */
+  .topbar{
+    padding:10px 14px;
+    gap:8px;
+    flex-wrap:nowrap;
+    position:sticky;
+    top:0;
+    z-index:100;
+    background:var(--surface);
+  }
+  .topbar-title{display:none}
+  .topbar-mobile-title{display:block}
+  .topbar-right{gap:6px}
+  .topbar-right .conn{display:none}
+  .topbar-right .btn-ghost{display:none}
+  /* Botão "+ Novo Full" — mantém mas compacto */
+  .topbar-right .btn-primary{font-size:11px;padding:6px 10px}
+  .hamburger{display:flex}
+
+  /* ── Content ──────────────────────────────── */
+  .content-area{flex-direction:column;overflow:visible}
+  .content{
+    padding:14px 12px;
+    overflow:visible;
+    flex:none;
+  }
+  .view{display:none}
+  .view.active{display:block}
+
+  /* ── Detail panel: bottom sheet ───────────── */
+  .detail-panel{
+    width:100% !important;
+    max-height:75vh;
+    border-left:none;
+    border-top:1px solid var(--border);
+    overflow-y:auto;
+  }
+  .detail-panel.open{width:100% !important}
+  .detail-header,.detail-body{min-width:unset}
+  .detail-stats{grid-template-columns:repeat(2,1fr)}
+
+  /* ── Cards grid ───────────────────────────── */
+  .cards{grid-template-columns:repeat(2,1fr) !important;gap:8px}
+
+  /* ── Tables side-by-side → stacked ────────── */
+  .tables{grid-template-columns:1fr !important;gap:10px}
+
+  /* ── Em processo grid ─────────────────────── */
+  .em-processo-grid{grid-template-columns:1fr !important}
+
+  /* ── FULLS: calendário ────────────────────── */
+  /* Esconde o calendário multi-coluna em mobile */
+  .cal-grid{
+    display:none !important;
+  }
+
+  /* Lista mobile de fulls (ver abaixo) */
+  #calMobileList{display:flex;flex-direction:column;gap:8px}
+
+  /* ── Full detalhe inline: coluna única ─────── */
+  #fullDetalheInline > div[style*="grid-template-columns:1fr 1fr"]{
+    display:flex !important;
+    flex-direction:column !important;
+  }
+  #fdStats{grid-template-columns:repeat(3,1fr) !important}
+
+  /* ── Modais ───────────────────────────────── */
+  .modal,.modal-lg{
+    width:96%;
+    max-width:100%;
+    max-height:92vh;
+    padding:16px 14px;
+    border-radius:14px 14px 0 0;
+    margin:0;
+    align-self:flex-end;
+  }
+  .modal-overlay{align-items:flex-end !important}
+  .form-grid{grid-template-columns:1fr !important}
+  .form-grid-3{grid-template-columns:1fr 1fr !important}
+
+  /* ── Fulls topbar (controls) ──────────────── */
+  #view-fulls > div:first-child{
+    flex-direction:column !important;
+    align-items:flex-start !important;
+    gap:10px !important;
+  }
+  #view-fulls > div:first-child > div:last-child{
+    width:100%;
+    justify-content:space-between !important;
+  }
+  /* Esconde legenda de cores em mobile */
+  #view-fulls > div:first-child > div:last-child > div:first-child{
+    display:none !important;
+  }
+
+  /* ── Ducato card ──────────────────────────── */
+  .ducato{padding:12px}
+
+  /* ── Dashboard insumos card ───────────────── */
+  #dashInsumosCard > div{flex-direction:column !important}
+  #dashInsumosLista{margin-left:0 !important;max-width:100% !important;margin-top:8px}
+
+  /* ── Vol: stacked ─────────────────────────── */
+  #view-volumetria > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr !important;
+  }
+
+  /* ── Saídas: form stacked ─────────────────── */
+  #view-saidas > div[style*="grid-template-columns"]{
+    grid-template-columns:1fr 1fr !important;
+  }
+
+  /* ── Relatório stats: stacked ─────────────── */
+  .relatorio-stats{grid-template-columns:repeat(3,1fr) !important}
+  .relatorio-stat{padding:8px}
+
+  /* ── Toast: centralizado ──────────────────── */
+  .toast{right:50%;transform:translateX(50%) translateY(60px);bottom:16px}
+  .toast.show{transform:translateX(50%) translateY(0)}
+
+  /* ── Login box ────────────────────────────── */
+  .login-box{width:92%;padding:28px 20px}
+
+  /* ── Tables: scroll horizontal ───────────── */
+  .full-table-wrap{overflow-x:auto}
+  table{min-width:500px}
+
+  /* ── Scrollable table wrappers ────────────── */
+  .ins-mov-table,.ins-hist-table{overflow-x:auto}
+  .ins-mov-header,.ins-mov-row{min-width:380px}
+  .ins-hist-header,.ins-hist-row{min-width:340px}
+
+  /* ── Análise devoluções: 1 col ────────────── */
+  #devPane-analise > div[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr !important;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   FULLS MOBILE CARD — lista de fulls no celular
+   ══════════════════════════════════════════════ */
+.cal-mobile-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px;
+  cursor:pointer;
+  transition:border-color .15s, background .15s;
+  position:relative;
+  overflow:hidden;
+}
+.cal-mobile-card::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:3px;
+  border-radius:3px 0 0 3px;
+}
+.cal-mobile-card.status-pronto::before{background:var(--green)}
+.cal-mobile-card.status-produzindo::before{background:var(--orange)}
+.cal-mobile-card.status-conferencia::before{background:var(--purple)}
+.cal-mobile-card.status-pendente::before{background:var(--muted)}
+.cal-mobile-card.status-atrasado::before{background:var(--red)}
+.cal-mobile-card:hover{border-color:var(--border2);background:var(--surface2)}
+.cal-mobile-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.cal-mobile-card-id{font-family:'DM Mono',monospace;font-size:14px;font-weight:700;color:var(--accent)}
+.cal-mobile-card-date{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);text-align:right}
+.cal-mobile-card-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.cal-mobile-card-dest{font-size:12px;color:var(--text);font-weight:600}
+.cal-mobile-card-meta{display:flex;justify-content:space-between;align-items:center}
+.cal-mobile-prog{background:var(--bg);border-radius:100px;height:5px;overflow:hidden;flex:1;margin-right:10px}
+.cal-mobile-prog-fill{height:100%;border-radius:100px;transition:width .4s ease}
+.cal-mobile-prog-fill.ok{background:linear-gradient(90deg,var(--green),#5de6a8)}
+.cal-mobile-prog-fill.warn{background:var(--orange)}
+.cal-mobile-prog-fill.done{background:var(--green)}
+.cal-mobile-qty{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);white-space:nowrap}
+
+/* Seção de data na lista mobile */
+.cal-mobile-day-header{
+  font-size:10px;
+  font-family:'DM Mono',monospace;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  padding:6px 4px 4px;
+  margin-top:8px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:6px;
+}
+.cal-mobile-day-header:first-child{margin-top:0}
+
+/* Filtro mobile de status */
+.cal-mobile-filters{
+  display:flex;
+  gap:6px;
+  overflow-x:auto;
+  padding-bottom:4px;
+  margin-bottom:14px;
+  scrollbar-width:none;
+}
+.cal-mobile-filters::-webkit-scrollbar{display:none}
+.cal-mobile-filter-btn{
+  flex-shrink:0;
+  padding:5px 12px;
+  border-radius:100px;
+  border:1px solid var(--border2);
+  background:transparent;
+  color:var(--muted2);
+  font-family:'Syne',sans-serif;
+  font-size:11px;
+  font-weight:600;
+  cursor:pointer;
+  white-space:nowrap;
+  transition:all .15s;
+}
+.cal-mobile-filter-btn.active{background:var(--surface2);color:var(--text);border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -470,6 +739,7 @@ select:focus{border-color:var(--accent)}
   </div>
 </div>
 
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 <div class="app">
   <!-- SIDEBAR -->
   <div class="sidebar">
@@ -505,7 +775,13 @@ select:focus{border-color:var(--accent)}
 
   <div class="main">
     <div class="topbar">
-      <div class="topbar-title"><span id="pageTitle">Dashboard</span><small id="pageDate"></small></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
+        <div class="topbar-title"><span id="pageTitle">Dashboard</span><small id="pageDate"></small></div>
+        <div class="topbar-mobile-title" id="mobileTitleText">Dashboard</div>
+      </div>
       <div class="topbar-right">
         <div class="conn"><div class="dot"></div>local</div>
         <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Alternar tema claro/escuro"></button>
@@ -643,6 +919,9 @@ select:focus{border-color:var(--accent)}
             </div>
           </div>
           <div class="cal-grid" id="calGrid"></div>
+
+          <!-- LISTA MOBILE DE FULLS (visível só em mobile) -->
+          <div id="calMobileList" style="display:none"></div>
 
           <!-- DETALHE INLINE DO FULL (abre abaixo do calendário) -->
           <div id="fullDetalheInline" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
@@ -1990,9 +2269,14 @@ function showPage(name) {
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const el = document.getElementById('view-'+name);
   if (el) el.classList.add('active');
-  document.getElementById('pageTitle').textContent = PAGE_TITLES[name]||name;
+  const title = PAGE_TITLES[name]||name;
+  document.getElementById('pageTitle').textContent = title;
+  // mobile title
+  const mt = document.getElementById('mobileTitleText');
+  if (mt) mt.textContent = title;
   closeDetail();
-  if (name==='fulls') { renderCal(); fecharFullDetalhe?.(); }
+  closeSidebar(); // fecha sidebar ao navegar em mobile
+  if (name==='fulls') { renderCal(); fecharFullDetalhe?.(); renderCalMobile(); }
   if (name==='volumetria') renderVolDia();
   if (name==='devolucoes') renderDev();
   if (name==='catalogo') renderCatalogo();
@@ -2002,6 +2286,132 @@ function showPage(name) {
   if (name==='dashboard') renderDashboard();
   if (name==='insumos') insInit();
 }
+
+// ══════════════════════════════════════════════════════
+// MOBILE — Sidebar hambúrguer
+// ══════════════════════════════════════════════════════
+function toggleSidebar(){
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  const isOpen = sidebar.classList.contains('mobile-open');
+  if(isOpen){ closeSidebar(); } else { openSidebar(); }
+}
+function openSidebar(){
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  sidebar.classList.add('mobile-open');
+  overlay.classList.add('visible');
+  btn.classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeSidebar(){
+  const sidebar = document.querySelector('.sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const btn = document.getElementById('hamburgerBtn');
+  if(!sidebar) return;
+  sidebar.classList.remove('mobile-open');
+  overlay.classList.remove('visible');
+  if(btn) btn.classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ══════════════════════════════════════════════════════
+// MOBILE — Lista de Fulls (substitui calendário em mobile)
+// ══════════════════════════════════════════════════════
+let _calMobileFilter = '';
+
+function isMobile(){ return window.innerWidth <= 768; }
+
+function renderCalMobile(){
+  if(!isMobile()) return;
+  const container = document.getElementById('calMobileList');
+  if(!container) return;
+  container.style.display = 'flex';
+  container.style.flexDirection = 'column';
+
+  const fulls = Object.values(FULLS_DATA || {});
+  const filtroEmpresa = document.getElementById('calFiltroEmpresa')?.value||'';
+
+  // Status filter bar
+  const statuses = ['', 'Pendente', 'Produzindo', 'Em conferência', 'Pronto', 'Atrasado'];
+  const statusLabels = {'':'Todos','Pendente':'Pendente','Produzindo':'Produzindo','Em conferência':'Conferência','Pronto':'Pronto','Atrasado':'Atrasado'};
+
+  let filtered = fulls;
+  if(filtroEmpresa) filtered = filtered.filter(f=>f.empresa===filtroEmpresa);
+  if(_calMobileFilter) filtered = filtered.filter(f=>f.status===_calMobileFilter);
+
+  // Sort: atrasados e produzindo primeiro
+  filtered.sort((a,b)=>{
+    const order = {Atrasado:0,Produzindo:1,'Em conferência':2,Pendente:3,Pronto:4};
+    const oa = order[a.status]??5, ob = order[b.status]??5;
+    if(oa!==ob) return oa-ob;
+    return (a.agendado||'').localeCompare(b.agendado||'');
+  });
+
+  const filtersHtml = `<div class="cal-mobile-filters">
+    ${statuses.map(s=>`<button class="cal-mobile-filter-btn${_calMobileFilter===s?' active':''}" onclick="setCalMobileFilter('${s}')">${statusLabels[s]}</button>`).join('')}
+  </div>`;
+
+  const statusSlug = s => s.toLowerCase().replace(/\s/g,'-').replace(/ê/,'e');
+  
+  if(!filtered.length){
+    container.innerHTML = filtersHtml + '<div style="text-align:center;padding:32px;color:var(--muted);font-size:12px;font-family:\'DM Mono\',monospace">Nenhum full encontrado</div>';
+    return;
+  }
+
+  const cards = filtered.map(f => {
+    const itens = f.itens||[];
+    const done = itens.filter(i=>i.status==='done').length;
+    const total = itens.length;
+    const pct = total>0 ? Math.round(done/total*100) : 0;
+    const progClass = pct===100?'done':pct>0?'warn':'ok';
+    const slug = statusSlug(f.status||'pendente');
+    const empresa = f.empresa||'';
+    const empClass = empresa==='LogBox'?'empresa-logbox':'empresa-fokus';
+    const agendado = f.agendado ? (() => {
+      const [y,m,d] = f.agendado.split('-');
+      return `${d}/${m}`;
+    })() : '—';
+    return `<div class="cal-mobile-card status-${slug}" onclick="calMobileOpenFull('${f.id}')">
+      <div class="cal-mobile-card-top">
+        <div class="cal-mobile-card-id">${f.id}</div>
+        <div class="cal-mobile-card-date">📅 ${agendado}</div>
+      </div>
+      <div class="cal-mobile-card-info">
+        <span class="cal-full-empresa ${empClass}">${empresa}</span>
+        <span class="cal-mobile-card-dest">${f.destino||'—'}</span>
+      </div>
+      <div class="cal-mobile-card-meta">
+        <div class="cal-mobile-prog">
+          <div class="cal-mobile-prog-fill ${progClass}" style="width:${pct}%"></div>
+        </div>
+        <span class="cal-mobile-qty">${done}/${total} itens · <span class="badge b-${slug==='pronto'?'done':slug==='atrasado'?'red':slug==='produzindo'?'doing':slug==='em-conferencia'?'purple':'pending'}">${f.status||'Pendente'}</span></span>
+      </div>
+    </div>`;
+  }).join('');
+
+  container.innerHTML = filtersHtml + cards;
+}
+
+function setCalMobileFilter(status){
+  _calMobileFilter = status;
+  renderCalMobile();
+}
+
+function calMobileOpenFull(id){
+  // Abre o detalhe inline (mesmo comportamento do desktop)
+  if(typeof openFullDetalheInline === 'function') openFullDetalheInline(id);
+  // Scroll ao detalhe
+  setTimeout(()=>{
+    const d = document.getElementById('fullDetalheInline');
+    if(d && d.style.display !== 'none') d.scrollIntoView({behavior:'smooth',block:'start'});
+  }, 150);
+}
+
+// Rerender mobile list when renderCal is called
+const _origRenderCal = typeof renderCal !== 'undefined' ? renderCal : null;
 function navTo(el,name){
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   el.classList.add('active');
@@ -2957,6 +3367,8 @@ function renderCal(){
 
   grid.innerHTML = html;
   grid.style.gridTemplateColumns = 'repeat(15,1fr)';
+  // Atualiza lista mobile
+  if(typeof renderCalMobile === 'function') renderCalMobile();
 }
 
 function calWeekOffset(dir){calOffset+=dir;renderCal();renderDashDucato();}
@@ -5784,6 +6196,37 @@ function insRenderDashCard() {
       : '<div style="font-size:11px;color:var(--muted);text-align:center;padding:6px 0">Estoque OK em todos os insumos ✓</div>';
   }
 }
+
+// ══════════════════════════════════════════════════════
+// MOBILE — resize handler & init
+// ══════════════════════════════════════════════════════
+window.addEventListener('resize', ()=>{
+  if(!isMobile()) {
+    closeSidebar();
+    // Esconde lista mobile, mostra calendário
+    const ml = document.getElementById('calMobileList');
+    const cg = document.getElementById('calGrid');
+    if(ml) ml.style.display = 'none';
+    if(cg) cg.style.display = '';
+  } else {
+    // Esconde calendário, mostra lista mobile
+    const ml = document.getElementById('calMobileList');
+    const cg = document.getElementById('calGrid');
+    if(cg) cg.style.display = 'none';
+    if(ml && document.getElementById('view-fulls')?.classList.contains('active')) {
+      renderCalMobile();
+    }
+  }
+});
+
+// Patch calFiltroEmpresa to also update mobile
+document.addEventListener('DOMContentLoaded', ()=>{
+  const sel = document.getElementById('calFiltroEmpresa');
+  if(sel){
+    const orig = sel.onchange;
+    sel.addEventListener('change', ()=>{ if(isMobile()) renderCalMobile(); });
+  }
+});
 </script>
 </body>
 </html>
