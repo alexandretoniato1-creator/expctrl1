@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -403,7 +404,95 @@ select:focus{border-color:var(--accent)}
 .imp-tipo-btn .imp-label{font-size:13px;font-weight:700;display:block}
 .imp-tipo-btn .imp-desc{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:2px;display:block}
 
-/* ── MOBILE HAMBURGER BUTTON ─────────────────── */
+/* ── SCANNER DE CÂMERA ───────────────────────── */
+.scanner-overlay{display:none;position:fixed;inset:0;background:#000;z-index:500;flex-direction:column}
+.scanner-overlay.open{display:flex}
+.scanner-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;flex-shrink:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px)}
+.scanner-title{color:#fff;font-size:15px;font-weight:700;letter-spacing:-.3px}
+.scanner-close{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.scanner-viewport{flex:1;position:relative;overflow:hidden}
+#scannerVideo{width:100%;height:100%;object-fit:cover}
+.scanner-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.scanner-box{width:260px;height:160px;position:relative}
+.scanner-box::before,.scanner-box::after{content:'';position:absolute;width:28px;height:28px;border-color:#58a6ff;border-style:solid}
+.scanner-box::before{top:0;left:0;border-width:3px 0 0 3px;border-radius:4px 0 0 4px}
+.scanner-box::after{top:0;right:0;border-width:3px 3px 0 0;border-radius:0 4px 0 0}
+.scanner-box-bl,.scanner-box-br{position:absolute;width:28px;height:28px;border-color:#58a6ff;border-style:solid}
+.scanner-box-bl{bottom:0;left:0;border-width:0 0 3px 3px;border-radius:0 0 0 4px}
+.scanner-box-br{bottom:0;right:0;border-width:0 3px 3px 0;border-radius:0 0 4px 0}
+.scanner-line{position:absolute;left:4px;right:4px;height:2px;background:linear-gradient(90deg,transparent,#58a6ff,transparent);animation:scanLine 2s ease-in-out infinite;top:50%}
+@keyframes scanLine{0%,100%{top:10%;opacity:.8}50%{top:88%;opacity:1}}
+.scanner-hint{position:absolute;bottom:0;left:0;right:0;padding:20px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.8));color:rgba(255,255,255,.7);font-size:12px;font-family:'DM Mono',monospace}
+.scanner-result-flash{position:absolute;inset:0;background:rgba(88,166,255,.15);opacity:0;pointer-events:none;transition:opacity .1s}
+.scanner-result-flash.flash{opacity:1}
+.scanner-status{padding:10px 20px;text-align:center;font-size:11px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.5);flex-shrink:0;background:rgba(0,0,0,.8)}
+
+/* Botão câmera no campo de bipe */
+.btn-camera{width:44px;height:44px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:20px;transition:all .15s;flex-shrink:0}
+.btn-camera:hover{background:var(--logbox-bg);border-color:var(--logbox);color:var(--logbox)}
+@media(max-width:768px){.btn-camera{display:flex}}
+
+/* ── SAÍDAS MOBILE ───────────────────────────── */
+@media(max-width:768px){
+  /* Form de configuração: 2x2 grid */
+  #view-saidas > div:first-child{
+    grid-template-columns:1fr 1fr !important;
+    gap:8px !important;
+  }
+  /* Botão fechar dia: full width */
+  #view-saidas > div:first-child > button{
+    grid-column:1/-1;
+    width:100%;
+  }
+  /* Campo de bipe: maior e mais fácil de tocar */
+  #saidaBipe{
+    font-size:16px !important;
+    padding:14px 13px !important;
+  }
+  /* Cards de totais: 2x2 */
+  #view-saidas .cards{
+    grid-template-columns:1fr 1fr !important;
+  }
+  /* Painel de contas ML: 2 colunas */
+  #sContasGrid{
+    grid-template-columns:1fr 1fr !important;
+  }
+  /* Tabela de registros do dia: lista mobile */
+  .saida-mobile-list{display:flex;flex-direction:column;gap:6px;padding:10px}
+  /* Header da tabela: esconde em mobile (usamos lista) */
+  #view-saidas .full-table-wrap table{display:none}
+  #view-saidas .saida-mobile-list{display:flex}
+  /* Toolbar da tabela: stacked */
+  #view-saidas .table-head{flex-direction:column;align-items:flex-start;gap:8px}
+  #view-saidas .table-head > div:last-child{width:100%;flex-wrap:wrap}
+}
+
+/* Card de saída individual (mobile) */
+.saida-card-mobile{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:8px;
+  padding:10px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.saida-card-num{
+  font-size:10px;
+  font-family:'DM Mono',monospace;
+  color:var(--muted);
+  width:20px;
+  text-align:center;
+  flex-shrink:0;
+}
+.saida-card-body{flex:1;min-width:0}
+.saida-card-venda{font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saida-card-meta{display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap}
+.saida-card-hora{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
+.saida-card-del{width:28px;height:28px;border-radius:6px;border:1px solid rgba(248,81,73,.2);background:rgba(248,81,73,.06);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.saida-card-del:hover{background:rgba(248,81,73,.15)}
+
+/* ── SCANNER ─────────────────────────────────── */
 .hamburger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;border-radius:8px;border:1px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;transition:all .15s;z-index:301}
 .hamburger:hover{background:var(--surface2)}
 .hamburger span{display:block;width:16px;height:1.5px;background:var(--muted2);border-radius:2px;transition:all .25s ease}
@@ -1069,7 +1158,10 @@ select:focus{border-color:var(--accent)}
                   <span id="bipeFuncNome">—</span>
                 </div>
               </div>
-              <input type="text" id="saidaBipe" placeholder="Ex: 12345678901234567" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:11px 13px;outline:none;transition:border-color .15s" onkeydown="if(event.key==='Enter')registrarSaida()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+              <div style="display:flex;gap:8px;align-items:center">
+                <input type="text" id="saidaBipe" placeholder="Ex: 12345678901234567" style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:11px 13px;outline:none;transition:border-color .15s" onkeydown="if(event.key==='Enter')registrarSaida()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                <button class="btn-camera" onclick="abrirScanner()" title="Escanear código de barras">📷</button>
+              </div>
             </div>
             <button class="btn btn-primary" onclick="registrarSaida()" style="height:44px;padding:0 18px">Registrar</button>
           </div>
@@ -1137,6 +1229,7 @@ select:focus{border-color:var(--accent)}
               </div>
               <table><thead><tr><th>#</th><th>Nº da Venda</th><th>Canal</th><th>Marketplace</th><th>Conta</th><th>Funcionário</th><th>Galpão</th><th>Hora</th><th></th></tr></thead>
               <tbody id="saidaBody"></tbody></table>
+              <div class="saida-mobile-list" id="saidaMobileList" style="display:none"></div>
             </div>
           </div>
           <div id="saidaTab-historico" style="display:none">
@@ -1431,6 +1524,27 @@ select:focus{border-color:var(--accent)}
       </div>
     </div>
   </div>
+</div>
+
+<!-- ══ SCANNER DE CÂMERA ══ -->
+<div class="scanner-overlay" id="scannerOverlay">
+  <div class="scanner-header">
+    <div class="scanner-title">📷 Escanear código de barras</div>
+    <button class="scanner-close" onclick="fecharScanner()">✕</button>
+  </div>
+  <div class="scanner-viewport">
+    <video id="scannerVideo" autoplay muted playsinline></video>
+    <div class="scanner-frame">
+      <div class="scanner-box">
+        <div class="scanner-box-bl"></div>
+        <div class="scanner-box-br"></div>
+        <div class="scanner-line"></div>
+      </div>
+    </div>
+    <div class="scanner-result-flash" id="scannerFlash"></div>
+    <div class="scanner-hint">Aponte a câmera para o código de barras do pedido</div>
+  </div>
+  <div class="scanner-status" id="scannerStatus">Iniciando câmera…</div>
 </div>
 
 <!-- ══ MODAIS ══ -->
@@ -3993,6 +4107,8 @@ function renderSaidas(){
   renderSaidaAnalise(galpao);
   const btnHoje = document.getElementById('btnImprimirHoje');
   if (btnHoje) btnHoje.onclick = () => abrirModalSaidaImpressao(new Date().toLocaleDateString('pt-BR'), galpao);
+  // ── lista mobile ──
+  if(typeof renderSaidasMobile === 'function') renderSaidasMobile(lista);
 }
 
 function filtrarContaHoje(conta) {
@@ -6268,6 +6384,193 @@ function insRenderDashCard() {
       : '<div style="font-size:11px;color:var(--muted);text-align:center;padding:6px 0">Estoque OK em todos os insumos ✓</div>';
   }
 }
+
+// ══════════════════════════════════════════════════════
+// SCANNER DE CÂMERA — ZXing
+// ══════════════════════════════════════════════════════
+let _scannerReader = null;
+let _scannerStream = null;
+let _scannerActive = false;
+
+async function abrirScanner() {
+  const overlay = document.getElementById('scannerOverlay');
+  const status  = document.getElementById('scannerStatus');
+  overlay.classList.add('open');
+  _scannerActive = true;
+
+  // Verifica suporte
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    status.textContent = '❌ Câmera não suportada neste browser. Use Chrome ou Safari.';
+    return;
+  }
+
+  try {
+    status.textContent = 'Iniciando câmera…';
+
+    // Pede câmera traseira
+    _scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: 'environment', width:{ideal:1280}, height:{ideal:720} }
+    });
+
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = _scannerStream;
+    await video.play();
+
+    status.textContent = 'Câmera ativa — aponte para o código';
+
+    // Inicia leitura com ZXing
+    if(window.ZXing) {
+      const hints = new Map();
+      const formats = [
+        ZXing.BarcodeFormat.CODE_128,
+        ZXing.BarcodeFormat.CODE_39,
+        ZXing.BarcodeFormat.EAN_13,
+        ZXing.BarcodeFormat.EAN_8,
+        ZXing.BarcodeFormat.QR_CODE,
+        ZXing.BarcodeFormat.ITF,
+        ZXing.BarcodeFormat.DATA_MATRIX,
+      ];
+      hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+      hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+
+      _scannerReader = new ZXing.BrowserMultiFormatReader(hints);
+      _scannerReader.decodeFromVideoElement(video, (result, err) => {
+        if(!_scannerActive) return;
+        if(result) {
+          onCodigoLido(result.getText());
+        }
+      });
+    } else {
+      // Fallback: polling manual com canvas
+      _scannerPollCanvas();
+    }
+
+  } catch(err) {
+    if(err.name === 'NotAllowedError') {
+      status.textContent = '❌ Permissão de câmera negada. Libere nas configurações do browser.';
+    } else {
+      status.textContent = '❌ Erro ao acessar câmera: ' + err.message;
+    }
+  }
+}
+
+function _scannerPollCanvas() {
+  // Fallback sem ZXing: apenas mostra aviso
+  document.getElementById('scannerStatus').textContent =
+    '⚠️ Biblioteca de leitura não carregou. Digite o código manualmente.';
+}
+
+function onCodigoLido(codigo) {
+  if(!_scannerActive) return;
+  _scannerActive = false; // evita leitura dupla
+
+  // Flash visual
+  const flash = document.getElementById('scannerFlash');
+  flash.classList.add('flash');
+  setTimeout(()=>flash.classList.remove('flash'), 300);
+
+  // Feedback de status
+  document.getElementById('scannerStatus').textContent = '✅ Lido: ' + codigo;
+
+  // Vibração haptica se suportado
+  if(navigator.vibrate) navigator.vibrate([80, 40, 80]);
+
+  // Pequeno delay para o usuário ver o feedback, depois fecha e registra
+  setTimeout(()=>{
+    fecharScanner();
+
+    // Preenche o campo de bipe
+    const campo = document.getElementById('saidaBipe');
+    if(campo) {
+      campo.value = codigo;
+      campo.style.borderColor = 'var(--green)';
+      setTimeout(()=>{ campo.style.borderColor='var(--border2)'; }, 1200);
+    }
+
+    // Registra automaticamente
+    showToast('📷 Código lido — registrando…');
+    setTimeout(()=>registrarSaida(), 200);
+
+  }, 600);
+}
+
+function fecharScanner() {
+  _scannerActive = false;
+  const overlay = document.getElementById('scannerOverlay');
+  overlay.classList.remove('open');
+
+  // Para a câmera
+  if(_scannerReader) {
+    try { _scannerReader.reset(); } catch(e){}
+    _scannerReader = null;
+  }
+  if(_scannerStream) {
+    _scannerStream.getTracks().forEach(t=>t.stop());
+    _scannerStream = null;
+  }
+  const video = document.getElementById('scannerVideo');
+  if(video) { video.srcObject = null; }
+  document.getElementById('scannerStatus').textContent = 'Iniciando câmera…';
+}
+
+// Fecha scanner com botão voltar do celular
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape') fecharScanner();
+});
+
+// ══════════════════════════════════════════════════════
+// SAÍDAS MOBILE — lista de cards no lugar da tabela
+// ══════════════════════════════════════════════════════
+function renderSaidasMobile(saidas) {
+  const list = document.getElementById('saidaMobileList');
+  if(!list) return;
+
+  if(!isMobile()) {
+    list.style.display = 'none';
+    return;
+  }
+
+  // Esconde tabela, mostra lista
+  const tabela = document.querySelector('#saidaTab-hoje table');
+  if(tabela) tabela.style.display = 'none';
+  list.style.display = 'flex';
+
+  if(!saidas || !saidas.length) {
+    list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px;font-family:\'DM Mono\',monospace">Nenhum registro hoje</div>';
+    return;
+  }
+
+  const canalBadge = c => c==='Flex'
+    ? `<span class="badge b-done" style="font-size:9px">${c}</span>`
+    : `<span class="badge b-blue" style="font-size:9px">${c}</span>`;
+
+  const mktBadge = m => m==='ML'
+    ? `<span class="badge b-pending" style="font-size:9px">ML</span>`
+    : m==='Amazon'
+    ? `<span class="badge" style="font-size:9px;background:rgba(255,153,0,.1);color:#f90;border:1px solid rgba(255,153,0,.2)">AMZ</span>`
+    : `<span class="badge b-shopee" style="font-size:9px">SHP</span>`;
+
+  list.innerHTML = [...saidas].reverse().map((s, i) => {
+    const num = saidas.length - i;
+    return `<div class="saida-card-mobile">
+      <div class="saida-card-num">${num}</div>
+      <div class="saida-card-body">
+        <div class="saida-card-venda">${s.num || s.venda || s.pedido || '—'}</div>
+        <div class="saida-card-meta">
+          ${canalBadge(s.canal||'Flex')}
+          ${mktBadge(s.market||s.marketplace||'ML')}
+          ${s.conta ? `<span style="font-size:10px;color:var(--muted)">${s.conta}</span>` : ''}
+          ${s.funcionario && s.funcionario!=='—' ? `<span style="font-size:10px;color:var(--muted2)">· ${s.funcionario}</span>` : ''}
+          <span class="saida-card-hora">${s.hora||''}</span>
+        </div>
+      </div>
+      <button class="saida-card-del" onclick="removerSaida(${saidas.length-1-i})" title="Remover">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── Patch renderSaidas para chamar versão mobile também
+const _origRenderSaidas = window.renderSaidas;
 
 // ══════════════════════════════════════════════════════
 // MOBILE — resize handler & init
