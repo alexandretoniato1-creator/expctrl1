@@ -225,6 +225,7 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .ins-topbar-right{display:flex;gap:6px;align-items:center}
 .ins-mes-select{font-size:12px;padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-weight:600;outline:none;cursor:pointer}
 .b-shopee{background:rgba(240,90,40,.10);color:#f05a28;border:1px solid rgba(240,90,40,.2)}
+.b-tiktok{background:rgba(0,0,0,.12);color:#69C9D0;border:1px solid rgba(105,201,208,.3)}
 .click-hint{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-left:6px;opacity:.5}
 
 /* ── ALERTS ──────────────────────────────────── */
@@ -1144,7 +1145,7 @@ select:focus{border-color:var(--accent)}
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end">
             <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
             <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
-            <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option></select></div>
+            <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option></select></div>
             <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select></div>
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
@@ -1214,6 +1215,7 @@ select:focus{border-color:var(--accent)}
                     <option value="ML">ML</option>
                     <option value="Amazon">Amazon</option>
                     <option value="Shopee">Shopee</option>
+                    <option value="TikTok">TikTok Shop</option>
                   </select>
                   <select id="saidaHojeFiltroContaHoje" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
                     <option value="">Todas as contas</option>
@@ -2359,6 +2361,26 @@ function populateFuncSelects(){
     const cur=el.value; el.innerHTML=opts;
     if(cur&&[...el.options].find(o=>o.value===cur)) el.value=cur;
   });
+  // Aplica filtro por galpão imediatamente após popular
+  filtrarFuncionariosPorGalpao();
+}
+
+function filtrarFuncionariosPorGalpao() {
+  const galpao  = document.getElementById('saidaGalpao')?.value || '';
+  const empresa = galpao === 'Fokus' ? 'Fokus' : 'LogBox';
+  const sel     = document.getElementById('saidaFuncionario');
+  if(!sel) return;
+
+  const cur = sel.value;
+  const filtrados = FUNCIONARIOS_DATA.filter(f => f.empresa === empresa);
+  sel.innerHTML = '<option value="—">—</option>' +
+    filtrados.map(f => `<option value="${f.nome}">${f.nome}</option>`).join('');
+
+  // Mantém seleção se funcionário ainda pertence ao galpão
+  if(cur && filtrados.find(f => f.nome === cur)) sel.value = cur;
+  else sel.value = '—';
+
+  atualizarBipeFuncionario();
 }
 
 const FUNC_INFO = new Proxy({},{
@@ -3950,6 +3972,10 @@ function atualizarBipeFuncionario() {
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('saidaFuncionario');
   if(sel) { sel.addEventListener('change', atualizarBipeFuncionario); atualizarBipeFuncionario(); }
+
+  // Filtra funcionários sempre que galpão mudar
+  const galpaoSel = document.getElementById('saidaGalpao');
+  if(galpaoSel) galpaoSel.addEventListener('change', filtrarFuncionariosPorGalpao);
 });
 async function registrarSaida(){
   const input=document.getElementById('saidaBipe');
@@ -3967,6 +3993,18 @@ async function registrarSaida(){
   const qrMatch = raw.match(/id[^0-9]*([0-9]{8,})/i);
   const num = qrMatch ? qrMatch[1] : raw.replace(/[\r\n\t]/g,'').trim();
 
+  // ── Checa duplicata (desktop e mobile) ────────────
+  const galpao=document.getElementById('saidaGalpao').value;
+  const jaBipado = SAIDAS_HOJE.some(s => s.galpao === galpao && s.num === num);
+  if(jaBipado){
+    input.value='';
+    input.style.borderColor='var(--red)';
+    setTimeout(()=>{ input.style.borderColor='var(--border2)'; },1500);
+    showToast('⚠️ Pedido '+num.slice(-8)+'... já bipado hoje!');
+    input.focus();
+    return;
+  }
+
   // Tenta extrair sender_id do QR code ML
   const senderMatch = raw.match(/sender_id[^0-9]*([0-9]{6,})/i);
   const senderConta = senderMatch ? (SENDER_CONTA[senderMatch[1]] || '') : null;
@@ -3979,7 +4017,6 @@ async function registrarSaida(){
   if (senderConta !== null) {
     market = 'ML';
     conta  = senderConta;
-    // Atualiza os selects visuais para refletir
     const mktEl   = document.getElementById('saidaMarket');
     const contaEl = document.getElementById('saidaConta');
     const wrapEl  = document.getElementById('saidaContaWrap');
@@ -3988,7 +4025,6 @@ async function registrarSaida(){
     if (wrapEl)  wrapEl.style.display = '';
   }
 
-  const galpao=document.getElementById('saidaGalpao').value;
   const funcionario=document.getElementById('saidaFuncionario')?.value||'—';
   const now=new Date();
   const hora=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
@@ -4022,13 +4058,14 @@ function renderSaidas(){
   const ml     = listaFull.filter(s => s.market==='ML').length;
   const amz    = listaFull.filter(s => s.market==='Amazon').length;
   const shp    = listaFull.filter(s => s.market==='Shopee').length;
+  const tkt    = listaFull.filter(s => s.market==='TikTok').length;
   const total  = listaFull.length;
 
   document.getElementById('sTotal').textContent = total;
   document.getElementById('sTotalSub').textContent = galpao;
   document.getElementById('sFlex').textContent = flex;
   document.getElementById('sColeta').textContent = coleta;
-  document.getElementById('sMkt').textContent = [ml?'ML:'+ml:'',amz?'AMZ:'+amz:'',shp?'SHP:'+shp:''].filter(Boolean).join(' · ')||'—';
+  document.getElementById('sMkt').textContent = [ml?'ML:'+ml:'',amz?'AMZ:'+amz:'',shp?'SHP:'+shp:'',tkt?'TKT:'+tkt:''].filter(Boolean).join(' · ')||'—';
   const fp = total ? Math.round((flex/total)*100) : 50;
   document.getElementById('sBarFlex').style.width = fp+'%';
   document.getElementById('sBarColeta').style.width = (100-fp)+'%';
@@ -4091,7 +4128,7 @@ function renderSaidas(){
         <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px">${lista.length-i}</td>
         <td style="font-family:'DM Mono',monospace;font-size:12px">${s.num}</td>
         <td><span class="badge ${s.canal==='Flex'?'b-done':'b-blue'}">${s.canal}</span></td>
-        <td><span class="badge ${s.market==='ML'?'b-blue':s.market==='Amazon'?'b-doing':'b-shopee'}">${s.market}</span></td>
+        <td><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok'}[s.market]||'b-pending'}">${s.market}</span></td>
         <td>${s.conta
           ? `<span style="padding:2px 9px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;color:${contaColor};background:${contaColor}18;border:1px solid ${contaColor}44">${s.conta}</span>`
           : '<span style="color:var(--muted);font-size:10px">—</span>'}</td>
@@ -4335,7 +4372,7 @@ function renderDetalheTabela(lista){
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${i+1}</td>
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:12px;font-weight:600">${p.num}</td>
       <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
-      <td style="padding:8px 11px"><span class="badge ${p.market==='ML'?'b-blue':p.market==='Amazon'?'b-doing':'b-shopee'}">${p.market}</span></td>
+      <td style="padding:8px 11px"><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok'}[p.market]||'b-pending'}">${p.market}</span></td>
       <td style="padding:8px 11px">${contaCell}</td>
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${p.hora}</td>
       <td style="padding:8px 11px;font-size:11px;color:var(--muted2)">${p.funcionario||'—'}</td>
@@ -4488,7 +4525,7 @@ function renderDev(){
   document.getElementById('devCount').textContent    = lista.length + ' registro' + (lista.length!==1?'s':'');
 
   const sc = { Revender:'badge-rev', Descarte:'badge-desc', Reparo:'badge-rep' };
-  const mc = { ML:'b-blue', Amazon:'b-doing', Shopee:'b-shopee' };
+  const mc = { ML:'b-blue', Amazon:'b-doing', Shopee:'b-shopee', TikTok:'b-tiktok' };
 
   const tbody = document.getElementById('devBody');
   tbody.innerHTML = lista.map((d) => {
@@ -4632,7 +4669,7 @@ function abrirDevDetalhe(idx) {
   _devEditandoIdx = idx;
 
   const sc = { Revender:'badge-rev', Descarte:'badge-desc', Reparo:'badge-rep' };
-  const mc = { ML:'b-blue', Amazon:'b-doing', Shopee:'b-shopee' };
+  const mc = { ML:'b-blue', Amazon:'b-doing', Shopee:'b-shopee', TikTok:'b-tiktok' };
 
   document.getElementById('detailTitle').textContent = d.sku || 'Devolução';
   document.getElementById('detailSub').textContent   = d.descricao || '—';
@@ -5231,7 +5268,7 @@ function abrirModalSaidaImpressao(data, galpao) {
     combos[k].count++;
   });
 
-  const marketColors = { ML: '#f59e0b', Amazon: '#e07a30', Shopee: '#f05a28' };
+  const marketColors = { ML: '#f59e0b', Amazon: '#e07a30', Shopee: '#f05a28', TikTok: '#69C9D0' };
   const canalColors  = { Flex: '#16a34a', Coleta: '#2563eb' };
   const canalIcons   = { Flex: '🏍', Coleta: '🚚' };
 
@@ -5797,7 +5834,7 @@ function buscarHistoricoGeral(){
           <td style="padding:8px 11px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${p.data}</td>
           <td style="padding:8px 11px"><span class="badge ${p.galpao==='LogBox'?'b-blue':'b-done'}">${p.galpao}</span></td>
           <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
-          <td style="padding:8px 11px"><span class="badge ${p.market==='ML'?'b-blue':p.market==='Amazon'?'b-doing':'b-shopee'}">${p.market}${p.conta?' · '+p.conta:''}</span></td>
+          <td style="padding:8px 11px"><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok'}[p.market]||'b-pending'}">${p.market}${p.conta?' · '+p.conta:''}</span></td>
           <td style="padding:8px 11px;font-size:11px;color:var(--muted2)">${p.funcionario||'—'}</td>
           <td style="padding:8px 11px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${p.hora}</td>
         </tr>`).join('')}
@@ -6617,6 +6654,8 @@ function renderSaidasMobile(saidas) {
     ? `<span class="badge b-pending" style="font-size:9px">ML</span>`
     : m==='Amazon'
     ? `<span class="badge" style="font-size:9px;background:rgba(255,153,0,.1);color:#f90;border:1px solid rgba(255,153,0,.2)">AMZ</span>`
+    : m==='TikTok'
+    ? `<span class="badge b-tiktok" style="font-size:9px">TKT</span>`
     : `<span class="badge b-shopee" style="font-size:9px">SHP</span>`;
 
   list.innerHTML = [...saidas].reverse().map((s, i) => {
