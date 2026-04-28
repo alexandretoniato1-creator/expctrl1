@@ -7245,16 +7245,21 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
   const autUrlGeneric = !volMatch && raw.startsWith('http') && raw.match(/\/(\d{7,})/);
   const isMeliUrl = raw.includes('mercadolivre') || raw.includes('mercadopago')
     || raw.includes('mercadolibre') || raw.includes('meli.');
-  // QR de uso interno ML — contém número de telefone (ex: "6609-1502" ou "tel:6609-1502")
+  // QR de uso interno ML — contém número de telefone (ex: "6609-1502")
   const isPhoneQr = !volMatch && /^(tel:)?[\d\-\s]{7,15}$/.test(raw.trim());
+  // QR JSON do ML — {"id":"66005642","operation":"fbm","type":"inbound",...}
+  let mlJsonId = null;
+  try { const j = JSON.parse(raw); if (j?.id) mlJsonId = String(j.id); } catch(e) {}
 
   const isAutorizacao = !volMatch && (
-    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl || isPhoneQr
+    !!mlJsonId || autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl || isPhoneQr
     || raw.toLowerCase().includes('frete')
     || raw.toLowerCase().includes('shipment')
     || raw.toLowerCase().includes('autorizacao')
     || raw.toLowerCase().includes('autorização')
     || raw.toLowerCase().includes('entrada')
+    || raw.toLowerCase().includes('inbound')
+    || raw.toLowerCase().includes('operation')
   );
 
   // ── Volume de caixa ───────────────────────────────
@@ -7291,12 +7296,12 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
 
   // ── Autorização de Entrada ────────────────────────
   } else if (isAutorizacao) {
-    // Extrai o número mais longo do QR — geralmente o número do frete
-    const autNum = autFreteMatch?.[1]
+    const autNum = mlJsonId
+      || autFreteMatch?.[1]
       || autUrlMatch?.[1]
       || autUrlGeneric?.[1]
-      || raw.match(/\d{7,}/)?.[0]  // qualquer sequência de 7+ dígitos
-      || raw.substring(0, 30);     // fallback: primeiros 30 chars
+      || raw.match(/\d{7,}/)?.[0]
+      || raw.substring(0, 30);
 
     if (_confAtual.aut_bipada) {
       _somDuplicata();
@@ -7645,18 +7650,23 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
   const isMeliUrl = raw.includes('mercadolivre') || raw.includes('mercadopago')
     || raw.includes('mercadolibre') || raw.includes('meli.') || raw.includes('ml.com');
   const isPhoneQr = !volMatch && /^(tel:)?[\d\-\s]{7,15}$/.test(raw.trim());
+  let mlJsonId = null;
+  try { const j = JSON.parse(raw); if (j?.id) mlJsonId = String(j.id); } catch(e) {}
   const isAutorizacao = !volMatch && (
-    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl || isPhoneQr
+    !!mlJsonId || autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl || isPhoneQr
     || raw.toLowerCase().includes('frete')
     || raw.toLowerCase().includes('shipment')
     || raw.toLowerCase().includes('autorizacao')
     || raw.toLowerCase().includes('autorização')
     || raw.toLowerCase().includes('entrada')
+    || raw.toLowerCase().includes('inbound')
+    || raw.toLowerCase().includes('operation')
   );
 
-  // Extrai número do frete de qualquer formato
+  // Extrai número do frete — prioriza campo id do JSON ML
   function extrairNumFrete(raw) {
-    return autFreteMatch?.[1]
+    return mlJsonId
+      || autFreteMatch?.[1]
       || autUrlMatch?.[1]
       || autUrlGeneric?.[1]
       || raw.match(/\d{7,}/)?.[0]
