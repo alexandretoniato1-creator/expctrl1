@@ -6754,15 +6754,33 @@ let _carrScannerMode = false; // scanner em modo carregamento?
 
 // ── Carrega ou cria conferência para um Full ──────────
 async function confCarregar(fullId, totalEsperado) {
-  // Busca conferência mais recente — concluída ou em andamento
+  // Busca conferência com volumes, senão pega a mais antiga
   const { data: todas } = await _sb
     .from('full_conferencia')
     .select('*')
     .eq('full_id', fullId)
-    .order('created_at', { ascending: false })
-    .limit(1);
+    .order('created_at', { ascending: true }); // mais antiga primeiro
 
-  const data = todas?.[0] || null;
+  // Prefere a que tem volumes, senão usa a primeira
+  let data = null;
+  if (todas?.length) {
+    // Verifica qual tem volumes
+    for (const conf of todas) {
+      const { count } = await _sb
+        .from('full_conferencia_volumes')
+        .select('*', { count: 'exact', head: true })
+        .eq('conferencia_id', conf.id);
+      if (count > 0) { data = conf; break; }
+    }
+    // Se nenhuma tem volumes, usa a mais antiga
+    if (!data) data = todas[0];
+
+    // Deleta duplicatas vazias que não são a selecionada
+    const idsParaDeletar = todas.filter(c => c.id !== data.id).map(c => c.id);
+    if (idsParaDeletar.length > 0) {
+      await _sb.from('full_conferencia').delete().in('id', idsParaDeletar);
+    }
+  }
 
   if (data) {
     _confAtual = data;
@@ -6772,7 +6790,6 @@ async function confCarregar(fullId, totalEsperado) {
       .eq('conferencia_id', data.id);
     _confVolumes = new Set((vols||[]).map(v => v.volume_num));
   } else {
-    // Cria nova conferência somente se não existe nenhuma
     const { data: nova } = await _sb
       .from('full_conferencia')
       .insert({ full_id: fullId, total_esperado: totalEsperado })
@@ -6823,7 +6840,7 @@ function confRenderSecao(fullId, totalEsperado) {
     <div class="conf-section">
       <div class="conf-header">
         <div class="conf-title">
-          📦 Conferência de Embarque
+          📦 Conferência de Estocagem
           <span class="conf-badge ${concluida ? 'conf-badge-ok' : completo ? 'conf-badge-ok' : 'conf-badge-pend'}">
             ${concluida ? '✓ Concluída' : completo ? '✓ Caixas OK' : 'Em andamento'}
           </span>
@@ -6903,7 +6920,7 @@ async function confAbrirScanner(fullId, totalEsperado) {
   const status  = document.getElementById('scannerStatus');
   // Muda título para indicar modo conferência
   const titulo = overlay.querySelector('.scanner-title');
-  if (titulo) titulo.textContent = '📦 Conferência de Embarque';
+  if (titulo) titulo.textContent = '📦 Conferência de Estocagem';
   const hint = overlay.querySelector('.scanner-hint');
   if (hint) hint.textContent = 'Bipe as caixas e a Autorização de Entrada';
 
@@ -7163,7 +7180,7 @@ function carrRenderSecaoHtml(fullId, totalEsperado) {
       <div class="conf-section" style="margin-top:10px;border-color:rgba(224,122,48,.2)">
         <div class="conf-header" style="background:rgba(224,122,48,.06)">
           <div class="conf-title" style="color:var(--orange)">
-            🚛 Carregamento na Ducato
+            🚛 Conferência de Embarque
             <span class="conf-badge conf-badge-pend">Não iniciado</span>
           </div>
         </div>
@@ -7223,7 +7240,7 @@ function carrRenderSecaoHtml(fullId, totalEsperado) {
     <div class="conf-section" style="margin-top:10px;border-color:rgba(224,122,48,.2)">
       <div class="conf-header" style="background:rgba(224,122,48,.06)">
         <div class="conf-title" style="color:var(--orange)">
-          🚛 Carregamento na Ducato
+          🚛 Conferência de Embarque
           <span class="conf-badge ${concluido ? 'conf-badge-ok' : completo ? 'conf-badge-ok' : 'conf-badge-pend'}">
             ${concluido ? '✓ Concluído' : completo ? '✓ Caixas OK' : 'Em andamento'}
           </span>
@@ -7299,7 +7316,7 @@ async function carrAbrirScanner(fullId, totalEsperado) {
   const status  = document.getElementById('scannerStatus');
   const titulo  = overlay.querySelector('.scanner-title');
   const hint    = overlay.querySelector('.scanner-hint');
-  if (titulo) titulo.textContent = '🚛 Carregamento na Ducato';
+  if (titulo) titulo.textContent = '🚛 Conferência de Embarque';
   if (hint)   hint.textContent   = 'Bipe cada caixa conforme embarca na Ducato';
 
   overlay.classList.add('open');
