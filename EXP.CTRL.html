@@ -3228,7 +3228,7 @@ async function renderDashSemana() {
       const diffDias = Math.floor((hoje - desde) / (1000*60*60*24));
       const diasLabel = diffDias === 0 ? 'hoje' : diffDias === 1 ? '1 dia' : `${diffDias} dias`;
 
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="showPage('fulls')">
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="dashAbrirFullEstocado('${c.full_id}')">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:3px;height:32px;border-radius:2px;background:${empCor};flex-shrink:0"></div>
           <div>
@@ -3335,6 +3335,28 @@ async function renderDashSemana() {
       </div>`;
     }).join('');
   }
+}
+
+// Abre aba de Fulls e mostra o detalhe do full estocado diretamente
+function dashAbrirFullEstocado(fullId) {
+  // Navega para a aba de Fulls
+  const navItem = document.querySelector('.nav-item[onclick*="fulls"]');
+  if (navItem) navTo(navItem, 'fulls');
+  // Aguarda renderização e abre o detalhe
+  setTimeout(() => {
+    if (isMobile()) {
+      // Mobile: abre via calMobileOpenFull
+      calMobileOpenFull(fullId);
+    } else {
+      // Desktop: abre inline
+      openFullDetalheInline(fullId);
+      // Scroll até o detalhe
+      setTimeout(() => {
+        const el = document.getElementById('fullDetalheInline');
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 150);
+    }
+  }, 100);
 }
 
 // ── Ducato por dia ──────────────────────────────────────
@@ -7300,10 +7322,11 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
       confRenderSecao(fullId, totalEsperado);
     }
 
-  // ── QR não reconhecido ────────────────────────────
+  // ── QR não reconhecido — mostra conteúdo bruto para debug ──
   } else {
     _somDuplicata();
-    status.textContent = '❓ QR não reconhecido — tente novamente';
+    const preview = raw.length > 60 ? raw.substring(0,60)+'…' : raw;
+    status.textContent = `❓ QR: "${preview}"`;
     status.style.color = 'var(--orange)';
   }
 
@@ -7314,7 +7337,7 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
     _scannerActive = true;
     const video = document.getElementById('scannerVideo');
     if (video && _scannerStream) _confTickScan(video, fullId, totalEsperado);
-  }, 1400);
+  }, 2000);
 }
 
 function confFecharScanner() {
@@ -7715,7 +7738,8 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
 
   } else {
     _somDuplicata();
-    status.textContent = '❓ QR não reconhecido — tente novamente';
+    const preview = raw.length > 60 ? raw.substring(0,60)+'…' : raw;
+    status.textContent = `❓ QR: "${preview}"`;
     status.style.color = 'var(--orange)';
   }
 
@@ -7725,7 +7749,7 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
     _scannerActive = true;
     const video = document.getElementById('scannerVideo');
     if (video && _scannerStream) _carrTickScan(video, fullId, totalEsperado);
-  }, 1400);
+  }, 2000);
 }
 
 function carrFecharScanner(fullId, totalEsperado) {
