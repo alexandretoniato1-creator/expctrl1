@@ -6748,6 +6748,10 @@ let _confAtual = null;      // objeto da conferência ativa
 let _confVolumes = new Set(); // volumes já bipados (nums)
 let _confScannerMode = false; // scanner está em modo conferência?
 
+let _carrAtual = null;        // objeto do carregamento ativo
+let _carrVolumes = new Set(); // volumes bipados no carregamento
+let _carrScannerMode = false; // scanner em modo carregamento?
+
 // ── Carrega ou cria conferência para um Full ──────────
 async function confCarregar(fullId, totalEsperado) {
   // Busca conferência em aberto
@@ -6842,12 +6846,7 @@ function confRenderSecao(fullId, totalEsperado) {
         <!-- Documentos -->
         <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Documentos</div>
         <div class="conf-doc-row">
-          <span class="conf-doc-label">NF</span>
-          <span class="conf-doc-val">${conf?.nf_numero || '—'}</span>
-          <span class="conf-doc-status ${nfOk ? 'conf-badge-ok' : 'conf-badge-pend'}">${nfOk ? '✓ bipada' : 'pendente'}</span>
-        </div>
-        <div class="conf-doc-row">
-          <span class="conf-doc-label">Autorização</span>
+          <span class="conf-doc-label">Autorização de Entrada</span>
           <span class="conf-doc-val">${conf?.aut_numero ? 'Frete '+conf.aut_numero : '—'}</span>
           <span class="conf-doc-status ${autOk ? 'conf-badge-ok' : 'conf-badge-pend'}">${autOk ? '✓ bipada' : 'pendente'}</span>
         </div>
@@ -6864,14 +6863,14 @@ function confRenderSecao(fullId, totalEsperado) {
               🗑 Resetar conferência
             </button>
           ` : ''}
-          ${completo && nfOk && autOk ? `
+          ${completo && autOk ? `
             <button class="conf-btn-scan" style="margin-top:6px;background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.3);color:var(--green)"
               onclick="confConcluir('${fullId}',${totalEsperado})">
               ✅ Concluir conferência
             </button>
-          ` : (completo || nfOk || autOk) ? `
+          ` : (completo || autOk) ? `
             <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-align:center;margin-top:8px;padding:6px;background:var(--surface2);border-radius:6px">
-              ${!completo ? '⚠ Caixas incompletas · ' : ''}${!nfOk ? '⚠ NF não bipada · ' : ''}${!autOk ? '⚠ Autorização não bipada' : ''}
+              ${!completo ? '⚠ Caixas incompletas · ' : ''}${!autOk ? '⚠ Autorização não bipada' : ''}
             </div>
             <button class="conf-btn-scan" style="margin-top:6px;opacity:.6"
               onclick="confConcluir('${fullId}',${totalEsperado})">
@@ -6888,7 +6887,10 @@ function confRenderSecao(fullId, totalEsperado) {
           </button>
         `}
       </div>
-    </div>`;
+    </div>
+
+    ${concluida ? carrRenderSecaoHtml(fullId, totalEsperado) : ''}
+  `;
 }
 
 // ── Abre scanner em modo conferência ──────────────────
@@ -6902,7 +6904,7 @@ async function confAbrirScanner(fullId, totalEsperado) {
   const titulo = overlay.querySelector('.scanner-title');
   if (titulo) titulo.textContent = '📦 Conferência de Embarque';
   const hint = overlay.querySelector('.scanner-hint');
-  if (hint) hint.textContent = 'Bipe as caixas, a NF e a Autorização de Entrada';
+  if (hint) hint.textContent = 'Bipe as caixas e a Autorização de Entrada';
 
   overlay.classList.add('open');
   _scannerActive = true;
@@ -6921,7 +6923,7 @@ async function confAbrirScanner(fullId, totalEsperado) {
     await video.play();
     _scannerCanvas = document.createElement('canvas');
     _scannerCtx    = _scannerCanvas.getContext('2d', { willReadFrequently: true });
-    status.textContent = 'Bipe as caixas, NF e Autorização…';
+    status.textContent = 'Bipe as caixas e a Autorização de Entrada…';
     _confTickScan(video, fullId, totalEsperado);
   } catch(err) {
     status.textContent = err.name === 'NotAllowedError'
@@ -6956,16 +6958,26 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
   const status = document.getElementById('scannerStatus');
 
   // ── Detecta tipo do QR ────────────────────────────
-  // 1. Volume de caixa: contém "envio:" ou padrão NNNNNNN/N
+  // 1. Volume de caixa: padrão NNNNNNN/N (ex: 66005642/7)
   const volMatch = raw.match(/(\d{6,})\s*\/\s*(\d+)/i)
     || raw.match(/envio[:\s]+(\d+)\s*\/\s*(\d+)/i);
 
-  // 2. Autorização de Entrada: contém "Frete" ou número de frete
-  const autMatch = raw.match(/frete\s*[:\s]?(\d+)/i)
-    || (raw.match(/^\d{8,}$/) && raw.length <= 12);
+  // 2. Autorização de Entrada:
+  //    - Texto com "Frete XXXXXXX"
+  //    - URL do ML contendo número do frete (ex: https://...shipment/66005642...)
+  //    - Número puro de 7-10 dígitos que NÃO seja um volume
+  const autFreteMatch = raw.match(/frete\s*[:\s]?(\d+)/i);
+  const autUrlMatch   = raw.match(/shipment[s]?[\/=](\d{6,})/i)
+    || raw.match(/freight[\/=](\d{6,})/i)
+    || raw.match(/envio[\/=](\d{6,})/i);
+  // URL genérica do ML — qualquer URL que contenha número longo
+  const autUrlGeneric = !volMatch && raw.startsWith('http') && raw.match(/\/(\d{7,})/);
 
-  // 3. NF-e: chave com 44 dígitos
-  const nfMatch = raw.replace(/\s/g,'').match(/^(\d{44})$/);
+  const isAutorizacao = !volMatch && (autFreteMatch || autUrlMatch || autUrlGeneric
+    || raw.toLowerCase().includes('frete')
+    || raw.toLowerCase().includes('shipment')
+    || raw.toLowerCase().includes('autorizacao')
+    || raw.toLowerCase().includes('autorização'));
 
   // ── Volume de caixa ───────────────────────────────
   if (volMatch) {
@@ -6973,7 +6985,6 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
     const volNum   = parseInt(volMatch[2]);
 
     if (_confVolumes.has(volNum)) {
-      // Duplicata
       flash.style.background = 'rgba(248,81,73,.3)';
       flash.classList.add('flash');
       setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
@@ -6982,7 +6993,6 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
       status.textContent = `⚠️ Volume ${volNum} já conferido!`;
       status.style.color = 'var(--red)';
     } else {
-      // Novo volume
       await _sb.from('full_conferencia_volumes').insert({
         conferencia_id: _confAtual.id,
         full_id: fullId,
@@ -6990,7 +7000,6 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
         volume_num: volNum
       });
       _confVolumes.add(volNum);
-
       flash.style.background = 'rgba(63,185,80,.2)';
       flash.classList.add('flash');
       setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
@@ -7001,42 +7010,19 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
       confRenderSecao(fullId, totalEsperado);
     }
 
-  // ── NF-e ──────────────────────────────────────────
-  } else if (nfMatch) {
-    const chave = nfMatch[1];
-    // Extrai número da NF da chave (posições 25-34)
-    const nfNum = chave.substring(22, 31).replace(/^0+/,'');
-
-    if (_confAtual.nf_bipada) {
-      _somDuplicata();
-      if (navigator.vibrate) navigator.vibrate([100,80,100]);
-      status.textContent = '⚠️ NF já foi bipada!';
-      status.style.color = 'var(--orange)';
-    } else {
-      await _sb.from('full_conferencia').update({
-        nf_numero: nfNum,
-        nf_bipada: true,
-        nf_bipada_em: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }).eq('id', _confAtual.id);
-      _confAtual.nf_numero = nfNum;
-      _confAtual.nf_bipada = true;
-
-      _somSucesso();
-      if (navigator.vibrate) navigator.vibrate(80);
-      status.textContent = `✅ NF ${nfNum} — confirmada`;
-      status.style.color = 'var(--green)';
-      confRenderSecao(fullId, totalEsperado);
-    }
-
   // ── Autorização de Entrada ────────────────────────
-  } else if (autMatch || raw.toLowerCase().includes('frete')) {
-    const autNum = autMatch ? (autMatch[1] || raw.match(/\d{6,}/)?.[0] || raw) : raw.match(/\d{6,}/)?.[0] || raw;
+  } else if (isAutorizacao) {
+    // Extrai número do frete de qualquer formato
+    const autNum = autFreteMatch?.[1]
+      || autUrlMatch?.[1]
+      || autUrlGeneric?.[1]
+      || raw.match(/\d{7,}/)?.[0]
+      || raw;
 
     if (_confAtual.aut_bipada) {
       _somDuplicata();
       if (navigator.vibrate) navigator.vibrate([100,80,100]);
-      status.textContent = '⚠️ Autorização já foi bipada!';
+      status.textContent = `⚠️ Autorização já foi bipada! (Frete ${_confAtual.aut_numero})`;
       status.style.color = 'var(--orange)';
     } else {
       await _sb.from('full_conferencia').update({
@@ -7047,7 +7033,9 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
       }).eq('id', _confAtual.id);
       _confAtual.aut_numero = String(autNum);
       _confAtual.aut_bipada = true;
-
+      flash.style.background = 'rgba(63,185,80,.2)';
+      flash.classList.add('flash');
+      setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
       _somSucesso();
       if (navigator.vibrate) navigator.vibrate(80);
       status.textContent = `✅ Autorização Frete ${autNum} — confirmada`;
@@ -7065,7 +7053,7 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
   // Reativa após delay
   setTimeout(()=>{
     status.style.color = '';
-    status.textContent = 'Bipe as caixas, NF e Autorização…';
+    status.textContent = 'Bipe as caixas e a Autorização de Entrada…';
     _scannerActive = true;
     const video = document.getElementById('scannerVideo');
     if (video && _scannerStream) _confTickScan(video, fullId, totalEsperado);
@@ -7132,7 +7120,387 @@ async function confIniciarPorFullId(fullId) {
   confAbrirScanner(fullId, totalCaixas);
 }
 
-// ── Patch: fecharScanner reseta modo conferência ──────
+// ══════════════════════════════════════════════════════
+// CARREGAMENTO — 2ª bipagem (embarque na Ducato)
+// ══════════════════════════════════════════════════════
+
+// ── Carrega ou cria registro de carregamento ──────────
+async function carrCarregar(fullId, totalEsperado) {
+  const { data } = await _sb
+    .from('full_carregamento')
+    .select('*')
+    .eq('full_id', fullId)
+    .eq('status', 'em_andamento')
+    .single();
+
+  if (data) {
+    _carrAtual = data;
+    const { data: vols } = await _sb
+      .from('full_carregamento_volumes')
+      .select('volume_num')
+      .eq('carregamento_id', data.id);
+    _carrVolumes = new Set((vols||[]).map(v => v.volume_num));
+  } else {
+    const { data: novo } = await _sb
+      .from('full_carregamento')
+      .insert({ full_id: fullId, conferencia_id: _confAtual.id })
+      .select()
+      .single();
+    _carrAtual = novo;
+    _carrVolumes = new Set();
+  }
+  confRenderSecao(fullId, totalEsperado);
+}
+
+// ── Gera HTML da seção de carregamento ────────────────
+function carrRenderSecaoHtml(fullId, totalEsperado) {
+  if (!_carrAtual && !_confAtual) return '';
+
+  // Se ainda não iniciou o carregamento
+  if (!_carrAtual) {
+    return `
+      <div class="conf-section" style="margin-top:10px;border-color:rgba(224,122,48,.2)">
+        <div class="conf-header" style="background:rgba(224,122,48,.06)">
+          <div class="conf-title" style="color:var(--orange)">
+            🚛 Carregamento na Ducato
+            <span class="conf-badge conf-badge-pend">Não iniciado</span>
+          </div>
+        </div>
+        <div class="conf-body">
+          <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:12px">
+            Inicie quando for carregar a Ducato. Bipe cada caixa conforme embarca.
+          </div>
+          <button class="conf-btn-scan" style="border-color:rgba(224,122,48,.3);color:var(--orange)"
+            onclick="carrIniciar('${fullId}',${totalEsperado})">
+            🚛 Iniciar carregamento
+          </button>
+        </div>
+      </div>`;
+  }
+
+  const carr = _carrAtual;
+  const bipados = _carrVolumes.size;
+  const pct = totalEsperado > 0 ? Math.round((bipados / totalEsperado) * 100) : 0;
+  const completo = bipados >= totalEsperado && totalEsperado > 0;
+  const concluido = carr.status === 'concluido';
+  const autOk = carr.aut_bipada;
+
+  // Chips de volumes
+  const todosNums = Array.from({length: totalEsperado}, (_,i) => i+1);
+  // Faltantes que FORAM conferidos (deveriam estar no carregamento)
+  const faltando = todosNums.filter(n => !_carrVolumes.has(n));
+  // Volumes bipados no carregamento que não passaram pela conferência — alerta
+  const naoConferidos = [..._carrVolumes].filter(n => !_confVolumes.has(n));
+
+  const chipsHtml = totalEsperado <= 100
+    ? `<div class="conf-volumes-grid">
+        ${todosNums.map(n => {
+          const embarcado = _carrVolumes.has(n);
+          const conferido = _confVolumes.has(n);
+          const cls = embarcado ? 'conf-vol-ok' : 'conf-vol-miss';
+          const title = !conferido && embarcado ? '⚠ não conferido' : '';
+          return `<span class="conf-vol-chip ${cls}" ${title?`style="border-color:var(--orange)"`:''} title="${title}">${n}</span>`;
+        }).join('')}
+       </div>`
+    : `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:8px">
+        Embarcados: ${[..._carrVolumes].sort((a,b)=>a-b).join(', ') || '—'}
+       </div>`;
+
+  const faltandoHtml = faltando.length && faltando.length <= 20
+    ? `<div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--red);margin-bottom:8px">
+        Faltando embarcar: ${faltando.join(', ')}
+       </div>`
+    : '';
+
+  const alertaHtml = naoConferidos.length
+    ? `<div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--orange);margin-bottom:8px;padding:6px;background:rgba(224,122,48,.08);border-radius:6px">
+        ⚠ Volumes não conferidos: ${naoConferidos.join(', ')}
+       </div>`
+    : '';
+
+  return `
+    <div class="conf-section" style="margin-top:10px;border-color:rgba(224,122,48,.2)">
+      <div class="conf-header" style="background:rgba(224,122,48,.06)">
+        <div class="conf-title" style="color:var(--orange)">
+          🚛 Carregamento na Ducato
+          <span class="conf-badge ${concluido ? 'conf-badge-ok' : completo ? 'conf-badge-ok' : 'conf-badge-pend'}">
+            ${concluido ? '✓ Concluído' : completo ? '✓ Caixas OK' : 'Em andamento'}
+          </span>
+        </div>
+      </div>
+      <div class="conf-body">
+        <div class="conf-progress-wrap">
+          <div class="conf-progress-row">
+            <span class="conf-progress-label">Caixas embarcadas</span>
+            <span class="conf-progress-count" style="color:${completo?'var(--green)':'var(--text)'}">${bipados}/${totalEsperado}</span>
+          </div>
+          <div class="conf-bar">
+            <div class="conf-bar-fill ${completo?'':'warn'}" style="width:${pct}%;background:${completo?'':'var(--orange)'}"></div>
+          </div>
+        </div>
+
+        ${chipsHtml}
+        ${faltandoHtml}
+        ${alertaHtml}
+
+        <!-- Autorização -->
+        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Documentos</div>
+        <div class="conf-doc-row">
+          <span class="conf-doc-label">Autorização de Entrada</span>
+          <span class="conf-doc-val">${carr.aut_bipada && _confAtual?.aut_numero ? 'Frete '+_confAtual.aut_numero : '—'}</span>
+          <span class="conf-doc-status ${autOk ? 'conf-badge-ok' : 'conf-badge-pend'}">${autOk ? '✓ bipada' : 'pendente'}</span>
+        </div>
+
+        ${!concluido ? `
+          <button class="conf-btn-scan ${_carrScannerMode ? 'active' : ''}" style="border-color:rgba(224,122,48,.3);color:var(--orange)"
+            onclick="${_carrScannerMode ? `carrFecharScanner('${fullId}',${totalEsperado})` : `carrAbrirScanner('${fullId}',${totalEsperado})`}">
+            ${_carrScannerMode ? '⏹ Parar scanner' : '📷 Escanear caixas'}
+          </button>
+          ${bipados > 0 ? `
+            <button class="conf-btn-scan" style="margin-top:6px;border-color:rgba(248,81,73,.3);color:var(--red)"
+              onclick="carrResetar('${fullId}',${totalEsperado})">
+              🗑 Resetar carregamento
+            </button>
+          ` : ''}
+          ${completo && autOk ? `
+            <button class="conf-btn-scan" style="margin-top:6px;background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.3);color:var(--green)"
+              onclick="carrConcluir('${fullId}',${totalEsperado})">
+              ✅ Concluir carregamento
+            </button>
+          ` : (completo || autOk) ? `
+            <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-align:center;margin-top:8px;padding:6px;background:var(--surface2);border-radius:6px">
+              ${!completo ? '⚠ Caixas incompletas · ' : ''}${!autOk ? '⚠ Autorização não bipada' : ''}
+            </div>
+            <button class="conf-btn-scan" style="margin-top:6px;opacity:.6"
+              onclick="carrConcluir('${fullId}',${totalEsperado})">
+              ✅ Concluir mesmo assim
+            </button>
+          ` : ''}
+        ` : `
+          <div style="text-align:center;padding:10px;font-size:12px;color:var(--green);font-family:'DM Mono',monospace">
+            ✓ Carregamento concluído — pronto para partir!
+          </div>
+        `}
+      </div>
+    </div>`;
+}
+
+async function carrIniciar(fullId, totalEsperado) {
+  await carrCarregar(fullId, totalEsperado);
+  carrAbrirScanner(fullId, totalEsperado);
+}
+
+async function carrAbrirScanner(fullId, totalEsperado) {
+  _carrScannerMode = true;
+  confRenderSecao(fullId, totalEsperado);
+
+  const overlay = document.getElementById('scannerOverlay');
+  const status  = document.getElementById('scannerStatus');
+  const titulo  = overlay.querySelector('.scanner-title');
+  const hint    = overlay.querySelector('.scanner-hint');
+  if (titulo) titulo.textContent = '🚛 Carregamento na Ducato';
+  if (hint)   hint.textContent   = 'Bipe cada caixa conforme embarca na Ducato';
+
+  overlay.classList.add('open');
+  _scannerActive = true;
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    status.textContent = '❌ Câmera não suportada.'; return;
+  }
+  try {
+    status.textContent = 'Iniciando câmera…';
+    _scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal:'environment' }, width:{ideal:1280}, height:{ideal:720} }
+    });
+    const video = document.getElementById('scannerVideo');
+    video.srcObject = _scannerStream;
+    await video.play();
+    _scannerCanvas = document.createElement('canvas');
+    _scannerCtx    = _scannerCanvas.getContext('2d', { willReadFrequently: true });
+    status.textContent = 'Bipe cada caixa conforme embarca…';
+    _carrTickScan(video, fullId, totalEsperado);
+  } catch(err) {
+    status.textContent = err.name === 'NotAllowedError'
+      ? '❌ Permissão negada.' : '❌ Erro: ' + err.message;
+  }
+}
+
+function _carrTickScan(video, fullId, totalEsperado) {
+  if (!_scannerActive) return;
+  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    const w = video.videoWidth, h = video.videoHeight;
+    if (w && h) {
+      _scannerCanvas.width = w; _scannerCanvas.height = h;
+      _scannerCtx.drawImage(video, 0, 0, w, h);
+      const imageData = _scannerCtx.getImageData(0, 0, w, h);
+      const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
+      if (code?.data) { carrOnCodigoLido(code.data, fullId, totalEsperado); return; }
+    }
+  }
+  _scannerAnimId = requestAnimationFrame(() => _carrTickScan(video, fullId, totalEsperado));
+}
+
+async function carrOnCodigoLido(raw, fullId, totalEsperado) {
+  if (!_scannerActive) return;
+  _scannerActive = false;
+
+  const flash  = document.getElementById('scannerFlash');
+  const status = document.getElementById('scannerStatus');
+
+  // Detecta volume de caixa
+  const volMatch = raw.match(/(\d{6,})\s*\/\s*(\d+)/i)
+    || raw.match(/envio[:\s]+(\d+)\s*\/\s*(\d+)/i);
+
+  // Detecta autorização
+  const autFreteMatch = raw.match(/frete\s*[:\s]?(\d+)/i);
+  const autUrlMatch   = raw.match(/shipment[s]?[\/=](\d{6,})/i) || raw.match(/freight[\/=](\d{6,})/i);
+  const autUrlGeneric = !volMatch && raw.startsWith('http') && raw.match(/\/(\d{7,})/);
+  const isAutorizacao = !volMatch && (autFreteMatch || autUrlMatch || autUrlGeneric
+    || raw.toLowerCase().includes('frete') || raw.toLowerCase().includes('shipment'));
+
+  if (volMatch) {
+    const envioId = volMatch[1];
+    const volNum  = parseInt(volMatch[2]);
+
+    if (_carrVolumes.has(volNum)) {
+      // Duplicata no carregamento
+      flash.style.background = 'rgba(248,81,73,.3)';
+      flash.classList.add('flash');
+      setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
+      _somDuplicata();
+      if (navigator.vibrate) navigator.vibrate([100,80,100]);
+      status.textContent = `⚠️ Volume ${volNum} já embarcado!`;
+      status.style.color = 'var(--red)';
+    } else {
+      // Alerta se não passou pela 1ª conferência
+      const naoConferido = !_confVolumes.has(volNum);
+
+      await _sb.from('full_carregamento_volumes').insert({
+        carregamento_id: _carrAtual.id,
+        full_id: fullId,
+        envio_id: envioId,
+        volume_num: volNum
+      });
+      _carrVolumes.add(volNum);
+
+      if (naoConferido) {
+        flash.style.background = 'rgba(224,122,48,.3)';
+        flash.classList.add('flash');
+        setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
+        _somDuplicata();
+        if (navigator.vibrate) navigator.vibrate([80,40,80]);
+        status.textContent = `⚠️ Volume ${volNum} — não estava conferido!`;
+        status.style.color = 'var(--orange)';
+      } else {
+        flash.style.background = 'rgba(63,185,80,.2)';
+        flash.classList.add('flash');
+        setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
+        _somSucesso();
+        if (navigator.vibrate) navigator.vibrate(80);
+        status.textContent = `✅ Volume ${volNum} embarcado — ${_carrVolumes.size}/${totalEsperado}`;
+        status.style.color = 'var(--green)';
+      }
+      confRenderSecao(fullId, totalEsperado);
+    }
+
+  } else if (isAutorizacao) {
+    const autNum = autFreteMatch?.[1] || autUrlMatch?.[1] || autUrlGeneric?.[1]
+      || raw.match(/\d{7,}/)?.[0] || raw;
+
+    if (_carrAtual.aut_bipada) {
+      _somDuplicata();
+      if (navigator.vibrate) navigator.vibrate([100,80,100]);
+      status.textContent = `⚠️ Autorização já bipada!`;
+      status.style.color = 'var(--orange)';
+    } else {
+      await _sb.from('full_carregamento').update({
+        aut_bipada: true,
+        aut_bipada_em: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }).eq('id', _carrAtual.id);
+      _carrAtual.aut_bipada = true;
+      flash.style.background = 'rgba(63,185,80,.2)';
+      flash.classList.add('flash');
+      setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
+      _somSucesso();
+      if (navigator.vibrate) navigator.vibrate(80);
+      status.textContent = `✅ Autorização Frete ${autNum} — confirmada`;
+      status.style.color = 'var(--green)';
+      confRenderSecao(fullId, totalEsperado);
+    }
+
+  } else {
+    _somDuplicata();
+    status.textContent = '❓ QR não reconhecido — tente novamente';
+    status.style.color = 'var(--orange)';
+  }
+
+  setTimeout(()=>{
+    status.style.color = '';
+    status.textContent = 'Bipe cada caixa conforme embarca…';
+    _scannerActive = true;
+    const video = document.getElementById('scannerVideo');
+    if (video && _scannerStream) _carrTickScan(video, fullId, totalEsperado);
+  }, 1400);
+}
+
+function carrFecharScanner(fullId, totalEsperado) {
+  _carrScannerMode = false;
+  fecharScanner();
+  confRenderSecao(fullId, totalEsperado);
+}
+
+async function carrConcluir(fullId, totalEsperado) {
+  if (!_carrAtual) return;
+  await _sb.from('full_carregamento')
+    .update({ status: 'concluido', updated_at: new Date().toISOString() })
+    .eq('id', _carrAtual.id);
+  _carrAtual.status = 'concluido';
+  showToast('🚛 Carregamento concluído — boa viagem!');
+  confRenderSecao(fullId, totalEsperado);
+}
+
+async function carrResetar(fullId, totalEsperado) {
+  if (!_carrAtual) return;
+  if (!confirm('Apagar todos os bipes do carregamento e recomeçar?')) return;
+  await _sb.from('full_carregamento_volumes').delete().eq('carregamento_id', _carrAtual.id);
+  await _sb.from('full_carregamento').update({
+    aut_bipada: false, aut_bipada_em: null,
+    updated_at: new Date().toISOString()
+  }).eq('id', _carrAtual.id);
+  _carrVolumes = new Set();
+  _carrAtual.aut_bipada = false;
+  showToast('🗑 Carregamento resetado');
+  confRenderSecao(fullId, totalEsperado);
+}
+
+// ── Patch confCarregar para também carregar estado do carregamento
+const _origConfCarregar = confCarregar;
+confCarregar = async function(fullId, totalEsperado) {
+  await _origConfCarregar(fullId, totalEsperado);
+  // Se conferência já está concluída, carrega carregamento também
+  if (_confAtual?.status === 'concluida') {
+    const { data: carr } = await _sb
+      .from('full_carregamento')
+      .select('*')
+      .eq('full_id', fullId)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    if (carr) {
+      _carrAtual = carr;
+      const { data: vols } = await _sb
+        .from('full_carregamento_volumes')
+        .select('volume_num')
+        .eq('carregamento_id', carr.id);
+      _carrVolumes = new Set((vols||[]).map(v => v.volume_num));
+    } else {
+      _carrAtual = null;
+      _carrVolumes = new Set();
+    }
+    confRenderSecao(fullId, totalEsperado);
+  }
+};
 const _origFecharScanner = fecharScanner;
 fecharScanner = function() {
   _confScannerMode = false;
