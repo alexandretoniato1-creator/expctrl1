@@ -1566,6 +1566,7 @@ select:focus{border-color:var(--accent)}
 <div class="scanner-overlay" id="scannerOverlay">
   <div class="scanner-header">
     <div class="scanner-title">📷 Escanear QR Code</div>
+    <div id="scannerProgress" style="display:none;font-family:'DM Mono',monospace;font-size:13px;font-weight:700;color:#fff;background:rgba(255,255,255,.1);padding:4px 12px;border-radius:100px;border:1px solid rgba(255,255,255,.2)"></div>
     <button class="scanner-close" onclick="fecharScanner()">✕</button>
   </div>
   <div class="scanner-viewport">
@@ -6911,6 +6912,26 @@ function confRenderSecao(fullId, totalEsperado) {
   `;
 }
 
+// ── Atualiza contador de progresso no scanner ─────────
+function updateScannerProgress(bipados, total, modo) {
+  const el = document.getElementById('scannerProgress');
+  if (!el) return;
+  if (!total) { el.style.display = 'none'; return; }
+  const faltam = total - bipados;
+  el.style.display = 'block';
+  el.textContent = `${bipados}/${total} caixas`;
+  // Cor muda conforme progresso
+  if (bipados >= total) {
+    el.style.background = 'rgba(63,185,80,.3)';
+    el.style.borderColor = 'rgba(63,185,80,.5)';
+    el.style.color = '#5de6a8';
+  } else {
+    el.style.background = 'rgba(255,255,255,.1)';
+    el.style.borderColor = 'rgba(255,255,255,.2)';
+    el.style.color = '#fff';
+  }
+}
+
 // ── Abre scanner em modo conferência ──────────────────
 async function confAbrirScanner(fullId, totalEsperado) {
   _confScannerMode = true;
@@ -6942,6 +6963,7 @@ async function confAbrirScanner(fullId, totalEsperado) {
     _scannerCanvas = document.createElement('canvas');
     _scannerCtx    = _scannerCanvas.getContext('2d', { willReadFrequently: true });
     status.textContent = 'Bipe as caixas e a Autorização de Entrada…';
+    updateScannerProgress(_confVolumes.size, totalEsperado);
     _confTickScan(video, fullId, totalEsperado);
   } catch(err) {
     status.textContent = err.name === 'NotAllowedError'
@@ -6991,9 +7013,11 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
   const autUrlGeneric = !volMatch && raw.startsWith('http') && raw.match(/\/(\d{7,})/);
   const isMeliUrl = raw.includes('mercadolivre') || raw.includes('mercadopago')
     || raw.includes('mercadolibre') || raw.includes('meli.');
+  // QR de uso interno ML — contém número de telefone (ex: "6609-1502" ou "tel:6609-1502")
+  const isPhoneQr = !volMatch && /^(tel:)?[\d\-\s]{7,15}$/.test(raw.trim());
 
   const isAutorizacao = !volMatch && (
-    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl
+    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl || isPhoneQr
     || raw.toLowerCase().includes('frete')
     || raw.toLowerCase().includes('shipment')
     || raw.toLowerCase().includes('autorizacao')
@@ -7027,6 +7051,7 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
       setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
       _somSucesso();
       if (navigator.vibrate) navigator.vibrate(80);
+      updateScannerProgress(_confVolumes.size, totalEsperado);
       status.textContent = `✅ Volume ${volNum} — ${_confVolumes.size}/${totalEsperado} conferidos`;
       status.style.color = 'var(--green)';
       confRenderSecao(fullId, totalEsperado);
@@ -7340,6 +7365,7 @@ async function carrAbrirScanner(fullId, totalEsperado) {
     _scannerCanvas = document.createElement('canvas');
     _scannerCtx    = _scannerCanvas.getContext('2d', { willReadFrequently: true });
     status.textContent = 'Bipe cada caixa conforme embarca…';
+    updateScannerProgress(_carrVolumes.size, totalEsperado);
     _carrTickScan(video, fullId, totalEsperado);
   } catch(err) {
     status.textContent = err.name === 'NotAllowedError'
@@ -7385,8 +7411,9 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
   const autUrlGeneric = !volMatch && raw.startsWith('http') && raw.match(/\/(\d{7,})/);
   const isMeliUrl = raw.includes('mercadolivre') || raw.includes('mercadopago')
     || raw.includes('mercadolibre') || raw.includes('meli.') || raw.includes('ml.com');
+  const isPhoneQr = !volMatch && /^(tel:)?[\d\-\s]{7,15}$/.test(raw.trim());
   const isAutorizacao = !volMatch && (
-    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl
+    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl || isPhoneQr
     || raw.toLowerCase().includes('frete')
     || raw.toLowerCase().includes('shipment')
     || raw.toLowerCase().includes('autorizacao')
@@ -7434,6 +7461,7 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
         setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
         _somDuplicata();
         if (navigator.vibrate) navigator.vibrate([80,40,80]);
+        updateScannerProgress(_carrVolumes.size, totalEsperado);
         status.textContent = `⚠️ Volume ${volNum} — não estava conferido!`;
         status.style.color = 'var(--orange)';
       } else {
@@ -7442,6 +7470,7 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
         setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
         _somSucesso();
         if (navigator.vibrate) navigator.vibrate(80);
+        updateScannerProgress(_carrVolumes.size, totalEsperado);
         status.textContent = `✅ Volume ${volNum} embarcado — ${_carrVolumes.size}/${totalEsperado}`;
         status.style.color = 'var(--green)';
       }
