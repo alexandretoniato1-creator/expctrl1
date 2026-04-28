@@ -6754,24 +6754,25 @@ let _carrScannerMode = false; // scanner em modo carregamento?
 
 // ── Carrega ou cria conferência para um Full ──────────
 async function confCarregar(fullId, totalEsperado) {
-  // Busca conferência em aberto
-  const { data } = await _sb
+  // Busca conferência mais recente — concluída ou em andamento
+  const { data: todas } = await _sb
     .from('full_conferencia')
     .select('*')
     .eq('full_id', fullId)
-    .eq('status', 'em_andamento')
-    .single();
+    .order('created_at', { ascending: false })
+    .limit(1);
+
+  const data = todas?.[0] || null;
 
   if (data) {
     _confAtual = data;
-    // Carrega volumes já bipados
     const { data: vols } = await _sb
       .from('full_conferencia_volumes')
       .select('volume_num')
       .eq('conferencia_id', data.id);
     _confVolumes = new Set((vols||[]).map(v => v.volume_num));
   } else {
-    // Cria nova conferência
+    // Cria nova conferência somente se não existe nenhuma
     const { data: nova } = await _sb
       .from('full_conferencia')
       .insert({ full_id: fullId, total_esperado: totalEsperado })
