@@ -6988,14 +6988,18 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
   const autUrlMatch   = raw.match(/shipment[s]?[\/=](\d{6,})/i)
     || raw.match(/freight[\/=](\d{6,})/i)
     || raw.match(/envio[\/=](\d{6,})/i);
-  // URL genérica do ML — qualquer URL que contenha número longo
   const autUrlGeneric = !volMatch && raw.startsWith('http') && raw.match(/\/(\d{7,})/);
+  const isMeliUrl = raw.includes('mercadolivre') || raw.includes('mercadopago')
+    || raw.includes('mercadolibre') || raw.includes('meli.');
 
-  const isAutorizacao = !volMatch && (autFreteMatch || autUrlMatch || autUrlGeneric
+  const isAutorizacao = !volMatch && (
+    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl
     || raw.toLowerCase().includes('frete')
     || raw.toLowerCase().includes('shipment')
     || raw.toLowerCase().includes('autorizacao')
-    || raw.toLowerCase().includes('autorização'));
+    || raw.toLowerCase().includes('autorização')
+    || raw.toLowerCase().includes('entrada')
+  );
 
   // ── Volume de caixa ───────────────────────────────
   if (volMatch) {
@@ -7030,12 +7034,12 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
 
   // ── Autorização de Entrada ────────────────────────
   } else if (isAutorizacao) {
-    // Extrai número do frete de qualquer formato
+    // Extrai o número mais longo do QR — geralmente o número do frete
     const autNum = autFreteMatch?.[1]
       || autUrlMatch?.[1]
       || autUrlGeneric?.[1]
-      || raw.match(/\d{7,}/)?.[0]
-      || raw;
+      || raw.match(/\d{7,}/)?.[0]  // qualquer sequência de 7+ dígitos
+      || raw.substring(0, 30);     // fallback: primeiros 30 chars
 
     if (_confAtual.aut_bipada) {
       _somDuplicata();
@@ -7369,12 +7373,35 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
   const volMatch = raw.match(/(\d{6,})\s*\/\s*(\d+)/i)
     || raw.match(/envio[:\s]+(\d+)\s*\/\s*(\d+)/i);
 
-  // Detecta autorização
+  // 2. Autorização de Entrada — detecção ampla:
+  //    - Texto com "Frete XXXXXXX"
+  //    - URL do ML (qualquer domínio mercadolivre/mercadopago/meli)
+  //    - Qualquer URL com número longo
+  //    - Número puro de 7-10 dígitos
   const autFreteMatch = raw.match(/frete\s*[:\s]?(\d+)/i);
-  const autUrlMatch   = raw.match(/shipment[s]?[\/=](\d{6,})/i) || raw.match(/freight[\/=](\d{6,})/i);
+  const autUrlMatch   = raw.match(/shipment[s]?[\/=](\d{6,})/i)
+    || raw.match(/freight[\/=](\d{6,})/i)
+    || raw.match(/envio[\/=](\d{6,})/i);
   const autUrlGeneric = !volMatch && raw.startsWith('http') && raw.match(/\/(\d{7,})/);
-  const isAutorizacao = !volMatch && (autFreteMatch || autUrlMatch || autUrlGeneric
-    || raw.toLowerCase().includes('frete') || raw.toLowerCase().includes('shipment'));
+  const isMeliUrl = raw.includes('mercadolivre') || raw.includes('mercadopago')
+    || raw.includes('mercadolibre') || raw.includes('meli.') || raw.includes('ml.com');
+  const isAutorizacao = !volMatch && (
+    autFreteMatch || autUrlMatch || autUrlGeneric || isMeliUrl
+    || raw.toLowerCase().includes('frete')
+    || raw.toLowerCase().includes('shipment')
+    || raw.toLowerCase().includes('autorizacao')
+    || raw.toLowerCase().includes('autorização')
+    || raw.toLowerCase().includes('entrada')
+  );
+
+  // Extrai número do frete de qualquer formato
+  function extrairNumFrete(raw) {
+    return autFreteMatch?.[1]
+      || autUrlMatch?.[1]
+      || autUrlGeneric?.[1]
+      || raw.match(/\d{7,}/)?.[0]
+      || raw.substring(0, 20);
+  }
 
   if (volMatch) {
     const envioId = volMatch[1];
@@ -7423,7 +7450,7 @@ async function carrOnCodigoLido(raw, fullId, totalEsperado) {
 
   } else if (isAutorizacao) {
     const autNum = autFreteMatch?.[1] || autUrlMatch?.[1] || autUrlGeneric?.[1]
-      || raw.match(/\d{7,}/)?.[0] || raw;
+      || raw.match(/\d{7,}/)?.[0] || raw.substring(0, 30);
 
     if (_carrAtual.aut_bipada) {
       _somDuplicata();
