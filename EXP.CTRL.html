@@ -983,6 +983,44 @@ select:focus{border-color:var(--accent)}
             <div id="dashDucatoBreakdown" style="margin-top:10px;display:flex;flex-direction:column;gap:4px"></div>
           </div>
 
+          <!-- ══ VISÃO SEMANAL ══ -->
+          <div style="display:flex;align-items:center;justify-content:space-between;margin:24px 0 12px">
+            <div style="font-size:13px;font-weight:800;letter-spacing:-.2px">📅 Visão da Semana</div>
+            <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)" id="dashSemanaLabel">—</div>
+          </div>
+
+          <!-- FULLS ESTOCADOS AGUARDANDO CARREGAMENTO -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div style="font-size:13px;font-weight:700">📦 Estocados — aguardando embarque</div>
+              <span class="badge" id="dashEstocadosBadge" style="font-size:10px">0 fulls</span>
+            </div>
+            <div id="dashEstocadosLista" style="display:flex;flex-direction:column;gap:6px">
+              <div style="color:var(--muted);font-size:12px;text-align:center;padding:16px">Carregando…</div>
+            </div>
+          </div>
+
+          <!-- SAÍDAS DA SEMANA -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div style="font-size:13px;font-weight:700">📤 Saídas da semana</div>
+              <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--accent)" id="dashSaidasSemanaTotal">—</span>
+            </div>
+            <!-- Barras por dia -->
+            <div id="dashSaidasSemanaBars" style="display:flex;align-items:flex-end;gap:6px;height:60px;margin-bottom:10px"></div>
+            <!-- Breakdown por marketplace -->
+            <div id="dashSaidasSemanaMkt" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+          </div>
+
+          <!-- FULLS CONCLUÍDOS NA SEMANA -->
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:700">✅ Fulls concluídos na semana</div>
+              <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="dashFullsConcluidosSub">—</span>
+            </div>
+            <div id="dashFullsConcluidosLista" style="display:flex;flex-direction:column;gap:5px"></div>
+          </div>
+
           <!-- TABELAS LOGBOX / FOKUS -->
           <div class="tables">
             <div class="table-wrap">
@@ -3125,6 +3163,178 @@ function renderDashboard() {
   renderDashDucato();
   // insumos
   insRenderDashCard();
+  // visão semanal
+  renderDashSemana();
+}
+
+// ── VISÃO SEMANAL ────────────────────────────────────
+async function renderDashSemana() {
+  // Define intervalo: segunda a domingo da semana atual
+  const hoje = new Date();
+  const diaSemana = hoje.getDay(); // 0=dom, 1=seg...
+  const seg = new Date(hoje);
+  seg.setDate(hoje.getDate() - (diaSemana === 0 ? 6 : diaSemana - 1));
+  seg.setHours(0,0,0,0);
+  const dom = new Date(seg);
+  dom.setDate(seg.getDate() + 6);
+  dom.setHours(23,59,59,999);
+
+  const fmt = d => d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  const fmtDia = d => d.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit'});
+  document.getElementById('dashSemanaLabel').textContent =
+    `${fmt(seg)} — ${fmt(dom)}`;
+
+  // ── 1. Fulls estocados aguardando embarque ────────
+  // Busca conferências de estocagem concluídas sem carregamento concluído
+  const { data: confConcluidas } = await _sb
+    .from('full_conferencia')
+    .select('full_id, updated_at, total_esperado')
+    .eq('status', 'concluida');
+
+  const { data: carrConcluidos } = await _sb
+    .from('full_carregamento')
+    .select('full_id')
+    .eq('status', 'concluido');
+
+  const carrConcluidosIds = new Set((carrConcluidos||[]).map(c => c.full_id));
+
+  // Fulls estocados = conf concluída + sem embarque concluído
+  const estocados = (confConcluidas||[]).filter(c => !carrConcluidosIds.has(c.full_id));
+
+  const listaEl = document.getElementById('dashEstocadosLista');
+  const badgeEl = document.getElementById('dashEstocadosBadge');
+
+  badgeEl.textContent = `${estocados.length} full${estocados.length !== 1 ? 's' : ''}`;
+  badgeEl.style.background = estocados.length > 0
+    ? 'rgba(224,122,48,.12)' : 'rgba(63,185,80,.1)';
+  badgeEl.style.color = estocados.length > 0 ? 'var(--orange)' : 'var(--green)';
+  badgeEl.style.border = estocados.length > 0
+    ? '1px solid rgba(224,122,48,.25)' : '1px solid rgba(63,185,80,.2)';
+
+  if (!estocados.length) {
+    listaEl.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px;font-family:'DM Mono',monospace">
+      ✓ Nenhum Full aguardando embarque
+    </div>`;
+  } else {
+    listaEl.innerHTML = estocados.map(c => {
+      const f = FULLS_DATA[c.full_id];
+      const empresa = f?.empresa || '—';
+      const destino = f?.destino || '—';
+      const agendado = f?.agendado || '—';
+      const empCor = empresa === 'LogBox' ? 'var(--logbox)' : 'var(--fokus)';
+      const cxs = c.total_esperado;
+      // Dias estocado
+      const desde = new Date(c.updated_at);
+      const diffDias = Math.floor((hoje - desde) / (1000*60*60*24));
+      const diasLabel = diffDias === 0 ? 'hoje' : diffDias === 1 ? '1 dia' : `${diffDias} dias`;
+
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="showPage('fulls')">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:3px;height:32px;border-radius:2px;background:${empCor};flex-shrink:0"></div>
+          <div>
+            <div style="font-size:12px;font-weight:700;font-family:'DM Mono',monospace;color:var(--accent)">${c.full_id}</div>
+            <div style="font-size:11px;color:var(--muted2)">${empresa} · ${destino}</div>
+          </div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text)">${cxs} cx · ${agendado}</div>
+          <div style="font-size:10px;color:var(--orange);font-family:'DM Mono',monospace">⏳ estocado há ${diasLabel}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── 2. Saídas da semana ───────────────────────────
+  const { data: saidasSemana } = await _sb
+    .from('saidas_hoje')
+    .select('*')
+    .gte('created_at', seg.toISOString())
+    .lte('created_at', dom.toISOString());
+
+  const saidas = saidasSemana || [];
+  const totalSemana = saidas.length;
+  document.getElementById('dashSaidasSemanaTotal').textContent =
+    `${totalSemana} pedido${totalSemana !== 1 ? 's' : ''} na semana`;
+
+  // Agrupa por dia da semana
+  const diasSemana = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(seg);
+    d.setDate(seg.getDate() + i);
+    const key = d.toLocaleDateString('pt-BR');
+    const count = saidas.filter(s => {
+      const sd = new Date(s.created_at);
+      return sd.toLocaleDateString('pt-BR') === key;
+    }).length;
+    diasSemana.push({ label: fmtDia(d), count, isHoje: d.toDateString() === hoje.toDateString() });
+  }
+
+  const maxCount = Math.max(...diasSemana.map(d => d.count), 1);
+  const barsEl = document.getElementById('dashSaidasSemanaBars');
+  barsEl.innerHTML = diasSemana.map(d => {
+    const h = Math.max(Math.round((d.count / maxCount) * 100), d.count > 0 ? 4 : 0);
+    const cor = d.isHoje ? 'var(--accent)' : 'var(--border2)';
+    return `<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%">
+      <div style="font-size:9px;font-family:'DM Mono',monospace;color:${d.count>0?'var(--text)':'var(--muted)'}">${d.count||''}</div>
+      <div style="flex:1;display:flex;align-items:flex-end;width:100%">
+        <div style="width:100%;height:${h}%;background:${cor};border-radius:3px 3px 0 0;min-height:${d.count>0?'3px':'0'};transition:height .4s ease"></div>
+      </div>
+      <div style="font-size:9px;color:${d.isHoje?'var(--accent)':'var(--muted)'};font-family:'DM Mono',monospace;white-space:nowrap;font-weight:${d.isHoje?700:400}">${d.label}</div>
+    </div>`;
+  }).join('');
+
+  // Breakdown por marketplace
+  const mkts = ['ML','Amazon','Shopee','TikTok'];
+  const mktColors = {ML:'var(--accent)',Amazon:'#f90',Shopee:'#f05a28',TikTok:'#69C9D0'};
+  const mktEl = document.getElementById('dashSaidasSemanaMkt');
+  mktEl.innerHTML = mkts.map(m => {
+    const n = saidas.filter(s => s.market === m).length;
+    if (!n) return '';
+    return `<div style="display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--surface2);border-radius:100px;border:1px solid var(--border)">
+      <div style="width:6px;height:6px;border-radius:50%;background:${mktColors[m]}"></div>
+      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text)">${m} <strong>${n}</strong></span>
+    </div>`;
+  }).filter(Boolean).join('') || `<span style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">Sem saídas registradas</span>`;
+
+  // ── 3. Fulls concluídos na semana ─────────────────
+  const fulls = Object.values(FULLS_DATA);
+  const segStr = seg.toLocaleDateString('pt-BR');
+  const domStr = dom.toLocaleDateString('pt-BR');
+
+  // Fulls com status Pronto agendados na semana
+  const concluidosSemana = fulls.filter(f => {
+    if (f.status !== 'Pronto') return false;
+    if (!f.agendado) return false;
+    // compara datas pt-BR
+    const [d,m,a] = f.agendado.split('/');
+    const fd = new Date(+a,+m-1,+d);
+    return fd >= seg && fd <= dom;
+  });
+
+  const subEl = document.getElementById('dashFullsConcluidosSub');
+  const listaConEl = document.getElementById('dashFullsConcluidosLista');
+
+  const lbConc = concluidosSemana.filter(f=>f.empresa==='LogBox').length;
+  const fkConc = concluidosSemana.filter(f=>f.empresa==='Fokus').length;
+  subEl.textContent = `${concluidosSemana.length} total · ${lbConc} LogBox · ${fkConc} Fokus`;
+
+  if (!concluidosSemana.length) {
+    listaConEl.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px;font-family:'DM Mono',monospace">Nenhum Full concluído esta semana</div>`;
+  } else {
+    listaConEl.innerHTML = concluidosSemana.map(f => {
+      const done = (f.itens||[]).filter(i=>i.status==='done').length;
+      const total = (f.itens||[]).length;
+      const empCor = f.empresa==='LogBox'?'var(--logbox)':'var(--fokus)';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(63,185,80,.04);border:1px solid rgba(63,185,80,.12);border-radius:7px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="color:var(--green);font-size:12px">✓</span>
+          <span style="font-size:11px;font-weight:700;font-family:'DM Mono',monospace;color:${empCor}">${f.id}</span>
+          <span style="font-size:11px;color:var(--muted2)">${f.destino||'—'}</span>
+        </div>
+        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${f.agendado||'—'}</span>
+      </div>`;
+    }).join('');
+  }
 }
 
 // ── Ducato por dia ──────────────────────────────────────
