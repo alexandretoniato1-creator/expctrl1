@@ -912,6 +912,13 @@ select:focus{border-color:var(--accent)}
 .etq-empty-sub{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
 /* Add area */
 .etq-add-area{padding:14px 16px;border-top:1px solid var(--border)}
+.etq-config-panel{padding:12px 16px;border-top:1px solid var(--border);background:var(--bg)}
+.etq-config-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.etq-config-field{display:flex;flex-direction:column;gap:3px}
+.etq-config-field label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.etq-config-input{width:72px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;padding:5px 8px;outline:none;text-align:center;transition:border-color .15s}
+.etq-config-input:focus{border-color:var(--accent)}
+.etq-config-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;white-space:nowrap}
 .etq-zpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'DM Mono',monospace;font-size:10px;padding:10px;resize:vertical;outline:none;transition:border-color .15s;min-height:90px;max-height:180px;line-height:1.5}
 .etq-zpl-textarea:focus{border-color:var(--accent);color:var(--text)}
 /* QZ status */
@@ -8087,6 +8094,31 @@ async function etqRenderSecao(fullId) {
     </div>
     ${barra}
     <div class="etq-list">${lista}</div>
+    <div class="etq-config-panel">
+      <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">⚙ Dimensões da folha de impressão</div>
+      <div class="etq-config-row">
+        <div class="etq-config-field">
+          <label>Largura (mm)</label>
+          <input class="etq-config-input" id="etqCfgW" type="number" value="${window._etqCfg?.larguraMm||200}" min="50" max="400" step="1" oninput="etqCfgAtualizar()">
+        </div>
+        <div class="etq-config-field">
+          <label>Altura (mm)</label>
+          <input class="etq-config-input" id="etqCfgH" type="number" value="${window._etqCfg?.alturaMm||44}" min="10" max="200" step="1" oninput="etqCfgAtualizar()">
+        </div>
+        <div class="etq-config-field">
+          <label>DPI</label>
+          <input class="etq-config-input" id="etqCfgDpi" type="number" value="${window._etqCfg?.dpi||203}" min="100" max="600" step="1" oninput="etqCfgAtualizar()">
+        </div>
+        <div style="flex:1"></div>
+        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
+          <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">ZPL gerado</div>
+          <div class="etq-config-badge" id="etqCfgBadge">^PW${Math.round((200/25.4)*203)}  ^LL${Math.round((44/25.4)*203)}</div>
+        </div>
+      </div>
+      <div style="margin-top:8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">
+        Folha 2 etiquetas = 200mm · 1 etiqueta = 100mm · Altura = 44mm · ZD220 = 203dpi
+      </div>
+    </div>
     <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
       <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Novo ZPL</div>
       <div class="form-group" style="margin-bottom:8px">
@@ -8239,21 +8271,42 @@ function etqFecharLote(etqId) {
    Cada ^XA...^XZ = 1 página = 2 etiquetas físicas lado a lado.
    Para imprimir N etiquetas → precisamos de ceil(N/2) blocos.
    ─────────────────────────────────────────────── */
+/* ── Configuração de tamanho da etiqueta ─────────── */
+window._etqCfg = {
+  larguraMm: 200,  // largura total da folha (2 etiquetas lado a lado)
+  alturaMm:  44,   // altura da etiqueta
+  dpi:       203   // ZDesigner ZD220 = 203 dpi
+};
+
+function etqCfgDots(mm) {
+  return Math.round((mm / 25.4) * window._etqCfg.dpi);
+}
+
+function etqCfgAtualizar() {
+  const w = parseFloat(document.getElementById('etqCfgW')?.value) || 200;
+  const h = parseFloat(document.getElementById('etqCfgH')?.value) || 44;
+  const d = parseInt(document.getElementById('etqCfgDpi')?.value) || 203;
+  window._etqCfg = { larguraMm: w, alturaMm: h, dpi: d };
+  const pw = Math.round((w / 25.4) * d);
+  const ll = Math.round((h / 25.4) * d);
+  const badge = document.getElementById('etqCfgBadge');
+  if (badge) badge.textContent = `^PW${pw}  ^LL${ll}`;
+}
+
 function zplFatiar(zpl, qtdEtiquetas) {
-  // Extrai todos os blocos ^XA...^XZ do arquivo
   const blocos = [];
   const regex = /(\^XA[\s\S]*?\^XZ)/gi;
   let m;
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) return zpl;
 
-  // Cada bloco = 2 etiquetas fisicas lado a lado (200x44mm)
-  // ^PW1600 = 200mm @ 203dpi (200*8=1600 dots)
-  // ^LL352  = 44mm  @ 203dpi (44*8=352 dots)
+  const pw = Math.round((window._etqCfg.larguraMm / 25.4) * window._etqCfg.dpi);
+  const ll = Math.round((window._etqCfg.alturaMm  / 25.4) * window._etqCfg.dpi);
+
   const blocosNecessarios = Math.ceil(qtdEtiquetas / 2);
   const selecionados = blocos.slice(0, Math.min(blocosNecessarios, blocos.length));
   const corrigidos = selecionados.map(function(b) {
-    return b.replace(/\^XA/i, '^XA^PW1600^LL352');
+    return b.replace(/\^XA/i, '^XA^PW' + pw + '^LL' + ll);
   });
   return corrigidos.join(String.fromCharCode(10));
 }
