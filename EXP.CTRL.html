@@ -8221,40 +8221,6 @@ async function etqResetar(fullId, etqId) {
   etqRenderSecao(fullId);
   showToast('↺ Contagem resetada');
 }
-
-/* ── Editar SKU inline ───────────────────────────── */
-function etqEditarSku(fullId, etqId) {
-  const labelEl = document.getElementById(`etqSkuLabel_${etqId}`);
-  const editBtn = labelEl?.nextElementSibling;
-  if (!labelEl) return;
-  const current = labelEl.textContent.trim();
-  // Substitui o label por um input inline
-  const input = document.createElement('input');
-  input.className = 'etq-sku-input';
-  input.value = current;
-  input.setAttribute('maxlength', '40');
-  labelEl.replaceWith(input);
-  if (editBtn) editBtn.style.display = 'none';
-  input.focus(); input.select();
-  const salvar = async () => {
-    const novoSku = input.value.trim() || current;
-    const arr = etqGetData(fullId);
-    const etq = arr.find(e => e.id === etqId);
-    if (etq) {
-      etq.sku  = novoSku;
-      etq.nome = novoSku; // sincroniza nome também
-      etqSetData(fullId, arr);
-      await etqSalvar(fullId);
-    }
-    etqRenderSecao(fullId);
-  };
-  input.addEventListener('blur', salvar);
-  input.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
-    if (e.key === 'Escape') { input.value = current; input.blur(); }
-  });
-}
-
 /* ── Lote parcial ────────────────────────────────── */
 function etqAbrirLote(fullId, etqId) {
   document.querySelectorAll('[id^="etqLote_"]').forEach(b=>b.style.display='none');
@@ -8293,38 +8259,43 @@ function etqCfgAtualizar() {
   if (badge) badge.textContent = `^PW${pw}  ^LL${ll}`;
 }
 
-/* ── zplFatiar v3 ────────────────────────────────────
-   O ZPL do ML tem 2 etiquetas LADO A LADO por bloco ^XA...^XZ,
-   usando ^LH0,0 (esquerda) e ^LH350,0 (direita).
-   A ZD220 com mídia 100mm só tem ~800 dots — a etiqueta direita
-   invade e corta. Solução: extrair APENAS a etiqueta esquerda
-   de cada bloco e montar N blocos individuais de 1 etiqueta.
+/* ── zplFatiar v4 — baseado na estrutura REAL do ML ──
+   Estrutura por bloco:
+     ^XA^CI28
+     ^LH0,0
+     [conteudo esquerda — ^FO com X pequeno ~16-105]
+     ^CI28            ← separador isolado
+     ^LH0,0
+     [conteudo direita — ^FO com X grande ~346-425]
+     ^XZ
+   Estratégia: achar o ^CI28 solitário após o 1º ^LH,
+   extrair o conteudo da esquerda, e duplicar com offset X+320.
    ─────────────────────────────────────────────────── */
-/* ── Extrai conteúdo da etiqueta esquerda do ZPL ML ─
-   O ML gera: ^XA^LH0,0[conteúdo esq]^LH350,0[conteúdo dir]^XZ
-   Separamos pelo split em ^LH e pegamos partes[1] (esquerda).
-   ─────────────────────────────────────────────────── */
-function zplExtrairConteudoEsq(blocoZpl) {
-  var partes = blocoZpl.split(/\^LH\s*\d+\s*,\s*\d+/gi);
-  if (partes.length < 2) return blocoZpl; // sem ^LH, retorna tudo
-  var c = partes[1];
-  c = c.replace(/\^CI28\s*$/i, ''); // remove separador final
-  c = c.replace(/\^XZ\s*$/i,  ''); // remove ^XZ se sobrou
-  return c.trim();
+function zplExtrairLadoEsquerdo(blocoZpl) {
+  var linhas = blocoZpl.replace(/\r/g, '').split('\n');
+  var sepIdx = -1;
+  var pastFirstLH = false;
+  for (var i = 0; i < linhas.length; i++) {
+    var l = linhas[i].trim();
+    if (!pastFirstLH && /^\^LH\d+,\d+/.test(l)) { pastFirstLH = true; continue; }
+    if (pastFirstLH && l === '^CI28') { sepIdx = i; break; }
+  }
+  if (sepIdx === -1) {
+    // Sem separador: devolve tudo menos ^XA e ^XZ
+    return blocoZpl.replace(/^\^XA[^\n]*\n?/, '').replace(/\^XZ\s*$/, '').trim();
+  }
+  // Retorna: ^LH0,0 + linhas do conteudo esquerdo
+  return linhas.slice(1, sepIdx).join('\n').trim();
 }
 
-/* ── Monta bloco com 2 etiquetas idênticas lado a lado ─
-   Esquerda: ^LH0,0   → posição X=0
-   Direita:  ^LH{pw},0 → posição X = largura de 1 etiqueta em dots
-   Resultado: folha de 200mm com as 2 colunas preenchidas.
-   ─────────────────────────────────────────────────── */
-function zplMontarPagina2Colunas(conteudoEsq, pw1, pw2, ll) {
-  // pw1 = largura de 1 etiqueta em dots (offset da coluna direita)
-  // pw2 = largura total da folha em dots (2 etiquetas)
-  return '^XA^PW' + pw2 + '^LL' + ll +
-    '^LH0,0' + conteudoEsq +
-    '^LH' + pw1 + ',0' + conteudoEsq +
-    '^XZ';
+function zplMontarPaginaDupla(leftContent, pw2, ll) {
+  // Gera o lado direito somando 320 dots ao X de cada ^FO
+  var rightContent = leftContent.replace(/\^FO(\d+),/g, function(_, x) {
+    return '^FO' + (parseInt(x) + 320) + ',';
+  });
+  return '^XA^PW' + pw2 + '^LL' + ll + '^CI28\n' +
+    leftContent + '\n^CI28\n' +
+    rightContent + '\n^XZ';
 }
 
 function zplFatiar(zpl, qtdEtiquetas) {
@@ -8334,24 +8305,23 @@ function zplFatiar(zpl, qtdEtiquetas) {
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) return zpl;
 
-  var dpi  = window._etqCfg.dpi        || 203;
-  var wMm  = window._etqCfg.larguraMm  || 100;  // 1 etiqueta = 100mm
-  var hMm  = window._etqCfg.alturaMm   || 44;
-  var pw1  = Math.round((wMm       / 25.4) * dpi); // dots de 1 etiqueta
-  var pw2  = Math.round((wMm * 2   / 25.4) * dpi); // dots da folha toda
-  var ll   = Math.round((hMm       / 25.4) * dpi);
+  var dpi = window._etqCfg.dpi       || 203;
+  var wMm = window._etqCfg.larguraMm || 100; // 1 etiqueta = 100mm
+  var hMm = window._etqCfg.alturaMm  || 44;
+  var pw2 = Math.round((wMm * 2 / 25.4) * dpi); // folha total 200mm
+  var ll  = Math.round((hMm     / 25.4) * dpi);
 
-  // Cada página impressa = 2 etiquetas (esq + dir idênticas)
-  // Para N etiquetas: ceil(N/2) páginas
+  // 1 página = 2 etiquetas → ceil(N/2) páginas para N etiquetas
   var paginas = Math.ceil(qtdEtiquetas / 2);
   var resultado = [];
   for (var p = 0; p < paginas; p++) {
-    var idxBloco = p % blocos.length;
-    var conteudo = zplExtrairConteudoEsq(blocos[idxBloco]);
-    resultado.push(zplMontarPagina2Colunas(conteudo, pw1, pw2, ll));
+    var idx = p % blocos.length;
+    var left = zplExtrairLadoEsquerdo(blocos[idx]);
+    resultado.push(zplMontarPaginaDupla(left, pw2, ll));
   }
-  return resultado.join(String.fromCharCode(10));
+  return resultado.join('\n');
 }
+
 async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   let qtd = parseInt(document.getElementById(`etqQtd_${etqId}`)?.value)||0;
   if (qtd<=0) { showToast('⚠️ Digite uma quantidade válida'); return; }
