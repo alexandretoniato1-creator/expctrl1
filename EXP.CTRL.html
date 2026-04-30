@@ -8245,15 +8245,18 @@ function zplFatiar(zpl, qtdEtiquetas) {
   const regex = /(\^XA[\s\S]*?\^XZ)/gi;
   let m;
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
-  if (!blocos.length) return zpl; // fallback: retorna tudo
+  if (!blocos.length) return zpl;
 
-  // Cada bloco = 2 etiquetas físicas
+  // Cada bloco = 2 etiquetas fisicas lado a lado (200x44mm)
+  // ^PW1600 = 200mm @ 203dpi (200*8=1600 dots)
+  // ^LL352  = 44mm  @ 203dpi (44*8=352 dots)
   const blocosNecessarios = Math.ceil(qtdEtiquetas / 2);
   const selecionados = blocos.slice(0, Math.min(blocosNecessarios, blocos.length));
-  return selecionados.join(String.fromCharCode(10));
-
+  const corrigidos = selecionados.map(function(b) {
+    return b.replace(/\^XA/i, '^XA^PW1600^LL352');
+  });
+  return corrigidos.join(String.fromCharCode(10));
 }
-
 async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   let qtd = parseInt(document.getElementById(`etqQtd_${etqId}`)?.value)||0;
   if (qtd<=0) { showToast('⚠️ Digite uma quantidade válida'); return; }
