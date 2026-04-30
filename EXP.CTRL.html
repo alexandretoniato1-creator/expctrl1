@@ -8259,19 +8259,19 @@ function etqCfgAtualizar() {
   if (badge) badge.textContent = `^PW${pw}  ^LL${ll}`;
 }
 
-/* ── zplFatiar v4 — baseado na estrutura REAL do ML ──
-   Estrutura por bloco:
-     ^XA^CI28
-     ^LH0,0
-     [conteudo esquerda — ^FO com X pequeno ~16-105]
-     ^CI28            ← separador isolado
-     ^LH0,0
-     [conteudo direita — ^FO com X grande ~346-425]
-     ^XZ
-   Estratégia: achar o ^CI28 solitário após o 1º ^LH,
-   extrair o conteudo da esquerda, e duplicar com offset X+320.
+/* ── zplFatiar v5 — usa lados ORIGINAIS do ZPL ML ────
+   O ML gera cada bloco ^XA...^XZ com 2 etiquetas:
+     Esquerda: ^LH0,0 + ^FO com X~16-105
+     Separador: ^CI28 isolado
+     Direita:  ^LH0,0 + ^FO com X~346-425 (offsets distintos por campo)
+   
+   CAUSA DO DESALINHAMENTO ANTERIOR:
+   Reconstruíamos a direita somando +320 a todos os ^FO,
+   mas o ML usa offsets diferentes por campo (barcode +320, texto +330).
+   
+   SOLUÇÃO: usar os dois lados originais do ZPL sem modificar.
    ─────────────────────────────────────────────────── */
-function zplExtrairLadoEsquerdo(blocoZpl) {
+function zplExtrairAmbosLados(blocoZpl) {
   var linhas = blocoZpl.replace(/\r/g, '').split('\n');
   var sepIdx = -1;
   var pastFirstLH = false;
@@ -8281,21 +8281,13 @@ function zplExtrairLadoEsquerdo(blocoZpl) {
     if (pastFirstLH && l === '^CI28') { sepIdx = i; break; }
   }
   if (sepIdx === -1) {
-    // Sem separador: devolve tudo menos ^XA e ^XZ
-    return blocoZpl.replace(/^\^XA[^\n]*\n?/, '').replace(/\^XZ\s*$/, '').trim();
+    // Bloco sem separador: usa o conteúdo como esquerda, duplica para direita
+    var inner = linhas.slice(1, linhas.length - 1).join('\n').trim();
+    return { left: inner, right: inner };
   }
-  // Retorna: ^LH0,0 + linhas do conteudo esquerdo
-  return linhas.slice(1, sepIdx).join('\n').trim();
-}
-
-function zplMontarPaginaDupla(leftContent, pw2, ll) {
-  // Gera o lado direito somando 320 dots ao X de cada ^FO
-  var rightContent = leftContent.replace(/\^FO(\d+),/g, function(_, x) {
-    return '^FO' + (parseInt(x) + 320) + ',';
-  });
-  return '^XA^PW' + pw2 + '^LL' + ll + '^CI28\n' +
-    leftContent + '\n^CI28\n' +
-    rightContent + '\n^XZ';
+  var left  = linhas.slice(1, sepIdx).join('\n').trim();
+  var right = linhas.slice(sepIdx + 1, linhas.length - 1).join('\n').trim();
+  return { left: left, right: right };
 }
 
 function zplFatiar(zpl, qtdEtiquetas) {
@@ -8306,18 +8298,23 @@ function zplFatiar(zpl, qtdEtiquetas) {
   if (!blocos.length) return zpl;
 
   var dpi = window._etqCfg.dpi       || 203;
-  var wMm = window._etqCfg.larguraMm || 100; // 1 etiqueta = 100mm
+  var wMm = window._etqCfg.larguraMm || 100;
   var hMm = window._etqCfg.alturaMm  || 44;
-  var pw2 = Math.round((wMm * 2 / 25.4) * dpi); // folha total 200mm
-  var ll  = Math.round((hMm     / 25.4) * dpi);
+  var pw2 = Math.round((wMm * 2 / 25.4) * dpi); // folha 200mm
+  var ll  = Math.round((hMm     / 25.4) * dpi);  // altura 44mm
 
-  // 1 página = 2 etiquetas → ceil(N/2) páginas para N etiquetas
+  // 1 página = 2 etiquetas → ceil(N/2) páginas
   var paginas = Math.ceil(qtdEtiquetas / 2);
   var resultado = [];
   for (var p = 0; p < paginas; p++) {
-    var idx = p % blocos.length;
-    var left = zplExtrairLadoEsquerdo(blocos[idx]);
-    resultado.push(zplMontarPaginaDupla(left, pw2, ll));
+    var idx  = p % blocos.length;
+    var lados = zplExtrairAmbosLados(blocos[idx]);
+    // Monta página com os dois lados originais + dimensões corretas
+    resultado.push(
+      '^XA^PW' + pw2 + '^LL' + ll + '^CI28\n' +
+      lados.left  + '\n^CI28\n' +
+      lados.right + '\n^XZ'
+    );
   }
   return resultado.join('\n');
 }
