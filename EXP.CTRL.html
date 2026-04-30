@@ -10,6 +10,7 @@
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <!-- QZ Tray — comunicação com impressora Zebra local -->
 <script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js" onerror="console.warn('QZ Tray script não carregado — modo offline')"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -8287,6 +8288,32 @@ function zplFatiar(zpl, qtdEtiquetas) {
   return selecionados.join('\n');
 }
 
+/* ── Converte ZPL → PNG via Labelary → PDF via jsPDF ──
+   Exatamente o que o MLTotal faz internamente:
+   renderiza o ZPL como imagem e escala para a dimensão física real.
+   ─────────────────────────────────────────────────── */
+async function zplParaPngBase64(zplBloco) {
+  // Labelary API: renderiza ZPL como PNG no tamanho físico exato
+  // 80x52mm = 3.15 x 2.047 polegadas, 8dpmm = 203dpi
+  const wIn = (window._etqCfg.larguraMm * 2 / 25.4).toFixed(3); // folha com 2 etiquetas
+  const hIn = (window._etqCfg.alturaMm      / 25.4).toFixed(3);
+  const url = `http://api.labelary.com/v1/printers/8dpmm/labels/${wIn}x${hIn}/0/`;
+
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Accept': 'image/png', 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: zplBloco
+  });
+  if (!resp.ok) throw new Error(`Labelary: ${resp.status}`);
+  const blob = await resp.blob();
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onload  = () => res(reader.result); // data:image/png;base64,...
+    reader.onerror = rej;
+    reader.readAsDataURL(blob);
+  });
+}
+
 async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   let qtd = parseInt(document.getElementById(`etqQtd_${etqId}`)?.value)||0;
   if (qtd<=0) { showToast('⚠️ Digite uma quantidade válida'); return; }
@@ -8295,33 +8322,62 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   const etq = arr.find(e=>e.id===etqId);
   if (!etq) return;
 
-  // Busca ZPL da biblioteca
   const zpl = await zplCarregar(etq.sku);
-  if (!zpl) {
-    showToast('❌ ZPL não encontrado na biblioteca para o SKU: ' + etq.sku);
-    return;
-  }
+  if (!zpl) { showToast('❌ ZPL não encontrado na biblioteca para o SKU: ' + etq.sku); return; }
 
-  // Fatia o ZPL para a quantidade pedida (cada bloco = 2 etiquetas)
-  const zplFatiado = zplFatiar(zpl, qtd);
-  const paginasReais = (zplFatiado.match(/\^XA/gi)||[]).length;
-  const etiquetasReais = paginasReais * 2;
+  const blocos = [];
+  const regex = /(\^XA[\s\S]*?\^XZ)/gi;
+  let m;
+  while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
+  if (!blocos.length) { showToast('❌ ZPL inválido'); return; }
+
+  const paginas = Math.ceil(qtd / 2);
+  showToast(`⏳ Gerando ${paginas} página(s)...`);
 
   const ok = await qzConectar();
-  if (!ok) {
-    try {
-      await navigator.clipboard.writeText(zplFatiado);
-      showToast(`📋 ZPL (${paginasReais} páginas) copiado — registrando ${qtd} etiquetas`);
-    } catch { showToast('⚠️ QZ Tray offline — instale e deixe rodando na bandeja'); return; }
-  } else {
-    try {
-      let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
-      if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
-      // Modo RAW — bypassa driver, respeita dimensões do ZPL
-      const config = qz.configs.create(impressora, { raw: true, copies: 1 });
-      await qz.print(config, [{ type:'raw', format:'plain', data: zplFatiado }]);
-      showToast(`✅ ${qtd} etiquetas (${paginasReais} pág.) → ${impressora}`);
-    } catch(e) { showToast('❌ Erro ao imprimir: '+(e.message||e)); return; }
+  if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
+
+  try {
+    // Dimensões físicas da etiqueta
+    const wMm = window._etqCfg.larguraMm * 2; // folha com 2 colunas
+    const hMm = window._etqCfg.alturaMm;
+
+    // Monta PDF com todas as páginas
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'mm', format: [wMm, hMm], orientation: 'landscape' });
+
+    for (let p = 0; p < paginas; p++) {
+      const bloco = blocos[p % blocos.length];
+      const pngData = await zplParaPngBase64(bloco);
+      if (p > 0) doc.addPage([wMm, hMm], 'landscape');
+      doc.addImage(pngData, 'PNG', 0, 0, wMm, hMm);
+    }
+
+    const pdfBase64 = doc.output('datauristring').split(',')[1];
+
+    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
+    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
+
+    const config = qz.configs.create(impressora, {
+      size: { width: wMm, height: hMm },
+      units: 'mm',
+      scaleContent: false,
+      margins: 0,
+      colorType: 'black-white'
+    });
+
+    await qz.print(config, [{
+      type: 'pixel',
+      format: 'pdf',
+      flavor: 'base64',
+      data: pdfBase64
+    }]);
+
+    showToast(`✅ ${qtd} etiquetas → ${impressora}`);
+
+  } catch(e) {
+    showToast('❌ Erro: ' + (e.message||e));
+    return;
   }
 
   etq.impressas = Math.min((etq.impressas||0)+qtd, etq.total);
