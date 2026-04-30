@@ -8300,65 +8300,57 @@ function etqCfgAtualizar() {
    invade e corta. Solução: extrair APENAS a etiqueta esquerda
    de cada bloco e montar N blocos individuais de 1 etiqueta.
    ─────────────────────────────────────────────────── */
-function zplExtrairEtiquetaEsquerda(blocoZpl) {
-  // Pega tudo entre o primeiro ^LH e o segundo ^LH (ou ^XZ se só tiver 1)
-  // O padrão do ML é: ^XA ^CI28 ^LH0,0 [conteúdo esq] ^CI28 ^LH350,0 [conteúdo dir] ^XZ
-  // Queremos: ^XA [conteúdo esq] ^XZ
-  var dpi = window._etqCfg.dpi || 203;
-  var wMm = window._etqCfg.larguraMm || 100; // 1 etiqueta = 100mm
-  var hMm = window._etqCfg.alturaMm  || 44;
-  var pw  = Math.round((wMm / 25.4) * dpi);
-  var ll  = Math.round((hMm / 25.4) * dpi);
-
-  // Divide o bloco nos dois ^LH
-  // Formato: ...^LH0,0\n[conteudo_esq]^CI28\n^LH350,...[conteudo_dir]^XZ
+/* ── Extrai conteúdo da etiqueta esquerda do ZPL ML ─
+   O ML gera: ^XA^LH0,0[conteúdo esq]^LH350,0[conteúdo dir]^XZ
+   Separamos pelo split em ^LH e pegamos partes[1] (esquerda).
+   ─────────────────────────────────────────────────── */
+function zplExtrairConteudoEsq(blocoZpl) {
   var partes = blocoZpl.split(/\^LH\s*\d+\s*,\s*\d+/gi);
-  // partes[0] = cabeçalho antes do 1º ^LH (^XA^CI28\n)
-  // partes[1] = conteúdo da etiqueta esquerda
-  // partes[2] = conteúdo da etiqueta direita (descartamos)
+  if (partes.length < 2) return blocoZpl; // sem ^LH, retorna tudo
+  var c = partes[1];
+  c = c.replace(/\^CI28\s*$/i, ''); // remove separador final
+  c = c.replace(/\^XZ\s*$/i,  ''); // remove ^XZ se sobrou
+  return c.trim();
+}
 
-  if (partes.length < 2) {
-    // ZPL não tem ^LH, retorna como está com dimensões corrigidas
-    return blocoZpl.replace(/\^XA/i, '^XA^PW' + pw + '^LL' + ll + '^LH0,0');
-  }
-
-  // Pega só o conteúdo da esquerda (partes[1]), remove o que pertence à direita
-  var conteudoEsq = partes[1];
-  // Remove ^CI28 solto no final que era separador entre as duas etiquetas
-  conteudoEsq = conteudoEsq.replace(/\^CI28\s*$/i, '');
-  // Remove ^XZ que possa ter sobrado
-  conteudoEsq = conteudoEsq.replace(/\^XZ\s*$/i, '');
-
-  return '^XA^PW' + pw + '^LL' + ll + '^LH0,0' + conteudoEsq + '^XZ';
+/* ── Monta bloco com 2 etiquetas idênticas lado a lado ─
+   Esquerda: ^LH0,0   → posição X=0
+   Direita:  ^LH{pw},0 → posição X = largura de 1 etiqueta em dots
+   Resultado: folha de 200mm com as 2 colunas preenchidas.
+   ─────────────────────────────────────────────────── */
+function zplMontarPagina2Colunas(conteudoEsq, pw1, pw2, ll) {
+  // pw1 = largura de 1 etiqueta em dots (offset da coluna direita)
+  // pw2 = largura total da folha em dots (2 etiquetas)
+  return '^XA^PW' + pw2 + '^LL' + ll +
+    '^LH0,0' + conteudoEsq +
+    '^LH' + pw1 + ',0' + conteudoEsq +
+    '^XZ';
 }
 
 function zplFatiar(zpl, qtdEtiquetas) {
-  // Extrai todos os blocos ^XA...^XZ
   var blocos = [];
   var regex = /(\^XA[\s\S]*?\^XZ)/gi;
   var m;
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) return zpl;
 
-  // Cada bloco original tem 2 etiquetas lado a lado.
-  // Extraímos só a etiqueta esquerda de cada bloco → 1 etiqueta por bloco.
-  // Para N etiquetas solicitadas, precisamos de N blocos.
-  var resultado = [];
-  var i = 0;
-  while (resultado.length < qtdEtiquetas && i < blocos.length * 100) {
-    var idxBloco = Math.floor(resultado.length / 1) % blocos.length;
-    resultado.push(zplExtrairEtiquetaEsquerda(blocos[idxBloco]));
-    // Se precisar mais que o total de blocos, cicla
-    if (resultado.length >= qtdEtiquetas) break;
-    i++;
-    if (i >= blocos.length && resultado.length < qtdEtiquetas) {
-      // Acabaram os blocos únicos — cicla do início
-      i = 0;
-    }
-    if (resultado.length >= qtdEtiquetas) break;
-  }
+  var dpi  = window._etqCfg.dpi        || 203;
+  var wMm  = window._etqCfg.larguraMm  || 100;  // 1 etiqueta = 100mm
+  var hMm  = window._etqCfg.alturaMm   || 44;
+  var pw1  = Math.round((wMm       / 25.4) * dpi); // dots de 1 etiqueta
+  var pw2  = Math.round((wMm * 2   / 25.4) * dpi); // dots da folha toda
+  var ll   = Math.round((hMm       / 25.4) * dpi);
 
-  return resultado.slice(0, qtdEtiquetas).join(String.fromCharCode(10));
+  // Cada página impressa = 2 etiquetas (esq + dir idênticas)
+  // Para N etiquetas: ceil(N/2) páginas
+  var paginas = Math.ceil(qtdEtiquetas / 2);
+  var resultado = [];
+  for (var p = 0; p < paginas; p++) {
+    var idxBloco = p % blocos.length;
+    var conteudo = zplExtrairConteudoEsq(blocos[idxBloco]);
+    resultado.push(zplMontarPagina2Colunas(conteudo, pw1, pw2, ll));
+  }
+  return resultado.join(String.fromCharCode(10));
 }
 async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   let qtd = parseInt(document.getElementById(`etqQtd_${etqId}`)?.value)||0;
