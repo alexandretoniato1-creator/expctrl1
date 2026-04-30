@@ -8250,8 +8250,8 @@ function zplFatiar(zpl, qtdEtiquetas) {
   // Cada bloco = 2 etiquetas físicas
   const blocosNecessarios = Math.ceil(qtdEtiquetas / 2);
   const selecionados = blocos.slice(0, Math.min(blocosNecessarios, blocos.length));
-  return selecionados.join('
-');
+  return selecionados.join(String.fromCharCode(10));
+
 }
 
 async function etqConfirmarLote(fullId, etqId, maxRestantes) {
