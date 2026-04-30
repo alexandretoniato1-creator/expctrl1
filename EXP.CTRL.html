@@ -838,42 +838,87 @@ select:focus{border-color:var(--accent)}
 .cal-mobile-filter-btn.active{background:var(--surface2);color:var(--text);border-color:var(--accent)}
 
 /* ── ETIQUETAS ML ────────────────────────────── */
+/* ── ETIQUETAS ML v4 ─────────────────────────── */
 .etq-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px}
-.etq-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.etq-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
 .etq-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
-.etq-progress-bar{background:var(--bg);border-radius:100px;height:6px;overflow:hidden;margin:10px 16px 0}
-.etq-progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--purple),var(--blue));transition:width .5s ease}
-.etq-progress-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);padding:4px 16px 12px;display:flex;justify-content:space-between}
-.etq-list{display:flex;flex-direction:column;gap:0}
-.etq-item{border-bottom:1px solid var(--border);padding:12px 16px;transition:background .1s}
-.etq-item:last-child{border-bottom:none}
-.etq-item:hover{background:rgba(255,255,255,.015)}
-.etq-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-.etq-item-name{font-size:12px;font-weight:700;color:var(--text)}
-.etq-item-count{font-family:'DM Mono',monospace;font-size:11px;font-weight:700}
-.etq-item-count.done{color:var(--green)}
-.etq-item-count.partial{color:var(--orange)}
-.etq-item-count.none{color:var(--muted)}
-.etq-item-bar{background:var(--bg);border-radius:100px;height:5px;overflow:hidden;margin-bottom:8px}
-.etq-item-bar-fill{height:100%;border-radius:100px;transition:width .4s ease}
-.etq-item-bar-fill.done{background:var(--green)}
-.etq-item-bar-fill.partial{background:var(--orange)}
-.etq-item-bar-fill.none{background:var(--muted);opacity:.3}
-.etq-item-actions{display:flex;gap:6px;align-items:center}
-.etq-btn-print{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;border:1px solid var(--logbox-border);background:var(--logbox-bg);color:var(--logbox);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
-.etq-btn-print:hover{background:rgba(88,166,255,.18)}
-.etq-btn-print:disabled{opacity:.4;cursor:not-allowed}
-.etq-btn-del{width:26px;height:26px;border-radius:6px;border:1px solid rgba(248,81,73,.2);background:rgba(248,81,73,.06);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+/* Barra geral */
+.etq-global-bar-wrap{padding:12px 16px 0}
+.etq-global-bar-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:5px}
+.etq-global-bar-nums{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
+.etq-global-bar-nums b{font-size:13px;color:var(--text)}
+.etq-global-bar-pct{font-size:13px;font-weight:800;font-family:'DM Mono',monospace}
+.etq-progress-bar{background:var(--bg);border-radius:100px;height:7px;overflow:hidden}
+.etq-progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--purple),var(--blue));transition:width .6s ease}
+.etq-progress-fill.done{background:linear-gradient(90deg,var(--green),#5de6a8)}
+/* Lista */
+.etq-list{display:flex;flex-direction:column;gap:10px;padding:14px 14px}
+/* Card ticket */
+.etq-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;transition:border-color .15s,box-shadow .15s}
+.etq-card:hover{border-color:var(--border2);box-shadow:0 2px 12px rgba(0,0,0,.18)}
+.etq-card.done{border-color:rgba(63,185,80,.25);background:linear-gradient(135deg,var(--surface2) 80%,rgba(63,185,80,.04))}
+.etq-card.partial{border-color:rgba(210,153,34,.2)}
+/* Borda colorida esquerda estilo ticket */
+.etq-card-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:10px 0 0 10px}
+.etq-card-stripe.done{background:var(--green)}
+.etq-card-stripe.partial{background:var(--orange)}
+.etq-card-stripe.none{background:var(--muted);opacity:.3}
+/* Corpo do card */
+.etq-card-body{padding:12px 12px 12px 16px}
+.etq-card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px}
+.etq-card-left{flex:1;min-width:0}
+/* SKU — destaque principal */
+.etq-sku-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.etq-sku-code{font-family:'DM Mono',monospace;font-size:15px;font-weight:800;color:var(--text);letter-spacing:.5px;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.etq-sku-edit-btn{width:20px;height:20px;border-radius:4px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:10px;display:flex;align-items:center;justify-content:center;transition:all .12s;flex-shrink:0;opacity:.6}
+.etq-sku-edit-btn:hover{opacity:1;background:var(--surface);color:var(--text)}
+.etq-sku-input{font-family:'DM Mono',monospace;font-size:14px;font-weight:800;color:var(--text);background:var(--bg);border:1px solid var(--accent);border-radius:5px;padding:2px 7px;outline:none;width:160px;letter-spacing:.5px}
+/* Nome/descrição — secundário, menor */
+.etq-card-desc{font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px}
+/* Progresso direita */
+.etq-card-right{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0;margin-left:12px}
+.etq-card-big-num{font-family:'DM Mono',monospace;font-size:22px;font-weight:800;line-height:1;letter-spacing:-1px}
+.etq-card-big-num.done{color:var(--green)}
+.etq-card-big-num.partial{color:var(--orange)}
+.etq-card-big-num.none{color:var(--muted);opacity:.5}
+.etq-card-total{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);text-align:right}
+.etq-card-pct-badge{font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px}
+.etq-card-pct-badge.done{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.2)}
+.etq-card-pct-badge.partial{background:rgba(210,153,34,.1);color:var(--orange);border:1px solid rgba(210,153,34,.2)}
+.etq-card-pct-badge.none{background:rgba(255,255,255,.05);color:var(--muted);border:1px solid var(--border)}
+/* Barra do card */
+.etq-card-bar-wrap{margin-bottom:10px}
+.etq-card-bar{background:var(--bg);border-radius:100px;height:5px;overflow:hidden}
+.etq-card-bar-fill{height:100%;border-radius:100px;transition:width .5s ease}
+.etq-card-bar-fill.done{background:linear-gradient(90deg,var(--green),#5de6a8)}
+.etq-card-bar-fill.partial{background:linear-gradient(90deg,var(--orange),#fbbf24)}
+.etq-card-bar-fill.none{background:var(--muted);opacity:.2}
+.etq-card-bar-label{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
+/* Ações do card */
+.etq-card-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.etq-btn-print{display:flex;align-items:center;gap:5px;padding:5px 14px;border-radius:7px;border:1px solid var(--logbox-border);background:var(--logbox-bg);color:var(--logbox);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.etq-btn-print:hover{background:rgba(88,166,255,.2);border-color:var(--logbox)}
+.etq-btn-done-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.22);color:var(--green)}
+.etq-btn-del{width:28px;height:28px;border-radius:7px;border:1px solid rgba(248,81,73,.2);background:rgba(248,81,73,.06);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .etq-btn-del:hover{background:rgba(248,81,73,.15)}
-.etq-btn-reset{width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.etq-btn-reset{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .etq-btn-reset:hover{background:var(--surface2);color:var(--text)}
-.etq-add-area{padding:12px 16px;border-top:1px solid var(--border)}
-.etq-zpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'DM Mono',monospace;font-size:10px;padding:10px;resize:vertical;outline:none;transition:border-color .15s;min-height:80px;max-height:160px}
+/* Lote parcial */
+.etq-lote-box{margin-top:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px}
+/* Empty state */
+.etq-empty{padding:32px 16px;text-align:center}
+.etq-empty-icon{font-size:32px;margin-bottom:10px;opacity:.3}
+.etq-empty-title{font-size:13px;font-weight:700;color:var(--muted2);margin-bottom:4px}
+.etq-empty-sub{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)}
+/* Add area */
+.etq-add-area{padding:14px 16px;border-top:1px solid var(--border)}
+.etq-zpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'DM Mono',monospace;font-size:10px;padding:10px;resize:vertical;outline:none;transition:border-color .15s;min-height:90px;max-height:180px;line-height:1.5}
 .etq-zpl-textarea:focus{border-color:var(--accent);color:var(--text)}
-.etq-qztray-status{display:flex;align-items:center;gap:6px;font-size:10px;font-family:'DM Mono',monospace}
-.etq-dot-conn{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
-.etq-dot-disc{width:6px;height:6px;border-radius:50%;background:var(--red)}
-.etq-dot-wait{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.5s infinite}
+/* QZ status */
+.etq-qztray-status{display:flex;align-items:center;gap:5px;font-size:10px;font-family:'DM Mono',monospace}
+.etq-dot-conn{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
+.etq-dot-disc{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0}
+.etq-dot-wait{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.5s infinite;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -7970,59 +8015,78 @@ async function etqRenderSecao(fullId) {
   else if (totalG>0)     badgeHtml = '<span class="badge" style="font-size:9px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)">Aguardando</span>';
 
   const barraHtml = totalG>0 ? `
-    <div class="etq-progress-bar" style="margin:10px 16px 0">
-      <div class="etq-progress-fill" style="width:${pctG}%;background:${tudoOk?'linear-gradient(90deg,var(--green),#5de6a8)':'linear-gradient(90deg,var(--purple),var(--blue))'}"></div>
-    </div>
-    <div class="etq-progress-label">
-      <span>${impressasG.toLocaleString('pt-BR')} impressas</span>
-      <span style="color:${tudoOk?'var(--green)':impressasG>0?'var(--orange)':'var(--muted)'}">${totalG.toLocaleString('pt-BR')} total · ${pctG}%</span>
+    <div class="etq-global-bar-wrap">
+      <div class="etq-global-bar-row">
+        <div class="etq-global-bar-nums"><b>${impressasG.toLocaleString('pt-BR')}</b> de ${totalG.toLocaleString('pt-BR')} etiquetas impressas</div>
+        <div class="etq-global-bar-pct" style="color:${tudoOk?'var(--green)':impressasG>0?'var(--orange)':'var(--muted)'}">${pctG}%</div>
+      </div>
+      <div class="etq-progress-bar">
+        <div class="etq-progress-fill${tudoOk?' done':''}" style="width:${pctG}%"></div>
+      </div>
     </div>` : '';
 
   const listaHtml = arr.length===0
-    ? `<div style="padding:28px 16px;text-align:center">
-        <div style="font-size:28px;opacity:.35;margin-bottom:8px">🏷</div>
-        <div style="font-size:13px;font-weight:700;color:var(--muted2);margin-bottom:4px">Nenhum ZPL adicionado</div>
-        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Cole o ZPL do Mercado Livre para controlar as impressões</div>
+    ? `<div class="etq-empty">
+        <div class="etq-empty-icon">🏷</div>
+        <div class="etq-empty-title">Nenhum ZPL adicionado</div>
+        <div class="etq-empty-sub">Cole o ZPL do Mercado Livre para controlar as impressões</div>
       </div>`
     : arr.map(etq => {
         const pct    = etq.total ? Math.round(((etq.impressas||0)/etq.total)*100) : 0;
         const cls    = pct>=100?'done':pct>0?'partial':'none';
         const faltam = Math.max(0, etq.total-(etq.impressas||0));
+        const skuLabel  = etq.sku || etq.nome || '—';
+        const descLabel = (etq.sku && etq.nome && etq.nome !== etq.sku) ? etq.nome : '';
         return `
-        <div class="etq-item">
-          <div class="etq-item-top">
-            <div>
-              <div class="etq-item-name">${etq.nome}</div>
-              <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:2px">
-                ${etq.total.toLocaleString('pt-BR')} etiquetas · ${etq.sku||'—'} · ${new Date(etq.criadoEm).toLocaleDateString('pt-BR')}
+        <div class="etq-card ${cls}">
+          <div class="etq-card-stripe ${cls}"></div>
+          <div class="etq-card-body">
+            <div class="etq-card-top">
+              <div class="etq-card-left">
+                <div class="etq-sku-row">
+                  <span class="etq-sku-code" id="etqSkuLabel_${etq.id}">${skuLabel}</span>
+                  <button class="etq-sku-edit-btn" onclick="etqEditarSku('${fullId}','${etq.id}')" title="Editar SKU">✏</button>
+                </div>
+                ${descLabel ? `<div class="etq-card-desc">${descLabel}</div>` : ''}
+                <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px">${etq.total.toLocaleString('pt-BR')} etiquetas · ${new Date(etq.criadoEm).toLocaleDateString('pt-BR')}</div>
+              </div>
+              <div class="etq-card-right">
+                <div class="etq-card-big-num ${cls}">${(etq.impressas||0).toLocaleString('pt-BR')}</div>
+                <div class="etq-card-total">de ${etq.total.toLocaleString('pt-BR')}</div>
+                <div class="etq-card-pct-badge ${cls}">${pct}%</div>
               </div>
             </div>
-            <div class="etq-item-count ${cls}">${(etq.impressas||0).toLocaleString('pt-BR')}/${etq.total.toLocaleString('pt-BR')}</div>
-          </div>
-          <div class="etq-item-bar"><div class="etq-item-bar-fill ${cls}" style="width:${pct}%"></div></div>
-          <div class="etq-item-actions">
-            ${pct<100
-              ? `<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>`
-              : `<div style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace;color:var(--green)">✅ Completo</div>`
-            }
-            <div style="flex:1"></div>
-            <button class="etq-btn-reset" onclick="etqResetar('${fullId}','${etq.id}')" title="Resetar contagem">↺</button>
-            <button class="etq-btn-del" onclick="etqExcluir('${fullId}','${etq.id}')" title="Excluir">✕</button>
-          </div>
-          ${pct<100 ? `
-          <div id="etqLote_${etq.id}" style="display:none;margin-top:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px">
-            <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:7px">Quantas etiquetas imprimir agora?</div>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-              <input type="number" id="etqQtd_${etq.id}" value="${faltam}" min="1" max="${faltam}"
-                style="width:90px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;font-weight:700;padding:6px 10px;outline:none;text-align:center"
-                onkeydown="if(event.key==='Enter')etqConfirmarLote('${fullId}','${etq.id}',${faltam})">
-              <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">de ${faltam.toLocaleString('pt-BR')} restantes</span>
-              <div style="flex:1"></div>
-              <button onclick="etqConfirmarLote('${fullId}','${etq.id}',${faltam})"
-                style="padding:6px 14px;border-radius:6px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Confirmar</button>
-              <button onclick="etqFecharLote('${etq.id}')" class="etq-btn-reset">✕</button>
+            <div class="etq-card-bar-wrap">
+              <div class="etq-card-bar"><div class="etq-card-bar-fill ${cls}" style="width:${pct}%"></div></div>
+              <div class="etq-card-bar-label">
+                <span>${(etq.impressas||0).toLocaleString('pt-BR')} impressas</span>
+                <span>${faltam.toLocaleString('pt-BR')} restantes</span>
+              </div>
             </div>
-          </div>` : ''}
+            <div class="etq-card-actions">
+              ${pct<100
+                ? `<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>`
+                : `<div class="etq-btn-done-tag">✅ Tudo impresso</div>`
+              }
+              <div style="flex:1"></div>
+              <button class="etq-btn-reset" onclick="etqResetar('${fullId}','${etq.id}')" title="Resetar">↺</button>
+              <button class="etq-btn-del" onclick="etqExcluir('${fullId}','${etq.id}')" title="Excluir">✕</button>
+            </div>
+            ${pct<100 ? `
+            <div class="etq-lote-box" id="etqLote_${etq.id}" style="display:none">
+              <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:7px">Quantas etiquetas imprimir agora?</div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                <input type="number" id="etqQtd_${etq.id}" value="${faltam}" min="1" max="${faltam}"
+                  style="width:90px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;font-weight:800;padding:6px 10px;outline:none;text-align:center"
+                  onkeydown="if(event.key==='Enter')etqConfirmarLote('${fullId}','${etq.id}',${faltam})">
+                <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">de ${faltam.toLocaleString('pt-BR')} restantes</span>
+                <div style="flex:1"></div>
+                <button onclick="etqConfirmarLote('${fullId}','${etq.id}',${faltam})"
+                  style="padding:6px 16px;border-radius:7px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Confirmar</button>
+                <button onclick="etqFecharLote('${etq.id}')" class="etq-btn-reset">✕</button>
+              </div>
+            </div>` : ''}
+          </div>
         </div>`;
       }).join('');
 
@@ -8148,6 +8212,39 @@ async function etqResetar(fullId, etqId) {
   await etqSalvar(fullId);
   etqRenderSecao(fullId);
   showToast('↺ Contagem resetada');
+}
+
+/* ── Editar SKU inline ───────────────────────────── */
+function etqEditarSku(fullId, etqId) {
+  const labelEl = document.getElementById(`etqSkuLabel_${etqId}`);
+  const editBtn = labelEl?.nextElementSibling;
+  if (!labelEl) return;
+  const current = labelEl.textContent.trim();
+  // Substitui o label por um input inline
+  const input = document.createElement('input');
+  input.className = 'etq-sku-input';
+  input.value = current;
+  input.setAttribute('maxlength', '40');
+  labelEl.replaceWith(input);
+  if (editBtn) editBtn.style.display = 'none';
+  input.focus(); input.select();
+  const salvar = async () => {
+    const novoSku = input.value.trim() || current;
+    const arr = etqGetData(fullId);
+    const etq = arr.find(e => e.id === etqId);
+    if (etq) {
+      etq.sku  = novoSku;
+      etq.nome = novoSku; // sincroniza nome também
+      etqSetData(fullId, arr);
+      await etqSalvar(fullId);
+    }
+    etqRenderSecao(fullId);
+  };
+  input.addEventListener('blur', salvar);
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = current; input.blur(); }
+  });
 }
 
 /* ── Lote parcial ────────────────────────────────── */
