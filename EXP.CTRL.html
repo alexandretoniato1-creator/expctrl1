@@ -8259,37 +8259,17 @@ function etqCfgAtualizar() {
   if (badge) badge.textContent = `^PW${pw}  ^LL${ll}`;
 }
 
-/* ── zplFatiar v5 — usa lados ORIGINAIS do ZPL ML ────
-   O ML gera cada bloco ^XA...^XZ com 2 etiquetas:
-     Esquerda: ^LH0,0 + ^FO com X~16-105
-     Separador: ^CI28 isolado
-     Direita:  ^LH0,0 + ^FO com X~346-425 (offsets distintos por campo)
+/* ── zplFatiar v6 — envia ZPL ORIGINAL sem modificar ──
+   DIAGNÓSTICO FINAL:
+   O ZPL do ML foi gerado para folha de ~54mm (ambas etiquetas
+   lado a lado cabem em X=0..53mm). A impressora tem 100mm.
    
-   CAUSA DO DESALINHAMENTO ANTERIOR:
-   Reconstruíamos a direita somando +320 a todos os ^FO,
-   mas o ML usa offsets diferentes por campo (barcode +320, texto +330).
+   Qualquer injeção de ^PW, ^LL ou reconstrução de ^FO
+   desalinha o conteúdo porque muda o espaço de coordenadas.
    
-   SOLUÇÃO: usar os dois lados originais do ZPL sem modificar.
+   SOLUÇÃO: enviar o bloco ^XA...^XZ EXATAMENTE como veio do ML.
+   Só fatiar pela quantidade — 1 bloco = 2 etiquetas físicas.
    ─────────────────────────────────────────────────── */
-function zplExtrairAmbosLados(blocoZpl) {
-  var linhas = blocoZpl.replace(/\r/g, '').split('\n');
-  var sepIdx = -1;
-  var pastFirstLH = false;
-  for (var i = 0; i < linhas.length; i++) {
-    var l = linhas[i].trim();
-    if (!pastFirstLH && /^\^LH\d+,\d+/.test(l)) { pastFirstLH = true; continue; }
-    if (pastFirstLH && l === '^CI28') { sepIdx = i; break; }
-  }
-  if (sepIdx === -1) {
-    // Bloco sem separador: usa o conteúdo como esquerda, duplica para direita
-    var inner = linhas.slice(1, linhas.length - 1).join('\n').trim();
-    return { left: inner, right: inner };
-  }
-  var left  = linhas.slice(1, sepIdx).join('\n').trim();
-  var right = linhas.slice(sepIdx + 1, linhas.length - 1).join('\n').trim();
-  return { left: left, right: right };
-}
-
 function zplFatiar(zpl, qtdEtiquetas) {
   var blocos = [];
   var regex = /(\^XA[\s\S]*?\^XZ)/gi;
@@ -8297,26 +8277,14 @@ function zplFatiar(zpl, qtdEtiquetas) {
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) return zpl;
 
-  var dpi = window._etqCfg.dpi       || 203;
-  var wMm = window._etqCfg.larguraMm || 100;
-  var hMm = window._etqCfg.alturaMm  || 44;
-  var pw2 = Math.round((wMm * 2 / 25.4) * dpi); // folha 200mm
-  var ll  = Math.round((hMm     / 25.4) * dpi);  // altura 44mm
-
-  // 1 página = 2 etiquetas → ceil(N/2) páginas
-  var paginas = Math.ceil(qtdEtiquetas / 2);
-  var resultado = [];
-  for (var p = 0; p < paginas; p++) {
-    var idx  = p % blocos.length;
-    var lados = zplExtrairAmbosLados(blocos[idx]);
-    // Monta página com os dois lados originais + dimensões corretas
-    resultado.push(
-      '^XA^PW' + pw2 + '^LL' + ll + '^CI28\n' +
-      lados.left  + '\n^CI28\n' +
-      lados.right + '\n^XZ'
-    );
+  // 1 bloco = 2 etiquetas físicas lado a lado
+  // Para N etiquetas → ceil(N/2) blocos
+  var blocosNecessarios = Math.ceil(qtdEtiquetas / 2);
+  var selecionados = [];
+  for (var p = 0; p < blocosNecessarios; p++) {
+    selecionados.push(blocos[p % blocos.length]);
   }
-  return resultado.join('\n');
+  return selecionados.join('\n');
 }
 
 async function etqConfirmarLote(fullId, etqId, maxRestantes) {
