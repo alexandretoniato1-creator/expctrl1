@@ -8099,7 +8099,7 @@ async function etqRenderSecao(fullId) {
       <div class="etq-config-row">
         <div class="etq-config-field">
           <label>Largura (mm)</label>
-          <input class="etq-config-input" id="etqCfgW" type="number" value="${window._etqCfg?.larguraMm||200}" min="50" max="400" step="1" oninput="etqCfgAtualizar()">
+          <input class="etq-config-input" id="etqCfgW" type="number" value="${window._etqCfg?.larguraMm||100}" min="50" max="400" step="1" oninput="etqCfgAtualizar()">
         </div>
         <div class="etq-config-field">
           <label>Altura (mm)</label>
@@ -8116,7 +8116,7 @@ async function etqRenderSecao(fullId) {
         </div>
       </div>
       <div style="margin-top:8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">
-        Folha 2 etiquetas = 200mm · 1 etiqueta = 100mm · Altura = 44mm · ZD220 = 203dpi
+        Largura = 1 etiqueta individual (100mm) · Altura = 44mm · ZD220 = 203dpi · Cada impressão = 1 etiqueta
       </div>
     </div>
     <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
@@ -8273,7 +8273,7 @@ function etqFecharLote(etqId) {
    ─────────────────────────────────────────────── */
 /* ── Configuração de tamanho da etiqueta ─────────── */
 window._etqCfg = {
-  larguraMm: 200,  // largura total da folha (2 etiquetas lado a lado)
+  larguraMm: 100,  // largura de 1 etiqueta individual (100mm)
   alturaMm:  44,   // altura da etiqueta
   dpi:       203   // ZDesigner ZD220 = 203 dpi
 };
@@ -8293,22 +8293,72 @@ function etqCfgAtualizar() {
   if (badge) badge.textContent = `^PW${pw}  ^LL${ll}`;
 }
 
+/* ── zplFatiar v3 ────────────────────────────────────
+   O ZPL do ML tem 2 etiquetas LADO A LADO por bloco ^XA...^XZ,
+   usando ^LH0,0 (esquerda) e ^LH350,0 (direita).
+   A ZD220 com mídia 100mm só tem ~800 dots — a etiqueta direita
+   invade e corta. Solução: extrair APENAS a etiqueta esquerda
+   de cada bloco e montar N blocos individuais de 1 etiqueta.
+   ─────────────────────────────────────────────────── */
+function zplExtrairEtiquetaEsquerda(blocoZpl) {
+  // Pega tudo entre o primeiro ^LH e o segundo ^LH (ou ^XZ se só tiver 1)
+  // O padrão do ML é: ^XA ^CI28 ^LH0,0 [conteúdo esq] ^CI28 ^LH350,0 [conteúdo dir] ^XZ
+  // Queremos: ^XA [conteúdo esq] ^XZ
+  var dpi = window._etqCfg.dpi || 203;
+  var wMm = window._etqCfg.larguraMm || 100; // 1 etiqueta = 100mm
+  var hMm = window._etqCfg.alturaMm  || 44;
+  var pw  = Math.round((wMm / 25.4) * dpi);
+  var ll  = Math.round((hMm / 25.4) * dpi);
+
+  // Divide o bloco nos dois ^LH
+  // Formato: ...^LH0,0\n[conteudo_esq]^CI28\n^LH350,...[conteudo_dir]^XZ
+  var partes = blocoZpl.split(/\^LH\s*\d+\s*,\s*\d+/gi);
+  // partes[0] = cabeçalho antes do 1º ^LH (^XA^CI28\n)
+  // partes[1] = conteúdo da etiqueta esquerda
+  // partes[2] = conteúdo da etiqueta direita (descartamos)
+
+  if (partes.length < 2) {
+    // ZPL não tem ^LH, retorna como está com dimensões corrigidas
+    return blocoZpl.replace(/\^XA/i, '^XA^PW' + pw + '^LL' + ll + '^LH0,0');
+  }
+
+  // Pega só o conteúdo da esquerda (partes[1]), remove o que pertence à direita
+  var conteudoEsq = partes[1];
+  // Remove ^CI28 solto no final que era separador entre as duas etiquetas
+  conteudoEsq = conteudoEsq.replace(/\^CI28\s*$/i, '');
+  // Remove ^XZ que possa ter sobrado
+  conteudoEsq = conteudoEsq.replace(/\^XZ\s*$/i, '');
+
+  return '^XA^PW' + pw + '^LL' + ll + '^LH0,0' + conteudoEsq + '^XZ';
+}
+
 function zplFatiar(zpl, qtdEtiquetas) {
-  const blocos = [];
-  const regex = /(\^XA[\s\S]*?\^XZ)/gi;
-  let m;
+  // Extrai todos os blocos ^XA...^XZ
+  var blocos = [];
+  var regex = /(\^XA[\s\S]*?\^XZ)/gi;
+  var m;
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) return zpl;
 
-  const pw = Math.round((window._etqCfg.larguraMm / 25.4) * window._etqCfg.dpi);
-  const ll = Math.round((window._etqCfg.alturaMm  / 25.4) * window._etqCfg.dpi);
+  // Cada bloco original tem 2 etiquetas lado a lado.
+  // Extraímos só a etiqueta esquerda de cada bloco → 1 etiqueta por bloco.
+  // Para N etiquetas solicitadas, precisamos de N blocos.
+  var resultado = [];
+  var i = 0;
+  while (resultado.length < qtdEtiquetas && i < blocos.length * 100) {
+    var idxBloco = Math.floor(resultado.length / 1) % blocos.length;
+    resultado.push(zplExtrairEtiquetaEsquerda(blocos[idxBloco]));
+    // Se precisar mais que o total de blocos, cicla
+    if (resultado.length >= qtdEtiquetas) break;
+    i++;
+    if (i >= blocos.length && resultado.length < qtdEtiquetas) {
+      // Acabaram os blocos únicos — cicla do início
+      i = 0;
+    }
+    if (resultado.length >= qtdEtiquetas) break;
+  }
 
-  const blocosNecessarios = Math.ceil(qtdEtiquetas / 2);
-  const selecionados = blocos.slice(0, Math.min(blocosNecessarios, blocos.length));
-  const corrigidos = selecionados.map(function(b) {
-    return b.replace(/\^XA/i, '^XA^PW' + pw + '^LL' + ll);
-  });
-  return corrigidos.join(String.fromCharCode(10));
+  return resultado.slice(0, qtdEtiquetas).join(String.fromCharCode(10));
 }
 async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   let qtd = parseInt(document.getElementById(`etqQtd_${etqId}`)?.value)||0;
