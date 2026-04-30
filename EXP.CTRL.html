@@ -8,6 +8,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<!-- QZ Tray — comunicação com impressora Zebra local -->
+<script src="https://cdn.jsdelivr.net/npm/qz-tray@2.2.4/qz-tray.js" onerror="console.warn('QZ Tray script não carregado — modo offline')"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
@@ -834,6 +836,44 @@ select:focus{border-color:var(--accent)}
   transition:all .15s;
 }
 .cal-mobile-filter-btn.active{background:var(--surface2);color:var(--text);border-color:var(--accent)}
+
+/* ── ETIQUETAS ML ────────────────────────────── */
+.etq-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px}
+.etq-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
+.etq-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
+.etq-progress-bar{background:var(--bg);border-radius:100px;height:6px;overflow:hidden;margin:10px 16px 0}
+.etq-progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--purple),var(--blue));transition:width .5s ease}
+.etq-progress-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);padding:4px 16px 12px;display:flex;justify-content:space-between}
+.etq-list{display:flex;flex-direction:column;gap:0}
+.etq-item{border-bottom:1px solid var(--border);padding:12px 16px;transition:background .1s}
+.etq-item:last-child{border-bottom:none}
+.etq-item:hover{background:rgba(255,255,255,.015)}
+.etq-item-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.etq-item-name{font-size:12px;font-weight:700;color:var(--text)}
+.etq-item-count{font-family:'DM Mono',monospace;font-size:11px;font-weight:700}
+.etq-item-count.done{color:var(--green)}
+.etq-item-count.partial{color:var(--orange)}
+.etq-item-count.none{color:var(--muted)}
+.etq-item-bar{background:var(--bg);border-radius:100px;height:5px;overflow:hidden;margin-bottom:8px}
+.etq-item-bar-fill{height:100%;border-radius:100px;transition:width .4s ease}
+.etq-item-bar-fill.done{background:var(--green)}
+.etq-item-bar-fill.partial{background:var(--orange)}
+.etq-item-bar-fill.none{background:var(--muted);opacity:.3}
+.etq-item-actions{display:flex;gap:6px;align-items:center}
+.etq-btn-print{display:flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;border:1px solid var(--logbox-border);background:var(--logbox-bg);color:var(--logbox);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.etq-btn-print:hover{background:rgba(88,166,255,.18)}
+.etq-btn-print:disabled{opacity:.4;cursor:not-allowed}
+.etq-btn-del{width:26px;height:26px;border-radius:6px;border:1px solid rgba(248,81,73,.2);background:rgba(248,81,73,.06);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.etq-btn-del:hover{background:rgba(248,81,73,.15)}
+.etq-btn-reset{width:26px;height:26px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.etq-btn-reset:hover{background:var(--surface2);color:var(--text)}
+.etq-add-area{padding:12px 16px;border-top:1px solid var(--border)}
+.etq-zpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'DM Mono',monospace;font-size:10px;padding:10px;resize:vertical;outline:none;transition:border-color .15s;min-height:80px;max-height:160px}
+.etq-zpl-textarea:focus{border-color:var(--accent);color:var(--text)}
+.etq-qztray-status{display:flex;align-items:center;gap:6px;font-size:10px;font-family:'DM Mono',monospace}
+.etq-dot-conn{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+.etq-dot-disc{width:6px;height:6px;border-radius:50%;background:var(--red)}
+.etq-dot-wait{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.5s infinite}
 </style>
 </head>
 <body>
@@ -1109,6 +1149,8 @@ select:focus{border-color:var(--accent)}
                 <div id="fdConferenciaSecao"></div>
               </div>
             </div>
+            <!-- ── SEÇÃO DE ETIQUETAS ML ── -->
+            <div id="fdEtiquetasSecao" style="padding:0 18px 18px"></div>
             <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
               <button class="btn btn-ghost btn-sm" onclick="fecharFullDetalhe();abrirImpressao(window._fdFullId)">🖨 Imprimir</button>
               <button class="btn-danger-sm" style="font-size:11px;padding:5px 12px" onclick="excluirFull(window._fdFullId)">🗑 Excluir</button>
@@ -3646,6 +3688,9 @@ function openFullDetalheInline(id) {
 
   // Renderiza seção de conferência (carrega do Supabase)
   confCarregar(id, totalCaixas);
+
+  // Renderiza seção de etiquetas ML
+  etqRenderSecao(id);
 
   // SKUs agrupados
   const skuMap = {};
@@ -7824,6 +7869,331 @@ fecharScanner = function() {
   _confScannerMode = false;
   _origFecharScanner();
 };// ══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// MÓDULO ETIQUETAS ML — ZPL + QZ Tray
+// ══════════════════════════════════════════════════════
+
+// Estado global de etiquetas por full (persiste no Supabase via full_etiquetas)
+// Estrutura: { fullId: [ { id, nome, zpl, total, impressas, criadoEm } ] }
+window._etqData   = {};   // cache local
+window._qzConn    = null; // conexão QZ Tray
+window._qzStatus  = 'disconnected'; // 'disconnected' | 'connecting' | 'connected'
+
+/* ── Utilitários ─────────────────────────────────── */
+function etqContarBlocos(zpl) {
+  // Conta ocorrências de ^XA no ZPL — cada ^XA = 1 etiqueta
+  // O ML gera 2 etiquetas por página (side by side) dentro do mesmo ^XA^XZ
+  // Mas cada ^XA...^XZ é 1 "página" contendo 2 etiquetas lado a lado
+  // Então: contamos ^XA e multiplicamos por 2 (padrão ML)
+  const blocos = (zpl.match(/\^XA/gi) || []).length;
+  // Detecta se é layout duplo (2 colunas: ^LH0,0 e ^LH350,0 ou similar no mesmo bloco)
+  // O ML padrão usa 2 etiquetas por folha
+  return blocos * 2;
+}
+
+function etqGetData(fullId) {
+  return window._etqData[fullId] || [];
+}
+
+function etqSetData(fullId, arr) {
+  window._etqData[fullId] = arr;
+}
+
+function etqSalvar(fullId) {
+  // Persiste no Supabase como JSON na tabela full_etiquetas
+  const arr = etqGetData(fullId);
+  return _sb.from('full_etiquetas')
+    .upsert({ full_id: fullId, dados: JSON.stringify(arr), updated_at: new Date().toISOString() })
+    .then(() => {});
+}
+
+async function etqCarregar(fullId) {
+  try {
+    const { data } = await _sb.from('full_etiquetas').select('dados').eq('full_id', fullId).single();
+    if (data?.dados) {
+      window._etqData[fullId] = JSON.parse(data.dados);
+    } else {
+      window._etqData[fullId] = [];
+    }
+  } catch(e) {
+    window._etqData[fullId] = [];
+  }
+}
+
+/* ── QZ Tray ─────────────────────────────────────── */
+async function qzConectar() {
+  if (window._qzStatus === 'connected') return true;
+  if (typeof qz === 'undefined') {
+    showToast('⚠️ QZ Tray não encontrado — verifique se está rodando');
+    return false;
+  }
+  window._qzStatus = 'connecting';
+  etqRenderQzStatus();
+  try {
+    if (!qz.websocket.isActive()) {
+      await qz.websocket.connect();
+    }
+    window._qzStatus = 'connected';
+    window._qzConn = true;
+    etqRenderQzStatus();
+    return true;
+  } catch(e) {
+    window._qzStatus = 'disconnected';
+    etqRenderQzStatus();
+    showToast('❌ Não conectou ao QZ Tray — verifique se está rodando na bandeja');
+    return false;
+  }
+}
+
+function etqRenderQzStatus() {
+  const els = document.querySelectorAll('.etq-qztray-status');
+  els.forEach(el => {
+    const s = window._qzStatus;
+    const dotCls = s === 'connected' ? 'etq-dot-conn' : s === 'connecting' ? 'etq-dot-wait' : 'etq-dot-disc';
+    const label  = s === 'connected' ? 'QZ Tray conectado' : s === 'connecting' ? 'conectando…' : 'QZ Tray offline';
+    el.innerHTML = `<div class="${dotCls}"></div><span style="color:var(--muted)">${label}</span>`;
+  });
+}
+
+async function etqImprimirZpl(fullId, etqId) {
+  const arr = etqGetData(fullId);
+  const etq = arr.find(e => e.id === etqId);
+  if (!etq) return;
+
+  // Tenta conectar QZ Tray
+  const ok = await qzConectar();
+  if (!ok) {
+    // Fallback: copia ZPL para clipboard
+    try {
+      await navigator.clipboard.writeText(etq.zpl);
+      showToast('📋 ZPL copiado! Cole no Zebra Setup Utilities para imprimir.');
+    } catch(e) {
+      showToast('⚠️ Não foi possível imprimir — QZ Tray offline');
+    }
+    return;
+  }
+
+  try {
+    // Detecta impressora Zebra disponível
+    const impressoras = await qz.printers.find('ZDesigner');
+    let impressora = impressoras[0];
+    if (!impressora) {
+      // Tenta qualquer impressora disponível
+      const todas = await qz.printers.getDefault();
+      impressora = todas;
+    }
+    if (!impressora) {
+      showToast('❌ Nenhuma impressora Zebra encontrada');
+      return;
+    }
+
+    const config = qz.configs.create(impressora, { raw: true });
+    const data   = [{ type: 'raw', format: 'plain', data: etq.zpl }];
+    await qz.print(config, data);
+
+    // Registra impressão — soma total de etiquetas do ZPL
+    etq.impressas = (etq.impressas || 0) + etq.total;
+    if (etq.impressas > etq.total) etq.impressas = etq.total;
+    etqSetData(fullId, arr);
+    await etqSalvar(fullId);
+    etqRenderSecao(fullId);
+    showToast(`✅ ${etq.total} etiquetas enviadas para ${impressora}`);
+  } catch(e) {
+    showToast('❌ Erro ao imprimir: ' + (e.message || e));
+  }
+}
+
+/* ── Render ──────────────────────────────────────── */
+async function etqRenderSecao(fullId) {
+  const el = document.getElementById('fdEtiquetasSecao');
+  if (!el) return;
+
+  // Carrega se não tiver em cache
+  if (!window._etqData[fullId]) await etqCarregar(fullId);
+  const arr = etqGetData(fullId);
+
+  const totalGeral    = arr.reduce((a, e) => a + (e.total || 0), 0);
+  const impressasGeral = arr.reduce((a, e) => a + (e.impressas || 0), 0);
+  const pctGeral      = totalGeral ? Math.round((impressasGeral / totalGeral) * 100) : 0;
+  const tudoOk        = totalGeral > 0 && impressasGeral >= totalGeral;
+
+  el.innerHTML = `
+  <div class="etq-section">
+    <div class="etq-header">
+      <div class="etq-title">
+        🏷 Etiquetas ML
+        ${tudoOk
+          ? '<span class="badge b-done" style="font-size:9px">✓ Completo</span>'
+          : totalGeral > 0 && impressasGeral > 0
+            ? `<span class="badge b-doing" style="font-size:9px">${pctGeral}% impresso</span>`
+            : totalGeral > 0
+              ? '<span class="badge" style="font-size:9px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)">Aguardando</span>'
+              : ''
+        }
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="etq-qztray-status"></div>
+        <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px">+ Adicionar ZPL</button>
+      </div>
+    </div>
+
+    ${totalGeral > 0 ? `
+    <div class="etq-progress-bar">
+      <div class="etq-progress-fill" style="width:${pctGeral}%"></div>
+    </div>
+    <div class="etq-progress-label">
+      <span>${impressasGeral.toLocaleString('pt-BR')} impressas</span>
+      <span>${totalGeral.toLocaleString('pt-BR')} total · ${pctGeral}%</span>
+    </div>` : ''}
+
+    <div class="etq-list">
+      ${arr.length === 0 ? `
+        <div style="padding:20px;text-align:center;font-size:12px;color:var(--muted)">
+          Nenhum ZPL adicionado ainda.<br>
+          <span style="font-size:11px;font-family:'DM Mono',monospace">Cole o ZPL do Mercado Livre para controlar as impressões.</span>
+        </div>` : arr.map(etq => {
+          const pct  = etq.total ? Math.round(((etq.impressas||0) / etq.total) * 100) : 0;
+          const cls  = pct >= 100 ? 'done' : pct > 0 ? 'partial' : 'none';
+          const faltam = Math.max(0, etq.total - (etq.impressas || 0));
+          return `
+          <div class="etq-item">
+            <div class="etq-item-top">
+              <div>
+                <div class="etq-item-name">${etq.nome}</div>
+                <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:2px">
+                  ${etq.total.toLocaleString('pt-BR')} etiquetas · adicionado ${new Date(etq.criadoEm).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+              <div class="etq-item-count ${cls}">
+                ${(etq.impressas||0).toLocaleString('pt-BR')}/${etq.total.toLocaleString('pt-BR')}
+              </div>
+            </div>
+            <div class="etq-item-bar">
+              <div class="etq-item-bar-fill ${cls}" style="width:${pct}%"></div>
+            </div>
+            <div class="etq-item-actions">
+              ${pct < 100
+                ? `<button class="etq-btn-print" onclick="etqImprimirZpl('${fullId}','${etq.id}')">
+                    🖨 Imprimir · faltam ${faltam.toLocaleString('pt-BR')}
+                  </button>`
+                : `<div style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace;color:var(--green)">
+                    ✅ Completo
+                  </div>`
+              }
+              <div style="flex:1"></div>
+              <button class="etq-btn-reset" onclick="etqResetar('${fullId}','${etq.id}')" title="Resetar contagem">↺</button>
+              <button class="etq-btn-del" onclick="etqExcluir('${fullId}','${etq.id}')" title="Excluir">✕</button>
+            </div>
+          </div>`;
+        }).join('')}
+    </div>
+
+    <!-- Área de adicionar novo ZPL -->
+    <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">Novo ZPL</div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label>Nome / Identificação</label>
+        <input type="text" id="etqNomeInput_${fullId}" placeholder="Ex: Bomba Submersa 2000l/h" style="font-size:12px">
+      </div>
+      <div class="form-group" style="margin-bottom:8px">
+        <label>Cole o ZPL aqui</label>
+        <textarea class="etq-zpl-textarea" id="etqZplInput_${fullId}" placeholder="^XA&#10;^FO...&#10;^XZ" oninput="etqPreviewCount('${fullId}')"></textarea>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="etqCountPreview_${fullId}">
+          Cole o ZPL acima para ver a quantidade de etiquetas
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-primary btn-sm" style="flex:1" onclick="etqConfirmarAdicionar('${fullId}')">✓ Adicionar</button>
+        <button class="btn btn-ghost btn-sm" onclick="etqFecharAdicionar('${fullId}')">Cancelar</button>
+      </div>
+    </div>
+  </div>`;
+
+  // Atualiza status QZ Tray
+  etqRenderQzStatus();
+
+  // Tenta conectar QZ Tray silenciosamente
+  if (window._qzStatus === 'disconnected' && typeof qz !== 'undefined') {
+    qzConectar();
+  }
+}
+
+function etqAbrirAdicionar(fullId) {
+  const area = document.getElementById(`etqAddArea_${fullId}`);
+  if (area) { area.style.display = ''; area.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+}
+
+function etqFecharAdicionar(fullId) {
+  const area = document.getElementById(`etqAddArea_${fullId}`);
+  if (area) area.style.display = 'none';
+  const inp = document.getElementById(`etqZplInput_${fullId}`);
+  const nome = document.getElementById(`etqNomeInput_${fullId}`);
+  if (inp) inp.value = '';
+  if (nome) nome.value = '';
+}
+
+function etqPreviewCount(fullId) {
+  const inp = document.getElementById(`etqZplInput_${fullId}`);
+  const preview = document.getElementById(`etqCountPreview_${fullId}`);
+  if (!inp || !preview) return;
+  const zpl = inp.value.trim();
+  if (!zpl) { preview.textContent = 'Cole o ZPL acima para ver a quantidade'; return; }
+  const total = etqContarBlocos(zpl);
+  preview.innerHTML = `<span style="color:var(--text);font-weight:700">${total.toLocaleString('pt-BR')}</span> etiquetas detectadas`;
+}
+
+async function etqConfirmarAdicionar(fullId) {
+  const nomeEl = document.getElementById(`etqNomeInput_${fullId}`);
+  const zplEl  = document.getElementById(`etqZplInput_${fullId}`);
+  if (!nomeEl || !zplEl) return;
+
+  const nome = nomeEl.value.trim();
+  const zpl  = zplEl.value.trim();
+
+  if (!zpl) { showToast('⚠️ Cole o ZPL antes de adicionar'); return; }
+
+  const total = etqContarBlocos(zpl);
+  const novoItem = {
+    id: 'etq_' + Date.now(),
+    nome: nome || 'SKU sem nome',
+    zpl,
+    total,
+    impressas: 0,
+    criadoEm: new Date().toISOString()
+  };
+
+  const arr = etqGetData(fullId);
+  arr.push(novoItem);
+  etqSetData(fullId, arr);
+  await etqSalvar(fullId);
+  etqFecharAdicionar(fullId);
+  etqRenderSecao(fullId);
+  showToast(`🏷 ZPL adicionado — ${total.toLocaleString('pt-BR')} etiquetas`);
+}
+
+async function etqExcluir(fullId, etqId) {
+  if (!confirm('Excluir este ZPL e seu histórico de impressões?')) return;
+  let arr = etqGetData(fullId);
+  arr = arr.filter(e => e.id !== etqId);
+  etqSetData(fullId, arr);
+  await etqSalvar(fullId);
+  etqRenderSecao(fullId);
+  showToast('🗑 ZPL removido');
+}
+
+async function etqResetar(fullId, etqId) {
+  if (!confirm('Resetar contagem de impressões para este ZPL?')) return;
+  const arr = etqGetData(fullId);
+  const etq = arr.find(e => e.id === etqId);
+  if (etq) { etq.impressas = 0; }
+  etqSetData(fullId, arr);
+  await etqSalvar(fullId);
+  etqRenderSecao(fullId);
+  showToast('↺ Contagem resetada');
+}
+
 window.addEventListener('resize', ()=>{
   if(!isMobile()) {
     closeSidebar();
