@@ -7918,125 +7918,115 @@ fecharScanner = function() {
 // MÓDULO ETIQUETAS ML — ZPL + QZ Tray
 // ══════════════════════════════════════════════════════
 
-// Estado global de etiquetas por full (persiste no Supabase via full_etiquetas)
-// Estrutura: { fullId: [ { id, nome, zpl, total, impressas, criadoEm } ] }
-window._etqData   = {};   // cache local
-window._qzConn    = null; // conexão QZ Tray
-window._qzStatus = 'disconnected';
 
-/* ── Parsing ZPL ─────────────────────────────────── */
+// ── MÓDULO ETIQUETAS ML — Biblioteca ZPL
+window._etqData      = {};  // { fullId: [{id,sku,descricao,total,impressas,criadoEm}] }
+window._zplCache     = {};  // { sku: zpl } — cache local da biblioteca
+window._qzStatus     = 'disconnected';
+
+/* ── Parsing ZPL ──────────────────────────────── */
 function etqAnalisarZpl(zpl) {
-  // Contagem correta: cada ^LH = 1 etiqueta (ML coloca 2 ^LH por página)
-  const totalLH = (zpl.match(/\^LH/gi) || []).length;
-  const totalXA = (zpl.match(/\^XA/gi) || []).length;
+  const totalLH = (zpl.match(/\^LH/gi)||[]).length;
+  const totalXA = (zpl.match(/\^XA/gi)||[]).length;
   const total   = totalLH > 0 ? totalLH : totalXA;
-
-  // Detecta SKUs únicos pelo barcode ^BCN...^FD
-  const barcodeMatches = [...zpl.matchAll(/\^BCN[^\^]*\^FD([^\^]+)\^FS/gi)].map(m => m[1].trim());
-  const skuMatches     = [...zpl.matchAll(/SKU:\s*([A-Z0-9_\-]+)/gi)].map(m => m[1].trim());
-  const nameMatches    = [...zpl.matchAll(/\^FO(?:16|30),115[^\^]*\^FH\^FD([^\^]{3,})\^FS/gi)]
-                           .map(m => m[1].replace(/_C3_A1/g,'á').replace(/_C3_A7/g,'ç').replace(/_C3_A3/g,'ã').trim());
-
+  const bm = [...zpl.matchAll(/\^BCN[^\^]*\^FD([^\^]+)\^FS/gi)].map(m=>m[1].trim());
+  const sm = [...zpl.matchAll(/SKU:\s*([A-Z0-9_\-]+)/gi)].map(m=>m[1].trim());
+  const nm = [...zpl.matchAll(/\^FO(?:16|30),115[^\^]*\^FH\^FD([^\^]{3,})\^FS/gi)]
+               .map(m=>m[1].replace(/_C3_A1/g,'á').replace(/_C3_A7/g,'ç').replace(/_C3_A3/g,'ã').trim());
   const skuMap = {};
-  barcodeMatches.forEach((bc, i) => {
-    if (!skuMap[bc]) skuMap[bc] = {
-      barcode: bc,
-      sku:  skuMatches[i] || skuMatches[Math.floor(i/2)] || '',
-      nome: nameMatches[Math.floor(i/2)] || nameMatches[0] || bc,
-      count: 0
-    };
+  bm.forEach((bc,i)=>{
+    if(!skuMap[bc]) skuMap[bc]={barcode:bc,sku:sm[i]||sm[Math.floor(i/2)]||'',nome:nm[Math.floor(i/2)]||nm[0]||bc,count:0};
     skuMap[bc].count++;
   });
-
   const skusDetectados = Object.values(skuMap);
-  // Fallback: se nenhum barcode encontrado, trata como 1 SKU
-  if (skusDetectados.length === 0) skusDetectados.push({ barcode:'', sku:'', nome:'Etiqueta ML', count: total });
-
-  return { total, skusDetectados, multiSku: skusDetectados.length > 1 };
+  if(!skusDetectados.length) skusDetectados.push({barcode:'',sku:'',nome:'Etiqueta ML',count:total});
+  return {total,skusDetectados,multiSku:skusDetectados.length>1};
 }
 
-function etqGetData(fullId)      { return window._etqData[fullId] || []; }
-function etqSetData(fullId, arr) { window._etqData[fullId] = arr; }
+/* ── Biblioteca ZPL ───────────────────────────── */
+async function zplSalvar(sku, descricao, zpl) {
+  await _sb.from('zpl_biblioteca').upsert({sku,descricao,zpl,updated_at:new Date().toISOString()},{onConflict:'sku'});
+  window._zplCache[sku] = zpl;
+}
+
+async function zplCarregar(sku) {
+  if(window._zplCache[sku]) return window._zplCache[sku];
+  try {
+    const {data} = await _sb.from('zpl_biblioteca').select('zpl').eq('sku',sku).single();
+    if(data?.zpl){window._zplCache[sku]=data.zpl;return data.zpl;}
+  } catch {}
+  return null;
+}
+
+/* ── Storage ──────────────────────────────────── */
+function etqGetData(fullId)      { return window._etqData[fullId]||[]; }
+function etqSetData(fullId, arr) { window._etqData[fullId]=arr; }
 
 async function etqSalvar(fullId) {
-  await _sb.from('full_etiquetas')
-    .upsert({ full_id: fullId, dados: JSON.stringify(etqGetData(fullId)), updated_at: new Date().toISOString() });
+  const arr = etqGetData(fullId).map(e=>({id:e.id,sku:e.sku,descricao:e.descricao||'',total:e.total,impressas:e.impressas||0,criadoEm:e.criadoEm}));
+  await _sb.from('full_etiquetas').upsert({full_id:fullId,dados:JSON.stringify(arr),versao:2,updated_at:new Date().toISOString()});
 }
 
 async function etqCarregar(fullId) {
   try {
-    const { data } = await _sb.from('full_etiquetas').select('dados').eq('full_id', fullId).single();
+    const {data} = await _sb.from('full_etiquetas').select('dados').eq('full_id',fullId).single();
     window._etqData[fullId] = data?.dados ? JSON.parse(data.dados) : [];
-  } catch { window._etqData[fullId] = []; }
+  } catch { window._etqData[fullId]=[]; }
 }
 
-/* ── QZ Tray ─────────────────────────────────────── */
+/* ── QZ Tray ──────────────────────────────────── */
 async function qzConectar() {
-  if (window._qzStatus === 'connected') return true;
-  if (typeof qz === 'undefined') return false;
-  window._qzStatus = 'connecting';
-  etqRenderQzStatus();
+  if(window._qzStatus==='connected') return true;
+  if(typeof qz==='undefined') return false;
+  window._qzStatus='connecting'; etqRenderQzStatus();
   try {
-    if (!qz.websocket.isActive()) await qz.websocket.connect();
-    window._qzStatus = 'connected';
-    etqRenderQzStatus();
-    return true;
-  } catch {
-    window._qzStatus = 'disconnected';
-    etqRenderQzStatus();
-    return false;
-  }
+    if(!qz.websocket.isActive()) await qz.websocket.connect();
+    window._qzStatus='connected'; etqRenderQzStatus(); return true;
+  } catch { window._qzStatus='disconnected'; etqRenderQzStatus(); return false; }
 }
 
 function etqRenderQzStatus() {
-  document.querySelectorAll('.etq-qztray-status').forEach(el => {
-    const s = window._qzStatus;
-    const dotCls = s==='connected'?'etq-dot-conn':s==='connecting'?'etq-dot-wait':'etq-dot-disc';
-    const label  = s==='connected'?'Impressora conectada':s==='connecting'?'conectando…':'QZ Tray offline';
-    el.innerHTML = `<div class="${dotCls}"></div><span style="color:var(--muted)">${label}</span>`;
+  document.querySelectorAll('.etq-qztray-status').forEach(el=>{
+    const s=window._qzStatus;
+    const d=s==='connected'?'etq-dot-conn':s==='connecting'?'etq-dot-wait':'etq-dot-disc';
+    const l=s==='connected'?'Impressora conectada':s==='connecting'?'conectando…':'QZ Tray offline';
+    el.innerHTML=`<div class="${d}"></div><span style="color:var(--muted)">${l}</span>`;
   });
 }
 
-/* ── Render ──────────────────────────────────────── */
+/* ── Render ───────────────────────────────────── */
 async function etqRenderSecao(fullId) {
-  const el = document.getElementById('fdEtiquetasSecao');
-  if (!el) return;
-  if (!window._etqData[fullId]) await etqCarregar(fullId);
-  const arr = etqGetData(fullId);
+  const el=document.getElementById('fdEtiquetasSecao');
+  if(!el) return;
+  if(!window._etqData[fullId]) await etqCarregar(fullId);
+  const arr=etqGetData(fullId);
+  const totalG=arr.reduce((a,e)=>a+(e.total||0),0);
+  const impG  =arr.reduce((a,e)=>a+(e.impressas||0),0);
+  const pctG  =totalG?Math.round((impG/totalG)*100):0;
+  const ok    =totalG>0&&impG>=totalG;
 
-  const totalG     = arr.reduce((a,e)=>a+(e.total||0),0);
-  const impressasG = arr.reduce((a,e)=>a+(e.impressas||0),0);
-  const pctG       = totalG ? Math.round((impressasG/totalG)*100) : 0;
-  const tudoOk     = totalG>0 && impressasG>=totalG;
+  let badge='';
+  if(ok)        badge='<span class="badge b-done" style="font-size:9px">✓ Completo</span>';
+  else if(impG) badge=`<span class="badge b-doing" style="font-size:9px">${pctG}% impresso</span>`;
+  else if(totalG) badge='<span class="badge" style="font-size:9px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)">Aguardando</span>';
 
-  let badgeHtml = '';
-  if (tudoOk)            badgeHtml = '<span class="badge b-done" style="font-size:9px">✓ Completo</span>';
-  else if (impressasG>0) badgeHtml = `<span class="badge b-doing" style="font-size:9px">${pctG}% impresso</span>`;
-  else if (totalG>0)     badgeHtml = '<span class="badge" style="font-size:9px;background:rgba(255,255,255,.06);color:var(--muted);border:1px solid rgba(255,255,255,.1)">Aguardando</span>';
-
-  const barraHtml = totalG>0 ? `
+  const barra=totalG?`
     <div class="etq-global-bar-wrap">
       <div class="etq-global-bar-row">
-        <div class="etq-global-bar-nums"><b>${impressasG.toLocaleString('pt-BR')}</b> de ${totalG.toLocaleString('pt-BR')} etiquetas impressas</div>
-        <div class="etq-global-bar-pct" style="color:${tudoOk?'var(--green)':impressasG>0?'var(--orange)':'var(--muted)'}">${pctG}%</div>
+        <div class="etq-global-bar-nums"><b>${impG.toLocaleString('pt-BR')}</b> de ${totalG.toLocaleString('pt-BR')} etiquetas impressas</div>
+        <div class="etq-global-bar-pct" style="color:${ok?'var(--green)':impG?'var(--orange)':'var(--muted)'}">${pctG}%</div>
       </div>
-      <div class="etq-progress-bar">
-        <div class="etq-progress-fill${tudoOk?' done':''}" style="width:${pctG}%"></div>
-      </div>
-    </div>` : '';
+      <div class="etq-progress-bar"><div class="etq-progress-fill${ok?' done':''}" style="width:${pctG}%"></div></div>
+    </div>`:'';
 
-  const listaHtml = arr.length===0
-    ? `<div class="etq-empty">
-        <div class="etq-empty-icon">🏷</div>
-        <div class="etq-empty-title">Nenhum ZPL adicionado</div>
-        <div class="etq-empty-sub">Cole o ZPL do Mercado Livre para controlar as impressões</div>
-      </div>`
-    : arr.map(etq => {
-        const pct    = etq.total ? Math.round(((etq.impressas||0)/etq.total)*100) : 0;
-        const cls    = pct>=100?'done':pct>0?'partial':'none';
-        const faltam = Math.max(0, etq.total-(etq.impressas||0));
-        const skuLabel  = etq.sku || etq.nome || '—';
-        const descLabel = (etq.sku && etq.nome && etq.nome !== etq.sku) ? etq.nome : '';
+  const lista=arr.length===0
+    ?`<div class="etq-empty"><div class="etq-empty-icon">🏷</div><div class="etq-empty-title">Nenhum ZPL adicionado</div><div class="etq-empty-sub">Cole o ZPL do Mercado Livre para controlar as impressões</div></div>`
+    :arr.map(etq=>{
+        const pct=etq.total?Math.round(((etq.impressas||0)/etq.total)*100):0;
+        const cls=pct>=100?'done':pct>0?'partial':'none';
+        const faltam=Math.max(0,etq.total-(etq.impressas||0));
+        const skuLbl=etq.sku||etq.descricao||'—';
+        const descLbl=(etq.sku&&etq.descricao&&etq.descricao!==etq.sku)?etq.descricao:'';
         return `
         <div class="etq-card ${cls}">
           <div class="etq-card-stripe ${cls}"></div>
@@ -8044,10 +8034,10 @@ async function etqRenderSecao(fullId) {
             <div class="etq-card-top">
               <div class="etq-card-left">
                 <div class="etq-sku-row">
-                  <span class="etq-sku-code" id="etqSkuLabel_${etq.id}">${skuLabel}</span>
+                  <span class="etq-sku-code" id="etqSkuLabel_${etq.id}">${skuLbl}</span>
                   <button class="etq-sku-edit-btn" onclick="etqEditarSku('${fullId}','${etq.id}')" title="Editar SKU">✏</button>
                 </div>
-                ${descLabel ? `<div class="etq-card-desc">${descLabel}</div>` : ''}
+                ${descLbl?`<div class="etq-card-desc">${descLbl}</div>`:''}
                 <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px">${etq.total.toLocaleString('pt-BR')} etiquetas · ${new Date(etq.criadoEm).toLocaleDateString('pt-BR')}</div>
               </div>
               <div class="etq-card-right">
@@ -8058,21 +8048,17 @@ async function etqRenderSecao(fullId) {
             </div>
             <div class="etq-card-bar-wrap">
               <div class="etq-card-bar"><div class="etq-card-bar-fill ${cls}" style="width:${pct}%"></div></div>
-              <div class="etq-card-bar-label">
-                <span>${(etq.impressas||0).toLocaleString('pt-BR')} impressas</span>
-                <span>${faltam.toLocaleString('pt-BR')} restantes</span>
-              </div>
+              <div class="etq-card-bar-label"><span>${(etq.impressas||0).toLocaleString('pt-BR')} impressas</span><span>${faltam.toLocaleString('pt-BR')} restantes</span></div>
             </div>
             <div class="etq-card-actions">
               ${pct<100
-                ? `<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>`
-                : `<div class="etq-btn-done-tag">✅ Tudo impresso</div>`
-              }
+                ?`<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>`
+                :`<div class="etq-btn-done-tag">✅ Tudo impresso</div>`}
               <div style="flex:1"></div>
               <button class="etq-btn-reset" onclick="etqResetar('${fullId}','${etq.id}')" title="Resetar">↺</button>
               <button class="etq-btn-del" onclick="etqExcluir('${fullId}','${etq.id}')" title="Excluir">✕</button>
             </div>
-            ${pct<100 ? `
+            ${pct<100?`
             <div class="etq-lote-box" id="etqLote_${etq.id}" style="display:none">
               <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:7px">Quantas etiquetas imprimir agora?</div>
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
@@ -8085,32 +8071,30 @@ async function etqRenderSecao(fullId) {
                   style="padding:6px 16px;border-radius:7px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Confirmar</button>
                 <button onclick="etqFecharLote('${etq.id}')" class="etq-btn-reset">✕</button>
               </div>
-            </div>` : ''}
+            </div>`:''}
           </div>
         </div>`;
       }).join('');
 
-  el.innerHTML = `
+  el.innerHTML=`
   <div class="etq-section">
     <div class="etq-header">
-      <div class="etq-title">🏷 Etiquetas ML ${badgeHtml}</div>
+      <div class="etq-title">🏷 Etiquetas ML ${badge}</div>
       <div style="display:flex;align-items:center;gap:10px">
         <div class="etq-qztray-status"></div>
         <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px">+ Adicionar ZPL</button>
       </div>
     </div>
-    ${barraHtml}
-    <div class="etq-list">${listaHtml}</div>
+    ${barra}
+    <div class="etq-list">${lista}</div>
     <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
       <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Novo ZPL</div>
       <div class="form-group" style="margin-bottom:8px">
         <label>Cole o ZPL aqui</label>
-        <textarea class="etq-zpl-textarea" id="etqZplInput_${fullId}"
-          placeholder="^XA&#10;^FO...&#10;^XZ"
-          oninput="etqAnalisarInput('${fullId}')"></textarea>
+        <textarea class="etq-zpl-textarea" id="etqZplInput_${fullId}" placeholder="^XA&#10;^FO...&#10;^XZ" oninput="etqAnalisarInput('${fullId}')"></textarea>
       </div>
       <div id="etqDetectBox_${fullId}" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">SKUs detectados automaticamente</div>
+        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">SKUs detectados</div>
         <div id="etqDetectList_${fullId}"></div>
       </div>
       <div style="display:flex;gap:8px">
@@ -8119,89 +8103,81 @@ async function etqRenderSecao(fullId) {
       </div>
     </div>
   </div>`;
-
   etqRenderQzStatus();
-  if (window._qzStatus==='disconnected' && typeof qz!=='undefined') qzConectar();
+  if(window._qzStatus==='disconnected'&&typeof qz!=='undefined') qzConectar();
 }
 
-/* ── Análise em tempo real ───────────────────────── */
 function etqAnalisarInput(fullId) {
-  const zpl = document.getElementById(`etqZplInput_${fullId}`)?.value?.trim();
-  const box = document.getElementById(`etqDetectBox_${fullId}`);
-  const lst = document.getElementById(`etqDetectList_${fullId}`);
-  if (!box||!lst) return;
-  if (!zpl) { box.style.display='none'; return; }
-  const { total, skusDetectados, multiSku } = etqAnalisarZpl(zpl);
-  box.style.display = '';
-  if (multiSku) {
-    lst.innerHTML = skusDetectados.map(s =>
-      `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:5px">
-        <div>
-          <div style="font-size:12px;font-weight:600;color:var(--text)">${s.nome||s.barcode}</div>
-          <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${s.sku||s.barcode}</div>
-        </div>
-        <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--logbox);background:var(--logbox-bg);padding:2px 8px;border-radius:5px;border:1px solid var(--logbox-border)">${s.count.toLocaleString('pt-BR')} etiquetas</span>
-      </div>`).join('') +
-      `<div style="margin-top:6px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">
-        Total: <b style="color:var(--text)">${total.toLocaleString('pt-BR')}</b> · ${skusDetectados.length} itens criados separadamente
-      </div>`;
-  } else {
-    const s = skusDetectados[0];
-    lst.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px">
-      <div>
-        <div style="font-size:12px;font-weight:600;color:var(--text)">${s.nome||'Etiqueta ML'}</div>
-        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${s.sku||s.barcode||'—'}</div>
-      </div>
-      <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--logbox);background:var(--logbox-bg);padding:2px 8px;border-radius:5px;border:1px solid var(--logbox-border)">${total.toLocaleString('pt-BR')} etiquetas</span>
-    </div>`;
-  }
+  const zpl=document.getElementById(`etqZplInput_${fullId}`)?.value?.trim();
+  const box=document.getElementById(`etqDetectBox_${fullId}`);
+  const lst=document.getElementById(`etqDetectList_${fullId}`);
+  if(!box||!lst) return;
+  if(!zpl){box.style.display='none';return;}
+  const {total,skusDetectados,multiSku}=etqAnalisarZpl(zpl);
+  box.style.display='';
+  const r=s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:5px">
+    <div><div style="font-size:12px;font-weight:600;color:var(--text)">${s.nome||s.barcode}</div><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${s.sku||s.barcode}</div></div>
+    <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--logbox);background:var(--logbox-bg);padding:2px 8px;border-radius:5px;border:1px solid var(--logbox-border)">${s.count.toLocaleString('pt-BR')} etiquetas</span>
+  </div>`;
+  lst.innerHTML=(multiSku?skusDetectados.map(r).join('')+`<div style="margin-top:6px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Total: <b style="color:var(--text)">${total.toLocaleString('pt-BR')}</b> · ${skusDetectados.length} itens</div>`:r(skusDetectados[0]||{nome:'Etiqueta ML',sku:'',count:total,barcode:''}));
 }
 
-/* ── Ações ───────────────────────────────────────── */
-function etqAbrirAdicionar(fullId) {
-  const a = document.getElementById(`etqAddArea_${fullId}`);
-  if (a) { a.style.display=''; a.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-}
-
-function etqFecharAdicionar(fullId) {
-  const a = document.getElementById(`etqAddArea_${fullId}`);
-  const z = document.getElementById(`etqZplInput_${fullId}`);
-  const b = document.getElementById(`etqDetectBox_${fullId}`);
-  if (a) a.style.display='none';
-  if (z) z.value='';
-  if (b) b.style.display='none';
+function etqAbrirAdicionar(fullId){const a=document.getElementById(`etqAddArea_${fullId}`);if(a){a.style.display='';a.scrollIntoView({behavior:'smooth',block:'nearest'});}}
+function etqFecharAdicionar(fullId){
+  const a=document.getElementById(`etqAddArea_${fullId}`);
+  const z=document.getElementById(`etqZplInput_${fullId}`);
+  const b=document.getElementById(`etqDetectBox_${fullId}`);
+  if(a)a.style.display='none';if(z)z.value='';if(b)b.style.display='none';
 }
 
 async function etqConfirmarAdicionar(fullId) {
-  const zpl = document.getElementById(`etqZplInput_${fullId}`)?.value?.trim();
-  if (!zpl) { showToast('⚠️ Cole o ZPL antes de adicionar'); return; }
-  const { total, skusDetectados, multiSku } = etqAnalisarZpl(zpl);
-  const arr = etqGetData(fullId);
-  const agora = new Date().toISOString();
-  if (multiSku) {
-    skusDetectados.forEach(s => arr.push({
-      id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),
-      nome:s.nome||s.barcode, sku:s.sku||s.barcode||'', zpl, total:s.count, impressas:0, criadoEm:agora
-    }));
-    showToast(`🏷 ${skusDetectados.length} SKUs adicionados — ${total.toLocaleString('pt-BR')} etiquetas`);
-  } else {
-    const s = skusDetectados[0];
-    arr.push({ id:'etq_'+Date.now(), nome:s.nome||'Etiqueta ML', sku:s.sku||s.barcode||'', zpl, total, impressas:0, criadoEm:agora });
-    showToast(`🏷 ZPL adicionado — ${total.toLocaleString('pt-BR')} etiquetas`);
+  const zpl=document.getElementById(`etqZplInput_${fullId}`)?.value?.trim();
+  if(!zpl){showToast('⚠️ Cole o ZPL antes de adicionar');return;}
+  const {total,skusDetectados,multiSku}=etqAnalisarZpl(zpl);
+  const arr=etqGetData(fullId);
+  const agora=new Date().toISOString();
+  const itens=multiSku?skusDetectados:[{...(skusDetectados[0]||{}),count:total}];
+  for(const s of itens){
+    const sku=s.sku||s.barcode||'SKU-'+Date.now();
+    const desc=s.nome||sku;
+    await zplSalvar(sku,desc,zpl); // salva 1x na biblioteca
+    arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku,descricao:desc,total:s.count,impressas:0,criadoEm:agora});
   }
-  etqSetData(fullId, arr);
+  etqSetData(fullId,arr);
   await etqSalvar(fullId);
   etqFecharAdicionar(fullId);
   etqRenderSecao(fullId);
+  showToast(multiSku?`🏷 ${itens.length} SKUs na biblioteca — ${total.toLocaleString('pt-BR')} etiquetas`:`🏷 ZPL salvo na biblioteca — ${total.toLocaleString('pt-BR')} etiquetas`);
 }
 
-async function etqExcluir(fullId, etqId) {
-  if (!confirm('Excluir este ZPL e seu histórico de impressões?')) return;
-  etqSetData(fullId, etqGetData(fullId).filter(e=>e.id!==etqId));
+async function etqExcluir(fullId,etqId){
+  if(!confirm('Excluir este SKU do Full?')) return;
+  etqSetData(fullId,etqGetData(fullId).filter(e=>e.id!==etqId));
   await etqSalvar(fullId);
   etqRenderSecao(fullId);
-  showToast('🗑 ZPL removido');
+  showToast('🗑 Removido');
 }
+
+function etqEditarSku(fullId,etqId){
+  const lbl=document.getElementById(`etqSkuLabel_${etqId}`);
+  const btn=lbl?.nextElementSibling;
+  if(!lbl) return;
+  const cur=lbl.textContent.trim();
+  const inp=document.createElement('input');
+  inp.className='etq-sku-input';inp.value=cur;inp.maxLength=40;
+  lbl.replaceWith(inp);if(btn)btn.style.display='none';
+  inp.focus();inp.select();
+  const save=async()=>{
+    const novo=inp.value.trim()||cur;
+    const arr=etqGetData(fullId);
+    const e=arr.find(x=>x.id===etqId);
+    if(e){e.sku=novo;etqSetData(fullId,arr);await etqSalvar(fullId);}
+    etqRenderSecao(fullId);
+  };
+  inp.addEventListener('blur',save);
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();inp.blur();}if(e.key==='Escape'){inp.value=cur;inp.blur();}});
+}
+
 
 async function etqResetar(fullId, etqId) {
   if (!confirm('Resetar contagem de impressões para este ZPL?')) return;
