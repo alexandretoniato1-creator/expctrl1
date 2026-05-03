@@ -8249,7 +8249,9 @@ async function etqPreview(fullId, etqId) {
 
   const info = document.createElement('div');
   info.style.cssText = 'color:#fff;font-family:DM Mono,monospace;font-size:12px;text-align:center';
-  info.innerHTML = `📐 Canvas: ${canvas.width}×${canvas.height}px &nbsp;|&nbsp; Folha: ${wMm}×${hMm}mm<br><span style="opacity:.6;font-size:10px">Este é o render offline — o que será impresso</span>`;
+  const dotsW = Math.round(canvas.width / 2), dotsH = Math.round(canvas.height / 2);
+  const realWmm = Math.round(dotsW / 8), realHmm = Math.round(dotsH / 8);
+  info.innerHTML = `📐 Canvas: ${canvas.width}×${canvas.height}px &nbsp;|&nbsp; ZPL: ${dotsW}×${dotsH} dots = ${realWmm}×${realHmm}mm<br><span style="opacity:.6;font-size:10px">Este é o render offline — o que será impresso</span>`;
 
   canvas.style.cssText = `max-width:90vw;max-height:70vh;border:2px solid #fff;background:#fff;image-rendering:pixelated`;
 
@@ -8359,7 +8361,22 @@ function _zplRender(zplBloco, pxPerDot) {
     else if(cmd==='FD'){
       if(cur){
         let text=tok.substring(3).replace(/\^FS.*$/,'').replace(/\^F[HSDB].*/,'').trim();
-        if(useHex)text=text.replace(/_([0-9A-Fa-f]{2})/g,(_,h)=>String.fromCharCode(parseInt(h,16)));
+        if(useHex){
+        // Decode ZPL ^FH hex escapes: _XX where XX are UTF-8 bytes
+        // Collect all hex bytes and decode as UTF-8
+        const bytes=[];
+        const hexParts=text.split(/_([0-9A-Fa-f]{2})/);
+        const parts2=[];
+        for(let pi=0;pi<hexParts.length;pi++){
+          if(pi%2===1){bytes.push(parseInt(hexParts[pi],16));}
+          else{
+            if(bytes.length){try{parts2.push(new TextDecoder().decode(new Uint8Array(bytes)));}catch(e){parts2.push('');}bytes.length=0;}
+            parts2.push(hexParts[pi]);
+          }
+        }
+        if(bytes.length){try{parts2.push(new TextDecoder().decode(new Uint8Array(bytes)));}catch(e){}}
+        text=parts2.join('');
+      }
         cur.text=text;
         if(!cur.type)cur.type='text';
         fields.push({...cur});cur=null;
@@ -8463,8 +8480,10 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
 
   try {
-    const wMm = window._etqCfg.larguraMm * 2; // 200mm (2 etiquetas)
-    const hMm = window._etqCfg.alturaMm;       // 52mm
+    // Usa dimensões reais do ZPL (pw/ll do arquivo), não configuração manual
+    const _testCanvas = _zplRender(blocos[0], 1);
+    const wMm = Math.round(_testCanvas.width  / 8); // dots/dpmm = mm
+    const hMm = Math.round(_testCanvas.height / 8);
 
     const { jsPDF } = window.jspdf;
     // portrait = largura < altura na nomenclatura jsPDF
