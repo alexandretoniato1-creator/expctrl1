@@ -8096,31 +8096,7 @@ async function etqRenderSecao(fullId) {
     </div>
     ${barra}
     <div class="etq-list">${lista}</div>
-    <div class="etq-config-panel">
-      <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">⚙ Dimensões da folha de impressão</div>
-      <div class="etq-config-row">
-        <div class="etq-config-field">
-          <label>Largura (mm)</label>
-          <input class="etq-config-input" id="etqCfgW" type="number" value="${window._etqCfg?.larguraMm||100}" min="50" max="400" step="1" oninput="etqCfgAtualizar()">
-        </div>
-        <div class="etq-config-field">
-          <label>Altura (mm)</label>
-          <input class="etq-config-input" id="etqCfgH" type="number" value="${window._etqCfg?.alturaMm||44}" min="10" max="200" step="1" oninput="etqCfgAtualizar()">
-        </div>
-        <div class="etq-config-field">
-          <label>DPI</label>
-          <input class="etq-config-input" id="etqCfgDpi" type="number" value="${window._etqCfg?.dpi||203}" min="100" max="600" step="1" oninput="etqCfgAtualizar()">
-        </div>
-        <div style="flex:1"></div>
-        <div style="display:flex;flex-direction:column;gap:3px;align-items:flex-end">
-          <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">ZPL gerado</div>
-          <div class="etq-config-badge" id="etqCfgBadge">^PW${Math.round((200/25.4)*203)}  ^LL${Math.round((44/25.4)*203)}</div>
-        </div>
-      </div>
-      <div style="margin-top:8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">
-        Largura = 1 etiqueta individual (100mm) · Altura = 44mm · ZD220 = 203dpi · Cada impressão = 1 etiqueta
-      </div>
-    </div>
+
     <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
       <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Novo ZPL</div>
       <div class="form-group" style="margin-bottom:8px">
@@ -8362,20 +8338,12 @@ function _zplRender(zplBloco, pxPerDot) {
       if(cur){
         let text=tok.substring(3).replace(/\^FS.*$/,'').replace(/\^F[HSDB].*/,'').trim();
         if(useHex){
-        // Decode ZPL ^FH hex escapes: _XX where XX are UTF-8 bytes
-        // Collect all hex bytes and decode as UTF-8
-        const bytes=[];
-        const hexParts=text.split(/_([0-9A-Fa-f]{2})/);
-        const parts2=[];
-        for(let pi=0;pi<hexParts.length;pi++){
-          if(pi%2===1){bytes.push(parseInt(hexParts[pi],16));}
-          else{
-            if(bytes.length){try{parts2.push(new TextDecoder().decode(new Uint8Array(bytes)));}catch(e){parts2.push('');}bytes.length=0;}
-            parts2.push(hexParts[pi]);
-          }
-        }
-        if(bytes.length){try{parts2.push(new TextDecoder().decode(new Uint8Array(bytes)));}catch(e){}}
-        text=parts2.join('');
+        // Decode _XX hex sequences as UTF-8 bytes using escape/decodeURIComponent
+        text = text.replace(/(?:_([0-9A-Fa-f]{2}))+/g, function(match) {
+          try {
+            return decodeURIComponent(match.replace(/_/g, '%'));
+          } catch(e) { return match; }
+        });
       }
         cur.text=text;
         if(!cur.type)cur.type='text';
