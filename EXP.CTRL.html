@@ -8060,7 +8060,8 @@ async function etqRenderSecao(fullId) {
             </div>
             <div class="etq-card-actions">
               ${pct<100
-                ?`<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>`
+                ?`<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>
+              <button class="etq-btn-reset" onclick="etqPreview('${fullId}','${etq.id}')" title="Preview da etiqueta" style="width:auto;padding:5px 10px;font-size:11px">👁 Preview</button>`
                 :`<div class="etq-btn-done-tag">✅ Tudo impresso</div>`}
               <div style="flex:1"></div>
               <button class="etq-btn-reset" onclick="etqResetar('${fullId}','${etq.id}')" title="Resetar">↺</button>
@@ -8223,6 +8224,47 @@ async function etqResetar(fullId, etqId) {
   showToast('↺ Contagem resetada');
 }
 /* ── Lote parcial ────────────────────────────────── */
+async function etqPreview(fullId, etqId) {
+  const arr = etqGetData(fullId);
+  const etq = arr.find(e => e.id === etqId);
+  if (!etq) return;
+  const zpl = await zplCarregar(etq.sku);
+  if (!zpl) { showToast('❌ ZPL não encontrado'); return; }
+
+  const blocos = [];
+  const rx = /(\^XA[\s\S]*?\^XZ)/gi;
+  let m;
+  while ((m = rx.exec(zpl)) !== null) blocos.push(m[1]);
+  if (!blocos.length) { showToast('❌ ZPL inválido'); return; }
+
+  const wMm = window._etqCfg.larguraMm * 2;
+  const hMm = window._etqCfg.alturaMm;
+
+  // Renderiza o primeiro bloco no canvas e abre em popup
+  const canvas = _zplRender(blocos[0], 2);
+
+  // Cria modal de preview
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px';
+
+  const info = document.createElement('div');
+  info.style.cssText = 'color:#fff;font-family:DM Mono,monospace;font-size:12px;text-align:center';
+  info.innerHTML = `📐 Canvas: ${canvas.width}×${canvas.height}px &nbsp;|&nbsp; Folha: ${wMm}×${hMm}mm<br><span style="opacity:.6;font-size:10px">Este é o render offline — o que será impresso</span>`;
+
+  canvas.style.cssText = `max-width:90vw;max-height:70vh;border:2px solid #fff;background:#fff;image-rendering:pixelated`;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕ Fechar';
+  closeBtn.style.cssText = 'padding:8px 24px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.onclick = () => document.body.removeChild(overlay);
+
+  overlay.appendChild(info);
+  overlay.appendChild(canvas);
+  overlay.appendChild(closeBtn);
+  overlay.onclick = (e) => { if (e.target === overlay) document.body.removeChild(overlay); };
+  document.body.appendChild(overlay);
+}
+
 function etqAbrirLote(fullId, etqId) {
   document.querySelectorAll('[id^="etqLote_"]').forEach(b=>b.style.display='none');
   const box = document.getElementById(`etqLote_${etqId}`);
@@ -8425,13 +8467,17 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
     const hMm = window._etqCfg.alturaMm;       // 52mm
 
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit: 'mm', format: [wMm, hMm], orientation: 'landscape' });
+    // portrait = largura < altura na nomenclatura jsPDF
+    // Nossa folha é 200x52mm — sempre landscape (larga)
+    // format: [width, height] em mm no modo portrait do jsPDF
+    // Para folha 200x52: passamos [52, 200] com portrait, ou [200,52] com landscape
+    // QZ Tray recebe o PDF e imprime sem rotacionar
+    const doc = new jsPDF({ unit: 'mm', format: [wMm, hMm], orientation: 'portrait' });
 
     for (let p = 0; p < paginas; p++) {
       const bloco = blocos[p % blocos.length];
-      // Renderiza ZPL no canvas offline
       const pngData = zplBlocoParaDataURL(bloco, 2);
-      if (p > 0) doc.addPage([wMm, hMm], 'landscape');
+      if (p > 0) doc.addPage([wMm, hMm], 'portrait');
       doc.addImage(pngData, 'PNG', 0, 0, wMm, hMm);
     }
 
@@ -8444,8 +8490,9 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
       size: { width: wMm, height: hMm },
       units: 'mm',
       scaleContent: false,
-      margins: 0,
-      colorType: 'black-white'
+      margins: { top: 0, right: 0, bottom: 0, left: 0 },
+      colorType: 'black-white',
+      interpolation: 'nearest-neighbor'
     });
 
     await qz.print(config, [{
