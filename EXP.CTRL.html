@@ -8352,7 +8352,11 @@ function _zplRender(zplBloco, pxPerDot) {
     }
   }
 
-  const W=pw*pxPerDot, H=ll*pxPerDot;
+  // Se ^PW não estiver no ZPL, calcula pelo X máximo dos ^FO
+  const foXvals=(zpl.match(/\^FO(\d+),/g)||[]).map(s=>parseInt(s.replace(/\^FO|,/g,'')));
+  const xMax=foXvals.length?Math.max(...foXvals):430;
+  const autoW=xMax+120; // X_máx + largura do campo direito
+  const W=(pw>autoW?pw:autoW)*pxPerDot, H=ll*pxPerDot;
   const canvas=document.createElement('canvas');
   canvas.width=W;canvas.height=H;
   const ctx=canvas.getContext('2d');
@@ -8448,9 +8452,14 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
 
   try {
-    // Usa dimensões reais do ZPL (pw/ll do arquivo), não configuração manual
+    // Calcula largura real: inclui coluna direita (X máx de todos os ^FO)
+    // O ZPL do ML tem 2 colunas — esq ~X=105, dir ~X=425
+    // Largura real = X_máx + margem
+    const _foXvals = (blocos[0].match(/\^FO(\d+),/g)||[]).map(s=>parseInt(s.replace(/\^FO|,/g,'')));
+    const _xMax = _foXvals.length ? Math.max(..._foXvals) : 430;
+    const _rawW = _xMax + 120; // X_máx + largura do campo direito (~120 dots)
     const _testCanvas = _zplRender(blocos[0], 1);
-    const wMm = Math.round(_testCanvas.width  / 8); // dots/dpmm = mm
+    const wMm = Math.round(_rawW / 8);  // dots → mm @ 8dpmm
     const hMm = Math.round(_testCanvas.height / 8);
 
     const { jsPDF } = window.jspdf;
