@@ -4540,7 +4540,8 @@ function renderSaidaHistorico(galpao){
   const filtroConta=document.getElementById('histFiltroConta')?.value||'';
   const CONTAS = ['FW','BTMX','Falcom','Octo'];
   const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
-  const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao);
+  const _parseData = d => { const [dd,mm,aaaa] = d.split('/'); return new Date(`${aaaa}-${mm}-${dd}`); };
+  const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao).sort((a,b)=>_parseData(b.data)-_parseData(a.data));
   const tbody=document.getElementById('saidaHistBody');
   if(!hist.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--muted)">Sem histórico</td></tr>';return;}
   tbody.innerHTML=hist.map(h=>{
