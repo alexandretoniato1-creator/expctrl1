@@ -971,6 +971,7 @@ select:focus{border-color:var(--accent)}
     <div class="nav-item" onclick="navTo(this,'insumos')"><span class="nav-icon">🗂</span>Insumos</div>
     <div class="nav-section">Cadastros</div>
     <div class="nav-item" onclick="navTo(this,'catalogo')"><span class="nav-icon">🗂</span>Catálogo SKUs</div>
+    <div class="nav-item" onclick="navTo(this,'etiquetas')"><span class="nav-icon">🏷</span>Etiquetas</div>
     <div class="company-badges">
       <div class="company-badge logbox-badge">
         <span>LogBox — Edipo</span>
@@ -1630,7 +1631,29 @@ select:focus{border-color:var(--accent)}
           </div>
         </div>
 
-        <!-- ══ ENVIADOS ══ -->
+        <!-- ══ BIBLIOTECA DE ETIQUETAS ══ -->
+        <div class="view" id="view-etiquetas">
+          <div class="dev-toolbar">
+            <div class="dev-toolbar-left">
+              <input type="text" id="bibBusca" placeholder="🔍 Buscar SKU ou descrição..." oninput="bibRenderLista()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="bibCount">0 SKUs</span>
+              <button class="btn btn-ghost btn-sm" onclick="etqTestarRegua()" title="Imprime marcas de mm pra calibrar o alinhamento entre colunas">📐 Régua</button>
+              <button class="btn btn-ghost btn-sm" onclick="etqTestarImpressao()" title="Imprime uma etiqueta de teste, sem gastar SKU nenhum">🧪 Testar impressão</button>
+              <button class="btn btn-primary btn-sm" onclick="bibAbrirNovo()">+ Nova etiqueta</button>
+            </div>
+          </div>
+          <div class="cards">
+            <div class="card c-accent"><div class="card-label">SKUs cadastrados</div><div class="card-value" id="bibTotalSkus">0</div><div class="card-sub">com ZPL salvo na biblioteca</div></div>
+            <div class="card c-green"><div class="card-label">Estoque pré-impresso</div><div class="card-value" id="bibTotalEstoque">0</div><div class="card-sub">etiquetas prontas, aguardando uso</div></div>
+            <div class="card"><div class="card-label">Impressora</div><div class="card-value" style="font-size:15px" id="bibStatusImpressora">—</div><div class="card-sub">status do QZ Tray</div></div>
+          </div>
+          <div class="full-table-wrap">
+            <div class="table-head"><div class="table-head-title">Etiquetas na biblioteca</div><span style="font-size:10px;color:var(--muted)">clique no SKU pra editar o ZPL</span></div>
+            <div style="overflow-x:auto"><table><thead><tr><th>SKU</th><th>Descrição</th><th>Estoque pré-impresso</th><th>Atualizado</th><th></th></tr></thead><tbody id="bibBody"></tbody></table></div>
+          </div>
+        </div>
         <div class="view" id="view-enviados">
 
           <!-- toolbar -->
@@ -1911,6 +1934,22 @@ select:focus{border-color:var(--accent)}
     <div class="form-grid"><div class="form-group"><label>Qtde produtos/caixa</label><input class="form-sel" id="sk-qtdecx" type="number" min="1"></div><div class="form-group"><label>Tempo/caixa (min)</label><input class="form-sel" id="sk-tempo" type="number" step="0.5" oninput="calcSkuTempoun()"></div></div>
     <div style="background:var(--surface2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--muted);margin-bottom:4px">💡 10 caixas deste SKU = <strong style="color:var(--accent)" id="sk-preview-tempo">—</strong></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalSku')">Cancelar</button><button class="btn btn-primary" onclick="salvarSku()">Salvar SKU</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modalBibEtq">
+  <div class="modal modal-lg" style="max-width:560px">
+    <div class="modal-title"><span id="bibModalTitle">Nova etiqueta na biblioteca</span><button class="modal-close" onclick="closeModal('modalBibEtq')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label>SKU *</label><input class="form-sel" id="bib-sku" type="text" placeholder="Ex: VA_2DBA02"></div>
+      <div class="form-group"><label>Descrição</label><input class="form-sel" id="bib-desc" type="text" placeholder="Nome do produto"></div>
+    </div>
+    <div class="form-group" style="margin-top:8px;margin-bottom:8px">
+      <label>Cole o ZPL aqui</label>
+      <textarea class="etq-zpl-textarea" id="bib-zpl" placeholder="^XA&#10;^FO...&#10;^XZ" style="min-height:160px"></textarea>
+    </div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px">💡 Esse ZPL fica disponível pra qualquer Full que use esse SKU — não precisa colar de novo depois.</div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalBibEtq')">Cancelar</button><button class="btn btn-primary" onclick="bibSalvarItem()">Salvar na biblioteca</button></div>
   </div>
 </div>
 
@@ -2571,7 +2610,7 @@ let calOffset = 0;
 const BASE_MON = (()=>{ const d=new Date(); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; })();
 const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
 const DIAS_SHORT = ['Seg','Ter','Qua','Qui','Sex'];
-const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs',insumos:'Insumos'};
+const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs',insumos:'Insumos',etiquetas:'Biblioteca de Etiquetas'};
 
 // ══════════════════════════════════════════════════════
 // NAVEGAÇÃO
@@ -2596,6 +2635,7 @@ function showPage(name) {
   if (name==='saidas') { renderSaidas(); setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100); }
   if (name==='dashboard') renderDashboard();
   if (name==='insumos') insInit();
+  if (name==='etiquetas') bibRenderView();
 }
 
 // ══════════════════════════════════════════════════════
@@ -7953,9 +7993,54 @@ function etqAnalisarZpl(zpl) {
 }
 
 /* ── Biblioteca ZPL ───────────────────────────── */
+window._zplBibIndex = null; // Map sku -> {sku, descricao, zpl, estoque, updated_at}
+
+async function zplCarregarIndice(forcar) {
+  if (window._zplBibIndex && !forcar) return window._zplBibIndex;
+  const { data, error } = await _sb.from('zpl_biblioteca').select('*').order('sku');
+  if (error) { console.error('[zpl_biblioteca] erro ao carregar:', error); window._zplBibIndex = window._zplBibIndex || new Map(); return window._zplBibIndex; }
+  window._zplBibIndex = new Map((data||[]).map(r=>[r.sku, r]));
+  (data||[]).forEach(r=>{ if (r.zpl) window._zplCache[r.sku] = r.zpl; });
+  return window._zplBibIndex;
+}
+
+function zplEstaNaBiblioteca(sku) {
+  if (!window._zplBibIndex) return true; // ainda não carregou — não acusa falso alarme
+  return window._zplBibIndex.has(sku);
+}
+
+function zplEstoqueDe(sku) {
+  return window._zplBibIndex?.get(sku)?.estoque || 0;
+}
+
+// Agrupa um ZPL colado (que pode ter vários SKUs misturados) por SKU,
+// guardando só 1 bloco representante de cada (os repetidos são idênticos).
+function zplAgruparPorSku(zpl) {
+  const blocos = [...zpl.matchAll(/\^XA[\s\S]*?\^XZ/gi)].map(m=>m[0]);
+  const grupos = {};
+  for (const bloco of blocos) {
+    const bcs = [...bloco.matchAll(/\^BCN[^\^]*\^FD([^\^]+)\^FS/gi)].map(m=>m[1].trim());
+    const sms = [...bloco.matchAll(/SKU:\s*([A-Z0-9_\-]+)/gi)].map(m=>m[1].trim());
+    const nms = [...bloco.matchAll(/\^FO(?:16|30),115[^\^]*\^FH\^FD([^\^]{3,})\^FS/gi)]
+                  .map(m=>m[1].replace(/_C3_A1/g,'á').replace(/_C3_A7/g,'ç').replace(/_C3_A3/g,'ã').trim());
+    const sku = sms[0] || bcs[0] || ('SKU-'+Date.now());
+    const nome = nms[0] || bcs[0] || sku;
+    if (!grupos[sku]) grupos[sku] = { sku, descricao: nome, blocos: [], count: 0 };
+    grupos[sku].blocos.push(bloco);
+    grupos[sku].count += bcs.length || 1;
+  }
+  return Object.values(grupos);
+}
+
 async function zplSalvar(sku, descricao, zpl) {
-  await _sb.from('zpl_biblioteca').upsert({sku,descricao,zpl,updated_at:new Date().toISOString()},{onConflict:'sku'});
+  const { data } = await _sb.from('zpl_biblioteca')
+    .upsert({sku,descricao,zpl,updated_at:new Date().toISOString()},{onConflict:'sku'})
+    .select().maybeSingle();
   window._zplCache[sku] = zpl;
+  if (window._zplBibIndex) {
+    if (data) window._zplBibIndex.set(sku, data);
+    else { const atual=window._zplBibIndex.get(sku)||{}; window._zplBibIndex.set(sku,{...atual,sku,descricao,zpl,estoque:atual.estoque||0}); }
+  }
 }
 
 async function zplCarregar(sku) {
@@ -7965,6 +8050,150 @@ async function zplCarregar(sku) {
     if(data?.zpl){window._zplCache[sku]=data.zpl;return data.zpl;}
   } catch {}
   return null;
+}
+
+/* ══════════════════════════════════════════════════════
+   BIBLIOTECA DE ETIQUETAS — view independente de Full
+   Permite cadastrar/imprimir antecipadamente, sem precisar
+   de um Full criado ainda.
+   ══════════════════════════════════════════════════════ */
+async function bibRenderView() {
+  await zplCarregarIndice(true);
+  bibRenderLista();
+  etqRenderQzStatus();
+  if (window._qzStatus==='disconnected' && typeof qz!=='undefined') qzConectar();
+}
+
+function bibRenderLista() {
+  const busca=(document.getElementById('bibBusca')?.value||'').toLowerCase();
+  const idx=window._zplBibIndex||new Map();
+  let linhas=[...idx.values()].filter(r=>!busca||r.sku.toLowerCase().includes(busca)||(r.descricao||'').toLowerCase().includes(busca));
+  linhas.sort((a,b)=>a.sku.localeCompare(b.sku));
+  const countEl=document.getElementById('bibCount'); if(countEl) countEl.textContent=linhas.length+' SKUs';
+  const totalEl=document.getElementById('bibTotalSkus'); if(totalEl) totalEl.textContent=idx.size;
+  const estEl=document.getElementById('bibTotalEstoque'); if(estEl) estEl.textContent=[...idx.values()].reduce((a,r)=>a+(r.estoque||0),0).toLocaleString('pt-BR');
+  const tbody=document.getElementById('bibBody');
+  if(!tbody) return;
+  tbody.innerHTML=linhas.map(r=>`
+    <tr class="full-row">
+      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px;cursor:pointer" onclick="bibEditar('${r.sku}')">${r.sku}</td>
+      <td style="font-size:12px;font-weight:600;cursor:pointer" onclick="bibEditar('${r.sku}')">${r.descricao||'—'}</td>
+      <td><input type="number" min="0" value="${r.estoque||0}" onchange="bibDefinirEstoque('${r.sku}',parseInt(this.value)||0)"
+        style="width:70px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:5px 8px;text-align:center"></td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${r.updated_at?new Date(r.updated_at).toLocaleDateString('pt-BR'):'—'}</td>
+      <td style="white-space:nowrap;text-align:right">
+        <button class="action-btn" onclick="bibPreview('${r.sku}')" title="Preview">👁</button>
+        <button class="action-btn" onclick="bibAbrirImprimir('${r.sku}')" title="Imprimir adiantado (soma ao estoque)">🖨</button>
+        <button class="btn-danger-sm" onclick="bibExcluirItem('${r.sku}')" title="Excluir">✕</button>
+      </td>
+    </tr>
+    <tr id="bibLoteRow_${r.sku}" style="display:none"><td colspan="5">
+      <div style="display:flex;gap:8px;align-items:center;padding:9px;background:var(--surface2);border-radius:7px;flex-wrap:wrap">
+        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Imprimir quantas agora (vai pro estoque pré-impresso):</span>
+        <input type="number" id="bibQtd_${r.sku}" value="10" min="1" style="width:80px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:5px 8px;text-align:center">
+        <button onclick="bibConfirmarImprimir('${r.sku}')" style="padding:6px 14px;border-radius:7px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Imprimir</button>
+        <button onclick="document.getElementById('bibLoteRow_${r.sku}').style.display='none'" class="etq-btn-reset">✕</button>
+      </div>
+    </td></tr>
+  `).join('') || `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma etiqueta cadastrada ainda</td></tr>`;
+}
+
+function bibAbrirImprimir(sku) {
+  document.querySelectorAll('[id^="bibLoteRow_"]').forEach(r=>r.style.display='none');
+  const row=document.getElementById(`bibLoteRow_${sku}`);
+  if(row) row.style.display='';
+}
+
+async function bibConfirmarImprimir(sku) {
+  const qtd=parseInt(document.getElementById(`bibQtd_${sku}`)?.value)||0;
+  if(qtd<=0){showToast('⚠️ Quantidade inválida');return;}
+  const reg=window._zplBibIndex?.get(sku);
+  if(!reg?.zpl){showToast('❌ ZPL não encontrado');return;}
+  const blocos=[...reg.zpl.matchAll(/\^XA[\s\S]*?\^XZ/gi)].map(m=>m[0]);
+  if(!blocos.length){showToast('❌ ZPL inválido');return;}
+  const necessarios=Math.ceil(qtd/2);
+  const selecionados=[];
+  for(let p=0;p<necessarios;p++) selecionados.push(blocos[p%blocos.length]);
+  const zplFinal=zplCorrigirAlinhamento(selecionados.join('\n'));
+  const impressora=await zplEnviarParaImpressora(zplFinal);
+  if(!impressora) return;
+  const novoEstoque=(reg.estoque||0)+qtd;
+  await _sb.from('zpl_biblioteca').update({estoque:novoEstoque}).eq('sku',sku);
+  reg.estoque=novoEstoque;
+  const row=document.getElementById(`bibLoteRow_${sku}`); if(row) row.style.display='none';
+  bibRenderLista();
+  showToast(`✅ ${qtd} etiquetas impressas e somadas ao estoque de ${sku}`);
+}
+
+function bibPreview(sku) {
+  const reg=window._zplBibIndex?.get(sku);
+  if(!reg?.zpl){showToast('❌ ZPL não encontrado');return;}
+  const bloco=reg.zpl.match(/\^XA[\s\S]*?\^XZ/i)?.[0]||reg.zpl;
+  const blocoCorrigido=zplCorrigirAlinhamento(bloco);
+  const canvas=_zplRender(blocoCorrigido,2);
+  const overlay=document.createElement('div');
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px';
+  canvas.style.cssText='max-width:90vw;max-height:70vh;border:2px solid #fff;background:#fff;image-rendering:pixelated';
+  const info=document.createElement('div');
+  info.style.cssText='color:#fff;font-family:DM Mono,monospace;font-size:12px;text-align:center';
+  info.textContent=`${sku} — ${reg.descricao||''}`;
+  const closeBtn=document.createElement('button');
+  closeBtn.textContent='✕ Fechar';
+  closeBtn.style.cssText='padding:8px 24px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.onclick=()=>document.body.removeChild(overlay);
+  overlay.appendChild(info);overlay.appendChild(canvas);overlay.appendChild(closeBtn);
+  overlay.onclick=(e)=>{if(e.target===overlay)document.body.removeChild(overlay);};
+  document.body.appendChild(overlay);
+}
+
+async function bibDefinirEstoque(sku, valor) {
+  if(valor<0) valor=0;
+  const { error } = await _sb.from('zpl_biblioteca').update({estoque:valor}).eq('sku',sku);
+  if(error){showToast('⚠️ Erro ao atualizar estoque');return;}
+  const reg=window._zplBibIndex?.get(sku);
+  if(reg) reg.estoque=valor;
+  bibRenderLista();
+  showToast(`📦 Estoque de ${sku} ajustado para ${valor}`);
+}
+
+function bibAbrirNovo(skuPreenchido, descPreenchida) {
+  document.getElementById('bibModalTitle').textContent='Nova etiqueta na biblioteca';
+  const skuEl=document.getElementById('bib-sku');
+  skuEl.value=skuPreenchido||''; skuEl.disabled=false;
+  document.getElementById('bib-desc').value=descPreenchida||'';
+  document.getElementById('bib-zpl').value='';
+  openModal('modalBibEtq');
+}
+
+function bibEditar(sku) {
+  const reg=window._zplBibIndex?.get(sku);
+  if(!reg) return;
+  document.getElementById('bibModalTitle').textContent='Editar etiqueta — '+sku;
+  const skuEl=document.getElementById('bib-sku');
+  skuEl.value=sku; skuEl.disabled=true;
+  document.getElementById('bib-desc').value=reg.descricao||'';
+  document.getElementById('bib-zpl').value=reg.zpl||'';
+  openModal('modalBibEtq');
+}
+
+async function bibSalvarItem() {
+  const sku=document.getElementById('bib-sku')?.value?.trim();
+  const desc=document.getElementById('bib-desc')?.value?.trim();
+  const zpl=document.getElementById('bib-zpl')?.value?.trim();
+  if(!sku||!zpl){showToast('⚠️ SKU e ZPL são obrigatórios');return;}
+  await zplSalvar(sku,desc||sku,zpl);
+  closeModal('modalBibEtq');
+  bibRenderLista();
+  showToast(`✅ ${sku} salvo na biblioteca`);
+}
+
+async function bibExcluirItem(sku) {
+  if(!confirm(`Excluir "${sku}" da biblioteca de etiquetas? Fulls que já usaram esse SKU não são afetados, mas você vai precisar recadastrar o ZPL se precisar dele de novo.`)) return;
+  await _sb.from('zpl_biblioteca').delete().eq('sku',sku);
+  window._zplBibIndex?.delete(sku);
+  delete window._zplCache[sku];
+  bibRenderLista();
+  showToast('🗑 Removido da biblioteca');
 }
 
 /* ── Storage ──────────────────────────────────── */
@@ -8001,6 +8230,28 @@ function etqRenderQzStatus() {
     const l=s==='connected'?'Impressora conectada':s==='connecting'?'conectando…':'QZ Tray offline';
     el.innerHTML=`<div class="${d}"></div><span style="color:var(--muted)">${l}</span>`;
   });
+  const bs=document.getElementById('bibStatusImpressora');
+  if (bs) bs.textContent = window._qzStatus==='connected'?'🟢 Conectada':window._qzStatus==='connecting'?'🟡 Conectando':'🔴 Offline';
+}
+
+/* ── Envio raw — ponto único de impressão, usado por todo o módulo ──
+   Garante que toda impressão (lote de Full, teste, régua, estoque
+   adiantado) passe pelo mesmo caminho, sem repetir lógica.
+   Retorna o nome da impressora em sucesso, ou false em falha.
+   ─────────────────────────────────────────────────────────────── */
+async function zplEnviarParaImpressora(zplText) {
+  const ok = await qzConectar();
+  if (!ok) { showToast('⚠️ QZ Tray offline'); return false; }
+  try {
+    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
+    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return false; }
+    const config = qz.configs.create(impressora);
+    await qz.print(config, [{ type: 'raw', format: 'plain', data: zplText }]);
+    return impressora;
+  } catch(e) {
+    showToast('❌ Erro: ' + (e.message||e));
+    return false;
+  }
 }
 
 /* ── Render ───────────────────────────────────── */
@@ -8008,6 +8259,7 @@ async function etqRenderSecao(fullId) {
   const el=document.getElementById('fdEtiquetasSecao');
   if(!el) return;
   if(!window._etqData[fullId]) await etqCarregar(fullId);
+  await zplCarregarIndice();
   const arr=etqGetData(fullId);
   const totalG=arr.reduce((a,e)=>a+(e.total||0),0);
   const impG  =arr.reduce((a,e)=>a+(e.impressas||0),0);
@@ -8036,6 +8288,8 @@ async function etqRenderSecao(fullId) {
         const faltam=Math.max(0,etq.total-(etq.impressas||0));
         const skuLbl=etq.sku||etq.descricao||'—';
         const descLbl=(etq.sku&&etq.descricao&&etq.descricao!==etq.sku)?etq.descricao:'';
+        const temZpl=zplEstaNaBiblioteca(etq.sku);
+        const estoqueDisp=zplEstoqueDe(etq.sku);
         return `
         <div class="etq-card ${cls}">
           <div class="etq-card-stripe ${cls}"></div>
@@ -8055,14 +8309,24 @@ async function etqRenderSecao(fullId) {
                 <div class="etq-card-pct-badge ${cls}">${pct}%</div>
               </div>
             </div>
+            ${!temZpl?`
+            <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span>⚠️ ZPL não cadastrado na biblioteca pra esse SKU — não dá pra imprimir ainda</span>
+              <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="bibAbrirNovo('${etq.sku}','${(descLbl||skuLbl).replace(/'/g,"\\'")}')">+ Cadastrar</button>
+            </div>`:''}
+            ${temZpl&&estoqueDisp>0&&faltam>0?`
+            <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.22);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--green);display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span>📦 ${estoqueDisp.toLocaleString('pt-BR')} etiqueta(s) já impressas no estoque pré-impresso</span>
+              <button class="btn btn-sm" style="background:var(--green);color:#0a0a0a;font-size:10px;flex-shrink:0" onclick="etqUsarEstoque('${fullId}','${etq.id}')">Usar do estoque</button>
+            </div>`:''}
             <div class="etq-card-bar-wrap">
               <div class="etq-card-bar"><div class="etq-card-bar-fill ${cls}" style="width:${pct}%"></div></div>
               <div class="etq-card-bar-label"><span>${(etq.impressas||0).toLocaleString('pt-BR')} impressas</span><span>${faltam.toLocaleString('pt-BR')} restantes</span></div>
             </div>
             <div class="etq-card-actions">
               ${pct<100
-                ?`<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>
-              <button class="etq-btn-reset" onclick="etqPreview('${fullId}','${etq.id}')" title="Preview da etiqueta" style="width:auto;padding:5px 10px;font-size:11px">👁 Preview</button>`
+                ?(temZpl?`<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>
+              <button class="etq-btn-reset" onclick="etqPreview('${fullId}','${etq.id}')" title="Preview da etiqueta" style="width:auto;padding:5px 10px;font-size:11px">👁 Preview</button>`:'')
                 :`<div class="etq-btn-done-tag">✅ Tudo impresso</div>`}
               <div style="flex:1"></div>
               <button class="etq-btn-reset" onclick="etqResetar('${fullId}','${etq.id}')" title="Resetar">↺</button>
@@ -8096,25 +8360,48 @@ async function etqRenderSecao(fullId) {
         <input type="number" step="0.1" value="${window._etqCfg.colDireitaOffsetMm}" onchange="etqDefinirOffsetColuna(parseFloat(this.value))" style="width:56px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px" title="Distância real (mm) entre as duas colunas — calibre com a régua">
         <button onclick="etqTestarRegua()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime marcas de mm pra achar a fenda física real entre as etiquetas">📐 Régua</button>
         <button onclick="etqTestarImpressao()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime uma etiqueta de teste (não consome SKU nenhum)">🧪 Testar impressão</button>
-        <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px">+ Adicionar ZPL</button>
+        <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px">+ Adicionar etiqueta</button>
       </div>
     </div>
     ${barra}
     <div class="etq-list">${lista}</div>
 
     <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
-      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">Novo ZPL</div>
-      <div class="form-group" style="margin-bottom:8px">
-        <label>Cole o ZPL aqui</label>
-        <textarea class="etq-zpl-textarea" id="etqZplInput_${fullId}" placeholder="^XA&#10;^FO...&#10;^XZ" oninput="etqAnalisarInput('${fullId}')"></textarea>
+      <div style="display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--border)">
+        <button id="etqTabNovo_${fullId}" class="edit-tab active" onclick="etqMostrarAbaAdicionar('${fullId}','novo')">Novo ZPL</button>
+        <button id="etqTabBib_${fullId}" class="edit-tab" onclick="etqMostrarAbaAdicionar('${fullId}','bib')">📚 Puxar da biblioteca</button>
       </div>
-      <div id="etqDetectBox_${fullId}" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
-        <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">SKUs detectados</div>
-        <div id="etqDetectList_${fullId}"></div>
+
+      <div id="etqAddNovo_${fullId}">
+        <div class="form-group" style="margin-bottom:8px">
+          <label>Cole o ZPL aqui</label>
+          <textarea class="etq-zpl-textarea" id="etqZplInput_${fullId}" placeholder="^XA&#10;^FO...&#10;^XZ" oninput="etqAnalisarInput('${fullId}')"></textarea>
+        </div>
+        <div id="etqDetectBox_${fullId}" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">SKUs detectados</div>
+          <div id="etqDetectList_${fullId}"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="etqConfirmarAdicionar('${fullId}')">✓ Adicionar</button>
+          <button class="btn btn-ghost btn-sm" onclick="etqFecharAdicionar('${fullId}')">Cancelar</button>
+        </div>
       </div>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-primary btn-sm" style="flex:1" onclick="etqConfirmarAdicionar('${fullId}')">✓ Adicionar</button>
-        <button class="btn btn-ghost btn-sm" onclick="etqFecharAdicionar('${fullId}')">Cancelar</button>
+
+      <div id="etqAddBib_${fullId}" style="display:none">
+        <div class="form-group" style="margin-bottom:8px">
+          <label>SKU já cadastrado na biblioteca</label>
+          <input type="text" id="etqBibSkuInput_${fullId}" list="etqBibSkuList_${fullId}" placeholder="Digite ou selecione o SKU" oninput="etqChecarSkuBib('${fullId}')" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 10px;width:100%;outline:none">
+          <datalist id="etqBibSkuList_${fullId}"></datalist>
+        </div>
+        <div id="etqBibSkuInfo_${fullId}" style="font-size:11px;color:var(--muted);margin-bottom:10px;min-height:14px"></div>
+        <div class="form-group" style="margin-bottom:10px">
+          <label>Quantidade necessária pra esse Full</label>
+          <input type="number" id="etqBibQtdInput_${fullId}" min="1" placeholder="Ex: 100" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 10px;width:100%;outline:none">
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary btn-sm" style="flex:1" onclick="etqAdicionarDaBiblioteca('${fullId}')">✓ Adicionar</button>
+          <button class="btn btn-ghost btn-sm" onclick="etqFecharAdicionar('${fullId}')">Cancelar</button>
+        </div>
       </div>
     </div>
   </div>`;
@@ -8137,7 +8424,11 @@ function etqAnalisarInput(fullId) {
   lst.innerHTML=(multiSku?skusDetectados.map(r).join('')+`<div style="margin-top:6px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Total: <b style="color:var(--text)">${total.toLocaleString('pt-BR')}</b> · ${skusDetectados.length} itens</div>`:r(skusDetectados[0]||{nome:'Etiqueta ML',sku:'',count:total,barcode:''}));
 }
 
-function etqAbrirAdicionar(fullId){const a=document.getElementById(`etqAddArea_${fullId}`);if(a){a.style.display='';a.scrollIntoView({behavior:'smooth',block:'nearest'});}}
+function etqAbrirAdicionar(fullId){
+  const a=document.getElementById(`etqAddArea_${fullId}`);
+  if(a){a.style.display='';a.scrollIntoView({behavior:'smooth',block:'nearest'});}
+  etqMostrarAbaAdicionar(fullId,'novo');
+}
 function etqFecharAdicionar(fullId){
   const a=document.getElementById(`etqAddArea_${fullId}`);
   const z=document.getElementById(`etqZplInput_${fullId}`);
@@ -8145,25 +8436,76 @@ function etqFecharAdicionar(fullId){
   if(a)a.style.display='none';if(z)z.value='';if(b)b.style.display='none';
 }
 
+function etqMostrarAbaAdicionar(fullId, aba) {
+  const novo=document.getElementById(`etqAddNovo_${fullId}`);
+  const bib=document.getElementById(`etqAddBib_${fullId}`);
+  const btnNovo=document.getElementById(`etqTabNovo_${fullId}`);
+  const btnBib=document.getElementById(`etqTabBib_${fullId}`);
+  if(!novo||!bib) return;
+  if(aba==='bib'){
+    novo.style.display='none'; bib.style.display='';
+    btnNovo?.classList.remove('active'); btnBib?.classList.add('active');
+    etqAtualizarDatalistBib(fullId);
+  } else {
+    novo.style.display=''; bib.style.display='none';
+    btnBib?.classList.remove('active'); btnNovo?.classList.add('active');
+  }
+}
+
+async function etqAtualizarDatalistBib(fullId) {
+  await zplCarregarIndice();
+  const dl=document.getElementById(`etqBibSkuList_${fullId}`);
+  if(dl) dl.innerHTML=[...window._zplBibIndex.values()].map(r=>`<option value="${r.sku}">${r.descricao||''}</option>`).join('');
+}
+
+function etqChecarSkuBib(fullId) {
+  const sku=document.getElementById(`etqBibSkuInput_${fullId}`)?.value?.trim();
+  const info=document.getElementById(`etqBibSkuInfo_${fullId}`);
+  if(!info) return;
+  const reg=sku?window._zplBibIndex?.get(sku):null;
+  info.innerHTML = reg
+    ? `✅ Encontrado: <b>${reg.descricao||sku}</b> · 📦 ${(reg.estoque||0).toLocaleString('pt-BR')} em estoque pré-impresso`
+    : sku ? `❌ SKU não encontrado na biblioteca — cole o ZPL na aba "Novo ZPL" pra cadastrar`
+          : '';
+}
+
+async function etqAdicionarDaBiblioteca(fullId) {
+  const sku=document.getElementById(`etqBibSkuInput_${fullId}`)?.value?.trim();
+  const qtd=parseInt(document.getElementById(`etqBibQtdInput_${fullId}`)?.value)||0;
+  if(!sku){showToast('⚠️ Informe o SKU');return;}
+  const reg=window._zplBibIndex?.get(sku);
+  if(!reg){showToast('❌ SKU não encontrado na biblioteca');return;}
+  if(qtd<=0){showToast('⚠️ Informe a quantidade');return;}
+  const arr=etqGetData(fullId);
+  const agora=new Date().toISOString();
+  arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku,descricao:reg.descricao||sku,total:qtd,impressas:0,criadoEm:agora});
+  etqSetData(fullId,arr);
+  await etqSalvar(fullId);
+  etqFecharAdicionar(fullId);
+  etqRenderSecao(fullId);
+  showToast(`🏷 ${sku} adicionado a partir da biblioteca — ${qtd.toLocaleString('pt-BR')} etiquetas`);
+}
+
 async function etqConfirmarAdicionar(fullId) {
   const zpl=document.getElementById(`etqZplInput_${fullId}`)?.value?.trim();
   if(!zpl){showToast('⚠️ Cole o ZPL antes de adicionar');return;}
-  const {total,skusDetectados,multiSku}=etqAnalisarZpl(zpl);
+  const grupos=zplAgruparPorSku(zpl);
+  if(!grupos.length){showToast('❌ ZPL inválido');return;}
   const arr=etqGetData(fullId);
   const agora=new Date().toISOString();
-  const itens=multiSku?skusDetectados:[{...(skusDetectados[0]||{}),count:total}];
-  for(const s of itens){
-    const sku=s.sku||s.barcode||'SKU-'+Date.now();
-    const desc=s.nome||sku;
-    await zplSalvar(sku,desc,zpl); // salva 1x na biblioteca
-    arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku,descricao:desc,total:s.count,impressas:0,criadoEm:agora});
+  for(const g of grupos){
+    await zplSalvar(g.sku,g.descricao,g.blocos[0]); // salva só o(s) bloco(s) desse SKU, deduplicado
+    arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku:g.sku,descricao:g.descricao,total:g.count,impressas:0,criadoEm:agora});
   }
   etqSetData(fullId,arr);
   await etqSalvar(fullId);
   etqFecharAdicionar(fullId);
   etqRenderSecao(fullId);
-  showToast(multiSku?`🏷 ${itens.length} SKUs na biblioteca — ${total.toLocaleString('pt-BR')} etiquetas`:`🏷 ZPL salvo na biblioteca — ${total.toLocaleString('pt-BR')} etiquetas`);
+  const totalGeral=grupos.reduce((a,g)=>a+g.count,0);
+  showToast(grupos.length>1?`🏷 ${grupos.length} SKUs na biblioteca — ${totalGeral.toLocaleString('pt-BR')} etiquetas`:`🏷 ZPL salvo na biblioteca — ${totalGeral.toLocaleString('pt-BR')} etiquetas`);
 }
+
+
 
 async function etqExcluir(fullId,etqId){
   if(!confirm('Excluir este SKU do Full?')) return;
@@ -8203,6 +8545,30 @@ async function etqResetar(fullId, etqId) {
   await etqSalvar(fullId);
   etqRenderSecao(fullId);
   showToast('↺ Contagem resetada');
+}
+
+// Consome etiquetas do estoque pré-impresso da biblioteca em vez de
+// imprimir agora — usa quando já tem etiquetas prontas adiantadas.
+async function etqUsarEstoque(fullId, etqId) {
+  const arr = etqGetData(fullId);
+  const etq = arr.find(e=>e.id===etqId);
+  if (!etq) return;
+  const idx = await zplCarregarIndice();
+  const reg = idx.get(etq.sku);
+  const estoqueAtual = reg?.estoque||0;
+  if (estoqueAtual<=0) { showToast('Sem estoque pré-impresso pra esse SKU'); return; }
+  const faltam = Math.max(0, etq.total-(etq.impressas||0));
+  const usar = Math.min(estoqueAtual, faltam);
+  if (usar<=0) return;
+  const novoEstoque = estoqueAtual-usar;
+  const { error } = await _sb.from('zpl_biblioteca').update({estoque:novoEstoque}).eq('sku', etq.sku);
+  if (error) { showToast('⚠️ Erro ao atualizar estoque'); return; }
+  reg.estoque = novoEstoque;
+  etq.impressas = Math.min((etq.impressas||0)+usar, etq.total);
+  etqSetData(fullId, arr);
+  await etqSalvar(fullId);
+  etqRenderSecao(fullId);
+  showToast(`📦 ${usar} etiqueta(s) puxadas do estoque pré-impresso`);
 }
 /* ── Lote parcial ────────────────────────────────── */
 async function etqPreview(fullId, etqId) {
@@ -8277,45 +8643,25 @@ function zplGerarRegua() {
 }
 
 async function etqTestarRegua() {
-  const ok = await qzConectar();
-  if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
-  try {
-    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
-    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
-    const config = qz.configs.create(impressora);
-    await qz.print(config, [{ type: 'raw', format: 'plain', data: zplGerarRegua() }]);
-    showToast('✅ Régua enviada — veja em qual mm a fenda física cai');
-  } catch(e) {
-    showToast('❌ Erro: ' + (e.message||e));
-  }
+  const impressora = await zplEnviarParaImpressora(zplGerarRegua());
+  if (impressora) showToast('✅ Régua enviada — veja em qual mm a fenda física cai');
 }
 
 async function etqTestarImpressao() {
-  const ok = await qzConectar();
-  if (!ok) { showToast('⚠️ QZ Tray offline — abra o QZ Tray no computador da impressora'); return; }
-  try {
-    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
-    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
-
-    const agora = new Date().toLocaleTimeString('pt-BR');
-    // Etiqueta real: 101,6 x 63,5mm (4 x 2,5pol) → a 203dpi, altura ≈ 508 dots.
-    // Quadrado no topo e outro perto do fim (y=420), cada um com seu texto
-    // ao LADO (não embaixo/sobreposto) pra não embaralhar na impressão.
-    const testZpl =
-      '^XA^CI28\n' +
-      '^FO20,20^GB60,60,3^FS\n' +                         // quadrado topo
-      '^FO110,30^A0N,35,35^FH^FDTESTE^FS\n' +
-      '^FO20,100^A0N,25,25^FH^FDOK ' + agora + '^FS\n' +
-      '^FO20,420^GB60,60,3^FS\n' +                         // quadrado perto do fim (~63,5mm)
-      '^FO110,440^A0N,25,25^FH^FDperto do fim^FS\n' +
-      '^XZ';
-
-    const config = qz.configs.create(impressora);
-    await qz.print(config, [{ type: 'raw', format: 'plain', data: testZpl }]);
-    showToast(`✅ Teste enviado → ${impressora}`);
-  } catch(e) {
-    showToast('❌ Erro: ' + (e.message||e));
-  }
+  const agora = new Date().toLocaleTimeString('pt-BR');
+  // Etiqueta real: 101,6 x 63,5mm (4 x 2,5pol) → a 203dpi, altura ≈ 508 dots.
+  // Quadrado no topo e outro perto do fim (y=420), cada um com seu texto
+  // ao LADO (não embaixo/sobreposto) pra não embaralhar na impressão.
+  const testZpl =
+    '^XA^CI28\n' +
+    '^FO20,20^GB60,60,3^FS\n' +                         // quadrado topo
+    '^FO110,30^A0N,35,35^FH^FDTESTE^FS\n' +
+    '^FO20,100^A0N,25,25^FH^FDOK ' + agora + '^FS\n' +
+    '^FO20,420^GB60,60,3^FS\n' +                         // quadrado perto do fim (~63,5mm)
+    '^FO110,440^A0N,25,25^FH^FDperto do fim^FS\n' +
+    '^XZ';
+  const impressora = await zplEnviarParaImpressora(testZpl);
+  if (impressora) showToast(`✅ Teste enviado → ${impressora}`);
 }
 
 function etqAbrirLote(fullId, etqId) {
@@ -8569,33 +8915,9 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   }
   const zplFinal = zplCorrigirAlinhamento(selecionados.join('\n'));
 
-  const ok = await qzConectar();
-  if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
-
-  try {
-    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
-    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
-
-    /* ── Impressão v7 — ZPL bruto direto pra impressora ──────────
-       Nada de canvas, PDF ou cálculo de mm aqui. A própria Zebra
-       (já calibrada para a etiqueta 101,6x63,5mm) interpreta o ZPL
-       no tamanho real. Isso elimina a causa do bug de tamanho
-       (heurística de px↔mm que não refletia a etiqueta física).
-       ────────────────────────────────────────────────────────── */
-    const config = qz.configs.create(impressora);
-
-    await qz.print(config, [{
-      type: 'raw',
-      format: 'plain',
-      data: zplFinal
-    }]);
-
-    showToast(`✅ ${qtd} etiquetas → ${impressora}`);
-
-  } catch(e) {
-    showToast('❌ Erro: ' + (e.message||e));
-    return;
-  }
+  const impressora = await zplEnviarParaImpressora(zplFinal);
+  if (!impressora) return;
+  showToast(`✅ ${qtd} etiquetas → ${impressora}`);
 
   etq.impressas = Math.min((etq.impressas||0)+qtd, etq.total);
   etqSetData(fullId, arr);
