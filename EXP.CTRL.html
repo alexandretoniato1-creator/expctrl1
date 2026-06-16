@@ -8092,6 +8092,9 @@ async function etqRenderSecao(fullId) {
       <div class="etq-title">🏷 Etiquetas ML ${badge}</div>
       <div style="display:flex;align-items:center;gap:10px">
         <div class="etq-qztray-status"></div>
+        <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">Offset dir.</span>
+        <input type="number" step="0.1" value="${window._etqCfg.colDireitaOffsetMm}" onchange="etqDefinirOffsetColuna(parseFloat(this.value))" style="width:56px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px" title="Distância real (mm) entre as duas colunas — calibre com a régua">
+        <button onclick="etqTestarRegua()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime marcas de mm pra achar a fenda física real entre as etiquetas">📐 Régua</button>
         <button onclick="etqTestarImpressao()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime uma etiqueta de teste (não consome SKU nenhum)">🧪 Testar impressão</button>
         <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px">+ Adicionar ZPL</button>
       </div>
@@ -8219,7 +8222,8 @@ async function etqPreview(fullId, etqId) {
   const hMm = window._etqCfg.alturaMm;
 
   // Renderiza o primeiro bloco no canvas e abre em popup
-  const canvas = _zplRender(blocos[0], 2);
+  const blocoCorrigido = zplCorrigirAlinhamento(blocos[0]);
+  const canvas = _zplRender(blocoCorrigido, 2);
 
   // Cria modal de preview
   const overlay = document.createElement('div');
@@ -8249,6 +8253,43 @@ async function etqPreview(fullId, etqId) {
    Serve só pra confirmar que a impressora está recebendo o ZPL puro
    no tamanho certo, sem gastar etiqueta de produto real.
    ─────────────────────────────────────────────────────────────── */
+/* ── Régua de alinhamento — não usa SKU nenhum ──────────────────
+   Imprime marcas verticais a cada 10mm, com a posição em mm escrita
+   ao lado de cada uma, pra você ver exatamente onde a fenda física
+   entre as duas etiquetas cai. O número que bater com a fenda real
+   é o que entra no campo "Offset coluna direita (mm)".
+   ─────────────────────────────────────────────────────────────── */
+function zplGerarRegua() {
+  const dpmm = window._etqCfg.dpi / 25.4;
+  const wMm = window._etqCfg.larguraMm;
+  const hMm = window._etqCfg.alturaMm;
+  const hDots = Math.round(hMm * dpmm);
+  const metade = wMm / 2;
+  let zpl = '^XA^CI28\n';
+  for (let mm = 0; mm <= wMm; mm += 10) {
+    const x = Math.round(mm * dpmm);
+    const grossura = Math.abs(mm - metade) < 1 ? 6 : 2;
+    zpl += `^FO${x},0^GB${grossura},${hDots},${grossura}^FS\n`;
+    zpl += `^FO${x+4},6^A0N,16,16^FH^FD${mm}^FS\n`;
+  }
+  zpl += '^XZ';
+  return zpl;
+}
+
+async function etqTestarRegua() {
+  const ok = await qzConectar();
+  if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
+  try {
+    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
+    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
+    const config = qz.configs.create(impressora);
+    await qz.print(config, [{ type: 'raw', format: 'plain', data: zplGerarRegua() }]);
+    showToast('✅ Régua enviada — veja em qual mm a fenda física cai');
+  } catch(e) {
+    showToast('❌ Erro: ' + (e.message||e));
+  }
+}
+
 async function etqTestarImpressao() {
   const ok = await qzConectar();
   if (!ok) { showToast('⚠️ QZ Tray offline — abra o QZ Tray no computador da impressora'); return; }
@@ -8258,15 +8299,15 @@ async function etqTestarImpressao() {
 
     const agora = new Date().toLocaleTimeString('pt-BR');
     // Etiqueta real: 101,6 x 63,5mm (4 x 2,5pol) → a 203dpi, altura ≈ 508 dots.
-    // Marca um quadrado no canto superior e outro perto do canto inferior:
-    // se os dois saírem dentro da etiqueta física, o tamanho está correto.
+    // Quadrado no topo e outro perto do fim (y=420), cada um com seu texto
+    // ao LADO (não embaixo/sobreposto) pra não embaralhar na impressão.
     const testZpl =
       '^XA^CI28\n' +
-      '^FO20,20^GB60,60,3^FS\n' +              // quadrado no canto superior
-      '^FO20,20^A0N,40,40^FH^FDTESTE^FS\n' +
-      '^FO20,70^A0N,30,30^FH^FDOK ' + agora + '^FS\n' +
-      '^FO20,420^GB60,60,3^FS\n' +              // quadrado próximo ao canto inferior (~63,5mm)
-      '^FO20,370^A0N,25,25^FH^FDperto do fim^FS\n' +
+      '^FO20,20^GB60,60,3^FS\n' +                         // quadrado topo
+      '^FO110,30^A0N,35,35^FH^FDTESTE^FS\n' +
+      '^FO20,100^A0N,25,25^FH^FDOK ' + agora + '^FS\n' +
+      '^FO20,420^GB60,60,3^FS\n' +                         // quadrado perto do fim (~63,5mm)
+      '^FO110,440^A0N,25,25^FH^FDperto do fim^FS\n' +
       '^XZ';
 
     const config = qz.configs.create(impressora);
@@ -8296,8 +8337,49 @@ function etqFecharLote(etqId) {
 window._etqCfg = {
   larguraMm: 101.6, // 4 polegadas — largura da fileira (2 etiquetas lado a lado)
   alturaMm:  63.5,  // 2,5 polegadas — altura da fileira
-  dpi:       203    // ZDesigner ZD220 = 203 dpi
+  dpi:       203,   // ZDesigner ZD220 = 203 dpi
+  colDireitaOffsetMm: 50.8 // distância real entre coluna esq/dir — CALIBRAR com a régua de teste
 };
+try {
+  const _salvo = localStorage.getItem('_etqColDireitaOffsetMm');
+  if (_salvo) window._etqCfg.colDireitaOffsetMm = parseFloat(_salvo);
+} catch(e) {}
+
+function etqDefinirOffsetColuna(mm) {
+  if (isNaN(mm) || mm<=0) return;
+  window._etqCfg.colDireitaOffsetMm = mm;
+  try { localStorage.setItem('_etqColDireitaOffsetMm', String(mm)); } catch(e) {}
+  showToast(`📐 Offset da coluna direita: ${mm}mm`);
+}
+
+/* ── Correção de alinhamento entre colunas ──────────────────────
+   O ZPL do MLtotal assume uma etiqueta individual mais estreita do
+   que a física real. Detecta o offset atual (pela posição dos 2
+   códigos de barra) e desloca tudo que pertence à coluna direita
+   pra bater com a largura física real (colDireitaOffsetMm).
+   ─────────────────────────────────────────────────────────────── */
+function zplDetectarOffsetColunasDots(zpl) {
+  const re = /\^FO(\d+),\d+\^BY[^\^]*\^BCN/g;
+  const xs = [];
+  let m;
+  while ((m = re.exec(zpl)) !== null) xs.push(parseInt(m[1], 10));
+  if (xs.length < 2) return null;
+  return xs[1] - xs[0];
+}
+
+function zplCorrigirAlinhamento(zpl) {
+  const dpmm = window._etqCfg.dpi / 25.4;
+  const offsetAtual = zplDetectarOffsetColunasDots(zpl);
+  if (offsetAtual == null || offsetAtual <= 0) return zpl; // não é layout de 2 colunas conhecido
+  const offsetDesejado = Math.round((window._etqCfg.colDireitaOffsetMm || 50.8) * dpmm);
+  const shift = offsetDesejado - offsetAtual;
+  if (!shift) return zpl;
+  const limiar = offsetAtual * 0.6; // separa coluna esquerda (X baixo) da direita (X alto)
+  return zpl.replace(/\^FO(\d+),(\d+)/g, (full, x, y) => {
+    const xi = parseInt(x, 10);
+    return xi >= limiar ? `^FO${xi + shift},${y}` : full;
+  });
+}
 
 function etqCfgDots(mm) {
   return Math.round((mm / 25.4) * window._etqCfg.dpi);
@@ -8485,7 +8567,7 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   for (let p = 0; p < blocosNecessarios; p++) {
     selecionados.push(blocos[p % blocos.length]);
   }
-  const zplFinal = selecionados.join('\n');
+  const zplFinal = zplCorrigirAlinhamento(selecionados.join('\n'));
 
   const ok = await qzConectar();
   if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
