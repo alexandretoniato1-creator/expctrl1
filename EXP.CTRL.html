@@ -8092,6 +8092,7 @@ async function etqRenderSecao(fullId) {
       <div class="etq-title">🏷 Etiquetas ML ${badge}</div>
       <div style="display:flex;align-items:center;gap:10px">
         <div class="etq-qztray-status"></div>
+        <button onclick="etqTestarImpressao()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime uma etiqueta de teste (não consome SKU nenhum)">🧪 Testar impressão</button>
         <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px">+ Adicionar ZPL</button>
       </div>
     </div>
@@ -8244,6 +8245,38 @@ async function etqPreview(fullId, etqId) {
   document.body.appendChild(overlay);
 }
 
+/* ── Teste de impressão — ZPL raw simples, não toca em nenhum SKU ──
+   Serve só pra confirmar que a impressora está recebendo o ZPL puro
+   no tamanho certo, sem gastar etiqueta de produto real.
+   ─────────────────────────────────────────────────────────────── */
+async function etqTestarImpressao() {
+  const ok = await qzConectar();
+  if (!ok) { showToast('⚠️ QZ Tray offline — abra o QZ Tray no computador da impressora'); return; }
+  try {
+    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
+    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
+
+    const agora = new Date().toLocaleTimeString('pt-BR');
+    // Etiqueta real: 101,6 x 63,5mm (4 x 2,5pol) → a 203dpi, altura ≈ 508 dots.
+    // Marca um quadrado no canto superior e outro perto do canto inferior:
+    // se os dois saírem dentro da etiqueta física, o tamanho está correto.
+    const testZpl =
+      '^XA^CI28\n' +
+      '^FO20,20^GB60,60,3^FS\n' +              // quadrado no canto superior
+      '^FO20,20^A0N,40,40^FH^FDTESTE^FS\n' +
+      '^FO20,70^A0N,30,30^FH^FDOK ' + agora + '^FS\n' +
+      '^FO20,420^GB60,60,3^FS\n' +              // quadrado próximo ao canto inferior (~63,5mm)
+      '^FO20,370^A0N,25,25^FH^FDperto do fim^FS\n' +
+      '^XZ';
+
+    const config = qz.configs.create(impressora);
+    await qz.print(config, [{ type: 'raw', format: 'plain', data: testZpl }]);
+    showToast(`✅ Teste enviado → ${impressora}`);
+  } catch(e) {
+    showToast('❌ Erro: ' + (e.message||e));
+  }
+}
+
 function etqAbrirLote(fullId, etqId) {
   document.querySelectorAll('[id^="etqLote_"]').forEach(b=>b.style.display='none');
   const box = document.getElementById(`etqLote_${etqId}`);
@@ -8261,9 +8294,9 @@ function etqFecharLote(etqId) {
    ─────────────────────────────────────────────── */
 /* ── Configuração de tamanho da etiqueta ─────────── */
 window._etqCfg = {
-  larguraMm: 100,  // largura de 1 etiqueta individual (100mm)
-  alturaMm:  44,   // altura da etiqueta
-  dpi:       203   // ZDesigner ZD220 = 203 dpi
+  larguraMm: 101.6, // 4 polegadas — largura da fileira (2 etiquetas lado a lado)
+  alturaMm:  63.5,  // 2,5 polegadas — altura da fileira
+  dpi:       203    // ZDesigner ZD220 = 203 dpi
 };
 
 function etqCfgDots(mm) {
@@ -8446,57 +8479,33 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) { showToast('❌ ZPL inválido'); return; }
 
-  const paginas = Math.ceil(qtd / 2);
-  showToast(`⏳ Gerando ${paginas} página(s) offline...`);
+  // 1 bloco = 2 etiquetas físicas lado a lado (fileira)
+  const blocosNecessarios = Math.ceil(qtd / 2);
+  const selecionados = [];
+  for (let p = 0; p < blocosNecessarios; p++) {
+    selecionados.push(blocos[p % blocos.length]);
+  }
+  const zplFinal = selecionados.join('\n');
 
   const ok = await qzConectar();
   if (!ok) { showToast('⚠️ QZ Tray offline'); return; }
 
   try {
-    // Calcula largura real: inclui coluna direita (X máx de todos os ^FO)
-    // O ZPL do ML tem 2 colunas — esq ~X=105, dir ~X=425
-    // Largura real = X_máx + margem
-    const _foXvals = (blocos[0].match(/\^FO(\d+),/g)||[]).map(s=>parseInt(s.replace(/\^FO|,/g,'')));
-    const _xMax = _foXvals.length ? Math.max(..._foXvals) : 430;
-    const _rawW = _xMax + 120; // X_máx + largura do campo direito (~120 dots)
-    const _testCanvas = _zplRender(blocos[0], 1);
-    const wMm = Math.round(_rawW / 8);  // dots → mm @ 8dpmm
-    const hMm = Math.round(_testCanvas.height / 8);
-
-    const { jsPDF } = window.jspdf;
-    // portrait = largura < altura na nomenclatura jsPDF
-    // Nossa folha é 200x52mm — sempre landscape (larga)
-    // format: [width, height] em mm no modo portrait do jsPDF
-    // Para folha 200x52: passamos [52, 200] com portrait, ou [200,52] com landscape
-    // QZ Tray recebe o PDF e imprime sem rotacionar
-    const doc = new jsPDF({ unit: 'mm', format: [wMm, hMm], orientation: 'portrait' });
-
-    for (let p = 0; p < paginas; p++) {
-      const bloco = blocos[p % blocos.length];
-      const pngData = zplBlocoParaDataURL(bloco, 2);
-      if (p > 0) doc.addPage([wMm, hMm], 'portrait');
-      doc.addImage(pngData, 'PNG', 0, 0, wMm, hMm);
-    }
-
-    const pdfBase64 = doc.output('datauristring').split(',')[1];
-
     let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
     if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return; }
 
-    const config = qz.configs.create(impressora, {
-      size: { width: wMm, height: hMm },
-      units: 'mm',
-      scaleContent: false,
-      margins: { top: 0, right: 0, bottom: 0, left: 0 },
-      colorType: 'black-white',
-      interpolation: 'nearest-neighbor'
-    });
+    /* ── Impressão v7 — ZPL bruto direto pra impressora ──────────
+       Nada de canvas, PDF ou cálculo de mm aqui. A própria Zebra
+       (já calibrada para a etiqueta 101,6x63,5mm) interpreta o ZPL
+       no tamanho real. Isso elimina a causa do bug de tamanho
+       (heurística de px↔mm que não refletia a etiqueta física).
+       ────────────────────────────────────────────────────────── */
+    const config = qz.configs.create(impressora);
 
     await qz.print(config, [{
-      type: 'pixel',
-      format: 'pdf',
-      flavor: 'base64',
-      data: pdfBase64
+      type: 'raw',
+      format: 'plain',
+      data: zplFinal
     }]);
 
     showToast(`✅ ${qtd} etiquetas → ${impressora}`);
