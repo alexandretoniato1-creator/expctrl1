@@ -8202,7 +8202,9 @@ function etqSetData(fullId, arr) { window._etqData[fullId]=arr; }
 
 async function etqSalvar(fullId) {
   const arr = etqGetData(fullId).map(e=>({id:e.id,sku:e.sku,descricao:e.descricao||'',total:e.total,impressas:e.impressas||0,criadoEm:e.criadoEm}));
-  await _sb.from('full_etiquetas').upsert({full_id:fullId,dados:JSON.stringify(arr),versao:2,updated_at:new Date().toISOString()});
+  const { error } = await _sb.from('full_etiquetas')
+    .upsert({full_id:fullId,dados:JSON.stringify(arr),versao:2,updated_at:new Date().toISOString()},{onConflict:'full_id'});
+  if (error) { console.error('[Supabase] etqSalvar:', error); showToast('⚠️ Erro ao salvar etiquetas — recarregue e tente de novo'); }
 }
 
 async function etqCarregar(fullId) {
