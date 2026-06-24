@@ -9029,30 +9029,35 @@ function kpiCard(emoji,nome,pendente,atrasados,atencao,bipados,aguardandoNota,sw
   if(atencao>0)   badges+=`<span style="background:#3a2a0c;color:#fbbf24;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px">${atencao} atenção</span>`;
   if(aguardandoNota>0) badges+=`<span style="background:rgba(88,166,255,.1);color:#79b8ff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px">${aguardandoNota} ag. nota</span>`;
   if(bipados>0)   badges+=`<span style="background:rgba(63,185,80,.1);color:#4ade80;font-size:11px;font-weight:800;padding:4px 10px;border-radius:100px">${bipados} bipados</span>`;
-  return `<div style="background:var(--surface);border:2px solid ${borda};${bg?'background:'+bg+';':''}border-radius:20px;padding:24px 18px;display:flex;flex-direction:column;align-items:center;text-align:center">
-    <div style="font-size:30px">${emoji}</div>
-    <div style="font-size:16px;font-weight:800;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;margin:5px 0 3px">${nome}</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:10px;font-weight:600">${kpiCorteLabel(sw,ss)}</div>
-    <div style="font-size:72px;font-weight:900;line-height:1;color:${cor}">${pendente}</div>
-    <div style="font-size:13px;color:var(--muted);font-weight:700;margin:4px 0 12px">falta bipar</div>
+  return `<div style="background:var(--surface);border:2px solid ${borda};${bg?'background:'+bg+';':''}border-radius:22px;padding:32px 20px 24px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:240px">
+    <div style="font-size:36px;margin-bottom:4px">${emoji}</div>
+    <div style="font-size:14px;font-weight:800;color:var(--muted2);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px">${nome}</div>
+    <div style="font-size:96px;font-weight:900;line-height:1;color:${cor};margin-bottom:6px">${pendente}</div>
+    <div style="font-size:12px;color:var(--muted);font-weight:700;margin-bottom:16px;text-transform:uppercase;letter-spacing:.5px">falta bipar</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center">${badges}</div>
   </div>`;
 }
 
 function renderConfigBar(cfg){
   const mkts=[{k:"ml",e:"🟡",n:"Mercado Livre"},{k:"shopee",e:"🛍️",n:"Shopee"},{k:"tiktok",e:"🎵",n:"TikTok"},{k:"amazon",e:"📦",n:"Amazon"},{k:"magalu",e:"🛒",n:"Magalu"}];
-  let html=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 22px;margin-bottom:28px;display:flex;gap:22px;flex-wrap:wrap;align-items:center">
-    <span style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">⚙ Horários de corte</span>`;
+  let html=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">`;
   for(const m of mkts){
-    html+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <span style="font-size:13px;font-weight:700;color:var(--text)">${m.e} ${m.n}</span>
-      <label style="font-size:11px;color:var(--muted)">seg-sex</label>
-      <input type="time" value="${cfg[m.k].semana}" onchange="kpiOnCorte('${m.k}','semana',this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px 8px;width:100px">
-      <label style="font-size:11px;color:var(--muted)">sáb</label>
-      <input type="time" value="${cfg[m.k].sabado}" onchange="kpiOnCorte('${m.k}','sabado',this.value)" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:13px;padding:4px 8px;width:100px">
+    html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
+      <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${m.e} ${m.n}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <label style="font-size:11px;color:var(--muted);font-weight:600">Seg – Sex</label>
+          <input type="time" value="${cfg[m.k].semana}" onchange="kpiOnCorte('${m.k}','semana',this.value)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:3px 7px;width:92px">
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <label style="font-size:11px;color:var(--muted);font-weight:600">Sábado</label>
+          <input type="time" value="${cfg[m.k].sabado}" onchange="kpiOnCorte('${m.k}','sabado',this.value)" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;padding:3px 7px;width:92px">
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:2px">Dom: sem coleta</div>
+      </div>
     </div>`;
   }
-  html+=`<span id="kpi-salvo" style="font-size:12px;color:#4ade80;display:none">✓ Salvo</span></div>`;
+  html+=`</div>`;
   return html;
 }
 
@@ -9115,7 +9120,7 @@ function renderMagisDetail(nome,emoji,dados,sw,ss){
 function kpiRender(){
   const root=document.getElementById("painel-kpi-root"); if(!root)return;
   const cfg=kpiCfg();
-  if(!kpiDML||!kpiDM5){ root.innerHTML=`<p style="color:var(--muted);padding:40px;text-align:center">Carregando dados...</p>`; return; }
+  if(!kpiDML||!kpiDM5){ root.innerHTML=`<div style="display:flex;align-items:center;justify-content:center;height:300px;color:var(--muted)"><div style="text-align:center"><div style="font-size:32px;margin-bottom:12px">⏳</div><p style="font-size:15px">Carregando dados...</p></div></div>`; return; }
   if(kpiDML.erro||kpiDM5.erro){ root.innerHTML=`<div class="alert alert-red">Erro: ${kpiDML.erro||kpiDM5.erro}</div>`; return; }
 
   const sh=kpiDM5.porMarketplace.Shopee, tk=kpiDM5.porMarketplace.TikTok, am=kpiDM5.porMarketplace.Amazon, mg=kpiDM5.porMarketplace.Magalu;
@@ -9125,28 +9130,45 @@ function kpiRender(){
   const amC=kpiContar(amP,cfg.amazon.semana,cfg.amazon.sabado);
   const mgC=kpiContar(mgP,cfg.magalu.semana,cfg.magalu.sabado);
   const agora=new Date().toLocaleTimeString("pt-BR");
+  const DIV = `<div style="border:none;border-top:1px solid var(--border);margin:28px 0"></div>`;
 
-  let html=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px">
-    <div><h2 style="font-size:24px;font-weight:900;margin:0">Painéis KPI — Expedição</h2><p style="font-size:13px;color:var(--muted);margin-top:2px">Todos os marketplaces · atualiza a cada 45s · última atualização ${agora}</p></div>
+  let html=``;
+
+  // ── SETOR 1: KPIs grandes ──
+  html+=`<div style="margin-bottom:0">`;
+  html+=`<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:20px">
+    <div>
+      <h2 style="font-size:22px;font-weight:900;margin:0;color:var(--text)">Expedição — Todos os Marketplaces</h2>
+      <p style="font-size:12px;color:var(--muted);margin-top:3px">Atualiza a cada 45s · última atualização ${agora}</p>
+    </div>
   </div>`;
-
-  html+=renderConfigBar(cfg);
-
-  html+=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-bottom:40px">`;
+  html+=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:20px;margin-bottom:0">`;
   html+=kpiCard("🟡","Mercado Livre",kpiDML.totalPendentes,kpiDML.totalAtrasados,kpiDML.totalAtencao,kpiDML.bipadosHoje,0,cfg.ml.semana,cfg.ml.sabado);
   html+=kpiCard("🛍️","Shopee",shP.length,shC.atrasados,shC.atencao,sh.bipadosHoje,sh.aguardandoNota,cfg.shopee.semana,cfg.shopee.sabado);
   html+=kpiCard("🎵","TikTok",tkP.length,tkC.atrasados,tkC.atencao,tk.bipadosHoje,tk.aguardandoNota,cfg.tiktok.semana,cfg.tiktok.sabado);
   html+=kpiCard("📦","Amazon",amP.length,amC.atrasados,amC.atencao,am.bipadosHoje,am.aguardandoNota,cfg.amazon.semana,cfg.amazon.sabado);
   html+=kpiCard("🛒","Magalu",mgP.length,mgC.atrasados,mgC.atencao,mg.bipadosHoje,mg.aguardandoNota,cfg.magalu.semana,cfg.magalu.sabado);
+  html+=`</div></div>`;
+
+  // ── SEPARADOR ──
+  html+=`<div style="border-top:2px solid var(--border);margin:36px 0 32px"></div>`;
+
+  // ── SETOR 2: Configuração de horários ──
+  html+=`<div style="margin-bottom:36px">`;
+  html+=`<h3 style="font-size:15px;font-weight:800;color:var(--text);margin:0 0 16px;display:flex;align-items:center;gap:8px">⚙ Horários de corte <span style="font-size:12px;color:var(--muted);font-weight:500">— define quando o prazo passa para o próximo dia útil</span> <span id="kpi-salvo" style="font-size:12px;color:#4ade80;display:none;margin-left:4px">✓ Salvo</span></h3>`;
+  html+=renderConfigBar(cfg);
   html+=`</div>`;
 
-  const div=(t)=>`<hr style="border:none;border-top:1px solid var(--border);margin:28px 0">`;
-  html+=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px">`;
+  // ── SEPARADOR ──
+  html+=`<div style="border-top:2px solid var(--border);margin:0 0 32px"></div>`;
+
+  // ── SETOR 3: Detalhe por marketplace ──
+  html+=`<div style="display:flex;flex-direction:column;gap:4px">`;
   html+=renderMLDetail(kpiDML);
-  html+=div(); html+=renderMagisDetail("Shopee","🛍️",sh,cfg.shopee.semana,cfg.shopee.sabado);
-  html+=div(); html+=renderMagisDetail("TikTok","🎵",tk,cfg.tiktok.semana,cfg.tiktok.sabado);
-  html+=div(); html+=renderMagisDetail("Amazon","📦",am,cfg.amazon.semana,cfg.amazon.sabado);
-  html+=div(); html+=renderMagisDetail("Magalu","🛒",mg,cfg.magalu.semana,cfg.magalu.sabado);
+  html+=DIV; html+=renderMagisDetail("Shopee","🛍️",sh,cfg.shopee.semana,cfg.shopee.sabado);
+  html+=DIV; html+=renderMagisDetail("TikTok","🎵",tk,cfg.tiktok.semana,cfg.tiktok.sabado);
+  html+=DIV; html+=renderMagisDetail("Amazon","📦",am,cfg.amazon.semana,cfg.amazon.sabado);
+  html+=DIV; html+=renderMagisDetail("Magalu","🛒",mg,cfg.magalu.semana,cfg.magalu.sabado);
   html+=`</div>`;
 
   root.innerHTML=html;
