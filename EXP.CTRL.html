@@ -1614,6 +1614,7 @@ select:focus{border-color:var(--accent)}
             <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px" id="claimsCards">
               <div class="card c-red"><div class="card-label">Claims abertas</div><div class="card-value" id="claimsTotalAbertas">—</div><div class="card-sub">aguardando ação</div></div>
               <div class="card" style="border-color:rgba(210,153,34,.3)"><div class="card-label">Com devolução</div><div class="card-value" id="claimsComDevolucao" style="color:var(--orange)">—</div><div class="card-sub">produto em retorno</div></div>
+              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Dinheiro retido ML</div><div class="card-value" id="claimsDinheiroPreso" style="font-size:22px;color:var(--red)">—</div><div class="card-sub">aguardando retorno</div></div>
               <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Valor em risco</div><div class="card-value" id="claimsValorRisco" style="font-size:16px;color:var(--red)">—</div><div class="card-sub">claims abertas</div></div>
               <div class="card"><div class="card-label">Histórico</div><div class="card-value" id="claimsTotalFechadas" style="font-size:22px;color:var(--muted2)">—</div><div class="card-sub">claims encerradas</div></div>
             </div>
@@ -1642,6 +1643,7 @@ select:focus{border-color:var(--accent)}
                 <thead>
                   <tr>
                     <th>Data</th>
+                    <th>Nº Venda</th>
                     <th>Tipo</th>
                     <th>Etapa</th>
                     <th>Motivo</th>
@@ -1650,9 +1652,11 @@ select:focus{border-color:var(--accent)}
                     <th>Comprador</th>
                     <th>Valor</th>
                     <th>Logística</th>
-                    <th>NF?</th>
+                    <th>NF</th>
                     <th>Devolução</th>
-                    <th>Ações disponíveis</th>
+                    <th>💰 Dinheiro</th>
+                    <th>💬</th>
+                    <th>Ações</th>
                     <th>Resolução</th>
                   </tr>
                 </thead>
@@ -9045,6 +9049,7 @@ async function carregarClaims(forcar = false) {
     const t = _claimsDados.totais;
     document.getElementById('claimsTotalAbertas').textContent = t.abertas;
     document.getElementById('claimsComDevolucao').textContent = t.comDevolucao;
+    document.getElementById('claimsDinheiroPreso').textContent = t.dinheiroPreso || 0;
     document.getElementById('claimsValorRisco').textContent = 'R$ ' + (t.valorEmRisco||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     document.getElementById('claimsTotalFechadas').textContent = t.fechadas;
 
@@ -9069,34 +9074,34 @@ function renderClaims() {
 
   if (tipoFiltro) lista = lista.filter(c => c.tipo === tipoFiltro);
   if (busca) lista = lista.filter(c =>
-    [c.sku, c.produto, c.comprador, String(c.orderId), String(c.claimId), c.motivo]
+    [c.sku, c.produto, c.comprador, String(c.orderId), String(c.claimId), c.motivo, c.nfNumero]
     .some(v => (v||'').toLowerCase().includes(busca))
   );
 
-  // Ordena: abertas primeiro, depois por data decrescente
   lista.sort((a,b) => {
     if (a.status !== b.status) return a.status === 'opened' ? -1 : 1;
     return new Date(b.dataCriacao).getTime() - new Date(a.dataCriacao).getTime();
   });
 
   const ACOES_PT = {
-    send_message_to_complainant: '💬 Mensagem',
-    send_message_to_mediator: '💬 Mediador',
-    refund: '💰 Reembolso',
-    open_dispute: '⚖️ Disputa',
+    send_message_to_complainant: '💬 Msg comprador',
+    send_message_to_mediator: '💬 Msg mediador',
+    refund: '💰 Reembolsar',
+    open_dispute: '⚖️ Abrir disputa',
     allow_partial_refund: '💸 Reemb. parcial',
     return_review: '🔍 Revisar retorno',
   };
 
   const corpo = lista.map(c => {
     const dataStr = c.dataCriacao ? new Date(c.dataCriacao).toLocaleDateString('pt-BR') : '—';
+
     const tipoBadge = c.tipo === 'Devolução'
       ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3)">↩ Dev.</span>`
       : c.tipo === 'Mediação'
       ? `<span class="badge" style="background:rgba(210,153,34,.15);color:var(--orange);border:1px solid rgba(210,153,34,.3)">⚖️ Med.</span>`
       : `<span class="badge b-pending">${c.tipo}</span>`;
 
-    const etapaBadge = c.etapa === 'Disputa (ML)'
+    const etapaBadge = c.etapa === 'Disputa ML'
       ? `<span style="font-size:10px;color:var(--red);font-weight:700">🔴 Disputa ML</span>`
       : `<span style="font-size:10px;color:var(--muted2)">${c.etapa}</span>`;
 
@@ -9113,39 +9118,93 @@ function renderClaims() {
       : `<span style="font-size:10px;color:var(--muted)">Pendente</span>`;
 
     const logBadge = c.logisticType === 'Full'
-      ? `<span class="badge" style="background:rgba(88,166,255,.1);color:var(--accent)">📦 Full</span>`
+      ? `<span class="badge" style="background:rgba(88,166,255,.1);color:var(--accent);font-size:10px">📦 Full</span>`
       : c.logisticType === 'Flex'
-      ? `<span class="badge b-done">🏍 Flex</span>`
+      ? `<span class="badge b-done" style="font-size:10px">🏍 Flex</span>`
       : `<span style="font-size:10px;color:var(--muted)">${c.logisticType||'—'}</span>`;
 
-    const nfCell = c.nfChave
-      ? `<span style="font-size:10px;color:var(--green);font-weight:700" title="${c.nfChave}">✓ NF ${c.nfChave.slice(-6)}</span>`
+    const nfCell = c.nfNumero
+      ? `<span style="font-size:10px;color:var(--green);font-weight:700" title="${c.nfChave||''}">✓ NF ${c.nfNumero}</span>`
       : `<span style="font-size:10px;color:var(--muted)">Sem NF</span>`;
 
-    const devCell = c.temDevolucao
-      ? `<span style="font-size:10px;color:var(--orange);font-weight:700">↩ Em retorno</span>`
+    // Status da devolução com destino correto
+    let devCell = `<span style="font-size:10px;color:var(--muted)">—</span>`;
+    if (c.temDevolucao && c.devolucaoStatus) {
+      const destino = c.logisticType === 'Full' ? '→ Depósito ML' : '→ Seu galpão';
+      const cor = c.devolucaoStatus === 'Entregue ao vendedor' ? 'var(--green)'
+                : c.devolucaoStatus === 'Em trânsito' ? 'var(--orange)'
+                : 'var(--muted2)';
+      devCell = `<div style="font-size:10px;line-height:1.5">
+        <span style="color:${cor};font-weight:700">${c.devolucaoStatus}</span><br>
+        <span style="color:var(--muted)">${destino}</span>
+        ${c.devolucaoReembolsoEm ? `<br><span style="color:var(--muted)">Reemb. na ${c.devolucaoReembolsoEm}</span>` : ''}
+      </div>`;
+    } else if (c.temDevolucao) {
+      devCell = `<span style="font-size:10px;color:var(--orange)">↩ Autorizada</span>`;
+    }
+
+    const dinheiroCell = c.dinheiroPreso
+      ? `<span style="font-size:10px;color:var(--orange);font-weight:700">🔒 Retido</span>`
+      : c.resolucao?.coberturaMl
+      ? `<span style="font-size:10px;color:var(--green)">✓ Coberto ML</span>`
+      : `<span style="font-size:10px;color:var(--muted)">—</span>`;
+
+    const msgCell = c.totalMensagens > 0
+      ? `<span style="font-size:11px;font-weight:700;color:var(--accent);cursor:pointer" onclick="verMensagens(${c.claimId})" title="Ver mensagens">💬 ${c.totalMensagens}</span>`
       : `<span style="font-size:10px;color:var(--muted)">—</span>`;
 
     return `<tr style="cursor:default">
       <td style="white-space:nowrap;font-size:11px">${dataStr}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2)">${c.orderId}</td>
       <td>${tipoBadge}</td>
       <td>${etapaBadge}</td>
-      <td style="font-size:10px;max-width:120px" title="${c.motivo}">${c.motivo||c.motivoCodigo||'—'}</td>
+      <td style="font-size:10px;max-width:110px" title="${c.motivo}">${c.motivo||c.motivoCodigo||'—'}</td>
       <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${c.sku||'—'}</td>
-      <td style="font-size:10px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.produto||''}">${c.produto||'—'}</td>
-      <td style="font-size:10px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.comprador||''}">${c.comprador||'—'}</td>
+      <td style="font-size:10px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.produto||''}">${c.produto||'—'}</td>
+      <td style="font-size:10px;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.comprador||''}">${c.comprador||'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--red);white-space:nowrap">${c.valor!=null?'R$ '+c.valor.toFixed(2):'—'}</td>
       <td>${logBadge}</td>
       <td>${nfCell}</td>
       <td>${devCell}</td>
+      <td style="text-align:center">${dinheiroCell}</td>
+      <td style="text-align:center">${msgCell}</td>
       <td>${acoesCell}</td>
       <td>${resolucaoCell}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="13" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma claim encontrada</td></tr>';
+  }).join('') || '<tr><td colspan="16" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma claim encontrada</td></tr>';
 
   document.getElementById('claimsBody').innerHTML = corpo;
 }
 
-</script>
-</body>
-</html>
+function verMensagens(claimId) {
+  const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+  const claim = todas.find(c => c.claimId === claimId);
+  if (!claim || !claim.mensagens?.length) return;
+  const html = claim.mensagens.map(m => {
+    const data = m.data ? new Date(m.data).toLocaleString('pt-BR') : '';
+    const lado = m.de === 'Comprador' ? 'left' : m.de === 'Vendedor' ? 'right' : 'center';
+    const cor  = m.de === 'Comprador' ? 'var(--red)' : m.de === 'Vendedor' ? 'var(--accent)' : 'var(--muted)';
+    return `<div style="text-align:${lado};margin-bottom:12px">
+      <span style="font-size:10px;color:${cor};font-weight:700">${m.de}</span>
+      <span style="font-size:10px;color:var(--muted);margin-left:8px">${data}</span>
+      <div style="background:var(--surface2);border-radius:8px;padding:8px 12px;margin-top:4px;font-size:12px;max-width:80%;display:inline-block;text-align:left">${m.texto}</div>
+    </div>`;
+  }).join('');
+  // Mostra num modal simples
+  let modal = document.getElementById('claimsModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'claimsModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:9999;display:flex;align-items:center;justify-content:center';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:24px;width:520px;max-height:70vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-weight:700;font-size:14px">💬 Mensagens — Claim ${claimId}</span>
+      <button onclick="document.getElementById('claimsModal').remove()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
+    </div>
+    ${html}
+  </div>`;
+  modal.style.display = 'flex';
+}
