@@ -9153,7 +9153,7 @@ function renderClaims() {
       ? `<span style="font-size:11px;font-weight:700;color:var(--accent);cursor:pointer" onclick="verMensagens(${c.claimId})" title="Ver mensagens">💬 ${c.totalMensagens}</span>`
       : `<span style="font-size:10px;color:var(--muted)">—</span>`;
 
-    return `<tr style="cursor:default">
+    return `<tr style="cursor:pointer" onclick="abrirDetalhesClaim(${c.claimId}, ${c.orderId})" title="Clique para ver detalhes completos">
       <td style="white-space:nowrap;font-size:11px">${dataStr}</td>
       <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2)">${c.orderId}</td>
       <td>${tipoBadge}</td>
@@ -9207,6 +9207,183 @@ function verMensagens(claimId) {
     ${html}
   </div>`;
   modal.style.display = 'flex';
+}
+
+
+// ═══════════════════════════════════════════════════════
+// CLAIM DETAIL — Modal com dados completos sob demanda
+// ═══════════════════════════════════════════════════════
+const CLAIM_DETAIL_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/ml-claim-detail';
+
+const STATUS_DEV_PT = {
+  label_generated: 'Etiqueta gerada',
+  ready_to_ship: 'Aguardando postagem',
+  shipped: 'Em trânsito',
+  delivered: 'Entregue',
+  not_delivered: 'Não entregue',
+  cancelled: 'Cancelada',
+};
+
+async function abrirDetalhesClaim(claimId, orderId) {
+  // Cria ou reutiliza modal
+  let modal = document.getElementById('claimDetailModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'claimDetailModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+
+  // Loading
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:32px;width:680px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-weight:800;font-size:16px">📋 Claim #${claimId}</span>
+      <button onclick="document.getElementById('claimDetailModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="text-align:center;padding:40px;color:var(--muted)">
+      <div style="font-size:28px;margin-bottom:12px">⏳</div>
+      <p>Carregando detalhes completos...</p>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+
+  try {
+    const r = await fetch(`${CLAIM_DETAIL_API}?claim_id=${claimId}&order_id=${orderId}`, { cache: 'no-store' });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+
+    const m5 = d.magis5 || {};
+    const dev = d.devolucao;
+    const pg = d.pagamento || {};
+    const msgs = d.mensagens || [];
+
+    // Helper de linha de detalhe
+    const linha = (label, val, cor='') => val
+      ? `<div style="display:flex;gap:8px;align-items:baseline;padding:6px 0;border-bottom:1px solid var(--border2)">
+          <span style="font-size:11px;color:var(--muted);min-width:150px;font-weight:600">${label}</span>
+          <span style="font-size:12px;color:${cor||'var(--text)'}">${val}</span>
+         </div>`
+      : '';
+
+    const secao = (titulo, conteudo) => `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">${titulo}</div>
+        ${conteudo}
+      </div>`;
+
+    let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div>
+        <span style="font-weight:800;font-size:16px">📋 Claim #${claimId}</span>
+        <span style="font-size:11px;color:var(--muted);margin-left:12px">Pedido ${orderId}</span>
+      </div>
+      <button onclick="document.getElementById('claimDetailModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1">✕</button>
+    </div>`;
+
+    // Produto
+    if (m5.produto) {
+      let prodHtml = '';
+      if (m5.imagem) prodHtml += `<img src="${m5.imagem}" style="width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid var(--border);float:right;margin-left:12px">`;
+      prodHtml += linha('SKU', m5.sku, 'var(--accent)');
+      prodHtml += linha('Produto', m5.produto);
+      prodHtml += linha('EAN', m5.ean);
+      prodHtml += linha('Qtd comprada', dev ? `${dev.qtdTotal} un` : `${m5.quantidade} un`);
+      if (dev) prodHtml += linha('Qtd devolvida', `${dev.qtdDevolvida} un`, Number(dev.qtdDevolvida) < Number(dev.qtdTotal) ? 'var(--orange)' : '');
+      prodHtml += linha('Valor unitário', m5.valorUnitario ? 'R$ ' + m5.valorUnitario.toFixed(2) : null);
+      prodHtml += linha('Custo do produto', m5.conciliacao?.custo ? 'R$ ' + m5.conciliacao.custo.toFixed(2) : null, 'var(--muted2)');
+      prodHtml += linha('Logística', m5.logisticType === 'fulfillment' ? '📦 Full (depósito ML)' : '🏍 Flex/Coleta (seu galpão)');
+      if (dev?.itemId) prodHtml += linha('Anúncio ML', `<a href="https://www.mercadolivre.com.br/p/${dev.itemId}" target="_blank" style="color:var(--accent)">${dev.itemId} ↗</a>`);
+      html += secao('🛍 Produto', prodHtml);
+    }
+
+    // Comprador
+    if (m5.comprador) {
+      const c = m5.comprador;
+      const end = c.enderecoEntrega;
+      let compHtml = '';
+      compHtml += linha('Nome', c.nome);
+      compHtml += linha('CPF', c.cpf ? c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : null);
+      compHtml += linha('E-mail', c.email);
+      compHtml += linha('Telefone', c.telefone);
+      if (end) {
+        compHtml += linha('Endereço entrega', `${end.address_line || ''}, ${end.neighborhood?.name || ''}`);
+        compHtml += linha('Cidade/UF', end.city?.name ? `${end.city.name} / ${end.state?.name}` : null);
+        compHtml += linha('CEP', end.zip_code);
+      }
+      html += secao('👤 Comprador', compHtml);
+    }
+
+    // Nota Fiscal
+    if (m5.nf) {
+      let nfHtml = '';
+      nfHtml += linha('Número NF', m5.nf.numero);
+      nfHtml += linha('Série', m5.nf.serie);
+      nfHtml += linha('Emissão', m5.nf.dataEmissao ? new Date(m5.nf.dataEmissao).toLocaleString('pt-BR') : null);
+      nfHtml += linha('Chave acesso', `<span style="font-family:monospace;font-size:10px;word-break:break-all">${m5.nf.chave}</span>`);
+      if (m5.nf.urlXml) nfHtml += linha('XML', `<a href="${m5.nf.urlXml}" target="_blank" style="color:var(--accent)">Download XML ↗</a>`);
+      html += secao('🧾 Nota Fiscal', nfHtml);
+    }
+
+    // Devolução
+    if (dev) {
+      let devHtml = '';
+      devHtml += linha('Status', STATUS_DEV_PT[dev.status] || dev.status, dev.status === 'delivered' ? 'var(--green)' : dev.status === 'shipped' ? 'var(--orange)' : '');
+      devHtml += linha('Tipo', dev.subtype === 'return_total' ? 'Devolução total' : 'Devolução parcial');
+      devHtml += linha('Reembolso ao comprador', dev.reembolsoEm === 'shipped' ? 'Na postagem do produto' : dev.reembolsoEm === 'delivered' ? 'Na entrega ao destino' : dev.reembolsoEm);
+      devHtml += linha('Inspeção ML obrigatória', dev.intermediateCheck ? '⚠ Sim — ML vai inspecionar' : 'Não', dev.intermediateCheck ? 'var(--orange)' : '');
+      devHtml += linha('Dinheiro', dev.statusMoney === 'retained' ? '🔒 Retido pelo ML' : dev.statusMoney === 'refunded' ? '✓ Já reembolsado' : dev.statusMoney, dev.statusMoney === 'retained' ? 'var(--orange)' : 'var(--green)');
+      if (dev.dataCriacao) devHtml += linha('Criada em', new Date(dev.dataCriacao).toLocaleString('pt-BR'));
+      if (dev.dataFechamento) devHtml += linha('Fechada em', new Date(dev.dataFechamento).toLocaleString('pt-BR'));
+      if (dev.envio) {
+        const destino = dev.envio.destino === 'warehouse' ? `📦 Depósito ML — Cajamar/SP` : `📬 Seu galpão`;
+        devHtml += linha('Destino do retorno', destino);
+        devHtml += linha('Rastreio', dev.envio.rastreio || 'Ainda sem rastreio');
+        if (dev.envio.enderecoDestino) {
+          const ed = dev.envio.enderecoDestino;
+          devHtml += linha('Endereço destino', `${ed.address_line}, ${ed.city?.name}`);
+        }
+      }
+      html += secao('↩ Devolução', devHtml);
+    }
+
+    // Pagamento / BPP
+    if (pg) {
+      let pgHtml = '';
+      pgHtml += linha('Status pagamento', pg.status);
+      pgHtml += linha('Detalhe', pg.statusDetail);
+      if (pg.bppRefunded) pgHtml += `<div style="background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;color:var(--red)">⚠ <strong>BPP Refunded</strong> — O ML já reembolsou o comprador pelo Programa de Proteção. O valor pode ser descontado da sua conta caso a devolução não seja resolvida.</div>`;
+      if (pg.valorReembolsado) pgHtml += linha('Valor reembolsado', 'R$ ' + pg.valorReembolsado.toFixed(2), 'var(--red)');
+      html += secao('💳 Pagamento', pgHtml);
+    }
+
+    // Mensagens
+    if (msgs.length > 0) {
+      const msgsHtml = msgs.map(m => {
+        const lado = m.de === 'Comprador' ? 'flex-start' : m.de === 'Vendedor' ? 'flex-end' : 'center';
+        const cor  = m.de === 'Comprador' ? 'var(--red)' : m.de === 'Vendedor' ? 'var(--accent)' : 'var(--muted)';
+        const bg   = m.de === 'Comprador' ? 'var(--surface2)' : m.de === 'Vendedor' ? 'rgba(88,166,255,.08)' : 'transparent';
+        const data = m.data ? new Date(m.data).toLocaleString('pt-BR') : '';
+        return `<div style="display:flex;flex-direction:column;align-items:${lado};margin-bottom:12px">
+          <div style="font-size:10px;color:${cor};font-weight:700;margin-bottom:3px">${m.de} <span style="color:var(--muted);font-weight:400">${data}</span></div>
+          <div style="background:${bg};border:1px solid var(--border);border-radius:10px;padding:9px 13px;max-width:85%;font-size:12px;line-height:1.5">${m.texto || '<em style="color:var(--muted)">sem texto</em>'}</div>
+        </div>`;
+      }).join('');
+      html += secao(`💬 Mensagens (${msgs.length})`, msgsHtml);
+    } else {
+      html += secao('💬 Mensagens', '<p style="font-size:12px;color:var(--muted);text-align:center;padding:8px">Nenhuma mensagem nesta claim.</p>');
+    }
+
+    modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;width:700px;max-height:88vh;overflow-y:auto">${html}</div>`;
+
+  } catch(e) {
+    modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:32px;width:500px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <span style="font-weight:800">Erro ao carregar detalhes</span>
+        <button onclick="document.getElementById('claimDetailModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <p style="color:var(--red);font-size:13px">${e.message}</p>
+    </div>`;
+  }
 }
 
 </script>
