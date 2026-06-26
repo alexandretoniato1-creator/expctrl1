@@ -1535,9 +1535,8 @@ select:focus{border-color:var(--accent)}
 
           <!-- Sub-abas -->
           <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px">
-            <button class="saida-tab active" id="devTab-registros" onclick="switchDevTab('registros',this)">📋 Registros</button>
-            <button class="saida-tab" id="devTab-analise" onclick="switchDevTab('analise',this)">📊 Análise</button>
-            <button class="saida-tab" id="devTab-claims" onclick="switchDevTab('claims',this)">📡 Claims ML</button>
+            <button class="saida-tab active" id="devTab-registros" onclick="switchDevTab('registros',this)">📋 Claims ML</button>
+            <button class="saida-tab" id="devTab-manual" onclick="switchDevTab('manual',this)">✏️ Registro Manual</button>
             <button class="saida-tab" id="devTab-acoes" onclick="switchDevTab('acoes',this)">⚠️ Ações Pendentes</button>
             <button class="saida-tab" id="devTab-analise-ml" onclick="switchDevTab('analise-ml',this)">📈 Análise ML</button>
             <button class="saida-tab" id="devTab-transito" onclick="switchDevTab('transito',this)">📦 Em Trânsito</button>
@@ -1546,84 +1545,14 @@ select:focus{border-color:var(--accent)}
 
           <!-- ── SUB-ABA: REGISTROS ── -->
           <div id="devPane-registros">
-          <div class="dev-toolbar" style="flex-wrap:wrap;gap:8px">
-            <div class="dev-toolbar-left" style="flex-wrap:wrap;gap:6px">
-              <input type="text" id="devFiltroBusca" placeholder="🔍 SKU, venda, cliente..." oninput="renderDev()" style="width:190px;font-size:11px;padding:5px 9px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-              <select id="devFiltroMes" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todos os meses</option></select>
-              <select id="devFiltroMarket" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todos markets</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="Magalu">Magalu</option></select>
-              <select id="devFiltroConta" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todas as contas</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select>
-              <select id="devFiltroTipo" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Full + Flex</option><option value="Full">Full</option><option value="Flex">Flex</option></select>
-              <select id="devFiltroSit" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todas situações</option><option value="Revender">Revender</option><option value="Descarte">Descarte</option><option value="Reparo">Reparo</option></select>
-              <select id="devFiltroResp" onchange="renderDev()" style="font-size:11px;padding:5px 8px"><option value="">Todos responsáveis</option><option value="Edipo">Edipo</option><option value="Max">Max</option></select>
-              <input type="date" id="devFiltroDe" onchange="renderDev()" style="font-size:11px;padding:5px 8px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none" title="Data inicial">
-              <input type="date" id="devFiltroAte" onchange="renderDev()" style="font-size:11px;padding:5px 8px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none" title="Data final">
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <button class="btn-excel" onclick="exportarExcel()">📥 Exportar</button>
-              <button class="btn-danger-sm" onclick="limparDev()">🗑 Limpar</button>
-              <button class="btn btn-primary btn-sm" onclick="abrirNovaDev()">+ Nova devolução</button>
-            </div>
-          </div>
-          <div class="cards" style="grid-template-columns:repeat(4,1fr)">
-            <div class="card c-red"><div class="card-label">Total devoluções</div><div class="card-value" id="devTotal">0</div><div class="card-sub">registradas</div></div>
-            <div class="card c-green"><div class="card-label">Para revender</div><div class="card-value" id="devRevender">0</div><div class="card-sub">itens</div></div>
-            <div class="card c-accent"><div class="card-label">Descarte / Reparo</div><div class="card-value" id="devDescarte">0</div><div class="card-sub">itens</div></div>
-            <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Gasto total</div><div class="card-value" id="devGastoTotal" style="font-size:18px;color:var(--red)">R$ 0,00</div><div class="card-sub">custo + frete</div></div>
-          </div>
-          <div class="full-table-wrap">
-            <div class="table-head"><div class="table-head-title">Registro de Devoluções</div><span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="devCount">0 registros</span></div>
-            <div style="overflow-x:auto"><table id="devTable"><thead><tr><th>Chegada</th><th>Envio</th><th>SKU</th><th>Descrição</th><th>Qtde</th><th>Market</th><th>Conta</th><th>Tipo</th><th>Recebido</th><th>Reputação</th><th>Mediação</th><th>Situação</th><th>Venda</th><th>Total</th><th>Cobrou?</th><th>Por</th><th></th></tr></thead><tbody id="devBody"></tbody></table></div>
-          </div>
-          </div><!-- /devPane-registros -->
-
-          <!-- ── SUB-ABA: ANÁLISE ── -->
-          <div id="devPane-analise" style="display:none">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap">
-              <select id="analFiltroMes" onchange="renderDevAnalise()" style="font-size:11px;padding:5px 8px"><option value="">Todos os meses</option></select>
-              <select id="analFiltroConta" onchange="renderDevAnalise()" style="font-size:11px;padding:5px 8px"><option value="">Todas as contas</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select>
-            </div>
-            <!-- Cards macro -->
-            <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
-              <div class="card c-red"><div class="card-label">Total devoluções</div><div class="card-value" id="analTotal">0</div><div class="card-sub">no período</div></div>
-              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Gasto total</div><div class="card-value" id="analGasto" style="font-size:17px;color:var(--red)">R$ 0</div><div class="card-sub">custo + frete</div></div>
-              <div class="card c-green"><div class="card-label">Cobrado dos clientes</div><div class="card-value" id="analCobrou" style="font-size:22px">0</div><div class="card-sub">devoluções cobradas</div></div>
-              <div class="card c-accent"><div class="card-label">Reputação afetada</div><div class="card-value" id="analReput" style="font-size:22px;color:var(--orange)">0</div><div class="card-sub">pedidos</div></div>
-            </div>
-            <!-- Por conta -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
-                <div style="font-size:12px;font-weight:700;margin-bottom:12px">Devoluções por conta</div>
-                <div id="analPorConta"></div>
-              </div>
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
-                <div style="font-size:12px;font-weight:700;margin-bottom:12px">Situação do produto</div>
-                <div id="analPorSituacao"></div>
-              </div>
-            </div>
-            <!-- Por mês -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:14px">
-              <div style="font-size:12px;font-weight:700;margin-bottom:12px">Volume mensal</div>
-              <div id="analBarMes" style="display:flex;align-items:flex-end;gap:10px;height:100px"></div>
-              <div id="analBarMesLabel" style="display:flex;gap:10px;margin-top:6px"></div>
-            </div>
-            <!-- Por motivo -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
-              <div style="font-size:12px;font-weight:700;margin-bottom:12px">Motivos mais frequentes</div>
-              <div id="analPorMotivo"></div>
-            </div>
-          </div><!-- /devPane-analise -->
-
-          <!-- ── SUB-ABA: CLAIMS ML ── -->
-          <div id="devPane-claims" style="display:none">
             <!-- Cards de resumo -->
-            <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px" id="claimsCards">
+            <div class="cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px" id="claimsCards">
               <div class="card c-red"><div class="card-label">Claims abertas</div><div class="card-value" id="claimsTotalAbertas">—</div><div class="card-sub">aguardando ação</div></div>
               <div class="card" style="border-color:rgba(210,153,34,.3)"><div class="card-label">Com devolução</div><div class="card-value" id="claimsComDevolucao" style="color:var(--orange)">—</div><div class="card-sub">produto em retorno</div></div>
               <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Dinheiro retido ML</div><div class="card-value" id="claimsDinheiroPreso" style="font-size:22px;color:var(--red)">—</div><div class="card-sub">aguardando retorno</div></div>
               <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Valor em risco</div><div class="card-value" id="claimsValorRisco" style="font-size:16px;color:var(--red)">—</div><div class="card-sub">claims abertas</div></div>
               <div class="card"><div class="card-label">Histórico</div><div class="card-value" id="claimsTotalFechadas" style="font-size:22px;color:var(--muted2)">—</div><div class="card-sub">claims encerradas</div></div>
             </div>
-
             <!-- Filtros -->
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
               <select id="claimsFiltroStatus" onchange="renderClaims()" style="font-size:11px;padding:5px 8px">
@@ -1641,7 +1570,6 @@ select:focus{border-color:var(--accent)}
               <button class="btn btn-ghost btn-sm" onclick="carregarClaims(true)" id="claimsReloadBtn">↻ Atualizar</button>
               <span id="claimsLoadingMsg" style="font-size:11px;color:var(--muted);display:none">Carregando...</span>
             </div>
-
             <!-- Tabela -->
             <div style="overflow-x:auto">
               <table id="claimsTable" style="font-size:12px">
@@ -1666,13 +1594,58 @@ select:focus{border-color:var(--accent)}
                   </tr>
                 </thead>
                 <tbody id="claimsBody">
-                  <tr><td colspan="13" style="text-align:center;padding:40px;color:var(--muted)">Clique em "↻ Atualizar" para carregar as claims</td></tr>
+                  <tr><td colspan="16" style="text-align:center;padding:40px;color:var(--muted)">Clique em "↻ Atualizar" para carregar as claims da conta LOGBOX</td></tr>
                 </tbody>
               </table>
             </div>
-          </div><!-- /devPane-claims -->
+          </div><!-- /devPane-registros -->
 
-          <!-- ── AÇÕES PENDENTES ── -->
+          <!-- ── REGISTRO MANUAL (outros marketplaces) ── -->
+          <div id="devPane-manual" style="display:none">
+            <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:12px;color:var(--muted)">
+              ✏️ <strong>Registro manual</strong> — para devoluções de Shopee, TikTok, Amazon e Magalu enquanto as APIs desses marketplaces não estão conectadas. As claims do Mercado Livre são automáticas na aba "Claims ML".
+            </div>
+            <div class="dev-toolbar" style="flex-wrap:wrap;gap:8px">
+              <div class="dev-toolbar-left" style="flex-wrap:wrap;gap:6px">
+                <input type="text" id="devFiltroBusca" placeholder="🔍 SKU, venda, cliente..." oninput="renderDev()" style="width:190px">
+                <select id="devFiltroStatus" onchange="renderDev()">
+                  <option value="">Todos status</option>
+                  <option value="aberto">Aberto</option>
+                  <option value="resolvido">Resolvido</option>
+                  <option value="pendente">Pendente</option>
+                </select>
+                <select id="devFiltroTipo" onchange="renderDev()">
+                  <option value="">Todos tipos</option>
+                  <option value="devolucao">Devolução</option>
+                  <option value="reclamacao">Reclamação</option>
+                  <option value="troca">Troca</option>
+                </select>
+                <select id="devFiltroMkt" onchange="renderDev()">
+                  <option value="">Todos markets</option>
+                  <option value="Shopee">Shopee</option>
+                  <option value="TikTok">TikTok</option>
+                  <option value="Amazon">Amazon</option>
+                  <option value="Magalu">Magalu</option>
+                </select>
+              </div>
+              <div class="dev-toolbar-right">
+                <button class="btn btn-primary btn-sm" onclick="abrirNovaDev()">+ Nova devolução</button>
+              </div>
+            </div>
+            <table id="devTable">
+              <thead>
+                <tr>
+                  <th>Data</th><th>Marketplace</th><th>Nº Venda</th><th>SKU</th><th>Produto</th>
+                  <th>Motivo</th><th>Status</th><th>Valor</th><th>Observação</th><th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="devBody">
+                <tr><td colspan="10" class="empty-state">Nenhuma devolução registrada</td></tr>
+              </tbody>
+            </table>
+          </div><!-- /devPane-manual -->
+
+                    <!-- ── AÇÕES PENDENTES ── -->
           <div id="devPane-acoes" style="display:none">
             <div id="acoes-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver as ações pendentes.</div></div>
           </div>
@@ -4991,13 +4964,14 @@ function _devPopularFiltroMes() {
 function switchDevTab(tab, btn) {
   document.querySelectorAll('.saida-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  const panes = ['registros','analise','claims','acoes','analise-ml','transito','impacto'];
+  const panes = ['registros','manual','acoes','analise-ml','transito','impacto'];
   panes.forEach(p => {
     const el = document.getElementById('devPane-'+p);
     if (el) el.style.display = p === tab ? '' : 'none';
   });
-  if (tab === 'analise') renderDevAnalise();
-  if (tab === 'claims' && !window._claimsCarregados) carregarClaims(false);
+  // Claims ML é agora a aba "registros"
+  if (tab === 'registros' && !window._claimsCarregados) carregarClaims(false);
+  if (tab === 'manual') renderDev();
   if (['acoes','analise-ml','transito','impacto'].includes(tab)) {
     if (!window._claimsCarregados) carregarClaims(false).then(() => renderSubAba(tab));
     else renderSubAba(tab);
