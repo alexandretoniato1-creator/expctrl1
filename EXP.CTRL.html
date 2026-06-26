@@ -9585,70 +9585,338 @@ function renderAnaliseMl() {
 }
 
 // ── ABA 3: EM TRÂNSITO ─────────────────────────────────
+const POSVENDAS_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/posvendas-registros';
+
+const PRODUTO_CORRETO_PT  = { sim: '✅ Produto correto', nao: '❌ Produto errado', parcial: '⚠️ Parcialmente correto' };
+const ESTADO_PRODUTO_PT   = { lacrado: 'Lacrado', aberto: 'Aberto', danificado: 'Danificado', inutilizavel: 'Inutilizável', sem_produto: 'Sem produto' };
+const ACAO_TOMADA_PT      = { revendeu: 'Revendeu', descartou: 'Descartou', devolveu_fornecedor: 'Devolveu ao fornecedor', aguardando: 'Aguardando decisão', nf_pendente: 'NF de devolução pendente' };
+const ETIQUETAS_SUGERIDAS = ['fraude', 'produto-ok', 'fornecedor', 'aguardando-nf', 'prejuízo-confirmado', 'revendido', 'troca-pendente', 'inspecao-ml'];
+
+function statusDevCor(s) {
+  return s === 'Entregue' ? 'var(--green)' : s === 'Em trânsito' ? 'var(--orange)' : s === 'Não entregue' ? 'var(--red)' : 'var(--muted2)';
+}
+
 function renderEmTransito() {
   const root = document.getElementById('transito-root');
   if (!root || !_claimsDados) return;
 
   const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
-  const comDev = todas.filter(c => c.temDevolucao);
 
-  const aguardando   = comDev.filter(c => c.devolucaoStatus === 'Aguardando postagem' || c.devolucaoStatus === 'Etiqueta gerada');
-  const emTransito   = comDev.filter(c => c.devolucaoStatus === 'Em trânsito');
-  const entregues    = comDev.filter(c => c.devolucaoStatus === 'Entregue');
+  // Seção 1: Com devolução física formalizada
+  const comDev = todas.filter(c => c.temDevolucao);
+  const emMovimento  = comDev.filter(c => ['Em trânsito','Aguardando postagem','Etiqueta gerada'].includes(c.devolucaoStatus));
+  const concluidas   = comDev.filter(c => c.devolucaoStatus === 'Entregue');
   const problemas    = comDev.filter(c => c.devolucaoStatus === 'Não entregue');
 
-  let html = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px">
-    ${pvCard('Aguardando postagem', aguardando.length, 'var(--muted2)', 'comprador ainda não postou')}
-    ${pvCard('Em trânsito', emTransito.length, 'var(--orange)', 'a caminho do destino')}
-    ${pvCard('Entregues', entregues.length, 'var(--green)', 'chegaram ao destino')}
+  // Seção 2: Claims returns sem devolução formalizada ainda
+  const aguardandoAutorizacao = todas.filter(c => c.tipo === 'Devolução' && !c.temDevolucao && c.status === 'opened');
+
+  let html = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:28px">
+    ${pvCard('Em movimento', emMovimento.length, emMovimento.length > 0 ? 'var(--orange)' : 'var(--green)', 'produto em trânsito')}
+    ${pvCard('Aguard. autorização', aguardandoAutorizacao.length, aguardandoAutorizacao.length > 0 ? 'var(--orange)' : 'var(--green)', 'ainda não formalizadas')}
+    ${pvCard('Aguard. confirmação', concluidas.filter(c => !c.registro?.confirmado_chegada).length, 'var(--orange)', 'entregues, não confirmadas')}
+    ${pvCard('Confirmadas', concluidas.filter(c => c.registro?.confirmado_chegada).length, 'var(--green)', 'chegada verificada')}
     ${pvCard('Com problema', problemas.length, problemas.length ? 'var(--red)' : 'var(--green)', 'não entregues')}
   </div>`;
 
-  const STATUS_COR = {
-    'Etiqueta gerada': 'var(--muted2)',
-    'Aguardando postagem': 'var(--muted2)',
-    'Em trânsito': 'var(--orange)',
-    'Entregue': 'var(--green)',
-    'Não entregue': 'var(--red)',
-    'Cancelada': 'var(--muted)',
-  };
+  // ── Seção 1: Em movimento ──
+  html += pvSecao('📦 Seção 1 — Em movimento (devolução formalizada)', (() => {
+    if (!emMovimento.length) return '<p style="color:var(--muted);font-size:13px;padding:12px">Nenhuma devolução em trânsito no momento.</p>';
+    const linhas = emMovimento.map(c => {
+      const destino = c.logisticType === 'Full' ? `<span style="font-size:10px;color:var(--accent)">📦 Depósito ML</span>` : `<span style="font-size:10px;color:var(--green)">🏭 Seu galpão</span>`;
+      return `<tr style="border-bottom:1px solid var(--border2);cursor:pointer" onclick="abrirDetalhesClaim(${c.claimId},${c.orderId})">
+        <td style="padding:9px 10px"><span style="font-size:11px;font-weight:700;color:${statusDevCor(c.devolucaoStatus)}">${c.devolucaoStatus}</span></td>
+        <td style="padding:9px 10px">${destino}</td>
+        <td style="padding:9px 10px;font-size:10px">${c.devolucaoSubtype||'—'}</td>
+        <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${c.sku||'—'}</td>
+        <td style="padding:9px 10px;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.produto||'—'}</td>
+        <td style="padding:9px 10px;font-size:11px;color:var(--red)">${c.valor!=null?'R$ '+c.valor.toFixed(2):'—'}</td>
+        <td style="padding:9px 10px;font-size:11px">${c.motivo}</td>
+        ${c.dinheiroPreso ? '<td style="padding:9px 10px"><span style="font-size:10px;color:var(--orange)">🔒 Retido</span></td>' : '<td style="padding:9px 10px;color:var(--muted);font-size:10px">—</td>'}
+        ${renderEtiquetasInline(c)}
+      </tr>`;
+    });
+    return pvTabela(['Status','Destino','Tipo','SKU','Produto','Valor','Motivo','💰','Etiquetas'], linhas);
+  })());
 
-  const ordenadas = [...comDev].sort((a,b) => {
-    const ordem = {'Em trânsito':0,'Aguardando postagem':1,'Etiqueta gerada':2,'Entregue':3,'Cancelada':4};
-    return (ordem[a.devolucaoStatus]??9) - (ordem[b.devolucaoStatus]??9);
-  });
-
-  const linhas = ordenadas.map(c => {
-    const cor = STATUS_COR[c.devolucaoStatus] || 'var(--muted2)';
-    const destino = c.logisticType === 'Full'
-      ? `<span style="font-size:10px;color:var(--accent)">📦 Depósito ML</span>`
-      : `<span style="font-size:10px;color:var(--green)">🏭 Seu galpão</span>`;
-    const subtype = c.devolucaoSubtype === 'Parcial'
-      ? `<span style="font-size:10px;color:var(--orange)">Parcial</span>`
-      : `<span style="font-size:10px;color:var(--muted)">Total</span>`;
-    const dinheiro = c.dinheiroPreso
-      ? `<span style="font-size:10px;color:var(--orange)">🔒 Retido</span>`
-      : `<span style="font-size:10px;color:var(--muted)">—</span>`;
-
-    return `<tr style="border-bottom:1px solid var(--border2);cursor:pointer" onclick="abrirDetalhesClaim(${c.claimId},${c.orderId})">
-      <td style="padding:9px 10px"><span style="font-size:11px;font-weight:700;color:${cor}">${c.devolucaoStatus||'—'}</span></td>
-      <td style="padding:9px 10px">${destino}</td>
-      <td style="padding:9px 10px">${subtype}</td>
-      <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${c.sku||'—'}</td>
-      <td style="padding:9px 10px;font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.produto||''}">${c.produto||'—'}</td>
-      <td style="padding:9px 10px;font-size:11px;color:var(--red)">${c.valor!=null?'R$ '+c.valor.toFixed(2):'—'}</td>
-      <td style="padding:9px 10px;font-size:11px">${c.motivo||'—'}</td>
-      <td style="padding:9px 10px">${dinheiro}</td>
+  // ── Seção 2: Aguardando autorização ──
+  html += pvSecao('⏳ Seção 2 — Aguardando autorização de devolução', (() => {
+    if (!aguardandoAutorizacao.length) return '<p style="color:var(--muted);font-size:13px;padding:12px">Nenhuma devolução aguardando autorização.</p>';
+    const linhas = aguardandoAutorizacao.map(c => `<tr style="border-bottom:1px solid var(--border2);cursor:pointer" onclick="abrirDetalhesClaim(${c.claimId},${c.orderId})">
       <td style="padding:9px 10px;font-size:11px;color:var(--muted)">${new Date(c.dataCriacao).toLocaleDateString('pt-BR')}</td>
-    </tr>`;
-  });
+      <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--muted2)">${c.orderId}</td>
+      <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${c.sku||'—'}</td>
+      <td style="padding:9px 10px;font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.produto||'—'}</td>
+      <td style="padding:9px 10px;font-size:11px;color:var(--red)">${c.valor!=null?'R$ '+c.valor.toFixed(2):'—'}</td>
+      <td style="padding:9px 10px;font-size:11px">${c.etapa}</td>
+      <td style="padding:9px 10px;font-size:11px">${c.motivo}</td>
+      ${renderEtiquetasInline(c)}
+    </tr>`);
+    return pvTabela(['Data','Pedido','SKU','Produto','Valor','Etapa','Motivo','Etiquetas'], linhas);
+  })());
 
-  html += pvSecao('Devoluções físicas — ordenadas por status',
-    pvTabela(['Status','Destino','Tipo','SKU','Produto','Valor','Motivo','💰','Data'], linhas,
-    'Nenhuma devolução física registrada'));
+  // ── Seção 3: Concluídas ──
+  html += pvSecao('✅ Seção 3 — Chegaram ao destino', (() => {
+    if (!concluidas.length) return '<p style="color:var(--muted);font-size:13px;padding:12px">Nenhuma devolução entregue no histórico carregado.</p>';
+    const linhas = concluidas.map(c => {
+      const reg = c.registro;
+      const confirmadoCell = reg?.confirmado_chegada
+        ? `<div style="font-size:10px;line-height:1.5">
+            <span style="color:var(--green);font-weight:700">✓ Confirmada</span><br>
+            <span style="color:var(--muted)">${PRODUTO_CORRETO_PT[reg.produto_correto]||'—'}</span><br>
+            <span style="color:var(--muted)">${ESTADO_PRODUTO_PT[reg.estado_produto]||'—'}</span>
+           </div>`
+        : `<button onclick="event.stopPropagation();abrirConfirmacaoChegada(${c.claimId},${c.orderId})"
+            style="background:rgba(63,185,80,.15);border:1px solid rgba(63,185,80,.4);color:var(--green);font-size:11px;font-weight:700;padding:5px 12px;border-radius:6px;cursor:pointer">
+            ✓ Confirmar chegada
+           </button>`;
+      return `<tr style="border-bottom:1px solid var(--border2);cursor:pointer" onclick="abrirDetalhesClaim(${c.claimId},${c.orderId})">
+        <td style="padding:9px 10px">${c.logisticType==='Full'?'<span style="font-size:10px;color:var(--accent)">📦 Depósito ML</span>':'<span style="font-size:10px;color:var(--green)">🏭 Seu galpão</span>'}</td>
+        <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${c.sku||'—'}</td>
+        <td style="padding:9px 10px;font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.produto||'—'}</td>
+        <td style="padding:9px 10px;font-size:11px;color:var(--red)">${c.valor!=null?'R$ '+c.valor.toFixed(2):'—'}</td>
+        <td style="padding:9px 10px">${confirmadoCell}</td>
+        <td style="padding:9px 10px;font-size:11px;color:var(--muted)">${reg?.descricao_chegada||'—'}</td>
+        <td style="padding:9px 10px">${renderEtiquetasInline(c)}</td>
+        <td style="padding:9px 10px"><button onclick="event.stopPropagation();abrirObservacoes(${c.claimId},${c.orderId})" style="background:none;border:1px solid var(--border);color:var(--muted);font-size:10px;padding:4px 8px;border-radius:6px;cursor:pointer">💬 Obs ${reg?.observacoes?.length ? '('+reg.observacoes.length+')' : ''}</button></td>
+      </tr>`;
+    });
+    return pvTabela(['Destino','SKU','Produto','Valor','Confirmação','Descrição','Etiquetas','Observações'], linhas);
+  })());
 
   root.innerHTML = html;
 }
+
+// Renderiza etiquetas inline numa célula de tabela
+function renderEtiquetasInline(c) {
+  const tags = c.registro?.etiquetas ?? [];
+  const tagsHtml = tags.map(t => `<span style="background:rgba(88,166,255,.12);color:var(--accent);font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;white-space:nowrap">${t}</span>`).join(' ');
+  return `<td style="padding:9px 10px"><div style="display:flex;gap:4px;flex-wrap:wrap;min-width:80px">${tagsHtml}
+    <span onclick="event.stopPropagation();abrirEtiquetas(${c.claimId},${c.orderId})" style="cursor:pointer;font-size:12px;color:var(--muted)" title="Gerenciar etiquetas">＋</span>
+  </div></td>`;
+}
+
+// ── Modal: Confirmar chegada ──
+async function abrirConfirmacaoChegada(claimId, orderId) {
+  let modal = document.getElementById('pvModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'pvModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;width:520px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-weight:800;font-size:16px">✓ Confirmar chegada — Claim #${claimId}</span>
+      <button onclick="document.getElementById('pvModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">O produto correto chegou?</label>
+        <div style="display:flex;gap:8px">
+          ${['sim','nao','parcial'].map(v => `<label style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
+            <input type="radio" name="pv_correto" value="${v}" style="margin-right:6px">${PRODUTO_CORRETO_PT[v]}
+          </label>`).join('')}
+        </div>
+      </div>
+
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Estado do produto</label>
+        <select id="pv_estado" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+          <option value="">Selecione...</option>
+          ${Object.entries(ESTADO_PRODUTO_PT).map(([k,v]) => `<option value="${k}">${v}</option>`).join('')}
+        </select>
+      </div>
+
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Descreva o que chegou (opcional)</label>
+        <textarea id="pv_descricao" rows="3" placeholder="Ex: Chegou produto de outra marca, embalagem aberta, faltando acessórios..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:vertical"></textarea>
+      </div>
+
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Ação tomada</label>
+        <select id="pv_acao" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
+          <option value="">Selecione...</option>
+          ${Object.entries(ACAO_TOMADA_PT).map(([k,v]) => `<option value="${k}">${v}</option>`).join('')}
+        </select>
+      </div>
+
+      <button onclick="salvarConfirmacao(${claimId},${orderId})"
+        style="background:var(--green);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%">
+        ✓ Confirmar e salvar
+      </button>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+}
+
+async function salvarConfirmacao(claimId, orderId) {
+  const correto = document.querySelector('input[name="pv_correto"]:checked')?.value;
+  const estado  = document.getElementById('pv_estado')?.value;
+  const descricao = document.getElementById('pv_descricao')?.value;
+  const acao    = document.getElementById('pv_acao')?.value;
+
+  if (!correto) { alert('Informe se o produto correto chegou.'); return; }
+
+  try {
+    const r = await fetch(POSVENDAS_API, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claim_id: claimId, acao: 'confirmar_chegada', payload: { order_id: orderId, produto_correto: correto, estado_produto: estado, descricao_chegada: descricao, acao_tomada: acao } })
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    // Atualiza o cache local
+    const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+    const c = todas.find(x => x.claimId === claimId);
+    if (c) c.registro = d;
+    document.getElementById('pvModal')?.remove();
+    renderEmTransito();
+  } catch(e) { alert('Erro ao salvar: ' + e.message); }
+}
+
+// ── Modal: Etiquetas ──
+async function abrirEtiquetas(claimId, orderId) {
+  const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+  const c = todas.find(x => x.claimId === claimId);
+  const tagsAtuais = c?.registro?.etiquetas ?? [];
+
+  let modal = document.getElementById('pvModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'pvModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+
+  const renderTags = (tags) => {
+    const sugeridas = ETIQUETAS_SUGERIDAS.filter(t => !tags.includes(t));
+    return `
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Etiquetas ativas</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;min-height:32px">
+          ${tags.length ? tags.map(t => `<span style="background:rgba(88,166,255,.15);color:var(--accent);border:1px solid rgba(88,166,255,.3);font-size:12px;font-weight:700;padding:4px 12px;border-radius:100px;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="removerEtiqueta(${claimId},${orderId},'${t}')">${t} <span style="opacity:.6">✕</span></span>`).join('') : '<span style="color:var(--muted);font-size:12px">Nenhuma etiqueta</span>'}
+        </div>
+      </div>
+      <div style="margin-bottom:16px">
+        <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Sugeridas</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${sugeridas.map(t => `<span style="background:var(--surface2);color:var(--muted2);border:1px solid var(--border);font-size:12px;font-weight:600;padding:4px 12px;border-radius:100px;cursor:pointer" onclick="adicionarEtiqueta(${claimId},${orderId},'${t}')">${t}</span>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input id="pv_nova_tag" placeholder="Nova etiqueta personalizada..." style="flex:1;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px" onkeydown="if(event.key==='Enter')adicionarEtiqueta(${claimId},${orderId},document.getElementById('pv_nova_tag').value)">
+        <button onclick="adicionarEtiqueta(${claimId},${orderId},document.getElementById('pv_nova_tag').value)" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">+ Adicionar</button>
+      </div>`;
+  };
+
+  modal.innerHTML = `<div id="pvModalInner" style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;width:480px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-weight:800;font-size:16px">🏷 Etiquetas — Claim #${claimId}</span>
+      <button onclick="document.getElementById('pvModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div id="pvTagsContent">${renderTags(tagsAtuais)}</div>
+  </div>`;
+  modal.style.display = 'flex';
+}
+
+async function adicionarEtiqueta(claimId, orderId, etiqueta) {
+  etiqueta = (etiqueta||'').trim().toLowerCase().replace(/\s+/g,'-');
+  if (!etiqueta) return;
+  try {
+    const r = await fetch(POSVENDAS_API, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claim_id: claimId, acao: 'add_etiqueta', payload: { order_id: orderId, etiqueta } })
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+    const c = todas.find(x => x.claimId === claimId);
+    if (c) { c.registro = d; }
+    document.getElementById('pvTagsContent').innerHTML = `<div id="pvTagsContent">${(function(){ const renderTags = (tags) => { const sugeridas = ETIQUETAS_SUGERIDAS.filter(t => !tags.includes(t)); return \`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Etiquetas ativas</div><div style="display:flex;gap:6px;flex-wrap:wrap;min-height:32px">\${tags.length ? tags.map(t => \`<span style="background:rgba(88,166,255,.15);color:var(--accent);border:1px solid rgba(88,166,255,.3);font-size:12px;font-weight:700;padding:4px 12px;border-radius:100px;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="removerEtiqueta(\${claimId},\${orderId},'\${t}')">\${t} <span style="opacity:.6">✕</span></span>\`).join('') : '<span style="color:var(--muted);font-size:12px">Nenhuma etiqueta</span>'}</div></div>\`; }; return renderTags(d.etiquetas||[]); })()}</div>`;
+    renderEmTransito();
+    renderAcoesPendentes();
+    renderAnaliseMl();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function removerEtiqueta(claimId, orderId, etiqueta) {
+  try {
+    const r = await fetch(POSVENDAS_API, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claim_id: claimId, acao: 'remove_etiqueta', payload: { order_id: orderId, etiqueta } })
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+    const c = todas.find(x => x.claimId === claimId);
+    if (c) c.registro = d;
+    abrirEtiquetas(claimId, orderId);
+    renderEmTransito();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+// ── Modal: Observações ──
+async function abrirObservacoes(claimId, orderId) {
+  const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+  const c = todas.find(x => x.claimId === claimId);
+  const obs = c?.registro?.observacoes ?? [];
+
+  let modal = document.getElementById('pvModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'pvModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+
+  const obsHtml = obs.length
+    ? obs.map(o => `<div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:10px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${new Date(o.data).toLocaleString('pt-BR')}</div>
+        <div style="font-size:13px">${o.texto}</div>
+      </div>`).join('')
+    : '<p style="color:var(--muted);font-size:13px">Nenhuma observação registrada.</p>';
+
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;width:500px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-weight:800;font-size:16px">💬 Observações — Claim #${claimId}</span>
+      <button onclick="document.getElementById('pvModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="margin-bottom:20px">${obsHtml}</div>
+    <div>
+      <textarea id="pv_nova_obs" rows="3" placeholder="Nova observação..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:vertical;margin-bottom:8px"></textarea>
+      <button onclick="salvarObservacao(${claimId},${orderId})"
+        style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">
+        + Salvar observação
+      </button>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+}
+
+async function salvarObservacao(claimId, orderId) {
+  const texto = document.getElementById('pv_nova_obs')?.value?.trim();
+  if (!texto) return;
+  try {
+    const r = await fetch(POSVENDAS_API, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ claim_id: claimId, acao: 'add_observacao', payload: { order_id: orderId, texto } })
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+    const c = todas.find(x => x.claimId === claimId);
+    if (c) c.registro = d;
+    abrirObservacoes(claimId, orderId);
+    renderEmTransito();
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
 
 // ── ABA 4: IMPACTO FINANCEIRO ──────────────────────────
 function renderImpacto() {
