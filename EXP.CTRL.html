@@ -1537,6 +1537,10 @@ select:focus{border-color:var(--accent)}
             <button class="saida-tab active" id="devTab-registros" onclick="switchDevTab('registros',this)">📋 Registros</button>
             <button class="saida-tab" id="devTab-analise" onclick="switchDevTab('analise',this)">📊 Análise</button>
             <button class="saida-tab" id="devTab-claims" onclick="switchDevTab('claims',this)">📡 Claims ML</button>
+            <button class="saida-tab" id="devTab-acoes" onclick="switchDevTab('acoes',this)">⚠️ Ações Pendentes</button>
+            <button class="saida-tab" id="devTab-analise-ml" onclick="switchDevTab('analise-ml',this)">📈 Análise ML</button>
+            <button class="saida-tab" id="devTab-transito" onclick="switchDevTab('transito',this)">📦 Em Trânsito</button>
+            <button class="saida-tab" id="devTab-impacto" onclick="switchDevTab('impacto',this)">💰 Impacto</button>
           </div>
 
           <!-- ── SUB-ABA: REGISTROS ── -->
@@ -1666,6 +1670,26 @@ select:focus{border-color:var(--accent)}
               </table>
             </div>
           </div><!-- /devPane-claims -->
+
+          <!-- ── AÇÕES PENDENTES ── -->
+          <div id="devPane-acoes" style="display:none">
+            <div id="acoes-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver as ações pendentes.</div></div>
+          </div>
+
+          <!-- ── ANÁLISE ML ── -->
+          <div id="devPane-analise-ml" style="display:none">
+            <div id="analise-ml-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver a análise.</div></div>
+          </div>
+
+          <!-- ── EM TRÂNSITO ── -->
+          <div id="devPane-transito" style="display:none">
+            <div id="transito-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver as devoluções em trânsito.</div></div>
+          </div>
+
+          <!-- ── IMPACTO FINANCEIRO ── -->
+          <div id="devPane-impacto" style="display:none">
+            <div id="impacto-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver o impacto financeiro.</div></div>
+          </div>
 
         </div>
 
@@ -4959,14 +4983,19 @@ function _devPopularFiltroMes() {
 }
 
 function switchDevTab(tab, btn) {
-  document.querySelectorAll('#devTab-registros,#devTab-analise,#devTab-claims').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.saida-tab').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('devPane-registros').style.display = tab==='registros' ? '' : 'none';
-  document.getElementById('devPane-analise').style.display   = tab==='analise'   ? '' : 'none';
-  const claimsPane = document.getElementById('devPane-claims');
-  if (claimsPane) claimsPane.style.display = tab==='claims' ? '' : 'none';
+  const panes = ['registros','analise','claims','acoes','analise-ml','transito','impacto'];
+  panes.forEach(p => {
+    const el = document.getElementById('devPane-'+p);
+    if (el) el.style.display = p === tab ? '' : 'none';
+  });
   if (tab === 'analise') renderDevAnalise();
   if (tab === 'claims' && !window._claimsCarregados) carregarClaims(false);
+  if (['acoes','analise-ml','transito','impacto'].includes(tab)) {
+    if (!window._claimsCarregados) carregarClaims(false).then(() => renderSubAba(tab));
+    else renderSubAba(tab);
+  }
 }
 
 function renderDev(){
@@ -9384,6 +9413,324 @@ async function abrirDetalhesClaim(claimId, orderId) {
       <p style="color:var(--red);font-size:13px">${e.message}</p>
     </div>`;
   }
+}
+
+
+// ═══════════════════════════════════════════════════════
+// SUB-ABAS DE PÓS-VENDA
+// ═══════════════════════════════════════════════════════
+
+function renderSubAba(tab) {
+  if (tab === 'acoes')      renderAcoesPendentes();
+  if (tab === 'analise-ml') renderAnaliseMl();
+  if (tab === 'transito')   renderEmTransito();
+  if (tab === 'impacto')    renderImpacto();
+}
+
+// Helpers compartilhados
+function pvCard(label, valor, cor, sub) {
+  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;flex:1;min-width:130px">
+    <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${label}</div>
+    <div style="font-size:32px;font-weight:800;color:${cor||'var(--text)'}">${valor}</div>
+    ${sub ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${sub}</div>` : ''}
+  </div>`;
+}
+
+function pvSecao(titulo, html) {
+  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
+    <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px">${titulo}</div>
+    ${html}
+  </div>`;
+}
+
+function pvTabela(cols, linhas, vazio) {
+  if (!linhas.length) return `<p style="color:var(--muted);font-size:13px;padding:20px;text-align:center">${vazio||'Nenhum registro'}</p>`;
+  const ths = cols.map(c => `<th style="text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border)">${c}</th>`).join('');
+  return `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr>${ths}</tr></thead>
+    <tbody>${linhas.join('')}</tbody>
+  </table></div>`;
+}
+
+const URGENCIA_ORDEM = { 'Disputa ML': 0, 'Negociação': 1 };
+const ACOES_PT2 = {
+  send_message_to_complainant: '💬 Msg ao comprador',
+  send_message_to_mediator: '💬 Msg ao mediador',
+  refund: '💰 Reembolsar',
+  open_dispute: '⚖️ Abrir disputa',
+  allow_partial_refund: '💸 Reemb. parcial',
+  return_review: '🔍 Revisar retorno',
+};
+
+// ── ABA 1: AÇÕES PENDENTES ──────────────────────────────
+function renderAcoesPendentes() {
+  const root = document.getElementById('acoes-root');
+  if (!root || !_claimsDados) return;
+
+  const abertas = _claimsDados.abertas || [];
+  const precisamAcao = abertas.filter(c => c.acoes && c.acoes.length > 0);
+  const semResposta  = abertas.filter(c => (!c.acoes || c.acoes.length === 0) && c.etapa === 'Negociação');
+  const emDisputa    = abertas.filter(c => c.etapa === 'Disputa ML');
+
+  // Ordena por urgência: disputa > sem resposta > com ação, e por data crescente
+  const ordenadas = [...abertas].sort((a, b) => {
+    const ua = URGENCIA_ORDEM[a.etapa] ?? 2;
+    const ub = URGENCIA_ORDEM[b.etapa] ?? 2;
+    if (ua !== ub) return ua - ub;
+    return new Date(a.dataCriacao).getTime() - new Date(b.dataCriacao).getTime();
+  });
+
+  const diasAberta = (d) => Math.floor((Date.now() - new Date(d).getTime()) / 86400000);
+
+  let html = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px">
+    ${pvCard('Precisam de ação', precisamAcao.length, precisamAcao.length > 0 ? 'var(--red)' : 'var(--green)', 'ação disponível agora')}
+    ${pvCard('Em disputa ML', emDisputa.length, emDisputa.length > 0 ? 'var(--red)' : 'var(--green)', 'ML mediando')}
+    ${pvCard('Sem resposta sua', semResposta.length, semResposta.length > 5 ? 'var(--orange)' : 'var(--muted2)', 'em negociação')}
+    ${pvCard('Total abertas', abertas.length, 'var(--muted2)', 'todas as claims')}
+  </div>`;
+
+  const linhas = ordenadas.map(c => {
+    const dias = diasAberta(c.dataCriacao);
+    const urgenciaTag = c.etapa === 'Disputa ML'
+      ? `<span style="background:rgba(248,81,73,.15);color:var(--red);font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px">🔴 Disputa</span>`
+      : dias > 7
+      ? `<span style="background:rgba(210,153,34,.15);color:var(--orange);font-size:10px;font-weight:800;padding:2px 8px;border-radius:100px">⚠ ${dias}d</span>`
+      : `<span style="color:var(--muted);font-size:10px">${dias}d</span>`;
+
+    const acoesHtml = c.acoes && c.acoes.length
+      ? c.acoes.map(a => `<span style="font-size:10px;color:var(--accent)">${ACOES_PT2[a]||a}</span>`).join('<br>')
+      : `<span style="font-size:10px;color:var(--muted)">Aguardar</span>`;
+
+    const dinheiro = c.dinheiroPreso
+      ? `<span style="font-size:10px;color:var(--orange);font-weight:700">🔒 Retido</span>`
+      : `<span style="font-size:10px;color:var(--muted)">—</span>`;
+
+    return `<tr style="border-bottom:1px solid var(--border2);cursor:pointer" onclick="abrirDetalhesClaim(${c.claimId},${c.orderId})">
+      <td style="padding:9px 10px">${urgenciaTag}</td>
+      <td style="padding:9px 10px;font-size:11px;color:var(--muted)">${new Date(c.dataCriacao).toLocaleDateString('pt-BR')}</td>
+      <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--muted2)">${c.orderId}</td>
+      <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${c.sku||'—'}</td>
+      <td style="padding:9px 10px;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.produto||''}">${c.produto||'—'}</td>
+      <td style="padding:9px 10px;font-size:11px;color:var(--red)">${c.valor!=null?'R$ '+c.valor.toFixed(2):'—'}</td>
+      <td style="padding:9px 10px;font-size:11px">${c.motivo}</td>
+      <td style="padding:9px 10px">${acoesHtml}</td>
+      <td style="padding:9px 10px">${dinheiro}</td>
+    </tr>`;
+  });
+
+  html += pvSecao('Fila de ações — ordenada por urgência',
+    pvTabela(['Urgência','Data','Pedido','SKU','Produto','Valor','Motivo','Ações disponíveis','💰'],
+    linhas, 'Nenhuma claim aberta — ótimo!'));
+
+  root.innerHTML = html;
+}
+
+// ── ABA 2: ANÁLISE ML ──────────────────────────────────
+function renderAnaliseMl() {
+  const root = document.getElementById('analise-ml-root');
+  if (!root || !_claimsDados) return;
+
+  const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+  const abertas = _claimsDados.abertas || [];
+  const fechadas = _claimsDados.fechadas || [];
+
+  // Ranking de SKUs com mais claims
+  const porSku = {};
+  todas.forEach(c => {
+    if (!c.sku) return;
+    if (!porSku[c.sku]) porSku[c.sku] = { sku: c.sku, produto: c.produto, total: 0, motivos: {}, categorias: {}, valorTotal: 0 };
+    porSku[c.sku].total++;
+    porSku[c.sku].motivos[c.motivo] = (porSku[c.sku].motivos[c.motivo]||0)+1;
+    porSku[c.sku].categorias[c.categoria] = (porSku[c.sku].categorias[c.categoria]||0)+1;
+    porSku[c.sku].valorTotal += c.valor || 0;
+  });
+  const rankingSku = Object.values(porSku).sort((a,b) => b.total - a.total).slice(0,15);
+
+  // Por categoria
+  const porCat = {};
+  todas.forEach(c => {
+    if (!porCat[c.categoria]) porCat[c.categoria] = { total:0, abertas:0, fechadas:0, valor:0 };
+    porCat[c.categoria].total++;
+    if (c.status==='opened') porCat[c.categoria].abertas++;
+    else porCat[c.categoria].fechadas++;
+    porCat[c.categoria].valor += c.valor||0;
+  });
+
+  // Taxa de vitória
+  const comResolucao = fechadas.filter(c => c.resolucao);
+  const vendedorGanhou = comResolucao.filter(c => c.resolucao?.beneficiado === 'Vendedor').length;
+  const taxaVitoria = comResolucao.length ? Math.round(vendedorGanhou/comResolucao.length*100) : 0;
+
+  let html = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px">
+    ${pvCard('Total analisado', todas.length, 'var(--muted2)', 'abertas + fechadas')}
+    ${pvCard('SKUs distintos', Object.keys(porSku).length, 'var(--accent)', 'com ao menos 1 claim')}
+    ${pvCard('Taxa de vitória', taxaVitoria+'%', taxaVitoria > 40 ? 'var(--green)' : taxaVitoria > 20 ? 'var(--orange)' : 'var(--red)', 'casos onde vendedor ganhou')}
+    ${pvCard('ML cobriu', fechadas.filter(c=>c.resolucao?.coberturaMl).length, 'var(--green)', 'sem prejuízo seu')}
+  </div>`;
+
+  // Tabela por categoria
+  const linhasCat = Object.entries(porCat)
+    .sort((a,b) => b[1].total - a[1].total)
+    .map(([cat, d]) => `<tr style="border-bottom:1px solid var(--border2)">
+      <td style="padding:8px 10px;font-weight:700;font-size:12px">${cat}</td>
+      <td style="padding:8px 10px;font-size:12px;text-align:center;font-weight:800;color:var(--text)">${d.total}</td>
+      <td style="padding:8px 10px;font-size:12px;text-align:center;color:var(--red)">${d.abertas}</td>
+      <td style="padding:8px 10px;font-size:12px;text-align:center;color:var(--muted2)">${d.fechadas}</td>
+      <td style="padding:8px 10px;font-size:12px;color:var(--red)">R$ ${d.valor.toFixed(2)}</td>
+    </tr>`);
+
+  html += pvSecao('Por categoria de problema',
+    pvTabela(['Categoria','Total','Abertas','Fechadas','Valor em risco'], linhasCat));
+
+  // Ranking SKUs
+  const linhasSku = rankingSku.map((s,i) => {
+    const principalMotivo = Object.entries(s.motivos).sort((a,b)=>b[1]-a[1])[0];
+    const principalCat    = Object.entries(s.categorias).sort((a,b)=>b[1]-a[1])[0];
+    return `<tr style="border-bottom:1px solid var(--border2);cursor:pointer">
+      <td style="padding:8px 10px;font-size:12px;font-weight:700;color:var(--muted)">#${i+1}</td>
+      <td style="padding:8px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${s.sku}</td>
+      <td style="padding:8px 10px;font-size:11px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.produto||''}">${s.produto||'—'}</td>
+      <td style="padding:8px 10px;font-size:13px;font-weight:800;text-align:center;color:${s.total>=5?'var(--red)':s.total>=3?'var(--orange)':'var(--muted2)'}">${s.total}</td>
+      <td style="padding:8px 10px;font-size:11px">${principalCat?.[0]||'—'}</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--muted)">${principalMotivo?.[0]||'—'} (${principalMotivo?.[1]||0}x)</td>
+      <td style="padding:8px 10px;font-size:11px;color:var(--red)">R$ ${s.valorTotal.toFixed(2)}</td>
+    </tr>`;
+  });
+
+  html += pvSecao('Ranking de SKUs com mais reclamações',
+    pvTabela(['#','SKU','Produto','Claims','Categoria principal','Motivo mais frequente','Valor total'], linhasSku,
+    'Nenhum SKU com claims encontrado'));
+
+  root.innerHTML = html;
+}
+
+// ── ABA 3: EM TRÂNSITO ─────────────────────────────────
+function renderEmTransito() {
+  const root = document.getElementById('transito-root');
+  if (!root || !_claimsDados) return;
+
+  const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
+  const comDev = todas.filter(c => c.temDevolucao);
+
+  const aguardando   = comDev.filter(c => c.devolucaoStatus === 'Aguardando postagem' || c.devolucaoStatus === 'Etiqueta gerada');
+  const emTransito   = comDev.filter(c => c.devolucaoStatus === 'Em trânsito');
+  const entregues    = comDev.filter(c => c.devolucaoStatus === 'Entregue');
+  const problemas    = comDev.filter(c => c.devolucaoStatus === 'Não entregue');
+
+  let html = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px">
+    ${pvCard('Aguardando postagem', aguardando.length, 'var(--muted2)', 'comprador ainda não postou')}
+    ${pvCard('Em trânsito', emTransito.length, 'var(--orange)', 'a caminho do destino')}
+    ${pvCard('Entregues', entregues.length, 'var(--green)', 'chegaram ao destino')}
+    ${pvCard('Com problema', problemas.length, problemas.length ? 'var(--red)' : 'var(--green)', 'não entregues')}
+  </div>`;
+
+  const STATUS_COR = {
+    'Etiqueta gerada': 'var(--muted2)',
+    'Aguardando postagem': 'var(--muted2)',
+    'Em trânsito': 'var(--orange)',
+    'Entregue': 'var(--green)',
+    'Não entregue': 'var(--red)',
+    'Cancelada': 'var(--muted)',
+  };
+
+  const ordenadas = [...comDev].sort((a,b) => {
+    const ordem = {'Em trânsito':0,'Aguardando postagem':1,'Etiqueta gerada':2,'Entregue':3,'Cancelada':4};
+    return (ordem[a.devolucaoStatus]??9) - (ordem[b.devolucaoStatus]??9);
+  });
+
+  const linhas = ordenadas.map(c => {
+    const cor = STATUS_COR[c.devolucaoStatus] || 'var(--muted2)';
+    const destino = c.logisticType === 'Full'
+      ? `<span style="font-size:10px;color:var(--accent)">📦 Depósito ML</span>`
+      : `<span style="font-size:10px;color:var(--green)">🏭 Seu galpão</span>`;
+    const subtype = c.devolucaoSubtype === 'Parcial'
+      ? `<span style="font-size:10px;color:var(--orange)">Parcial</span>`
+      : `<span style="font-size:10px;color:var(--muted)">Total</span>`;
+    const dinheiro = c.dinheiroPreso
+      ? `<span style="font-size:10px;color:var(--orange)">🔒 Retido</span>`
+      : `<span style="font-size:10px;color:var(--muted)">—</span>`;
+
+    return `<tr style="border-bottom:1px solid var(--border2);cursor:pointer" onclick="abrirDetalhesClaim(${c.claimId},${c.orderId})">
+      <td style="padding:9px 10px"><span style="font-size:11px;font-weight:700;color:${cor}">${c.devolucaoStatus||'—'}</span></td>
+      <td style="padding:9px 10px">${destino}</td>
+      <td style="padding:9px 10px">${subtype}</td>
+      <td style="padding:9px 10px;font-family:monospace;font-size:11px;color:var(--accent)">${c.sku||'—'}</td>
+      <td style="padding:9px 10px;font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.produto||''}">${c.produto||'—'}</td>
+      <td style="padding:9px 10px;font-size:11px;color:var(--red)">${c.valor!=null?'R$ '+c.valor.toFixed(2):'—'}</td>
+      <td style="padding:9px 10px;font-size:11px">${c.motivo||'—'}</td>
+      <td style="padding:9px 10px">${dinheiro}</td>
+      <td style="padding:9px 10px;font-size:11px;color:var(--muted)">${new Date(c.dataCriacao).toLocaleDateString('pt-BR')}</td>
+    </tr>`;
+  });
+
+  html += pvSecao('Devoluções físicas — ordenadas por status',
+    pvTabela(['Status','Destino','Tipo','SKU','Produto','Valor','Motivo','💰','Data'], linhas,
+    'Nenhuma devolução física registrada'));
+
+  root.innerHTML = html;
+}
+
+// ── ABA 4: IMPACTO FINANCEIRO ──────────────────────────
+function renderImpacto() {
+  const root = document.getElementById('impacto-root');
+  if (!root || !_claimsDados) return;
+
+  const abertas  = _claimsDados.abertas  || [];
+  const fechadas = _claimsDados.fechadas || [];
+  const todas    = [...abertas, ...fechadas];
+
+  const valorAbertas  = abertas.reduce((s,c)=>s+(c.valor||0),0);
+  const comResolucao  = fechadas.filter(c => c.resolucao);
+  const compradorGanhou = comResolucao.filter(c => c.resolucao?.beneficiado === 'Comprador');
+  const vendedorGanhou  = comResolucao.filter(c => c.resolucao?.beneficiado === 'Vendedor');
+  const cobertosML    = comResolucao.filter(c => c.resolucao?.coberturaMl);
+  const prejuizoReal  = compradorGanhou.filter(c => !c.resolucao?.coberturaMl);
+  const valorPrejuizo = prejuizoReal.reduce((s,c)=>s+(c.valor||0),0);
+  const valorCoberto  = cobertosML.reduce((s,c)=>s+(c.valor||0),0);
+  const retidos       = todas.filter(c=>c.dinheiroPreso);
+  const valorRetido   = retidos.reduce((s,c)=>s+(c.valor||0),0);
+
+  let html = `<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px">
+    ${pvCard('Valor em risco', 'R$ '+valorAbertas.toFixed(2), 'var(--red)', 'claims abertas')}
+    ${pvCard('Dinheiro retido ML', 'R$ '+valorRetido.toFixed(2), valorRetido>0?'var(--orange)':'var(--green)', 'aguardando resolução')}
+    ${pvCard('Prejuízo real', 'R$ '+valorPrejuizo.toFixed(2), valorPrejuizo>0?'var(--red)':'var(--green)', 'sem cobertura do ML')}
+    ${pvCard('Coberto pelo ML', 'R$ '+valorCoberto.toFixed(2), 'var(--green)', 'sem custo pra você')}
+  </div>`;
+
+  // Por categoria de motivo
+  const catImpacto = {};
+  compradorGanhou.forEach(c => {
+    const cat = c.categoria || 'Outro';
+    if (!catImpacto[cat]) catImpacto[cat] = { total:0, valor:0, coberto:0, prejuizo:0 };
+    catImpacto[cat].total++;
+    catImpacto[cat].valor += c.valor||0;
+    if (c.resolucao?.coberturaMl) catImpacto[cat].coberto += c.valor||0;
+    else catImpacto[cat].prejuizo += c.valor||0;
+  });
+
+  const linhasCat = Object.entries(catImpacto)
+    .sort((a,b) => b[1].prejuizo - a[1].prejuizo)
+    .map(([cat, d]) => `<tr style="border-bottom:1px solid var(--border2)">
+      <td style="padding:8px 10px;font-weight:700;font-size:12px">${cat}</td>
+      <td style="padding:8px 10px;font-size:12px;text-align:center">${d.total}</td>
+      <td style="padding:8px 10px;font-size:12px;color:var(--red)">R$ ${d.valor.toFixed(2)}</td>
+      <td style="padding:8px 10px;font-size:12px;color:var(--green)">R$ ${d.coberto.toFixed(2)}</td>
+      <td style="padding:8px 10px;font-size:12px;font-weight:800;color:${d.prejuizo>0?'var(--red)':'var(--green)'}">R$ ${d.prejuizo.toFixed(2)}</td>
+    </tr>`);
+
+  html += pvSecao('Prejuízo por categoria — casos onde comprador ganhou (amostra atual)',
+    pvTabela(['Categoria','Casos','Valor total','Coberto ML','Prejuízo real'], linhasCat,
+    'Nenhum caso fechado favorável ao comprador na amostra'));
+
+  // Aviso sobre amostra
+  html += `<div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:10px;padding:14px 18px;font-size:12px;color:var(--muted)">
+    ℹ️ Os valores acima refletem a <strong>amostra carregada</strong> (até 50 claims abertas + 50 fechadas).
+    Para análise financeira completa dos ${_claimsDados.totais?.fechadas?.toLocaleString('pt-BR')} casos históricos,
+    o sistema precisaria paginar todo o histórico — o que pode demorar alguns minutos.
+    Use esses números como referência de tendência, não como total absoluto.
+  </div>`;
+
+  root.innerHTML = html;
 }
 
 </script>
