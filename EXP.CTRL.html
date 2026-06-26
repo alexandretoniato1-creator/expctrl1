@@ -9825,7 +9825,7 @@ async function abrirEtiquetas(claimId, orderId) {
 }
 
 async function adicionarEtiqueta(claimId, orderId, etiqueta) {
-  etiqueta = (etiqueta||'').trim().toLowerCase().replace(/\s+/g,'-');
+  etiqueta = (etiqueta||'').trim().toLowerCase().split(' ').join('-');
   if (!etiqueta) return;
   try {
     const r = await fetch(POSVENDAS_API, {
@@ -9836,8 +9836,10 @@ async function adicionarEtiqueta(claimId, orderId, etiqueta) {
     if (d.erro) throw new Error(d.erro);
     const todas = [...(_claimsDados.abertas||[]), ...(_claimsDados.fechadas||[])];
     const c = todas.find(x => x.claimId === claimId);
-    if (c) { c.registro = d; }
-    document.getElementById('pvTagsContent').innerHTML = `<div id="pvTagsContent">${(function(){ const renderTags = (tags) => { const sugeridas = ETIQUETAS_SUGERIDAS.filter(t => !tags.includes(t)); return \`<div style="margin-bottom:16px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">Etiquetas ativas</div><div style="display:flex;gap:6px;flex-wrap:wrap;min-height:32px">\${tags.length ? tags.map(t => \`<span style="background:rgba(88,166,255,.15);color:var(--accent);border:1px solid rgba(88,166,255,.3);font-size:12px;font-weight:700;padding:4px 12px;border-radius:100px;cursor:pointer;display:flex;align-items:center;gap:6px" onclick="removerEtiqueta(\${claimId},\${orderId},'\${t}')">\${t} <span style="opacity:.6">✕</span></span>\`).join('') : '<span style="color:var(--muted);font-size:12px">Nenhuma etiqueta</span>'}</div></div>\`; }; return renderTags(d.etiquetas||[]); })()}</div>`;
+    if (c) c.registro = d;
+    // Reabre o modal com dados atualizados
+    document.getElementById('pvModal').remove();
+    abrirEtiquetas(claimId, orderId);
     renderEmTransito();
     renderAcoesPendentes();
     renderAnaliseMl();
