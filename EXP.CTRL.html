@@ -946,7 +946,7 @@ select:focus{border-color:var(--accent)}
     <div class="login-error" id="loginError">Senha incorreta. Tente novamente.</div>
     <div class="login-badges">
       <div class="login-badge logbox-badge">LogBox</div>
-      <div class="login-badge fokus-badge">Fokus</div>
+      
     </div>
   </div>
 </div>
@@ -979,10 +979,7 @@ select:focus{border-color:var(--accent)}
         <span>LogBox — Edipo</span>
         <span class="badge-dot" style="background:var(--logbox)"></span>
       </div>
-      <div class="company-badge fokus-badge">
-        <span>Fokus — Max</span>
-        <span class="badge-dot" style="background:var(--fokus)"></span>
-      </div>
+
       
     </div>
   </div>
@@ -1016,7 +1013,7 @@ select:focus{border-color:var(--accent)}
           <!-- CARDS RESUMO clicáveis -->
           <div class="cards" style="grid-template-columns:repeat(6,1fr)">
             <div class="card c-accent" style="cursor:pointer" onclick="dashFiltrarStatus(null)" title="Ver todos os fulls">
-              <div class="card-label">Fulls do dia</div><div class="card-value" id="dTotalFulls">8</div><div class="card-sub" id="dFullsSub">LogBox + Fokus</div>
+              <div class="card-label">Fulls do dia</div><div class="card-value" id="dTotalFulls">8</div><div class="card-sub" id="dFullsSub">LogBox</div>
             </div>
             <div class="card c-green" style="cursor:pointer" onclick="dashFiltrarStatus('Pronto')" title="Ver fulls prontos">
               <div class="card-label">Prontos ↗</div><div class="card-value" id="dProntos">2</div><div class="card-sub" id="dProntosSub">de 8 fulls</div>
@@ -1128,24 +1125,7 @@ select:focus{border-color:var(--accent)}
               <tbody id="tLogbox"></tbody></table>
             </div>
             <div class="table-wrap">
-              <div class="table-head">
-                <div class="table-head-title">📦 Fokus <span class="click-hint">clique p/ detalhes</span></div>
-                <span class="badge b-pending" id="fokusBadge">2 pendentes</span>
-              </div>
-              <table><thead><tr><th>ID Full</th><th>Status</th><th>Progresso</th><th>Agendado</th></tr></thead>
-              <tbody id="tFokus"></tbody></table>
-            </div>
-          </div>
-
-          <!-- PAINEL DE FILTRO POR STATUS (aparece quando clica nos cards) -->
-          <div id="dashStatusPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-              <div style="font-size:13px;font-weight:700" id="dashStatusPanelTitle">Fulls</div>
-              <button onclick="dashFecharFiltro()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1">✕</button>
-            </div>
-            <div id="dashStatusLista" style="display:flex;flex-direction:column;gap:6px"></div>
-          </div>
-        </div>
+              
 
         <!-- ══ FULLS (CALENDÁRIO) ══ -->
         <div class="view" id="view-fulls">
@@ -1166,7 +1146,7 @@ select:focus{border-color:var(--accent)}
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.06)"></div>Pendente</div>
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(245,95,95,.12)"></div>Atrasado</div>
               </div>
-              <select id="calFiltroEmpresa" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">LogBox + Fokus</option><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select>
+              <select id="calFiltroEmpresa" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="Logbox">LogBox</option></select>
               <button class="btn btn-primary btn-sm" onclick="openModal('modalFull')">+ Novo Full</button>
             </div>
           </div>
@@ -1309,10 +1289,10 @@ select:focus{border-color:var(--accent)}
         <!-- ══ SAÍDAS ══ -->
         <div class="view" id="view-saidas">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end">
-            <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
+            <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="Logbox">LogBox</option></select></div>
             <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
-            <div class="form-group" id="saidaContaWrap" style="display:none"><label>Conta ML</label><select class="form-sel" id="saidaConta"><option value="">—</option><option value="FW">FW</option><option value="BTMX">BTMX</option><option value="Falcom">Falcom</option><option value="Octo">Octo</option></select></div>
+          
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
@@ -1339,13 +1319,7 @@ select:focus{border-color:var(--accent)}
             <div class="card"><div class="card-label">Marketplaces</div><div class="card-value" id="sMkt" style="font-size:13px;margin-top:4px">ML:5 AMZ:2 SHP:1</div><div class="card-sub">distribuição</div></div>
           </div>
           <!-- Painel por conta -->
-          <div id="sContasPanel" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-              <div style="font-size:12px;font-weight:700">Pedidos por conta — ML</div>
-              <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)" id="sContasTotal"></span>
-            </div>
-            <div id="sContasGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px"></div>
-          </div>
+          
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
               <div style="font-size:13px;font-weight:700">Flex vs Coleta</div>
@@ -1384,13 +1358,7 @@ select:focus{border-color:var(--accent)}
                     <option value="TikTok">TikTok Shop</option>
                     <option value="Magalu">Magalu</option>
                   </select>
-                  <select id="saidaHojeFiltroContaHoje" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
-                    <option value="">Todas as contas</option>
-                    <option value="FW">FW</option>
-                    <option value="BTMX">BTMX</option>
-                    <option value="Falcom">Falcom</option>
-                    <option value="Octo">Octo</option>
-                  </select>
+
                   <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="sHojeCount">8 pacotes</span>
                   <button class="btn btn-ghost btn-sm" id="btnImprimirHoje" style="color:var(--accent);border-color:rgba(255,255,255,.12)">🖨 Imprimir</button>
                   <button class="btn-danger-sm" onclick="limparSaidaHoje()">🗑 Limpar</button>
@@ -1407,13 +1375,7 @@ select:focus{border-color:var(--accent)}
                 <div class="table-head-title">Histórico por dia</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                   <input type="text" id="histBuscaGeral" placeholder="🔍 Buscar nº do pedido..." oninput="buscarHistoricoGeral()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:200px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-                  <select id="histFiltroConta" onchange="renderSaidaHistorico(document.getElementById('saidaGalpao').value)" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
-                    <option value="">Todas as contas</option>
-                    <option value="FW">FW</option>
-                    <option value="BTMX">BTMX</option>
-                    <option value="Falcom">Falcom</option>
-                    <option value="Octo">Octo</option>
-                  </select>
+                  
                   <span style="font-size:10px;color:var(--muted)">clique para ver pedidos · 🖨 imprimir</span>
                 </div>
               </div>
@@ -1447,7 +1409,7 @@ select:focus{border-color:var(--accent)}
               <div class="hist-header" onclick="toggleHist('h1')"><div><div style="font-weight:700;font-size:13px">Semana 12 — 17 a 21/03/2026</div><div style="font-size:11px;color:var(--muted);margin-top:2px">32 fulls · 4 destinos</div></div><div style="display:flex;gap:14px;align-items:center"><div style="text-align:right"><div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--green)">32 fulls</div><div style="font-size:11px;color:var(--muted)">587 caixas</div></div><span id="chev-h1" style="color:var(--muted);font-size:18px">›</span></div></div>
               <div class="hist-body" id="body-h1"><table><thead><tr><th>ID Full</th><th>Empresa</th><th>Status</th><th>Itens</th><th>Destino</th></tr></thead><tbody>
                 <tr class="full-row" onclick="openDetail('FULL-031')"><td style="font-family:'DM Mono',monospace;color:var(--accent)">FULL-031</td><td>LogBox</td><td><span class="badge b-done">Pronto</span></td><td>4/4</td><td style="font-size:11px">ML Cajamar/SP</td></tr>
-                <tr class="full-row" onclick="openDetail('FULL-032')"><td style="font-family:'DM Mono',monospace;color:var(--accent)">FULL-032</td><td>Fokus</td><td><span class="badge b-done">Pronto</span></td><td>5/5</td><td style="font-size:11px">Amazon SP</td></tr>
+                <tr class="full-row" onclick="openDetail('FULL-032')"><td style="font-family:'DM Mono',monospace;color:var(--accent)">FULL-032</td><td>LogBox</td><td><span class="badge b-done">Pronto</span></td><td>5/5</td><td style="font-size:11px">Amazon SP</td></tr>
               </tbody></table></div>
             </div>
           </div>
@@ -1468,8 +1430,7 @@ select:focus{border-color:var(--accent)}
                 <button class="ins-tab-btn" id="insTab-historico" onclick="insSwitchTab('historico',this)">Histórico</button>
               </div>
               <select id="insGalpaoSelect" class="ins-mes-select" onchange="insRenderEstoque();insRenderMovimentacoes();insPopularFiltros()">
-                <option value="LogBox">LogBox</option>
-                <option value="Fokus">Fokus</option>
+                <option value="Logbox">LogBox</option>
               </select>
               <select id="insMesSelect" class="ins-mes-select" onchange="insCarregarMes()"></select>
             </div>
@@ -1671,7 +1632,7 @@ select:focus{border-color:var(--accent)}
         <div class="view" id="view-catalogo">
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
-              <select id="catFiltroGalpao" onchange="renderCatalogo()" style="font-size:11px;padding:5px 8px"><option value="">LogBox + Fokus</option><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select>
+              <select id="catFiltroGalpao" onchange="renderCatalogo()" style="font-size:11px;padding:5px 8px"><option value="Logbox">LogBox</option></select>
               <input type="text" id="catBusca" placeholder="Buscar SKU ou descrição..." oninput="renderCatalogo()" style="width:200px;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
             </div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -1682,7 +1643,7 @@ select:focus{border-color:var(--accent)}
           <div class="cards">
             <div class="card c-accent"><div class="card-label">Total SKUs</div><div class="card-value" id="catTotal">0</div><div class="card-sub">cadastrados</div></div>
             <div class="card"><div class="card-label">LogBox</div><div class="card-value" id="catLogbox" style="font-size:22px">0</div><div class="card-sub">SKUs</div></div>
-            <div class="card"><div class="card-label">Fokus</div><div class="card-value" id="catFokus" style="font-size:22px">0</div><div class="card-sub">SKUs</div></div>
+            
             <div class="card c-green"><div class="card-label">Tempo médio/cx</div><div class="card-value" id="catTempo" style="font-size:22px">0</div><div class="card-sub">minutos</div></div>
           </div>
           <div class="full-table-wrap">
@@ -1724,7 +1685,7 @@ select:focus{border-color:var(--accent)}
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
               <input type="text" id="enviadosBusca" placeholder="🔍 Buscar por ID, destino ou empresa..." oninput="renderEnviados()" style="width:280px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
-              <select id="enviadosFiltroEmpresa" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px"><option value="">LogBox + Fokus</option><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select>
+              <select id="enviadosFiltroEmpresa" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px"><option value="Logbox">LogBox</option></select>
               <select id="enviadosFiltroDestino" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px">
                 <option value="">Todos os destinos</option>
                 <option value="ML Cajamar/SP">ML Cajamar/SP</option>
@@ -1746,7 +1707,7 @@ select:focus{border-color:var(--accent)}
           <div class="cards" style="grid-template-columns:repeat(4,1fr)">
             <div class="card c-green"><div class="card-label">Total enviados</div><div class="card-value" id="envTotal">0</div><div class="card-sub">todos os tempos</div></div>
             <div class="card"><div class="card-label">LogBox</div><div class="card-value" id="envLogbox" style="font-size:22px">0</div><div class="card-sub">Fulls</div></div>
-            <div class="card"><div class="card-label">Fokus</div><div class="card-value" id="envFokus" style="font-size:22px">0</div><div class="card-sub">Fulls</div></div>
+            
             <div class="card c-accent"><div class="card-label">Caixas enviadas</div><div class="card-value" id="envCaixas" style="font-size:22px">0</div><div class="card-sub">unidades</div></div>
           </div>
 
@@ -1812,7 +1773,7 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title">Novo Full <button class="modal-close" onclick="closeModal('modalFull')">✕</button></div>
     <div class="form-grid">
       <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="nf-id" placeholder="FULL-070" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-      <div class="form-group"><label>Empresa</label><select class="form-sel" id="nf-empresa"><option>LogBox</option><option>Fokus</option></select></div>
+      <div class="form-group"><label>Empresa</label><select class="form-sel" id="nf-empresa"><option value="Logbox">LogBox</option></select></div>
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
       <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date" id="nf-agendado"></div>
       <div class="form-group"><label>Responsável</label><select class="form-sel" id="nf-responsavel"><option>Edipo</option><option>Max</option></select></div>
@@ -1891,7 +1852,7 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title">👥 Funcionários <button class="modal-close" onclick="closeModal('modalFuncionarios')">✕</button></div>
     <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:14px;align-items:end">
       <div class="form-group" style="margin:0"><label>Nome</label><input class="form-sel" id="funcNome" type="text" placeholder="Ex: Carlos M." onkeydown="if(event.key==='Enter')adicionarFuncionario()"></div>
-      <div class="form-group" style="margin:0"><label>Empresa</label><select class="form-sel" id="funcEmpresa"><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div>
+      <div class="form-group" style="margin:0"><label>Empresa</label><select class="form-sel" id="funcEmpresa"><option value="Logbox">LogBox</option></select></div>
       <button class="btn btn-primary" onclick="adicionarFuncionario()" style="height:36px;padding:0 14px;align-self:end">+ Add</button>
     </div>
     <div id="funcLista" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
@@ -1948,7 +1909,7 @@ select:focus{border-color:var(--accent)}
     </div>
     <div class="section-divider">Pedido</div>
     <div class="form-grid-3">
-      <div class="form-group"><label>Conta</label><select class="form-sel" id="dConta"><option value="">—</option><option>FW</option><option>BTMX</option><option>Falcom</option><option>Octo</option></select></div>
+      <div class="form-group"><label>Conta</label><select class="form-sel" id="dConta"><option value="">Logbox</option></select></div>
       <div class="form-group"><label>Tipo de envio</label><select class="form-sel" id="dTipoEnvio"><option value="">—</option><option>Full</option><option>Flex</option></select></div>
       <div class="form-group"><label>Motivo plataforma</label><input class="form-sel" id="dMotivo" type="text"></div>
     </div>
@@ -1990,7 +1951,7 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title"><span id="skuModalTitle">Novo SKU</span><button class="modal-close" onclick="closeModal('modalSku')">✕</button></div>
     <div class="section-divider">Identificação</div>
     <div class="form-grid-3"><div class="form-group"><label>SKU *</label><input class="form-sel" id="sk-sku" type="text" placeholder="SKU-001"></div><div class="form-group span2"><label>Descrição *</label><input class="form-sel" id="sk-desc" type="text"></div></div>
-    <div class="form-grid"><div class="form-group"><label>EAN</label><input class="form-sel" id="sk-ean" type="text"></div><div class="form-group"><label>Galpão *</label><select class="form-sel" id="sk-galpao"><option value="">Selecione</option><option value="LogBox">LogBox</option><option value="Fokus">Fokus</option></select></div></div>
+    <div class="form-grid"><div class="form-group"><label>EAN</label><input class="form-sel" id="sk-ean" type="text"></div><div class="form-group"><label>Galpão *</label><select class="form-sel" id="sk-galpao"><option value="">Selecione</option><option value="Logbox">LogBox</option></select></div></div>
     <div class="section-divider">Dimensões da caixa</div>
     <div class="form-grid-3"><div class="form-group"><label>C (cm)</label><input class="form-sel" id="sk-comp" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>L (cm)</label><input class="form-sel" id="sk-larg" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>A (cm)</label><input class="form-sel" id="sk-altu" type="number" oninput="calcSkuVol()"></div></div>
     <div class="form-grid"><div class="form-group"><label>Peso (kg)</label><input class="form-sel" id="sk-peso" type="number" step="0.01"></div><div class="form-group"><label>Volume (L)</label><input type="text" id="sk-vol" readonly style="color:var(--green)"></div></div>
@@ -2035,13 +1996,7 @@ select:focus{border-color:var(--accent)}
         <input type="text" id="detalheBusca" placeholder="🔍  Buscar número do pedido..." oninput="filtrarDetalheDia()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
         <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)" id="detalheContador">0 resultados</div>
       </div>
-      <select id="detalheFiltroConta" onchange="filtrarDetalheDia()" style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:0 10px;outline:none">
-        <option value="">Todas as contas</option>
-        <option value="FW">FW</option>
-        <option value="BTMX">BTMX</option>
-        <option value="Falcom">Falcom</option>
-        <option value="Octo">Octo</option>
-      </select>
+      
     </div>
     <div style="max-height:340px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)">
       <table style="width:100%;border-collapse:collapse">
@@ -2141,9 +2096,7 @@ select:focus{border-color:var(--accent)}
     <input type="hidden" id="insProdId">
     <div class="form-group" style="margin-bottom:12px">
       <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Galpão</label>
-      <select id="insProdGalpao" class="form-sel" style="width:100%;font-size:13px">
-        <option value="LogBox">LogBox</option>
-        <option value="Fokus">Fokus</option>
+      <select id="insProdGalpao" class="form-sel" style="width:100%;font-size:13px"><option value="Logbox">LogBox</option>
       </select>
     </div>
     <div class="form-group" style="margin-bottom:12px">
@@ -2352,7 +2305,7 @@ const db = {
 
       SEMANAS_HIST = semanasHist||[];
       FUNCIONARIOS_DATA = (funcionariosDb||[]).map(f => ({ _id: f.id, nome: f.nome, empresa: f.empresa }));
-      INS_PRODUTOS = (insProdutosDb||[]).map(p => ({ _id: p.id, nome: p.nome, estoqueMinimo: p.estoque_minimo||0, ativo: p.ativo, galpao: p.galpao||'Fokus' }));
+      INS_PRODUTOS = (insProdutosDb||[]).map(p => ({ _id: p.id, nome: p.nome, estoqueMinimo: p.estoque_minimo||0, ativo: p.ativo, galpao: p.galpao||'LogBox' }));
       PROD_DATA = (prodData||[]).map(p => ({
         _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
         produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
@@ -2623,9 +2576,9 @@ const CHECKLIST_ITEMS = [
 let FUNCIONARIOS_DATA = []; // preenchido pelo db.load() via Supabase
 
 function funcAv(nome){return nome&&nome!=='—'?nome.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';}
-function funcCor(empresa){return empresa==='LogBox'?'av-blue':empresa==='Fokus'?'av-green':'av-amber';}
-function funcCorCss(empresa){return empresa==='LogBox'?'var(--logbox)':empresa==='Fokus'?'var(--fokus)':'var(--muted)';}
-function funcCorBg(empresa){return empresa==='LogBox'?'var(--logbox-bg)':empresa==='Fokus'?'var(--fokus-bg)':'rgba(255,255,255,.06)';}
+function funcCor(empresa){return 'av-blue';}
+function funcCorCss(empresa){return 'var(--logbox)';}
+function funcCorBg(empresa){return 'var(--logbox-bg)';}
 
 // Compat: array de nomes para código que usa FUNCIONARIOS[]
 const FUNCIONARIOS = { get length(){return FUNCIONARIOS_DATA.length;}, map:(fn)=>FUNCIONARIOS_DATA.map((f,i)=>fn(f.nome,i)), [Symbol.iterator]:function*(){for(const f of FUNCIONARIOS_DATA)yield f.nome;} };
@@ -2645,7 +2598,7 @@ function populateFuncSelects(){
 
 function filtrarFuncionariosPorGalpao() {
   const galpao  = document.getElementById('saidaGalpao')?.value || '';
-  const empresa = galpao === 'Fokus' ? 'Fokus' : 'LogBox';
+  const empresa = 'LogBox';
   const sel     = document.getElementById('saidaFuncionario');
   if(!sel) return;
 
@@ -2858,7 +2811,7 @@ function renderCalMobile(){
       const progClass = pct===100?'done':pct>0?'warn':'ok';
       const slug  = statusSlug(f.status||'Pendente');
       const empresa = f.empresa||'';
-      const empClass = empresa==='LogBox'?'empresa-logbox':'empresa-fokus';
+      const empClass = 'empresa-logbox';
       const dataFmt = fmtAgendado(f.agendado);
 
       html += `<div class="cal-mobile-card status-${slug}" onclick="calMobileOpenFull('${f.id}')">
@@ -3274,14 +3227,13 @@ function renderDashboard() {
   let hoje = fulls.filter(f => f.agendado === hoje_str);
   if (!hoje.length) hoje = fulls; // fallback: mostra todos quando não há fulls de hoje
   const logbox = hoje.filter(f=>f.empresa==='LogBox');
-  const fokus = hoje.filter(f=>f.empresa==='Fokus');
   const prontos = hoje.filter(f=>f.status==='Pronto').length;
   const conferencia = hoje.filter(f=>f.status==='Em conferência').length;
   const atrasados = hoje.filter(f=>f.status==='Atrasado').length;
   const emProcesso = hoje.filter(f=>['Produzindo','Em conferência'].includes(f.status));
 
   document.getElementById('dTotalFulls').textContent = hoje.length;
-  document.getElementById('dFullsSub').textContent = logbox.length+' LogBox · '+fokus.length+' Fokus';
+  document.getElementById('dFullsSub').textContent = 'LogBox';
   document.getElementById('dProntos').textContent = prontos;
   document.getElementById('dProntosSub').textContent = 'de '+hoje.length+' fulls';
   document.getElementById('dConferencia').textContent = conferencia;
@@ -3345,21 +3297,17 @@ function renderDashboard() {
     const tbody = document.getElementById(tbodyId);
     tbody.innerHTML = lista.map(f => `
       <tr class="full-row" onclick="openDetail('${f.id}')">
-        <td style="font-family:'DM Mono',monospace;color:${f.empresa==='LogBox'?'var(--logbox)':'var(--fokus)'};font-size:11px">${f.id}</td>
+        <td style="font-family:'DM Mono',monospace;color:${f.'var(--logbox)'};font-size:11px">${f.id}</td>
         <td><span class="badge ${statusClass(f.status)}">${statusIcon(f.status)} ${f.status}</span></td>
         <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2)">${f.itens.filter(i=>i.status==='done').length}/${f.itens.length}</td>
         <td style="font-size:11px;color:var(--muted2)">${f.agendado}</td>
       </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Sem fulls</td></tr>';
   };
   renderTabela('tLogbox', logbox);
-  renderTabela('tFokus', fokus);
-
   const latrasados = logbox.filter(f=>f.status==='Atrasado').length;
-  const fatrasados = fokus.filter(f=>f.status==='Atrasado').length;
+  const fatrasados = 0;
   document.getElementById('logboxBadge').textContent = latrasados ? latrasados+' atrasado'+(latrasados>1?'s':'') : logbox.filter(f=>f.status==='Pendente').length+' pendentes';
   document.getElementById('logboxBadge').className = 'badge '+(latrasados?'b-red':'b-pending');
-  document.getElementById('fokusBadge').textContent = fatrasados ? fatrasados+' atrasado'+(fatrasados>1?'s':'') : fokus.filter(f=>f.status==='Pendente').length+' pendentes';
-  document.getElementById('fokusBadge').className = 'badge '+(fatrasados?'b-red':'b-pending');
 
   // ducato
   renderDashDucato();
@@ -3423,7 +3371,7 @@ async function renderDashSemana() {
       const empresa = f?.empresa || '—';
       const destino = f?.destino || '—';
       const agendado = f?.agendado || '—';
-      const empCor = empresa === 'LogBox' ? 'var(--logbox)' : 'var(--fokus)';
+      const empCor = 'var(--logbox)';
       const cxs = c.total_esperado;
       // Dias estocado
       const desde = new Date(c.updated_at);
@@ -3517,8 +3465,8 @@ async function renderDashSemana() {
   const listaConEl = document.getElementById('dashFullsConcluidosLista');
 
   const lbConc = concluidosSemana.filter(f=>f.empresa==='LogBox').length;
-  const fkConc = concluidosSemana.filter(f=>f.empresa==='Fokus').length;
-  subEl.textContent = `${concluidosSemana.length} total · ${lbConc} LogBox · ${fkConc} Fokus`;
+  const fkConc = concluidosSemana.filter(f=>f.empresa==='LogBox').length;
+  subEl.textContent = `${concluidosSemana.length} total · ${LogBox`;
 
   if (!concluidosSemana.length) {
     listaConEl.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px;font-family:'DM Mono',monospace">Nenhum Full concluído esta semana</div>`;
@@ -3526,7 +3474,7 @@ async function renderDashSemana() {
     listaConEl.innerHTML = concluidosSemana.map(f => {
       const done = (f.itens||[]).filter(i=>i.status==='done').length;
       const total = (f.itens||[]).length;
-      const empCor = f.empresa==='LogBox'?'var(--logbox)':'var(--fokus)';
+      const empCor = 'var(--logbox)';
       return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(63,185,80,.04);border:1px solid rgba(63,185,80,.12);border-radius:7px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="color:var(--green);font-size:12px">✓</span>
@@ -4026,7 +3974,7 @@ function renderCal(){
       const weekStartCls = di===0?' week-start':'';
       const cards = fulls.map(f=>{
         const sc=statusCalClass(f.status);
-        const ec=f.empresa==='LogBox'?'empresa-logbox':'empresa-fokus';
+        const ec=f.'empresa-logbox';
         return `<div class="cal-full-card ${sc}"
           draggable="true"
           ondragstart="onDragStart(event,'${f.id}')"
@@ -4304,7 +4252,7 @@ function renderRelatorio(){
       <div class="relatorio-header" onclick="toggleRelatorio(${i})">
         <div>
           <div style="font-weight:700;font-size:13px">${sem.sem} — ${sem.inicio} a ${sem.fim}/2026</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">LogBox + Fokus · ${sem.logbox.fulls+sem.fokus.fulls} fulls · ${sem.logbox.caixas+sem.fokus.caixas} caixas · ${sem.logbox.saidas+sem.fokus.saidas} saídas</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">LogBox · ${sem.logbox.fulls} fulls · ${sem.logbox.caixas} caixas · ${sem.logbox.saidas} saídas</div>
         </div>
         <span id="relChev${i}" style="color:var(--muted);font-size:18px">›</span>
       </div>
@@ -4321,14 +4269,8 @@ function renderRelatorio(){
             </div>
           </div>
           <div style="padding:12px 16px">
-            <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--green);margin-bottom:10px;text-transform:uppercase">Fokus</div>
-            <div class="relatorio-stats">
-              <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--accent)">${sem.fokus.fulls}</div><div class="relatorio-stat-label">Fulls</div>${prev?delta(sem.fokus.fulls,prev.fokus.fulls):''}</div>
-              <div class="relatorio-stat"><div class="relatorio-stat-val">${sem.fokus.caixas}</div><div class="relatorio-stat-label">Caixas</div>${prev?delta(sem.fokus.caixas,prev.fokus.caixas):''}</div>
-              <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--red)">${sem.fokus.atrasados}</div><div class="relatorio-stat-label">Atrasados</div></div>
-              <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--green)">${sem.fokus.saidas}</div><div class="relatorio-stat-label">Saídas</div>${prev?delta(sem.fokus.saidas,prev.fokus.saidas):''}</div>
-              <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--green)">${sem.fokus.flex}</div><div class="relatorio-stat-label">Flex</div></div>
-            </div>
+            
+              <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--green)">            </div>
           </div>
         </div>
       </div>
@@ -4357,7 +4299,6 @@ function renderEnviados() {
 
   document.getElementById('envTotal').textContent = FULLS_ENVIADOS.length;
   document.getElementById('envLogbox').textContent = FULLS_ENVIADOS.filter(f=>f.empresa==='LogBox').length;
-  document.getElementById('envFokus').textContent = FULLS_ENVIADOS.filter(f=>f.empresa==='Fokus').length;
   document.getElementById('envCaixas').textContent = FULLS_ENVIADOS.reduce((a,f)=>a+(f.totalCaixas||0),0);
   document.getElementById('enviadosCount').textContent = lista.length + ' Fulls';
 
@@ -4370,7 +4311,7 @@ function renderEnviados() {
   tbody.innerHTML = lista.map(f => `
     <tr class="full-row" onclick="openEnviadoDetail('${f.id}')">
       <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${f.id}</td>
-      <td><span class="badge ${f.empresa==='LogBox'?'b-blue':'b-done'}">${f.empresa}</span></td>
+      <td><span class="badge ${'b-blue'}">${f.empresa}</span></td>
       <td style="font-size:12px;color:var(--muted)">${f.responsavel}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${f.agendado}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--green)">${f.enviadoEm}</td>
@@ -4469,10 +4410,7 @@ async function registrarSaida(){
 
   // ── Mapa de sender_id → conta ML ──────────────────
   const SENDER_CONTA = {
-    '334627891':  'FW',
-    '1507363246': 'BTMX',
-    '765039361':  'Falcom',
-    '758791711':  'Octo',
+    '2607113369': 'Logbox',
   };
 
   // Extrai número do pedido (id)
@@ -4562,8 +4500,8 @@ function renderSaidas(){
     : listaFull.length+' pacotes';
 
   // ── Painel por conta ──────────────────────────────
-  const CONTAS = ['FW','BTMX','Falcom','Octo'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTAS = ['Logbox'];
+  const CONTA_COLOR = { Logbox:'var(--logbox)' };
   const mlTotal = listaFull.filter(s => s.market==='ML').length;
   const porConta = CONTAS.map(c => ({
     label: c,
@@ -4646,8 +4584,8 @@ function filtrarContaHoje(conta) {
 }
 function renderSaidaHistorico(galpao){
   const filtroConta=document.getElementById('histFiltroConta')?.value||'';
-  const CONTAS = ['FW','BTMX','Falcom','Octo'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTAS = ['Logbox'];
+  const CONTA_COLOR = { Logbox:'var(--logbox)' };
   const _parseData = d => { const [dd,mm,aaaa] = d.split('/'); return new Date(`${aaaa}-${mm}-${dd}`); };
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao).sort((a,b)=>_parseData(b.data)-_parseData(a.data));
   const tbody=document.getElementById('saidaHistBody');
@@ -4674,7 +4612,7 @@ function renderSaidaHistorico(galpao){
     return `
     <tr class="full-row">
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.data} <span style="font-size:9px;color:var(--accent)">↗</span></td>
-      <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')"><span class="badge ${h.galpao==='LogBox'?'b-blue':'b-done'}">${h.galpao}</span></td>
+      <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')"><span class="badge ${'b-blue'}">${h.galpao}</span></td>
       <td style="font-family:'DM Mono',monospace;font-weight:700;color:var(--accent)" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.total}</td>
       <td style="font-family:'DM Mono',monospace;color:var(--green)" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.flex}</td>
       <td style="font-family:'DM Mono',monospace;color:var(--logbox)" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.coleta}</td>
@@ -4762,8 +4700,8 @@ function abrirDetalheDia(data,galpao){
   }
   detalheDiaAtual=pedidos;
 
-  const CONTAS = ['FW','BTMX','Falcom','Octo'];
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTAS = ['Logbox'];
+  const CONTA_COLOR = { Logbox:'var(--logbox)' };
 
   document.getElementById('detalheDiaTitulo').textContent='Pedidos — '+data;
   document.getElementById('detalheDiaSub').textContent=galpao+' · '+pedidos.length+' pacotes';
@@ -4847,7 +4785,7 @@ function filtrarDetalheDia(){
 }
 
 function renderDetalheTabela(lista){
-  const CONTA_COLOR = { FW:'var(--logbox)', BTMX:'var(--purple)', Falcom:'var(--orange)', Octo:'var(--green)' };
+  const CONTA_COLOR = { Logbox:'var(--logbox)' };
   const tbody=document.getElementById('detalheBody');
   if(!lista.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
   tbody.innerHTML=lista.map((p,i)=>{
@@ -4924,7 +4862,7 @@ async function excluirDiaHist(data, galpao){
 // ══════════════════════════════════════════════════════
 
 // helpers reutilizáveis
-const _devContaColor = c => ({FW:'var(--logbox)',BTMX:'var(--purple)',Falcom:'var(--orange)',Octo:'var(--green)'}[c]||'var(--muted)');
+const _devContaColor = _ => 'var(--logbox)'
 const _devRecebidoStyle = r => ({
   'Estoque Full':  'background:#238636;color:#fff',
   'Estoque Empresa':'background:#8250df;color:#fff',
@@ -5082,7 +5020,7 @@ function renderDevAnalise() {
   document.getElementById('analReput').textContent  = reputAfet;
 
   // Por conta
-  const contas = ['FW','BTMX','Falcom','Octo'];
+  const contas = ['Logbox'];
   const porConta = contas.map(c => ({ label:c, qtd: base.filter(d=>d.conta===c).length, gasto: base.filter(d=>d.conta===c).reduce((a,d)=>a+(parseFloat(d.total)||0),0) }));
   const maxConta = Math.max(...porConta.map(x=>x.qtd), 1);
   document.getElementById('analPorConta').innerHTML = porConta.map(({label,qtd,gasto}) => `
@@ -5356,7 +5294,6 @@ function renderCatalogo(){
   const lista=SKU_DB.filter(s=>(!galpao||s.galpao===galpao)&&(!busca||s.sku.toLowerCase().includes(busca)||s.descricao.toLowerCase().includes(busca)));
   document.getElementById('catTotal').textContent=SKU_DB.length;
   document.getElementById('catLogbox').textContent=SKU_DB.filter(s=>s.galpao==='LogBox').length;
-  document.getElementById('catFokus').textContent=SKU_DB.filter(s=>s.galpao==='Fokus').length;
   const tm=SKU_DB.length?(SKU_DB.reduce((a,s)=>a+(s.tempo||0),0)/SKU_DB.length).toFixed(1):0;
   document.getElementById('catTempo').textContent=tm;
   document.getElementById('catCount').textContent=lista.length+' SKUs';
@@ -5367,7 +5304,7 @@ function renderCatalogo(){
       <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${s.sku}</td>
       <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${s.ean||'—'}</td>
       <td style="font-size:12px;font-weight:600">${s.descricao}</td>
-      <td><span class="badge ${s.galpao==='LogBox'?'b-blue':'b-done'}">${s.galpao}</span></td>
+      <td><span class="badge ${'b-blue'}">${s.galpao}</span></td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${s.comp||'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${s.larg||'—'}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px">${s.altu||'—'}</td>
@@ -5619,8 +5556,6 @@ function gerarWppMsgs() {
   const hojeStr = hoje.toLocaleDateString('pt-BR');
   const fulls = Object.values(FULLS_DATA);
   const logbox = fulls.filter(f=>f.empresa==='LogBox');
-  const fokus = fulls.filter(f=>f.empresa==='Fokus');
-
   const fmtFull = f => {
     const icon = f.status==='Pronto'?'✅':f.status==='Em conferência'?'◎':f.status==='Atrasado'?'⚠️':f.status==='Produzindo'?'🔄':'⏳';
     const itens = f.itens||[];
@@ -5629,8 +5564,6 @@ function gerarWppMsgs() {
   };
 
   const logboxLines = logbox.length ? logbox.map(fmtFull).join('\n') : '– Nenhum full';
-  const fokusLines  = fokus.length  ? fokus.map(fmtFull).join('\n')  : '– Nenhum full';
-
   const prontos = fulls.filter(f=>f.status==='Pronto').length;
   const atrasados = fulls.filter(f=>f.status==='Atrasado').length;
   const emConf = fulls.filter(f=>f.status==='Em conferência').length;
@@ -5641,10 +5574,9 @@ function gerarWppMsgs() {
   }, 0);
 
   return {
-    ale: `*FULLS DO DIA – ${hojeStr}*\n\n*LOGBOX:*\n${logboxLines}\n\n*FOKUS:*\n${fokusLines}\n\n@Edipo – LogBox\n@Max – Fokus`,
+    ale: `*FULLS DO DIA – ${hojeStr}*\n\n*LOGBOX:*\n${logboxLines}`,
     edipo: `*LOGBOX – ${hojeStr}*\n${logboxLines}`,
-    max: `*FOKUS – ${hojeStr}*\n${fokusLines}`,
-    resumo: `*RESUMO DO DIA – ${hojeStr}*\n\n*LogBox:*\n✅ ${logbox.filter(f=>f.status==='Pronto').length} pronto · ◎ ${logbox.filter(f=>f.status==='Em conferência').length} conferência · ⚠️ ${logbox.filter(f=>f.status==='Atrasado').length} atrasado · 🔄 ${logbox.filter(f=>f.status==='Produzindo').length} produzindo\n\n*Fokus:*\n✅ ${fokus.filter(f=>f.status==='Pronto').length} pronto · ◎ ${fokus.filter(f=>f.status==='Em conferência').length} conferência · ⚠️ ${fokus.filter(f=>f.status==='Atrasado').length} atrasado · ⏳ ${fokus.filter(f=>f.status==='Pendente').length} pendentes\n\n📦 Total caixas prontas: ${totalCaixas}`,
+    resumo: `*RESUMO DO DIA – ${hojeStr}*\n\n*LogBox:*\n✅ ${logbox.filter(f=>f.status==='Pronto').length} pronto · ◎ ${logbox.filter(f=>f.status==='Em conferência').length} conferência · ⚠️ ${logbox.filter(f=>f.status==='Atrasado').length} atrasado · 🔄 ${logbox.filter(f=>f.status==='Produzindo').length} produzindo\n\n📦 Total caixas prontas: ${totalCaixas}`,
   };
 }
 function openWpp(){const msgs=gerarWppMsgs();document.getElementById('wppBox').textContent=msgs.ale;openModal('modalWpp');}
@@ -6248,7 +6180,7 @@ function renderProdutividade() {
           ${btnPeriodo('semana','Esta semana')}
           ${btnPeriodo('mes','Mensal')}
           <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-left:8px">Empresa:</span>
-          ${['','LogBox','Fokus'].map(btnEmpresa).join('')}
+          ${['','LogBox'].map(btnEmpresa).join('')}
         </div>
         ${mesSelector}${semLabel}
       </div>`;
@@ -6329,7 +6261,7 @@ function buscarHistoricoGeral(){
         <tr style="border-top:1px solid var(--border)">
           <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:12px;font-weight:600">${p.num}</td>
           <td style="padding:8px 11px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${p.data}</td>
-          <td style="padding:8px 11px"><span class="badge ${p.galpao==='LogBox'?'b-blue':'b-done'}">${p.galpao}</span></td>
+          <td style="padding:8px 11px"><span class="badge ${'b-blue'}">${p.galpao}</span></td>
           <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
           <td style="padding:8px 11px"><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[p.market]||'b-pending'}">${p.market}${p.conta?' · '+p.conta:''}</span></td>
           <td style="padding:8px 11px;font-size:11px;color:var(--muted2)">${p.funcionario||'—'}</td>
@@ -6602,7 +6534,7 @@ function insEstoqueAtual(prodId) {
 function insRenderEstoque() {
   const grid = document.getElementById('insGrid');
   const banner = document.getElementById('insAlertasBanner');
-  const galpao = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
+  const galpao = document.getElementById('insGalpaoSelect')?.value || 'LogBox';
   const produtos = INS_PRODUTOS.filter(p => p.galpao === galpao);
 
   if (!produtos.length) {
@@ -6644,7 +6576,7 @@ function insRenderEstoque() {
 
 // ── Movimentações ─────────────────────────────────────
 function insPopularFiltros() {
-  const galpao = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
+  const galpao = document.getElementById('insGalpaoSelect')?.value || 'LogBox';
   const produtosFiltrados = INS_PRODUTOS.filter(p => p.galpao === galpao);
 
   // filtro por produto em Movimentações
@@ -6669,7 +6601,7 @@ function insPopularFiltros() {
 }
 
 function insRenderMovimentacoes() {
-  const galpao     = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
+  const galpao     = document.getElementById('insGalpaoSelect')?.value || 'LogBox';
   const filtroTipo = document.getElementById('insMovFiltroTipo')?.value || '';
   const filtroProd = document.getElementById('insMovFiltroProd')?.value || '';
   const lista      = document.getElementById('insMovLista');
@@ -6751,7 +6683,7 @@ async function insConfirmarMov() {
 function insAbrirModalProduto(id) {
   const p = id ? INS_PRODUTOS.find(x => x._id === id) : null;
   // pré-seleciona galpão atual se novo produto
-  const galpaoAtual = document.getElementById('insGalpaoSelect')?.value || 'Fokus';
+  const galpaoAtual = document.getElementById('insGalpaoSelect')?.value || 'LogBox';
   document.getElementById('insProdId').value             = id || '';
   document.getElementById('modalInsProdTitulo').textContent = p ? 'Editar Produto' : 'Novo Produto';
   document.getElementById('insProdGalpao').value         = p ? p.galpao : galpaoAtual;
@@ -6769,7 +6701,7 @@ async function insSalvarProduto() {
   const nome   = document.getElementById('insProdNome').value.trim().toUpperCase();
   const min    = parseInt(document.getElementById('insProdMin').value) || 0;
   const inicial= parseInt(document.getElementById('insProdInicial').value) || 0;
-  const galpao = document.getElementById('insProdGalpao').value || 'Fokus';
+  const galpao = document.getElementById('insProdGalpao').value || 'LogBox';
   if (!nome) { showToast('⚠️ Informe o nome do produto'); return; }
 
   if (id) {
@@ -6922,7 +6854,7 @@ function insRenderDashCard() {
       ? alertas.slice(0,4).map(p => {
           const reg = INS_MESES.find(m => m.produto_id === p._id && m.mes === mesSel);
           const atual = reg ? reg.estoque_atual : 0;
-          const galpaoCor = p.galpao==='LogBox' ? 'var(--logbox)' : 'var(--fokus)';
+          const galpaoCor = 'var(--logbox)';
           return `<div style="display:flex;justify-content:space-between;font-size:11px;padding:4px 0;border-bottom:1px solid var(--border);align-items:center">
             <span style="color:var(--text)">${p.nome} <span style="font-size:9px;color:${galpaoCor};font-family:'DM Mono',monospace">${p.galpao}</span></span>
             <span style="font-family:'DM Mono',monospace;color:var(--red)">${atual.toLocaleString('pt-BR')}</span>
