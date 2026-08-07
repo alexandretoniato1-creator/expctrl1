@@ -3252,7 +3252,7 @@ function renderDashboard() {
   document.getElementById('dSaidasHoje').textContent = sTotal;
   document.getElementById('dSaidasSub').textContent = sTotal?'pacotes bipados':'nenhum ainda';
   document.getElementById('dSaidasFlexColeta').textContent = sTotal?(sFlex+' Flex · '+sColeta+' Col'):'—';
-  document.getElementById('dSaidasMkt').textContent = [sML?'ML:'+sML:'',sAMZ?'AMZ:'+sAMZ:'',sSHP?'SHP:'+sSHP:'',sTKT?'TKT:'+sTKT:'',sMGL?'MGL:'+sMGL:''].filter(Boolean).join(' · ')||'—';
+  const _dSaidasMkt = document.getElementById('dSaidasMkt'); if (_dSaidasMkt) _dSaidasMkt.textContent = [sML?'ML:'+sML:'',sAMZ?'AMZ:'+sAMZ:'',sSHP?'SHP:'+sSHP:'',sTKT?'TKT:'+sTKT:'',sMGL?'MGL:'+sMGL:''].filter(Boolean).join(' · ')||'—';
 
   // alertas
   const alertasDiv = document.getElementById('dashAlertas');
@@ -4513,10 +4513,10 @@ function renderSaidas(){
   const maxConta = Math.max(...porConta.map(x => x.qtd), 1);
   const semConta = listaFull.filter(s => s.market==='ML' && !s.conta).length;
 
-  document.getElementById('sContasTotal').textContent =
-    mlTotal ? ml+' pedidos ML no total' : 'Nenhum pedido ML hoje';
+  const _sContasTotal = document.getElementById('sContasTotal');
+  if (_sContasTotal) _sContasTotal.textContent = mlTotal ? ml+' pedidos ML no total' : 'Nenhum pedido ML hoje';
 
-  document.getElementById('sContasGrid').innerHTML = porConta.map(({label,qtd,flex,coleta,color}) => `
+  const _sContasGrid = document.getElementById('sContasGrid'); if (_sContasGrid) _sContasGrid.innerHTML = porConta.map(({label,qtd,flex,coleta,color}) => `
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;cursor:pointer;transition:border-color .15s"
          onclick="filtrarContaHoje('${label}')"
          title="Clique para filtrar por ${label}">
@@ -4953,11 +4953,12 @@ function renderDev(){
 
   const gastoTotal = lista.reduce((a,d) => a + (parseFloat(d.total)||0), 0);
 
-  document.getElementById('devTotal').textContent    = DEVS.length;
-  document.getElementById('devRevender').textContent = DEVS.filter(d => d.situacao==='Revender').length;
-  document.getElementById('devDescarte').textContent = DEVS.filter(d => d.situacao==='Descarte'||d.situacao==='Reparo').length;
-  document.getElementById('devGastoTotal').textContent = 'R$ ' + gastoTotal.toLocaleString('pt-BR',{minimumFractionDigits:2});
-  document.getElementById('devCount').textContent    = lista.length + ' registro' + (lista.length!==1?'s':'');
+  const _set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  _set('devTotal',     DEVS.length);
+  _set('devRevender',  DEVS.filter(d => d.situacao==='Revender').length);
+  _set('devDescarte',  DEVS.filter(d => d.situacao==='Descarte'||d.situacao==='Reparo').length);
+  _set('devGastoTotal','R$ ' + gastoTotal.toLocaleString('pt-BR',{minimumFractionDigits:2}));
+  _set('devCount',     lista.length + ' registro' + (lista.length!==1?'s':''));
 
   const sc = { Revender:'badge-rev', Descarte:'badge-desc', Reparo:'badge-rep' };
   const mc = { ML:'b-blue', Amazon:'b-doing', Shopee:'b-shopee', TikTok:'b-tiktok', Magalu:'b-magalu' };
