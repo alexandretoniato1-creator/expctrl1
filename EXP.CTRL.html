@@ -3398,8 +3398,8 @@ async function renderDashSemana() {
   const { data: saidasSemana } = await _sb
     .from('saidas_hoje')
     .select('*')
-    .gte('created_at', seg.toISOString())
-    .lte('created_at', dom.toISOString());
+    .gte('inserted_at', seg.toISOString())
+    .lte('inserted_at', dom.toISOString());
 
   const saidas = saidasSemana || [];
   const totalSemana = saidas.length;
