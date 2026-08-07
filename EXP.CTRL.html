@@ -3297,7 +3297,7 @@ function renderDashboard() {
     const tbody = document.getElementById(tbodyId);
     tbody.innerHTML = lista.map(f => `
       <tr class="full-row" onclick="openDetail('${f.id}')">
-        <td style="font-family:'DM Mono',monospace;color:${f.'var(--logbox)'};font-size:11px">${f.id}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--logbox);font-size:11px">${f.id}</td>
         <td><span class="badge ${statusClass(f.status)}">${statusIcon(f.status)} ${f.status}</span></td>
         <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2)">${f.itens.filter(i=>i.status==='done').length}/${f.itens.length}</td>
         <td style="font-size:11px;color:var(--muted2)">${f.agendado}</td>
