@@ -3974,7 +3974,7 @@ function renderCal(){
       const weekStartCls = di===0?' week-start':'';
       const cards = fulls.map(f=>{
         const sc=statusCalClass(f.status);
-        const ec=f.'empresa-logbox';
+        const ec='empresa-logbox';
         return `<div class="cal-full-card ${sc}"
           draggable="true"
           ondragstart="onDragStart(event,'${f.id}')"
