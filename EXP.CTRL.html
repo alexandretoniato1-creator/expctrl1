@@ -3466,7 +3466,7 @@ async function renderDashSemana() {
 
   const lbConc = concluidosSemana.filter(f=>f.empresa==='LogBox').length;
   const fkConc = concluidosSemana.filter(f=>f.empresa==='LogBox').length;
-  subEl.textContent = `${concluidosSemana.length} total · ${LogBox`;
+  subEl.textContent = `${concluidosSemana.length} total · LogBox`;
 
   if (!concluidosSemana.length) {
     listaConEl.innerHTML = `<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px;font-family:'DM Mono',monospace">Nenhum Full concluído esta semana</div>`;
