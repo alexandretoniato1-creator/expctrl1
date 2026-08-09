@@ -3240,6 +3240,7 @@ function statusCalClass(s){return 'status-'+(s==='Em conferência'?'conferencia'
 function statusIcon(s){return s==='Pronto'?'✓':s==='Em conferência'?'◎':s==='Produzindo'?'⟳':s==='Atrasado'?'⚠':'·';}
 
 function renderDashboard() {
+  console.log('[OUTBOX] renderDashboard() chamado');
   const fulls = Object.values(FULLS_DATA);
   const hoje_str = new Date().toLocaleDateString('pt-BR');
   // mostra fulls de hoje ou, se não houver, os mais próximos (para o preview funcionar sempre)
@@ -4029,6 +4030,7 @@ function renderCal(){
 
   grid.innerHTML = html;
   grid.style.gridTemplateColumns = 'repeat(15,1fr)';
+  console.log('[OUTBOX] grid.innerHTML definido. Tamanho:', html.length, '| grid.offsetHeight:', grid.offsetHeight, '| grid.style.display:', grid.style.display, '| computedDisplay:', window.getComputedStyle(grid).display);
   // Atualiza lista mobile
   if(typeof renderCalMobile === 'function') renderCalMobile();
 }
