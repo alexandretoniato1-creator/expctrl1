@@ -1146,7 +1146,7 @@ select:focus{border-color:var(--accent)}
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.06)"></div>Pendente</div>
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(245,95,95,.12)"></div>Atrasado</div>
               </div>
-              <select id="calFiltroEmpresa" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="Logbox">LogBox</option></select>
+              <select id="calFiltroEmpresa" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">LogBox</option></select>
               <button class="btn btn-primary btn-sm" onclick="openModal('modalFull')">+ Novo Full</button>
             </div>
           </div>
@@ -1289,7 +1289,7 @@ select:focus{border-color:var(--accent)}
         <!-- ══ SAÍDAS ══ -->
         <div class="view" id="view-saidas">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end">
-            <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="Logbox">LogBox</option></select></div>
+            <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option></select></div>
             <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
           
@@ -1430,7 +1430,7 @@ select:focus{border-color:var(--accent)}
                 <button class="ins-tab-btn" id="insTab-historico" onclick="insSwitchTab('historico',this)">Histórico</button>
               </div>
               <select id="insGalpaoSelect" class="ins-mes-select" onchange="insRenderEstoque();insRenderMovimentacoes();insPopularFiltros()">
-                <option value="Logbox">LogBox</option>
+                <option value="LogBox">LogBox</option>
               </select>
               <select id="insMesSelect" class="ins-mes-select" onchange="insCarregarMes()"></select>
             </div>
@@ -1632,7 +1632,7 @@ select:focus{border-color:var(--accent)}
         <div class="view" id="view-catalogo">
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
-              <select id="catFiltroGalpao" onchange="renderCatalogo()" style="font-size:11px;padding:5px 8px"><option value="Logbox">LogBox</option></select>
+              <select id="catFiltroGalpao" onchange="renderCatalogo()" style="font-size:11px;padding:5px 8px"><option value="LogBox">LogBox</option></select>
               <input type="text" id="catBusca" placeholder="Buscar SKU ou descrição..." oninput="renderCatalogo()" style="width:200px;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
             </div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -1685,7 +1685,7 @@ select:focus{border-color:var(--accent)}
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
               <input type="text" id="enviadosBusca" placeholder="🔍 Buscar por ID, destino ou empresa..." oninput="renderEnviados()" style="width:280px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
-              <select id="enviadosFiltroEmpresa" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px"><option value="Logbox">LogBox</option></select>
+              <select id="enviadosFiltroEmpresa" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px"><option value="LogBox">LogBox</option></select>
               <select id="enviadosFiltroDestino" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px">
                 <option value="">Todos os destinos</option>
                 <option value="ML Cajamar/SP">ML Cajamar/SP</option>
@@ -1773,7 +1773,7 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title">Novo Full <button class="modal-close" onclick="closeModal('modalFull')">✕</button></div>
     <div class="form-grid">
       <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="nf-id" placeholder="FULL-070" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-      <div class="form-group"><label>Empresa</label><select class="form-sel" id="nf-empresa"><option value="Logbox">LogBox</option></select></div>
+      <div class="form-group"><label>Empresa</label><select class="form-sel" id="nf-empresa"><option value="LogBox">LogBox</option></select></div>
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
       <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date" id="nf-agendado"></div>
       <div class="form-group"><label>Responsável</label><select class="form-sel" id="nf-responsavel"><option>Edipo</option><option>Max</option></select></div>
@@ -1852,7 +1852,7 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title">👥 Funcionários <button class="modal-close" onclick="closeModal('modalFuncionarios')">✕</button></div>
     <div style="display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-bottom:14px;align-items:end">
       <div class="form-group" style="margin:0"><label>Nome</label><input class="form-sel" id="funcNome" type="text" placeholder="Ex: Carlos M." onkeydown="if(event.key==='Enter')adicionarFuncionario()"></div>
-      <div class="form-group" style="margin:0"><label>Empresa</label><select class="form-sel" id="funcEmpresa"><option value="Logbox">LogBox</option></select></div>
+      <div class="form-group" style="margin:0"><label>Empresa</label><select class="form-sel" id="funcEmpresa"><option value="LogBox">LogBox</option></select></div>
       <button class="btn btn-primary" onclick="adicionarFuncionario()" style="height:36px;padding:0 14px;align-self:end">+ Add</button>
     </div>
     <div id="funcLista" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto"></div>
@@ -1951,7 +1951,7 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title"><span id="skuModalTitle">Novo SKU</span><button class="modal-close" onclick="closeModal('modalSku')">✕</button></div>
     <div class="section-divider">Identificação</div>
     <div class="form-grid-3"><div class="form-group"><label>SKU *</label><input class="form-sel" id="sk-sku" type="text" placeholder="SKU-001"></div><div class="form-group span2"><label>Descrição *</label><input class="form-sel" id="sk-desc" type="text"></div></div>
-    <div class="form-grid"><div class="form-group"><label>EAN</label><input class="form-sel" id="sk-ean" type="text"></div><div class="form-group"><label>Galpão *</label><select class="form-sel" id="sk-galpao"><option value="">Selecione</option><option value="Logbox">LogBox</option></select></div></div>
+    <div class="form-grid"><div class="form-group"><label>EAN</label><input class="form-sel" id="sk-ean" type="text"></div><div class="form-group"><label>Galpão *</label><select class="form-sel" id="sk-galpao"><option value="">Selecione</option><option value="LogBox">LogBox</option></select></div></div>
     <div class="section-divider">Dimensões da caixa</div>
     <div class="form-grid-3"><div class="form-group"><label>C (cm)</label><input class="form-sel" id="sk-comp" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>L (cm)</label><input class="form-sel" id="sk-larg" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>A (cm)</label><input class="form-sel" id="sk-altu" type="number" oninput="calcSkuVol()"></div></div>
     <div class="form-grid"><div class="form-group"><label>Peso (kg)</label><input class="form-sel" id="sk-peso" type="number" step="0.01"></div><div class="form-group"><label>Volume (L)</label><input type="text" id="sk-vol" readonly style="color:var(--green)"></div></div>
@@ -2096,7 +2096,7 @@ select:focus{border-color:var(--accent)}
     <input type="hidden" id="insProdId">
     <div class="form-group" style="margin-bottom:12px">
       <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Galpão</label>
-      <select id="insProdGalpao" class="form-sel" style="width:100%;font-size:13px"><option value="Logbox">LogBox</option>
+      <select id="insProdGalpao" class="form-sel" style="width:100%;font-size:13px"><option value="LogBox">LogBox</option>
       </select>
     </div>
     <div class="form-group" style="margin-bottom:12px">
@@ -3951,7 +3951,7 @@ function renderCal(){
   const weeks = [0,1,2].map(w=>getWeekDates(calOffset+w));
   const firstDay = weeks[0][0], lastDay = weeks[2][4];
   document.getElementById('calWeekLabel').textContent = fmtDate(firstDay)+' – '+fmtDate(lastDay);
-  let lista = CAL_FULLS.filter(f=>!empresa||f.empresa===empresa);
+  let lista = CAL_FULLS.filter(f=>!empresa||f.empresa?.toLowerCase()===empresa.toLowerCase());
   document.getElementById('calWeekSub').textContent = lista.length+' fulls · 3 semanas · arraste para reagendar';
   const grid = document.getElementById('calGrid');
 
