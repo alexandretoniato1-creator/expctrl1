@@ -1124,8 +1124,18 @@ select:focus{border-color:var(--accent)}
               <table><thead><tr><th>ID Full</th><th>Status</th><th>Progresso</th><th>Agendado</th></tr></thead>
               <tbody id="tLogbox"></tbody></table>
             </div>
-            <div class="table-wrap">
-              
+          </div>
+
+          <!-- PAINEL DE STATUS (aparece quando clica nos cards) -->
+          <div id="dashStatusPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:700" id="dashStatusPanelTitle">Fulls</div>
+              <button onclick="dashFecharFiltro()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1">✕</button>
+            </div>
+            <div id="dashStatusLista" style="display:flex;flex-direction:column;gap:6px"></div>
+          </div>
+
+        </div>
 
         <!-- ══ FULLS (CALENDÁRIO) ══ -->
         <div class="view" id="view-fulls">
@@ -4302,10 +4312,6 @@ function renderRelatorio(){
               <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--green)">${sem.logbox.saidas}</div><div class="relatorio-stat-label">Saídas</div>${prev?delta(sem.logbox.saidas,prev.logbox.saidas):''}</div>
               <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--green)">${sem.logbox.flex}</div><div class="relatorio-stat-label">Flex</div></div>
             </div>
-          </div>
-          <div style="padding:12px 16px">
-            
-              <div class="relatorio-stat"><div class="relatorio-stat-val" style="color:var(--green)">            </div>
           </div>
         </div>
       </div>
