@@ -73,8 +73,8 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .btn-green{background:var(--green);color:#0a0a0a}.btn-green:hover{filter:brightness(1.1)}
 .btn-sm{padding:5px 11px;font-size:11px}
 .content-area{display:flex;flex:1;overflow:hidden;min-height:0}
-.content{padding:24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;min-height:0}
-.view{display:none}.view.active{display:flex;flex-direction:column;flex:1;min-height:0}
+.content{padding:24px;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+.view{display:none}.view.active{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
 
 /* DETAIL PANEL */
 .detail-panel{width:0;overflow:hidden;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:width .3s ease;flex-shrink:0}
@@ -645,13 +645,14 @@ select:focus{border-color:var(--accent)}
   .content-area{flex-direction:column;overflow:visible}
   .content{
     padding:14px 12px;
-    overflow:visible;
     flex:1;
     display:flex;
     flex-direction:column;
+    min-height:0;
+    overflow:hidden;
   }
   .view{display:none}
-  .view.active{display:flex;flex-direction:column;flex:1;min-height:0}
+  .view.active{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
 
   /* ── Detail panel: bottom sheet ───────────── */
   .detail-panel{
