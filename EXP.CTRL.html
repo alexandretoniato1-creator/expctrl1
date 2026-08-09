@@ -38,10 +38,10 @@ body.light-mode .btn-primary:hover{background:#218b3a}
 body.light-mode .theme-toggle::after{left:18px;background:var(--accent)}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;display:flex;flex-direction:column}
-.app{display:flex;flex-direction:row;flex:1;overflow:hidden;height:100vh}
+.app{display:grid;grid-template-columns:228px 1fr;flex:1;overflow:hidden;height:100vh}
 
 /* ── SIDEBAR ─────────────────────────────────── */
-.sidebar{width:228px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
+.sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
 .logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
 .logo-name{font-size:17px;font-weight:800;letter-spacing:-.5px;color:var(--text)}
 .logo-name span{color:var(--border2)}
@@ -59,7 +59,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
 /* ── MAIN ────────────────────────────────────── */
-.main{display:flex;flex-direction:column;overflow:hidden;min-height:0;flex:1}
+.main{display:flex;flex-direction:column;overflow:hidden}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0}
 .topbar-title{font-size:17px;font-weight:800;letter-spacing:-.5px;color:var(--text)}
 .topbar-title small{display:block;font-size:11px;font-weight:400;color:var(--muted2);margin-top:2px;letter-spacing:0}
@@ -72,9 +72,9 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted2)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
 .btn-green{background:var(--green);color:#0a0a0a}.btn-green:hover{filter:brightness(1.1)}
 .btn-sm{padding:5px 11px;font-size:11px}
-.content-area{display:flex;flex:1;overflow:hidden;min-height:0}
-.content{padding:24px;flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-.view{display:none}.view.active{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
+.content-area{display:flex;flex:1;overflow:hidden}
+.content{padding:24px;overflow-y:auto;flex:1}
+.view{display:none}.view.active{display:block}
 
 /* DETAIL PANEL */
 .detail-panel{width:0;overflow:hidden;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:width .3s ease;flex-shrink:0}
@@ -645,14 +645,11 @@ select:focus{border-color:var(--accent)}
   .content-area{flex-direction:column;overflow:visible}
   .content{
     padding:14px 12px;
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    min-height:0;
-    overflow:hidden;
+    overflow:visible;
+    flex:none;
   }
   .view{display:none}
-  .view.active{display:flex;flex-direction:column;flex:1;min-height:0;overflow-y:auto}
+  .view.active{display:block}
 
   /* ── Detail panel: bottom sheet ───────────── */
   .detail-panel{
@@ -2672,8 +2669,11 @@ function showPage(name) {
       const ap = document.querySelector('.app');
       const mn = document.querySelector('.main');
       const cg = document.getElementById('calGrid');
-      console.log('[HEIGHTS] app:', ap?.offsetHeight, '| main:', mn?.offsetHeight, '| content-area:', ca?.offsetHeight, '| content:', ct?.offsetHeight, '| view-fulls:', vf?.offsetHeight, '| calGrid:', cg?.offsetHeight);
-      console.log('[DISPLAY] app:', window.getComputedStyle(ap).display, '| main:', window.getComputedStyle(mn).display, '| view-fulls:', window.getComputedStyle(vf).display);
+      const ml = document.getElementById('calMobileList');
+      const wl = document.getElementById('calWeekLabel');
+      const hdr = vf?.firstElementChild;
+      console.log('[HEIGHTS] app:', ap?.offsetHeight, '| main:', mn?.offsetHeight, '| content-area:', ca?.offsetHeight, '| content:', ct?.offsetHeight, '| view-fulls:', vf?.offsetHeight, '| calGrid:', cg?.offsetHeight, '| calMobileList:', ml?.offsetHeight, '| header:', hdr?.offsetHeight, '| calWeekLabel:', wl?.offsetHeight);
+      console.log('[DISPLAY] app:', window.getComputedStyle(ap).display, '| calGrid:', window.getComputedStyle(cg).display, '| calMobileList:', ml?.style.display, '| isMobile:', isMobile(), '| w:', window.innerWidth);
     }, 100);
   }
   if (name==='volumetria') renderVolDia();
