@@ -59,7 +59,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
 /* ── MAIN ────────────────────────────────────── */
-.main{display:flex;flex-direction:column;overflow:hidden}
+.main{display:flex;flex-direction:column;overflow:hidden;height:100%}
 .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0}
 .topbar-title{font-size:17px;font-weight:800;letter-spacing:-.5px;color:var(--text)}
 .topbar-title small{display:block;font-size:11px;font-weight:400;color:var(--muted2);margin-top:2px;letter-spacing:0}
@@ -72,9 +72,9 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted2)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
 .btn-green{background:var(--green);color:#0a0a0a}.btn-green:hover{filter:brightness(1.1)}
 .btn-sm{padding:5px 11px;font-size:11px}
-.content-area{display:flex;flex:1;overflow:hidden}
-.content{padding:24px;overflow-y:auto;flex:1;display:flex;flex-direction:column}
-.view{display:none}.view.active{display:flex;flex-direction:column;flex:1;min-height:0}
+.content-area{display:flex;flex:1;overflow:hidden;height:100%}
+.content{padding:24px;overflow-y:auto;flex:1;display:flex;flex-direction:column;height:100%;box-sizing:border-box}
+.view{display:none}.view.active{display:flex;flex-direction:column;flex:1;min-height:0;height:100%}
 
 /* DETAIL PANEL */
 .detail-panel{width:0;overflow:hidden;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:width .3s ease;flex-shrink:0}
@@ -651,7 +651,7 @@ select:focus{border-color:var(--accent)}
     flex-direction:column;
   }
   .view{display:none}
-  .view.active{display:flex;flex-direction:column;flex:1;min-height:0}
+  .view.active{display:flex;flex-direction:column;flex:1;min-height:0;height:100%}
 
   /* ── Detail panel: bottom sheet ───────────── */
   .detail-panel{
