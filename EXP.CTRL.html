@@ -73,9 +73,8 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .btn-green{background:var(--green);color:#0a0a0a}.btn-green:hover{filter:brightness(1.1)}
 .btn-sm{padding:5px 11px;font-size:11px}
 .content-area{display:flex;flex:1;overflow:hidden}
-.content{padding:24px;overflow-y:auto;flex:1}
-.view{display:none}.view.active{display:block;min-height:200px}
-#view-fulls.active{min-height:calc(100vh - 120px)}
+.content{padding:24px;overflow-y:auto;flex:1;display:flex;flex-direction:column}
+.view{display:none}.view.active{display:flex;flex-direction:column;flex:1;min-height:0}
 
 /* DETAIL PANEL */
 .detail-panel{width:0;overflow:hidden;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:width .3s ease;flex-shrink:0}
@@ -254,7 +253,7 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 /* CALENDÁRIO */
 .cal-nav{background:var(--surface);border:1px solid var(--border2);color:var(--text);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .cal-nav:hover{background:var(--surface2)}
-.cal-grid{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;overflow-x:auto;min-height:160px}
+.cal-grid{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;overflow-x:auto;min-height:160px;flex:1}
 .cal-week-sep{grid-column:span 15;display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-bottom:2px}
 .cal-col{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;min-height:120px;transition:border-color .15s}
 .cal-col.today{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.01)}
@@ -647,10 +646,12 @@ select:focus{border-color:var(--accent)}
   .content{
     padding:14px 12px;
     overflow:visible;
-    flex:none;
+    flex:1;
+    display:flex;
+    flex-direction:column;
   }
   .view{display:none}
-  .view.active{display:block;min-height:200px}
+  .view.active{display:flex;flex-direction:column;flex:1;min-height:0}
 
   /* ── Detail panel: bottom sheet ───────────── */
   .detail-panel{
