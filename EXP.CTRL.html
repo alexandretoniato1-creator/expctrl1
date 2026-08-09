@@ -2196,6 +2196,7 @@ const db = {
       // Nota: pedidos arquivados (>2 meses) ficam em saidas_hist_pedidos_arquivo
       // e não são carregados no load inicial para manter o sistema ágil
 
+      console.log('[OUTBOX] Iniciando db.load()...');
       const [
         { data: fulls,             error: e1 },
         { data: calFulls,          error: e2 },
@@ -2225,8 +2226,13 @@ const db = {
       // busca paginada separada
       const { data: saidasHistPedidos, error: e8 } = await fetchAllPedidos();
 
+      console.log('[OUTBOX] db.load() concluído. Dados:', {
+        fulls: fulls?.length, calFulls: calFulls?.length,
+        saidas: saidasHoje?.length, skuDb: skuDb?.length
+      });
       const erros = [e1,e2,e3,e4,e5,e6,e7,e8,e9,e10,e11,e12].filter(Boolean);
       if (erros.length) {
+        console.error('[OUTBOX] ERROS no db.load():', erros);
         console.error('[OUTBOX] Erros ao carregar:', erros);
         showToast('⚠️ Erro ao conectar com o banco — verifique o console');
         return;
@@ -3959,6 +3965,7 @@ function getWeekNum(d){
   return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
 }
 function renderCal(){
+  console.log('[OUTBOX] renderCal() chamado. CAL_FULLS:', CAL_FULLS?.length, 'FULLS_DATA:', Object.keys(FULLS_DATA||{}).length);
   const empresa = document.getElementById('calFiltroEmpresa')?.value||'';
   // Build 3 weeks of dates
   const weeks = [0,1,2].map(w=>getWeekDates(calOffset+w));
