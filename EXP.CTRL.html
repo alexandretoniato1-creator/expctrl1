@@ -2643,7 +2643,20 @@ function showPage(name) {
   if (mt) mt.textContent = title;
   closeDetail();
   closeSidebar(); // fecha sidebar ao navegar em mobile
-  if (name==='fulls') { renderCal(); fecharFullDetalhe?.(); renderCalMobile(); }
+  if (name==='fulls') {
+    renderCal();
+    fecharFullDetalhe?.();
+    // Garante que o estado correto aparece independente do tamanho da janela
+    const _ml = document.getElementById('calMobileList');
+    const _cg = document.getElementById('calGrid');
+    if (isMobile()) {
+      if (_cg) _cg.style.display = 'none';
+      renderCalMobile();
+    } else {
+      if (_ml) _ml.style.display = 'none';
+      if (_cg) _cg.style.display = '';
+    }
+  }
   if (name==='volumetria') renderVolDia();
   if (name==='devolucoes') renderDev();
   if (name==='catalogo') renderCatalogo();
