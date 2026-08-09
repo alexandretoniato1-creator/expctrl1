@@ -2652,7 +2652,6 @@ function showPage(name) {
   if (name==='fulls') {
     renderCal();
     fecharFullDetalhe?.();
-    // Garante que o estado correto aparece independente do tamanho da janela
     const _ml = document.getElementById('calMobileList');
     const _cg = document.getElementById('calGrid');
     if (isMobile()) {
@@ -2662,6 +2661,17 @@ function showPage(name) {
       if (_ml) _ml.style.display = 'none';
       if (_cg) _cg.style.display = '';
     }
+    // Log da cadeia de alturas
+    setTimeout(() => {
+      const vf = document.getElementById('view-fulls');
+      const ca = document.querySelector('.content-area');
+      const ct = document.querySelector('.content');
+      const ap = document.querySelector('.app');
+      const mn = document.querySelector('.main');
+      const cg = document.getElementById('calGrid');
+      console.log('[HEIGHTS] app:', ap?.offsetHeight, '| main:', mn?.offsetHeight, '| content-area:', ca?.offsetHeight, '| content:', ct?.offsetHeight, '| view-fulls:', vf?.offsetHeight, '| calGrid:', cg?.offsetHeight);
+      console.log('[DISPLAY] app:', window.getComputedStyle(ap).display, '| main:', window.getComputedStyle(mn).display, '| view-fulls:', window.getComputedStyle(vf).display);
+    }, 100);
   }
   if (name==='volumetria') renderVolDia();
   if (name==='devolucoes') renderDev();
