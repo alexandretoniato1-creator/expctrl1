@@ -1318,10 +1318,9 @@ select:focus{border-color:var(--accent)}
               <span id="mlDepStatus" style="font-size:11px;color:var(--muted)"></span>
             </div>
 
-            <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+            <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
               <div class="card"><div class="card-label">SKUs com produto Full</div><div class="card-value" id="mlDepTotalSkus">—</div><div class="card-sub">catálogo verificado</div></div>
               <div class="card c-accent"><div class="card-label">Unidades no depósito ML</div><div class="card-value" id="mlDepTotalFull">—</div><div class="card-sub">Cajamar e outros CDs</div></div>
-              <div class="card"><div class="card-label">Unidades com você</div><div class="card-value" id="mlDepTotalProprio" style="font-size:22px">—</div><div class="card-sub">estoque próprio (ML)</div></div>
               <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Zerados no ML</div><div class="card-value" id="mlDepZerados" style="color:var(--red)">—</div><div class="card-sub">sem estoque no depósito</div></div>
             </div>
 
@@ -1332,8 +1331,8 @@ select:focus{border-color:var(--accent)}
               </div>
               <div style="overflow-x:auto">
                 <table>
-                  <thead><tr><th>SKU</th><th>Título</th><th>No depósito ML</th><th>Com você</th><th>Status</th></tr></thead>
-                  <tbody id="mlDepBody"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Clique em "↻ Atualizar" para carregar</td></tr></tbody>
+                  <thead><tr><th>SKU</th><th>Título</th><th>No depósito ML</th><th>Status</th></tr></thead>
+                  <tbody id="mlDepBody"><tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted)">Clique em "↻ Atualizar" para carregar</td></tr></tbody>
                 </table>
               </div>
             </div>
@@ -10301,7 +10300,7 @@ async function carregarMlDeposito(forcar) {
     if (status) status.textContent = '';
     renderMlDeposito();
   } catch(e) {
-    document.getElementById('mlDepBody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--red)">Erro: ${e.message}</td></tr>`;
+    document.getElementById('mlDepBody').innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--red)">Erro: ${e.message}</td></tr>`;
     if (status) status.textContent = '';
   } finally {
     if (btn) btn.disabled = false;
@@ -10316,7 +10315,6 @@ function renderMlDeposito() {
 
   document.getElementById('mlDepTotalSkus').textContent = produtos.length;
   document.getElementById('mlDepTotalFull').textContent = produtos.reduce((s,p) => s + (p.estoque_full||0), 0);
-  document.getElementById('mlDepTotalProprio').textContent = produtos.reduce((s,p) => s + (p.estoque_proprio||0), 0);
   document.getElementById('mlDepZerados').textContent = produtos.filter(p => (p.estoque_full||0) === 0).length;
 
   let lista = produtos;
@@ -10326,7 +10324,6 @@ function renderMlDeposito() {
 
   const linhas = lista.map(p => {
     const full = p.estoque_full || 0;
-    const proprio = p.estoque_proprio || 0;
     const statusBadge = full === 0
       ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red)">Zerado no ML</span>`
       : full <= 5
@@ -10337,10 +10334,9 @@ function renderMlDeposito() {
       <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:12px">${p.sku||'—'}</td>
       <td style="font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.title||''}">${p.title||'—'}</td>
       <td style="font-size:13px;font-weight:800">${full}</td>
-      <td style="font-size:13px;color:var(--muted2)">${proprio}</td>
       <td>${statusBadge}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nenhum produto encontrado</td></tr>';
+  }).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nenhum produto encontrado</td></tr>';
 
   document.getElementById('mlDepBody').innerHTML = linhas;
 }
