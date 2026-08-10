@@ -1621,20 +1621,33 @@ select:focus{border-color:var(--accent)}
                 <option value="3">Últimos 3 dias</option>
                 <option value="7">Últimos 7 dias</option>
               </select>
+              <input type="text" id="concBusca" placeholder="🔍 SKU, chave, pedido, cliente..." oninput="renderConciliacao()" style="width:220px;font-size:11px;padding:5px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+              <select id="concFiltroCanal" onchange="renderConciliacao()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todos os canais</option>
+                <option value="ML">Mercado Livre</option>
+                <option value="Amazon">Amazon</option>
+                <option value="Shopee">Shopee</option>
+                <option value="TikTok">TikTok Shop</option>
+                <option value="Magalu">Magalu</option>
+              </select>
+              <select id="concFiltroFunc" onchange="renderConciliacao()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todos funcionários</option>
+              </select>
               <button class="btn btn-ghost btn-sm" onclick="sincronizarMagis5Saidas()">🔄 Sincronizar vendas com Magis5</button>
               <span id="concStatus" style="font-size:11px;color:var(--muted)"></span>
             </div>
 
-            <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+            <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
               <div class="card"><div class="card-label">Vendas c/ NF no período</div><div class="card-value" id="concTotalVendas">—</div><div class="card-sub">Magis5</div></div>
               <div class="card" style="border-color:rgba(210,153,34,.3)"><div class="card-label">Vendas sem bipagem</div><div class="card-value" id="concSemBipagem" style="color:var(--orange)">—</div><div class="card-sub">saiu sem passar pela conferência</div></div>
               <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Bipagens sem venda</div><div class="card-value" id="concSemVenda" style="color:var(--red)">—</div><div class="card-sub">chave não encontrada no Magis5</div></div>
+              <div class="card"><div class="card-label">Valor em risco</div><div class="card-value" id="concValorRisco" style="font-size:16px;color:var(--red)">—</div><div class="card-sub">soma das vendas sem bipagem</div></div>
             </div>
 
             <div class="full-table-wrap" style="margin-bottom:16px">
               <div class="table-head"><div class="table-head-title">⚠️ Vendas no Magis5 sem bipagem correspondente</div></div>
               <div style="overflow-x:auto"><table>
-                <thead><tr><th>Chave NF</th><th>Pedido</th><th>Produto</th><th>Cliente</th><th>Canal</th><th>Data</th></tr></thead>
+                <thead><tr><th>Chave NF</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Canal</th><th>Data</th></tr></thead>
                 <tbody id="concSemBipagemBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Sincronize para carregar</td></tr></tbody>
               </table></div>
             </div>
@@ -2178,13 +2191,14 @@ select:focus{border-color:var(--accent)}
         <input type="text" id="detalheBusca" placeholder="🔍  Buscar número do pedido..." oninput="filtrarDetalheDia()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
         <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)" id="detalheContador">0 resultados</div>
       </div>
-      
+      <button class="btn btn-ghost btn-sm" onclick="enriquecerDetalheDia()" id="detalheEnriquecerBtn" style="white-space:nowrap">🔍 Enriquecer com Magis5</button>
     </div>
     <div style="max-height:340px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">#</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Nº do Pedido</th>
+          <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0" id="detalheThSku">SKU</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Canal</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Market</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Conta</th>
@@ -3423,7 +3437,7 @@ function switchSaidaTab(tab,btn){
     if(tab==='historico') renderSaidaHistorico(g);
     if(tab==='analise') renderSaidaAnalise(g);
   }
-  if(tab==='conciliacao') { garantirMagis5SaidasCarregado(false).then(renderConciliacao); }
+  if(tab==='conciliacao') { popularFiltroFuncConc(); garantirMagis5SaidasCarregado(false).then(renderConciliacao); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -4910,6 +4924,8 @@ async function fecharDiaSaidas(){
 // DETALHE DIA SAÍDAS
 // ══════════════════════════════════════════════════════
 function abrirDetalheDia(data,galpao){
+  window._detalheDiaEnriquecido = false;
+  const btnEnr = document.getElementById('detalheEnriquecerBtn'); if (btnEnr) { btnEnr.disabled = false; btnEnr.textContent = '🔍 Enriquecer com Magis5'; }
   const hist=SAIDAS_HIST.find(h=>h.data===data&&h.galpao===galpao);if(!hist)return;
   const hoje=new Date().toLocaleDateString('pt-BR');
   const chave=data+'_'+galpao;
@@ -5005,17 +5021,26 @@ function filtrarDetalheDia(){
 
 function renderDetalheTabela(lista){
   const CONTA_COLOR = { Logbox:'var(--logbox)' };
+  const enriquecido = window._detalheDiaEnriquecido;
   const tbody=document.getElementById('detalheBody');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
+  if(!lista.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
   tbody.innerHTML=lista.map((p,i)=>{
     const cc = CONTA_COLOR[p.conta]||'';
     const contaCell = p.conta
       ? `<span style="padding:1px 8px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;color:${cc};background:${cc}18;border:1px solid ${cc}33">${p.conta}</span>`
       : '<span style="color:var(--muted);font-size:10px">—</span>';
+    let skuCell = '<span style="color:var(--muted);font-size:10px">—</span>';
+    if (enriquecido) {
+      const pedido = (window._magis5SaidasIndex||{})[p.num];
+      skuCell = pedido
+        ? `<span style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px;cursor:pointer" onclick="abrirDetalheVendaBipada('${p.num}')">${pedido.sku||'—'}</span>`
+        : `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px">✕ sem match</span>`;
+    }
     return `
     <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${i+1}</td>
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:12px;font-weight:600">${p.num}</td>
+      <td style="padding:8px 11px">${skuCell}</td>
       <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
       <td style="padding:8px 11px"><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[p.market]||'b-pending'}">${p.market}</span></td>
       <td style="padding:8px 11px">${contaCell}</td>
@@ -5024,6 +5049,20 @@ function renderDetalheTabela(lista){
       <td style="padding:4px 8px">${p._id?`<button class="btn-danger-sm" style="font-size:10px" onclick="excluirPedidoHist(${p._id})">✕</button>`:''}</td>
     </tr>`;
   }).join('');
+}
+
+async function enriquecerDetalheDia() {
+  const btn = document.getElementById('detalheEnriquecerBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Buscando no Magis5...'; }
+  try {
+    await garantirMagis5SaidasCarregado(false);
+    window._detalheDiaEnriquecido = true;
+    if (btn) btn.textContent = '✓ Enriquecido';
+    filtrarDetalheDia();
+  } catch(e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Enriquecer com Magis5'; }
+    alert('Erro ao enriquecer: ' + e.message);
+  }
 }
 async function excluirPedidoHist(pedidoId){
   if(!confirm('Excluir este pedido do histórico?')) return;
@@ -10471,7 +10510,7 @@ window._magis5SaidasLista = [];
 async function garantirMagis5SaidasCarregado(forcar) {
   if (window._magis5SaidasSincronizado && !forcar) return;
   try {
-    const r = await fetch(`${SAIDAS_MAGIS5_API}?dias=7`, { cache: 'no-store' });
+    const r = await fetch(`${SAIDAS_MAGIS5_API}?dias=3`, { cache: 'no-store' });
     const d = await r.json();
     if (d.erro) throw new Error(d.erro);
     window._magis5SaidasLista = d.pedidos || [];
@@ -10493,7 +10532,7 @@ async function sincronizarMagis5Saidas() {
   try {
     const r = await fetch(SAIDAS_MAGIS5_API, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ horas: 168 }) // 7 dias
+      body: JSON.stringify({ horas: 72 }) // 3 dias — equilíbrio entre cobertura e leveza
     });
     const d = await r.json();
     if (d.erro) throw new Error(d.erro);
@@ -10542,40 +10581,87 @@ function abrirDetalheVendaBipada(chave) {
   modal.style.display = 'flex';
 }
 
+// Gera as chaves data_galpao (DD/MM/AAAA_Galpao) dos últimos N dias, pra filtrar
+// SAIDAS_HIST_PEDIDOS sem varrer os 29 mil registros inteiros
+function _chavesDiasRecentes(dias) {
+  const chaves = [];
+  const galpao = document.getElementById('saidaGalpao')?.value || 'LogBox';
+  for (let i = 0; i < dias + 1; i++) {
+    const d = new Date(Date.now() - i * 86400000);
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const aaaa = d.getFullYear();
+    chaves.push(`${dd}/${mm}/${aaaa}_${galpao}`);
+  }
+  return chaves;
+}
+
+function popularFiltroFuncConc() {
+  const sel = document.getElementById('concFiltroFunc');
+  if (!sel) return;
+  const nomes = new Set();
+  FUNCIONARIOS_DATA.forEach(f => { if (f.nome) nomes.add(f.nome); });
+  sel.innerHTML = '<option value="">Todos funcionários</option>' + [...nomes].sort().map(n => `<option value="${n}">${n}</option>`).join('');
+}
+
 function renderConciliacao() {
   const dias = parseInt(document.getElementById('concPeriodo')?.value || '1');
+  const busca = (document.getElementById('concBusca')?.value || '').toLowerCase().trim();
+  const fCanal = document.getElementById('concFiltroCanal')?.value || '';
+  const fFunc = document.getElementById('concFiltroFunc')?.value || '';
   const limite = Date.now() - dias * 86400000;
+
+  // Só processa o histórico dos dias relevantes — não os 29 mil registros inteiros
+  const chavesDias = _chavesDiasRecentes(dias);
+  const pedidosHistJanela = chavesDias.flatMap(k => SAIDAS_HIST_PEDIDOS[k] || []);
 
   const vendas = (window._magis5SaidasLista||[]).filter(p => new Date(p.data_pedido).getTime() >= limite);
   const chavesBipadas = new Set([
     ...SAIDAS_HOJE.map(s => s.num),
-    ...Object.values(SAIDAS_HIST_PEDIDOS||{}).flat().map(p => p.numero || p.num).filter(Boolean),
+    ...pedidosHistJanela.map(p => p.numero || p.num).filter(Boolean),
   ]);
 
-  const vendasSemBipagem = vendas.filter(v => !chavesBipadas.has(v.chave_nf));
+  let vendasSemBipagem = vendas.filter(v => !chavesBipadas.has(v.chave_nf));
 
   const todasBipagens = [
     ...SAIDAS_HOJE,
-    ...Object.values(SAIDAS_HIST_PEDIDOS||{}).flat().map(p => ({ num: p.numero||p.num, canal: p.canal, market: p.market, funcionario: p.funcionario, hora: p.hora })),
+    ...pedidosHistJanela.map(p => ({ num: p.numero||p.num, canal: p.canal, market: p.market, funcionario: p.funcionario, hora: p.hora })),
   ];
   const chavesVendas = new Set((window._magis5SaidasLista||[]).map(v => v.chave_nf));
-  const bipagensSemVenda = todasBipagens.filter(b => b.num && !chavesVendas.has(b.num));
+  let bipagensSemVenda = todasBipagens.filter(b => b.num && !chavesVendas.has(b.num));
+
+  // Filtros
+  if (busca) {
+    vendasSemBipagem = vendasSemBipagem.filter(v => (v.sku||'').toLowerCase().includes(busca) || (v.chave_nf||'').toLowerCase().includes(busca) || (v.order_id||'').toLowerCase().includes(busca) || (v.cliente||'').toLowerCase().includes(busca));
+    bipagensSemVenda = bipagensSemVenda.filter(b => (b.num||'').toLowerCase().includes(busca));
+  }
+  if (fCanal) {
+    vendasSemBipagem = vendasSemBipagem.filter(v => v.canal === fCanal);
+    bipagensSemVenda = bipagensSemVenda.filter(b => b.market === fCanal);
+  }
+  if (fFunc) bipagensSemVenda = bipagensSemVenda.filter(b => b.funcionario === fFunc);
 
   document.getElementById('concTotalVendas').textContent = vendas.length;
   document.getElementById('concSemBipagem').textContent = vendasSemBipagem.length;
   document.getElementById('concSemVenda').textContent = bipagensSemVenda.length;
+  const valorRisco = vendasSemBipagem.reduce((s,v) => s + (v.valor||0), 0);
+  const elValor = document.getElementById('concValorRisco');
+  if (elValor) elValor.textContent = 'R$ ' + valorRisco.toLocaleString('pt-BR',{minimumFractionDigits:2});
 
-  document.getElementById('concSemBipagemBody').innerHTML = vendasSemBipagem.map(v => `
+  // Limita renderização a 150 linhas por tabela — evita travar com listas grandes
+  const LIMITE_LINHAS = 150;
+
+  document.getElementById('concSemBipagemBody').innerHTML = vendasSemBipagem.slice(0, LIMITE_LINHAS).map(v => `
     <tr>
       <td style="font-family:'DM Mono',monospace;font-size:10px">${(v.chave_nf||'').slice(-8)}</td>
       <td style="font-size:11px">${v.order_id||'—'}</td>
-      <td style="font-size:11px">${v.produto||'—'}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${v.sku||'—'}</td>
       <td style="font-size:11px">${v.cliente||'—'}</td>
       <td style="font-size:11px">${v.canal||'—'}</td>
       <td style="font-size:10px;color:var(--muted)">${v.data_pedido ? new Date(v.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
     </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--green)">✓ Todas as vendas foram bipadas</td></tr>';
 
-  document.getElementById('concSemVendaBody').innerHTML = bipagensSemVenda.map(b => `
+  document.getElementById('concSemVendaBody').innerHTML = bipagensSemVenda.slice(0, LIMITE_LINHAS).map(b => `
     <tr>
       <td style="font-family:'DM Mono',monospace;font-size:10px">${(b.num||'').slice(-8)}</td>
       <td style="font-size:11px">${b.canal||'—'}</td>
@@ -10583,6 +10669,11 @@ function renderConciliacao() {
       <td style="font-size:11px">${b.funcionario||'—'}</td>
       <td style="font-size:10px;color:var(--muted)">${b.hora||'—'}</td>
     </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--green)">✓ Todas as bipagens têm venda correspondente</td></tr>';
+
+  const avisoLimite1 = vendasSemBipagem.length > LIMITE_LINHAS ? `<tr><td colspan="6" style="text-align:center;padding:8px;color:var(--muted);font-size:10px">+ ${vendasSemBipagem.length - LIMITE_LINHAS} outras — refine a busca ou filtro pra ver mais</td></tr>` : '';
+  if (avisoLimite1) document.getElementById('concSemBipagemBody').innerHTML += avisoLimite1;
+  const avisoLimite2 = bipagensSemVenda.length > LIMITE_LINHAS ? `<tr><td colspan="5" style="text-align:center;padding:8px;color:var(--muted);font-size:10px">+ ${bipagensSemVenda.length - LIMITE_LINHAS} outras — refine a busca ou filtro pra ver mais</td></tr>` : '';
+  if (avisoLimite2) document.getElementById('concSemVendaBody').innerHTML += avisoLimite2;
 }
 
 // ═══════════════════════════════════════════════════════
