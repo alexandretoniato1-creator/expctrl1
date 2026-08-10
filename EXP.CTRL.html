@@ -1139,6 +1139,13 @@ select:focus{border-color:var(--accent)}
 
         <!-- ══ FULLS (CALENDÁRIO) ══ -->
         <div class="view" id="view-fulls">
+          <!-- Sub-abas -->
+          <div class="saida-tabs" style="margin-bottom:14px">
+            <button class="saida-tab active" id="fullsTab-agenda" onclick="switchFullsTab('agenda',this)">📅 Agenda</button>
+            <button class="saida-tab" id="fullsTab-estoque" onclick="switchFullsTab('estoque',this)">📦 Estoque Full</button>
+          </div>
+
+          <div id="fullsPane-agenda">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
             <div style="display:flex;align-items:center;gap:10px">
               <button class="cal-nav" onclick="calWeekOffset(-1)">‹</button>
@@ -1202,6 +1209,57 @@ select:focus{border-color:var(--accent)}
               <button class="btn-danger-sm" style="font-size:11px;padding:5px 12px" onclick="excluirFull(window._fdFullId)">🗑 Excluir</button>
             </div>
           </div>
+          </div><!-- /fullsPane-agenda -->
+
+          <!-- ══ SUB-ABA: ESTOQUE FULL ══ -->
+          <div id="fullsPane-estoque" style="display:none">
+
+            <!-- Cards de resumo -->
+            <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+              <div class="card"><div class="card-label">SKUs no espaço Full</div><div class="card-value" id="efSkusTotal">—</div><div class="card-sub">pré-etiquetados</div></div>
+              <div class="card c-accent"><div class="card-label">Solicitações pendentes</div><div class="card-value" id="efPendentes">—</div><div class="card-sub">aguardando separação</div></div>
+              <div class="card" style="border-color:rgba(63,185,80,.3)"><div class="card-label">Separadas</div><div class="card-value" id="efSeparadas" style="color:var(--green)">—</div><div class="card-sub">aguardando entrega</div></div>
+              <div class="card" style="border-color:rgba(210,153,34,.3)"><div class="card-label">Aguard. baixa Magis5</div><div class="card-value" id="efAguardBaixa" style="color:var(--orange)">—</div><div class="card-sub">saiu mas não confirmou</div></div>
+            </div>
+
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="abrirNovaSolicitacaoFull()">+ Solicitar estoque para o Full</button>
+              <button class="btn btn-ghost btn-sm" onclick="carregarEstoqueFull(true)" id="efReloadBtn">↻ Atualizar</button>
+              <button class="btn btn-ghost btn-sm" onclick="efSincronizarEspelho()" id="efSyncBtn">🔄 Sincronizar estoque principal com Magis5</button>
+              <span id="efSyncStatus" style="font-size:11px;color:var(--muted);align-self:center"></span>
+            </div>
+
+            <!-- Seção 0: Estoque Principal (espelho do Magis5) -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">🏭 Estoque Principal — espelho do Magis5</div>
+                <div style="font-size:10px;color:var(--muted)" id="efEspelhoAtualizadoEm"></div>
+              </div>
+              <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--muted)">
+                ℹ️ Este é um espelho — só atualiza quando você clica em "Sincronizar". Vendas normais no Magis5 não refletem aqui automaticamente. Ao confirmar uma entrega no Full, este saldo é descontado localmente.
+              </div>
+              <div id="efEspelhoBody"></div>
+            </div>
+
+            <!-- Seção 1: Fila de solicitações -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">📋 Fila de solicitações (Max → Edipo)</div>
+              <div id="efFilaBody"></div>
+            </div>
+
+            <!-- Seção 2: Saldo atual no espaço Full -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
+              <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">📦 Saldo no espaço Full (pré-etiquetagem)</div>
+              <div id="efSaldoBody"></div>
+            </div>
+
+            <!-- Seção 3: Saiu do galpão — aguardando baixa Magis5 -->
+            <div style="background:var(--surface);border:1px solid rgba(210,153,34,.3);border-radius:12px;padding:18px">
+              <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:12px">⚠️ Saiu do galpão — confirmar baixa no Magis5</div>
+              <div id="efBaixaBody"></div>
+            </div>
+
+          </div><!-- /fullsPane-estoque -->
         </div>
 
         <!-- ══ VOLUMETRIA ══ -->
@@ -10165,6 +10223,234 @@ window.showPage = function(name){
   if(_origShowPageKpi) _origShowPageKpi(name);
 };
 })();
+
+// ═══════════════════════════════════════════════════════
+// ESTOQUE FULL — Solicitações Max ↔ Edipo + saldo pré-etiquetagem
+// ═══════════════════════════════════════════════════════
+const FULL_ESTOQUE_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/full-estoque';
+let _efDados = null;
+
+function switchFullsTab(tab, btn) {
+  document.querySelectorAll('#fullsTab-agenda,#fullsTab-estoque').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('fullsPane-agenda').style.display  = tab==='agenda'  ? '' : 'none';
+  document.getElementById('fullsPane-estoque').style.display = tab==='estoque' ? '' : 'none';
+  if (tab === 'estoque') carregarEstoqueFull(false);
+}
+
+async function carregarEstoqueFull(forcar) {
+  if (_efDados && !forcar) { renderEstoqueFull(); return; }
+  const btn = document.getElementById('efReloadBtn');
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch(FULL_ESTOQUE_API, { cache: 'no-store' });
+    _efDados = await r.json();
+    if (_efDados.erro) throw new Error(_efDados.erro);
+    renderEstoqueFull();
+  } catch(e) {
+    document.getElementById('efFilaBody').innerHTML = `<p style="color:var(--red);font-size:12px">Erro ao carregar: ${e.message}</p>`;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderEstoqueFull() {
+  if (!_efDados) return;
+  const { solicitacoes = [], saldo = [], espelho = [] } = _efDados;
+
+  const pendentes  = solicitacoes.filter(s => s.status === 'pendente');
+  const separadas  = solicitacoes.filter(s => s.status === 'separado');
+  const entregues  = solicitacoes.filter(s => s.status === 'entregue');
+  const saiuSemBaixa = solicitacoes.filter(s => s.status === 'saiu' && !s.baixa_magis_confirmada);
+
+  document.getElementById('efSkusTotal').textContent  = saldo.filter(s => s.quantidade > 0).length;
+  document.getElementById('efPendentes').textContent  = pendentes.length;
+  document.getElementById('efSeparadas').textContent  = separadas.length;
+  document.getElementById('efAguardBaixa').textContent = saiuSemBaixa.length;
+
+  // Espelho do estoque principal
+  const espelhoOrdenado = [...espelho].sort((a,b) => (a.sku||'').localeCompare(b.sku||''));
+  const ultimaSync = espelho.reduce((max, e) => {
+    const t = new Date(e.sincronizado_em).getTime();
+    return t > max ? t : max;
+  }, 0);
+  document.getElementById('efEspelhoAtualizadoEm').textContent = ultimaSync
+    ? 'Última sincronização: ' + new Date(ultimaSync).toLocaleString('pt-BR')
+    : 'Ainda não sincronizado';
+  const espelhoHtml = espelhoOrdenado.map(e => {
+    const baixo = e.quantidade <= 5;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)">
+      <div style="font-size:12px"><span style="font-family:'DM Mono',monospace;color:var(--accent)">${e.sku}</span> ${e.produto ? '— '+e.produto : ''}</div>
+      <span style="font-size:13px;font-weight:800;color:${baixo?'var(--red)':'var(--text)'}">${e.quantidade} un</span>
+    </div>`;
+  }).join('') || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Clique em "Sincronizar" para trazer o estoque do Magis5.</p>';
+  document.getElementById('efEspelhoBody').innerHTML = espelhoHtml;
+
+  const filaAtiva = [...pendentes, ...separadas].sort((a,b) => new Date(a.solicitado_em) - new Date(b.solicitado_em));
+  const filaHtml = filaAtiva.map(s => {
+    const dataStr = new Date(s.solicitado_em).toLocaleDateString('pt-BR');
+    const statusBadge = s.status === 'pendente'
+      ? `<span class="badge b-pending">Aguardando separação</span>`
+      : `<span class="badge b-blue">Separado — aguard. entrega</span>`;
+    const acaoBtn = s.status === 'pendente'
+      ? `<button class="btn btn-primary btn-sm" onclick="efSepararSolicitacao(${s.id})">✓ Separar (Edipo)</button>`
+      : `<button class="btn btn-primary btn-sm" onclick="efConfirmarEntrega(${s.id})">✓ Confirmar entrega no Full (Max)</button>`;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2)">
+      <div>
+        <div style="font-size:13px;font-weight:700">${s.sku} ${s.produto ? '— '+s.produto : ''}</div>
+        <div style="font-size:11px;color:var(--muted)">Qtd: ${s.quantidade} · Pedido em ${dataStr} por ${s.solicitado_por}${s.full_id ? ' · Full '+s.full_id : ' · avulsa'}</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">${statusBadge}${acaoBtn}</div>
+    </div>`;
+  }).join('') || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Nenhuma solicitação em aberto.</p>';
+  document.getElementById('efFilaBody').innerHTML = filaHtml;
+
+  const saldoAtivo = saldo.filter(s => s.quantidade > 0).sort((a,b) => b.quantidade - a.quantidade);
+  const saldoHtml = saldoAtivo.map(s => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)">
+      <div style="font-size:12px"><span style="font-family:'DM Mono',monospace;color:var(--accent)">${s.sku}</span> ${s.produto ? '— '+s.produto : ''}</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:14px;font-weight:800">${s.quantidade} un</span>
+        <button class="btn btn-ghost btn-sm" onclick="efMarcarSaida('${s.sku.replace(/'/g,"\\'")}', ${s.quantidade})">📤 Saiu p/ ML</button>
+      </div>
+    </div>`).join('') || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Nenhum estoque no espaço Full no momento.</p>';
+  document.getElementById('efSaldoBody').innerHTML = saldoHtml;
+
+  const baixaHtml = saiuSemBaixa.map(s => {
+    const dataStr = s.saiu_em ? new Date(s.saiu_em).toLocaleDateString('pt-BR') : '—';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border2)">
+      <div>
+        <div style="font-size:13px;font-weight:700">${s.sku} ${s.produto ? '— '+s.produto : ''}</div>
+        <div style="font-size:11px;color:var(--muted)">Qtd: ${s.quantidade} · Saiu do galpão em ${dataStr}</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:700;color:var(--orange)">
+        <input type="checkbox" onchange="if(this.checked)efConfirmarBaixaMagis(${s.id})" style="width:18px;height:18px;cursor:pointer">
+        Dei baixa no Magis5
+      </label>
+    </div>`;
+  }).join('') || '<p style="color:var(--green);font-size:12px;padding:8px 0">✓ Tudo em dia — nenhuma baixa pendente.</p>';
+  document.getElementById('efBaixaBody').innerHTML = baixaHtml;
+}
+
+function abrirNovaSolicitacaoFull() {
+  let modal = document.getElementById('efModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'efModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;width:440px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <span style="font-weight:800;font-size:16px">+ Solicitar estoque para o Full</span>
+      <button onclick="document.getElementById('efModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">SKU</label>
+        <input id="ef_sku" placeholder="Ex: VA-BA02" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Produto (opcional)</label>
+        <input id="ef_produto" placeholder="Nome do produto" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Quantidade</label>
+        <input id="ef_qtd" type="number" min="1" placeholder="0" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Vincular a um Full existente? (opcional)</label>
+        <input id="ef_fullid" placeholder="ID do Full, ex: 8.2.4-L" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+      </div>
+      <button onclick="efCriarSolicitacao()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer">Solicitar</button>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+}
+
+async function efCriarSolicitacao() {
+  const sku = document.getElementById('ef_sku')?.value?.trim();
+  const produto = document.getElementById('ef_produto')?.value?.trim();
+  const quantidade = parseInt(document.getElementById('ef_qtd')?.value || '0');
+  const full_id = document.getElementById('ef_fullid')?.value?.trim() || null;
+  if (!sku || !quantidade) { alert('Preencha SKU e quantidade.'); return; }
+  try {
+    const r = await fetch(FULL_ESTOQUE_API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sku, produto, quantidade, full_id, solicitado_por: 'Max' })
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    document.getElementById('efModal')?.remove();
+    await carregarEstoqueFull(true);
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function efPatch(id, acao, payload) {
+  const r = await fetch(FULL_ESTOQUE_API, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id, acao, payload })
+  });
+  const d = await r.json();
+  if (d.erro) throw new Error(d.erro);
+  return d;
+}
+
+async function efSepararSolicitacao(id) {
+  try { await efPatch(id, 'separar', { separado_por: 'Edipo' }); await carregarEstoqueFull(true); }
+  catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function efConfirmarEntrega(id) {
+  try { await efPatch(id, 'confirmar_entrega'); await carregarEstoqueFull(true); }
+  catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function efMarcarSaida(sku, quantidadeMax) {
+  const qtdStr = prompt(`Quantas unidades de ${sku} saíram do galpão rumo ao ML?`, quantidadeMax);
+  if (!qtdStr) return;
+  const qtd = parseInt(qtdStr);
+  if (!qtd || qtd <= 0) return;
+  try {
+    const rNova = await fetch(FULL_ESTOQUE_API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sku, quantidade: qtd, solicitado_por: 'Max' })
+    });
+    const nova = await rNova.json();
+    if (nova.erro) throw new Error(nova.erro);
+    await efPatch(nova.id, 'marcar_saida');
+    await carregarEstoqueFull(true);
+  } catch(e) { alert('Erro: ' + e.message); }
+}
+
+async function efSincronizarEspelho() {
+  const btn = document.getElementById('efSyncBtn');
+  const status = document.getElementById('efSyncStatus');
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = 'Sincronizando com Magis5...';
+  try {
+    const r = await fetch(FULL_ESTOQUE_API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'sincronizar_espelho' })
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    if (status) status.textContent = `✓ ${d.sincronizados}/${d.total} SKUs sincronizados`;
+    await carregarEstoqueFull(true);
+  } catch(e) {
+    if (status) status.textContent = 'Erro: ' + e.message;
+  } finally {
+    if (btn) btn.disabled = false;
+    setTimeout(() => { if (status) status.textContent = ''; }, 5000);
+  }
+}
+
+async function efConfirmarBaixaMagis(id) {
+  try { await efPatch(id, 'confirmar_baixa_magis', { por: 'Max' }); await carregarEstoqueFull(true); }
+  catch(e) { alert('Erro: ' + e.message); }
+}
+
 </script>
 
 </body>
