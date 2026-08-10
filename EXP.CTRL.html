@@ -1287,23 +1287,38 @@ select:focus{border-color:var(--accent)}
 
           <!-- ══ SUB-ABA: ESTOQUE PRINCIPAL (ESPELHO) ══ -->
           <div id="fullsPane-espelho" style="display:none">
+            <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:var(--muted)">
+              ℹ️ Este é um espelho — só atualiza quando você clica em "Sincronizar". Vendas normais no Magis5 não refletem aqui automaticamente. Ao confirmar uma entrega no Full, este saldo é descontado localmente.
+            </div>
+
             <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+              <input type="text" id="efEspelhoBusca" placeholder="🔍 Buscar SKU ou produto..." oninput="renderEstoqueFull()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+                <input type="checkbox" id="efFiltroPositivo" checked onchange="renderEstoqueFull()" style="width:15px;height:15px;cursor:pointer">
+                Só com estoque positivo
+              </label>
               <button class="btn btn-ghost btn-sm" onclick="efSincronizarEspelho()" id="efSyncBtn">🔄 Sincronizar com Magis5</button>
               <span id="efSyncStatus" style="font-size:11px;color:var(--muted)"></span>
-              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-left:auto;cursor:pointer">
-                <input type="checkbox" id="efFiltroPositivo" checked onchange="renderEstoqueFull()" style="width:15px;height:15px;cursor:pointer">
-                Mostrar só com estoque positivo
-              </label>
+              <span id="efEspelhoAtualizadoEm" style="font-size:10px;color:var(--muted);margin-left:auto"></span>
             </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">🏭 Estoque Principal — espelho do Magis5</div>
-                <div style="font-size:10px;color:var(--muted)" id="efEspelhoAtualizadoEm"></div>
+
+            <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+              <div class="card"><div class="card-label">SKUs cadastrados</div><div class="card-value" id="efEspSkusTotal">—</div><div class="card-sub">catálogo Magis5</div></div>
+              <div class="card c-accent"><div class="card-label">Unidades no estoque principal</div><div class="card-value" id="efEspUnidadesTotal">—</div><div class="card-sub">soma de todos os SKUs</div></div>
+              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Estoque baixo</div><div class="card-value" id="efEspBaixos" style="color:var(--red)">—</div><div class="card-sub">≤ 5 unidades</div></div>
+            </div>
+
+            <div class="full-table-wrap">
+              <div class="table-head">
+                <div class="table-head-title">Estoque Principal — por SKU</div>
+                <span style="font-size:10px;color:var(--muted)">espelho sincronizado do Magis5</span>
               </div>
-              <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--muted)">
-                ℹ️ Este é um espelho — só atualiza quando você clica em "Sincronizar". Vendas normais no Magis5 não refletem aqui automaticamente. Ao confirmar uma entrega no Full, este saldo é descontado localmente.
+              <div style="overflow-x:auto">
+                <table>
+                  <thead><tr><th>SKU</th><th>Produto</th><th>Quantidade</th><th>Status</th></tr></thead>
+                  <tbody id="efEspelhoBody"><tr><td colspan="4" style="text-align:center;padding:30px;color:var(--muted)">Clique em "Sincronizar com Magis5" para carregar</td></tr></tbody>
+                </table>
               </div>
-              <div id="efEspelhoBody"></div>
             </div>
           </div><!-- /fullsPane-espelho -->
 
@@ -1491,6 +1506,11 @@ select:focus{border-color:var(--accent)}
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+            <button class="btn btn-ghost btn-sm" onclick="sincronizarMagis5Saidas()" id="saidasSyncBtn">🔄 Sincronizar vendas com Magis5</button>
+            <span id="saidasSyncStatus" style="font-size:11px;color:var(--muted)"></span>
+            <span id="saidasSyncUltima" style="font-size:10px;color:var(--muted);margin-left:auto"></span>
+          </div>
           <div style="background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
             <div style="flex:1">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
@@ -1533,6 +1553,7 @@ select:focus{border-color:var(--accent)}
             <button class="saida-tab active" onclick="switchSaidaTab('hoje',this)">Hoje</button>
             <button class="saida-tab" onclick="switchSaidaTab('historico',this)">Histórico semanal</button>
             <button class="saida-tab" onclick="switchSaidaTab('analise',this)">Análise</button>
+            <button class="saida-tab" onclick="switchSaidaTab('conciliacao',this)">🔗 Conciliação</button>
           </div>
           <div id="saidaTab-hoje">
             <div class="full-table-wrap">
@@ -1559,7 +1580,7 @@ select:focus{border-color:var(--accent)}
                   <button class="btn-danger-sm" onclick="limparSaidaHoje()">🗑 Limpar</button>
                 </div>
               </div>
-              <table><thead><tr><th>#</th><th>Nº da Venda</th><th>Canal</th><th>Marketplace</th><th>Conta</th><th>Funcionário</th><th>Galpão</th><th>Hora</th><th></th></tr></thead>
+              <table><thead><tr><th>#</th><th>Nº da Venda</th><th>Produto</th><th>Canal</th><th>Marketplace</th><th>Conta</th><th>Funcionário</th><th>Galpão</th><th>Hora</th><th></th></tr></thead>
               <tbody id="saidaBody"></tbody></table>
               <div class="saida-mobile-list" id="saidaMobileList" style="display:none"></div>
             </div>
@@ -1589,6 +1610,41 @@ select:focus{border-color:var(--accent)}
               <div style="font-size:13px;font-weight:700;margin-bottom:12px">Volume por dia</div>
               <div id="sBarChart" style="display:flex;align-items:flex-end;gap:6px;height:110px"></div>
               <div id="sBarLabels" style="display:flex;gap:6px;margin-top:5px"></div>
+            </div>
+          </div>
+
+          <!-- ── SUB-ABA: CONCILIAÇÃO ── -->
+          <div id="saidaTab-conciliacao" style="display:none">
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+              <select id="concPeriodo" onchange="renderConciliacao()" style="font-size:11px;padding:5px 8px">
+                <option value="1">Hoje</option>
+                <option value="3">Últimos 3 dias</option>
+                <option value="7">Últimos 7 dias</option>
+              </select>
+              <button class="btn btn-ghost btn-sm" onclick="sincronizarMagis5Saidas()">🔄 Sincronizar vendas com Magis5</button>
+              <span id="concStatus" style="font-size:11px;color:var(--muted)"></span>
+            </div>
+
+            <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
+              <div class="card"><div class="card-label">Vendas c/ NF no período</div><div class="card-value" id="concTotalVendas">—</div><div class="card-sub">Magis5</div></div>
+              <div class="card" style="border-color:rgba(210,153,34,.3)"><div class="card-label">Vendas sem bipagem</div><div class="card-value" id="concSemBipagem" style="color:var(--orange)">—</div><div class="card-sub">saiu sem passar pela conferência</div></div>
+              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Bipagens sem venda</div><div class="card-value" id="concSemVenda" style="color:var(--red)">—</div><div class="card-sub">chave não encontrada no Magis5</div></div>
+            </div>
+
+            <div class="full-table-wrap" style="margin-bottom:16px">
+              <div class="table-head"><div class="table-head-title">⚠️ Vendas no Magis5 sem bipagem correspondente</div></div>
+              <div style="overflow-x:auto"><table>
+                <thead><tr><th>Chave NF</th><th>Pedido</th><th>Produto</th><th>Cliente</th><th>Canal</th><th>Data</th></tr></thead>
+                <tbody id="concSemBipagemBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Sincronize para carregar</td></tr></tbody>
+              </table></div>
+            </div>
+
+            <div class="full-table-wrap">
+              <div class="table-head"><div class="table-head-title">⚠️ Bipagens sem venda correspondente no Magis5</div></div>
+              <div style="overflow-x:auto"><table>
+                <thead><tr><th>Chave bipada</th><th>Canal</th><th>Marketplace</th><th>Funcionário</th><th>Hora</th></tr></thead>
+                <tbody id="concSemVendaBody"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Sincronize para carregar</td></tr></tbody>
+              </table></div>
             </div>
           </div>
         </div>
@@ -3361,12 +3417,13 @@ function switchHistTab(tab,btn){
 function switchSaidaTab(tab,btn){
   document.querySelectorAll('#view-saidas .saida-tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  ['hoje','historico','analise'].forEach(t=>{const el=document.getElementById('saidaTab-'+t);if(el)el.style.display=t===tab?'block':'none';});
+  ['hoje','historico','analise','conciliacao'].forEach(t=>{const el=document.getElementById('saidaTab-'+t);if(el)el.style.display=t===tab?'block':'none';});
   if(tab==='historico'||tab==='analise'){
     const g=document.getElementById('saidaGalpao')?.value||'LogBox';
     if(tab==='historico') renderSaidaHistorico(g);
     if(tab==='analise') renderSaidaAnalise(g);
   }
+  if(tab==='conciliacao') { garantirMagis5SaidasCarregado(false).then(renderConciliacao); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -4695,7 +4752,7 @@ function renderSaidas(){
   // ── tabela hoje ───────────────────────────────────
   const tbody = document.getElementById('saidaBody');
   if (!lista.length) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:30px;color:var(--muted)">📦 Nenhum pacote encontrado</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:30px;color:var(--muted)">📦 Nenhum pacote encontrado</td></tr>';
   } else {
     tbody.innerHTML = [...lista].reverse().map((s,i) => {
       const realIdx = SAIDAS_HOJE.indexOf(s);
@@ -4703,10 +4760,17 @@ function renderSaidas(){
       const av   = func!=='—' ? func.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase() : '?';
       const cor  = funcCorCss(FUNC_INFO[func]?.empresa||'');
       const contaColor = CONTA_COLOR[s.conta]||'var(--muted)';
+      const pedido = (window._magis5SaidasIndex||{})[s.num];
+      const produtoCell = pedido
+        ? `<span style="font-size:11px;cursor:pointer;color:var(--text)" title="${pedido.produto||''} · R$ ${(pedido.valor||0).toFixed(2)}" onclick="abrirDetalheVendaBipada('${s.num}')">${pedido.sku||'—'}</span>`
+        : (window._magis5SaidasSincronizado
+            ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px" title="Não encontrado na última sincronização com o Magis5">✕ sem match</span>`
+            : `<span style="font-size:10px;color:var(--muted)">—</span>`);
       return `
       <tr>
         <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px">${lista.length-i}</td>
         <td style="font-family:'DM Mono',monospace;font-size:12px">${s.num}</td>
+        <td>${produtoCell}</td>
         <td><span class="badge ${s.canal==='Flex'?'b-done':'b-blue'}">${s.canal}</span></td>
         <td><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[s.market]||'b-pending'}">${s.market}</span></td>
         <td>${s.conta
@@ -10397,6 +10461,131 @@ async function abrirHistoricoMlDeposito(itemId, sku) {
 }
 
 // ═══════════════════════════════════════════════════════
+// SAÍDAS × MAGIS5 — enriquecimento e conciliação de bipagens
+// ═══════════════════════════════════════════════════════
+const SAIDAS_MAGIS5_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/saidas-magis5-sync';
+window._magis5SaidasIndex = {};
+window._magis5SaidasSincronizado = false;
+window._magis5SaidasLista = [];
+
+async function garantirMagis5SaidasCarregado(forcar) {
+  if (window._magis5SaidasSincronizado && !forcar) return;
+  try {
+    const r = await fetch(`${SAIDAS_MAGIS5_API}?dias=7`, { cache: 'no-store' });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    window._magis5SaidasLista = d.pedidos || [];
+    window._magis5SaidasIndex = {};
+    for (const p of window._magis5SaidasLista) window._magis5SaidasIndex[p.chave_nf] = p;
+    window._magis5SaidasSincronizado = true;
+    const el = document.getElementById('saidasSyncUltima');
+    if (el) el.textContent = d.ultima_sincronizacao ? 'Última sincronização: ' + new Date(d.ultima_sincronizacao).toLocaleString('pt-BR') : '';
+  } catch(e) { console.error('[Magis5 Saídas] erro ao carregar:', e); }
+}
+
+async function sincronizarMagis5Saidas() {
+  const btn = document.getElementById('saidasSyncBtn');
+  const status = document.getElementById('saidasSyncStatus');
+  const concStatus = document.getElementById('concStatus');
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = 'Sincronizando (pode levar ~20s)...';
+  if (concStatus) concStatus.textContent = 'Sincronizando (pode levar ~20s)...';
+  try {
+    const r = await fetch(SAIDAS_MAGIS5_API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ horas: 168 }) // 7 dias
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    if (status) status.textContent = `✓ ${d.sincronizados} pedidos sincronizados`;
+    if (concStatus) concStatus.textContent = `✓ ${d.sincronizados} pedidos sincronizados`;
+    await garantirMagis5SaidasCarregado(true);
+    renderSaidas();
+    renderConciliacao();
+  } catch(e) {
+    if (status) status.textContent = 'Erro: ' + e.message;
+    if (concStatus) concStatus.textContent = 'Erro: ' + e.message;
+  } finally {
+    if (btn) btn.disabled = false;
+    setTimeout(() => { if (status) status.textContent = ''; }, 6000);
+  }
+}
+
+function abrirDetalheVendaBipada(chave) {
+  const p = window._magis5SaidasIndex[chave];
+  if (!p) return;
+  let modal = document.getElementById('vendaBipadaModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'vendaBipadaModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:24px;width:420px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <span style="font-weight:800;font-size:15px">Venda vinculada</span>
+      <button onclick="document.getElementById('vendaBipadaModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:12px">
+      <div><b>Pedido:</b> ${p.order_id||'—'}</div>
+      <div><b>SKU:</b> <span style="font-family:'DM Mono',monospace;color:var(--accent)">${p.sku||'—'}</span></div>
+      <div><b>Produto:</b> ${p.produto||'—'}</div>
+      <div><b>Quantidade:</b> ${p.quantidade||'—'}</div>
+      <div><b>Valor:</b> R$ ${(p.valor||0).toFixed(2)}</div>
+      <div><b>Cliente:</b> ${p.cliente||'—'}</div>
+      <div><b>Cidade/UF:</b> ${p.cidade||'—'} / ${p.uf||'—'}</div>
+      <div><b>Canal:</b> ${p.canal||'—'}</div>
+      <div><b>Data do pedido:</b> ${p.data_pedido ? new Date(p.data_pedido).toLocaleString('pt-BR') : '—'}</div>
+    </div>
+  </div>`;
+  modal.style.display = 'flex';
+}
+
+function renderConciliacao() {
+  const dias = parseInt(document.getElementById('concPeriodo')?.value || '1');
+  const limite = Date.now() - dias * 86400000;
+
+  const vendas = (window._magis5SaidasLista||[]).filter(p => new Date(p.data_pedido).getTime() >= limite);
+  const chavesBipadas = new Set([
+    ...SAIDAS_HOJE.map(s => s.num),
+    ...Object.values(SAIDAS_HIST_PEDIDOS||{}).flat().map(p => p.numero || p.num).filter(Boolean),
+  ]);
+
+  const vendasSemBipagem = vendas.filter(v => !chavesBipadas.has(v.chave_nf));
+
+  const todasBipagens = [
+    ...SAIDAS_HOJE,
+    ...Object.values(SAIDAS_HIST_PEDIDOS||{}).flat().map(p => ({ num: p.numero||p.num, canal: p.canal, market: p.market, funcionario: p.funcionario, hora: p.hora })),
+  ];
+  const chavesVendas = new Set((window._magis5SaidasLista||[]).map(v => v.chave_nf));
+  const bipagensSemVenda = todasBipagens.filter(b => b.num && !chavesVendas.has(b.num));
+
+  document.getElementById('concTotalVendas').textContent = vendas.length;
+  document.getElementById('concSemBipagem').textContent = vendasSemBipagem.length;
+  document.getElementById('concSemVenda').textContent = bipagensSemVenda.length;
+
+  document.getElementById('concSemBipagemBody').innerHTML = vendasSemBipagem.map(v => `
+    <tr>
+      <td style="font-family:'DM Mono',monospace;font-size:10px">${(v.chave_nf||'').slice(-8)}</td>
+      <td style="font-size:11px">${v.order_id||'—'}</td>
+      <td style="font-size:11px">${v.produto||'—'}</td>
+      <td style="font-size:11px">${v.cliente||'—'}</td>
+      <td style="font-size:11px">${v.canal||'—'}</td>
+      <td style="font-size:10px;color:var(--muted)">${v.data_pedido ? new Date(v.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
+    </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--green)">✓ Todas as vendas foram bipadas</td></tr>';
+
+  document.getElementById('concSemVendaBody').innerHTML = bipagensSemVenda.map(b => `
+    <tr>
+      <td style="font-family:'DM Mono',monospace;font-size:10px">${(b.num||'').slice(-8)}</td>
+      <td style="font-size:11px">${b.canal||'—'}</td>
+      <td style="font-size:11px">${b.market||'—'}</td>
+      <td style="font-size:11px">${b.funcionario||'—'}</td>
+      <td style="font-size:10px;color:var(--muted)">${b.hora||'—'}</td>
+    </tr>`).join('') || '<tr><td colspan="5" style="text-align:center;padding:16px;color:var(--green)">✓ Todas as bipagens têm venda correspondente</td></tr>';
+}
+
+// ═══════════════════════════════════════════════════════
 // VALIDAÇÃO GLOBAL DE SKU — todo SKU digitado no OUTBOX
 // precisa bater com o catálogo real do Magis5
 // ═══════════════════════════════════════════════════════
@@ -10545,9 +10734,18 @@ function renderEstoqueFull() {
   document.getElementById('efAguardBaixa').textContent = saiuSemBaixa.length;
 
   // Espelho do estoque principal
+  const buscaEsp = (document.getElementById('efEspelhoBusca')?.value || '').toLowerCase().trim();
   const filtroPositivo = document.getElementById('efFiltroPositivo')?.checked ?? true;
-  const espelhoFiltrado = filtroPositivo ? espelho.filter(e => (e.quantidade||0) > 0) : espelho;
-  const espelhoOrdenado = [...espelhoFiltrado].sort((a,b) => (a.sku||'').localeCompare(b.sku||''));
+
+  document.getElementById('efEspSkusTotal').textContent = espelho.length;
+  document.getElementById('efEspUnidadesTotal').textContent = espelho.reduce((s,e) => s + (e.quantidade||0), 0);
+  document.getElementById('efEspBaixos').textContent = espelho.filter(e => (e.quantidade||0) > 0 && (e.quantidade||0) <= 5).length;
+
+  let espelhoFiltrado = espelho;
+  if (buscaEsp) espelhoFiltrado = espelhoFiltrado.filter(e => (e.sku||'').toLowerCase().includes(buscaEsp) || (e.produto||'').toLowerCase().includes(buscaEsp));
+  if (filtroPositivo) espelhoFiltrado = espelhoFiltrado.filter(e => (e.quantidade||0) > 0);
+  const espelhoOrdenado = [...espelhoFiltrado].sort((a,b) => (b.quantidade||0) - (a.quantidade||0));
+
   const ultimaSync = espelho.reduce((max, e) => {
     const t = new Date(e.sincronizado_em).getTime();
     return t > max ? t : max;
@@ -10555,14 +10753,22 @@ function renderEstoqueFull() {
   document.getElementById('efEspelhoAtualizadoEm').textContent = ultimaSync
     ? 'Última sincronização: ' + new Date(ultimaSync).toLocaleString('pt-BR')
     : 'Ainda não sincronizado';
-  const espelhoHtml = espelhoOrdenado.map(e => {
-    const baixo = e.quantidade <= 5;
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border2)">
-      <div style="font-size:12px"><span style="font-family:'DM Mono',monospace;color:var(--accent)">${e.sku}</span> ${e.produto ? '— '+e.produto : ''}</div>
-      <span style="font-size:13px;font-weight:800;color:${baixo?'var(--red)':'var(--text)'}">${e.quantidade} un</span>
-    </div>`;
-  }).join('') || '<p style="color:var(--muted);font-size:12px;padding:8px 0">Clique em "Sincronizar" para trazer o estoque do Magis5.</p>';
-  document.getElementById('efEspelhoBody').innerHTML = espelhoHtml;
+
+  const espelhoLinhas = espelhoOrdenado.map(e => {
+    const qtd = e.quantidade || 0;
+    const statusBadge = qtd === 0
+      ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red)">Zerado</span>`
+      : qtd <= 5
+      ? `<span class="badge" style="background:rgba(210,153,34,.15);color:var(--orange)">Baixo</span>`
+      : `<span class="badge b-done">OK</span>`;
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:12px">${e.sku||'—'}</td>
+      <td style="font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.produto||''}">${e.produto||'—'}</td>
+      <td style="font-size:13px;font-weight:800">${qtd}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="4" style="text-align:center;padding:20px;color:var(--muted)">Nenhum SKU encontrado</td></tr>';
+  document.getElementById('efEspelhoBody').innerHTML = espelhoLinhas;
 
   const filaAtiva = [...pendentes, ...separadas].sort((a,b) => new Date(a.solicitado_em) - new Date(b.solicitado_em));
   const filaHtml = filaAtiva.map(s => {
