@@ -972,7 +972,7 @@ select:focus{border-color:var(--accent)}
     <div class="nav-item" onclick="navTo(this,'insumos')"><span class="nav-icon">🗂</span>Insumos</div>
     <div class="nav-section">Cadastros</div>
     <div class="nav-item" onclick="navTo(this,'catalogo')"><span class="nav-icon">🗂</span>Catálogo SKUs</div>
-    <div class="nav-item" onclick="navTo(this,'etiquetas')"><span class="nav-icon">🏷</span>Etiquetas</div>
+    
     <div class="nav-item" onclick="navTo(this,'painel-kpi')"><span class="nav-icon">📊</span>Painéis KPI</div>
     <div class="company-badges">
       <div class="company-badge logbox-badge">
@@ -1143,6 +1143,7 @@ select:focus{border-color:var(--accent)}
           <div class="saida-tabs" style="margin-bottom:14px">
             <button class="saida-tab active" id="fullsTab-agenda" onclick="switchFullsTab('agenda',this)">📅 Agenda</button>
             <button class="saida-tab" id="fullsTab-estoque" onclick="switchFullsTab('estoque',this)">📦 Estoque Full</button>
+            <button class="saida-tab" id="fullsTab-espelho" onclick="switchFullsTab('espelho',this)">🏭 Estoque Principal</button>
           </div>
 
           <div id="fullsPane-agenda">
@@ -1214,6 +1215,15 @@ select:focus{border-color:var(--accent)}
           <!-- ══ SUB-ABA: ESTOQUE FULL ══ -->
           <div id="fullsPane-estoque" style="display:none">
 
+            <!-- Abas internas -->
+            <div class="saida-tabs" style="margin-bottom:14px">
+              <button class="saida-tab active" id="efSubTab-mov" onclick="switchEstoqueFullSub('mov',this)">🔄 Movimentação</button>
+              <button class="saida-tab" id="efSubTab-etq" onclick="switchEstoqueFullSub('etq',this)">🏷️ Etiquetas</button>
+            </div>
+
+            <!-- ── SUB: MOVIMENTAÇÃO ── -->
+            <div id="efSub-mov">
+
             <!-- Cards de resumo -->
             <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
               <div class="card"><div class="card-label">SKUs no espaço Full</div><div class="card-value" id="efSkusTotal">—</div><div class="card-sub">pré-etiquetados</div></div>
@@ -1225,20 +1235,6 @@ select:focus{border-color:var(--accent)}
             <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
               <button class="btn btn-primary btn-sm" onclick="abrirNovaSolicitacaoFull()">+ Solicitar estoque para o Full</button>
               <button class="btn btn-ghost btn-sm" onclick="carregarEstoqueFull(true)" id="efReloadBtn">↻ Atualizar</button>
-              <button class="btn btn-ghost btn-sm" onclick="efSincronizarEspelho()" id="efSyncBtn">🔄 Sincronizar estoque principal com Magis5</button>
-              <span id="efSyncStatus" style="font-size:11px;color:var(--muted);align-self:center"></span>
-            </div>
-
-            <!-- Seção 0: Estoque Principal (espelho do Magis5) -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-                <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">🏭 Estoque Principal — espelho do Magis5</div>
-                <div style="font-size:10px;color:var(--muted)" id="efEspelhoAtualizadoEm"></div>
-              </div>
-              <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--muted)">
-                ℹ️ Este é um espelho — só atualiza quando você clica em "Sincronizar". Vendas normais no Magis5 não refletem aqui automaticamente. Ao confirmar uma entrega no Full, este saldo é descontado localmente.
-              </div>
-              <div id="efEspelhoBody"></div>
             </div>
 
             <!-- Seção 1: Fila de solicitações -->
@@ -1259,7 +1255,55 @@ select:focus{border-color:var(--accent)}
               <div id="efBaixaBody"></div>
             </div>
 
+            </div><!-- /efSub-mov -->
+
+            <!-- ── SUB: ETIQUETAS (biblioteca de moldes ZPL) ── -->
+            <div id="efSub-etq" style="display:none">
+              <div class="dev-toolbar">
+                <div class="dev-toolbar-left">
+                  <input type="text" id="bibBusca" placeholder="🔍 Buscar SKU ou descrição..." oninput="bibRenderLista()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                  <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="bibCount">0 SKUs</span>
+                  <button class="btn btn-ghost btn-sm" onclick="etqTestarRegua()" title="Imprime marcas de mm pra calibrar o alinhamento entre colunas">📐 Régua</button>
+                  <button class="btn btn-ghost btn-sm" onclick="etqTestarImpressao()" title="Imprime uma etiqueta de teste, sem gastar SKU nenhum">🧪 Testar impressão</button>
+                  <button class="btn btn-primary btn-sm" onclick="bibAbrirNovo()">+ Nova etiqueta</button>
+                </div>
+              </div>
+              <div class="cards">
+                <div class="card c-accent"><div class="card-label">SKUs cadastrados</div><div class="card-value" id="bibTotalSkus">0</div><div class="card-sub">com ZPL salvo na biblioteca</div></div>
+                <div class="card c-green"><div class="card-label">Estoque pré-impresso</div><div class="card-value" id="bibTotalEstoque">0</div><div class="card-sub">etiquetas prontas, aguardando uso</div></div>
+                <div class="card"><div class="card-label">Impressora</div><div class="card-value" style="font-size:15px" id="bibStatusImpressora">—</div><div class="card-sub">status do QZ Tray</div></div>
+              </div>
+              <div class="full-table-wrap">
+                <div class="table-head"><div class="table-head-title">Etiquetas na biblioteca</div><span style="font-size:10px;color:var(--muted)">clique no SKU pra editar o ZPL</span></div>
+                <div style="overflow-x:auto"><table><thead><tr><th>SKU</th><th>Descrição</th><th>Estoque pré-impresso</th><th>Atualizado</th><th></th></tr></thead><tbody id="bibBody"></tbody></table></div>
+              </div>
+            </div><!-- /efSub-etq -->
+
           </div><!-- /fullsPane-estoque -->
+
+          <!-- ══ SUB-ABA: ESTOQUE PRINCIPAL (ESPELHO) ══ -->
+          <div id="fullsPane-espelho" style="display:none">
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+              <button class="btn btn-ghost btn-sm" onclick="efSincronizarEspelho()" id="efSyncBtn">🔄 Sincronizar com Magis5</button>
+              <span id="efSyncStatus" style="font-size:11px;color:var(--muted)"></span>
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-left:auto;cursor:pointer">
+                <input type="checkbox" id="efFiltroPositivo" checked onchange="renderEstoqueFull()" style="width:15px;height:15px;cursor:pointer">
+                Mostrar só com estoque positivo
+              </label>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">🏭 Estoque Principal — espelho do Magis5</div>
+                <div style="font-size:10px;color:var(--muted)" id="efEspelhoAtualizadoEm"></div>
+              </div>
+              <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:11px;color:var(--muted)">
+                ℹ️ Este é um espelho — só atualiza quando você clica em "Sincronizar". Vendas normais no Magis5 não refletem aqui automaticamente. Ao confirmar uma entrega no Full, este saldo é descontado localmente.
+              </div>
+              <div id="efEspelhoBody"></div>
+            </div>
+          </div><!-- /fullsPane-espelho -->
         </div>
 
         <!-- ══ VOLUMETRIA ══ -->
@@ -1725,28 +1769,7 @@ select:focus{border-color:var(--accent)}
         <div class="view" id="view-painel-kpi" style="padding:0">
           <div id="painel-kpi-root" style="padding:32px 40px"></div>
         </div>
-        <div class="view" id="view-etiquetas">
-          <div class="dev-toolbar">
-            <div class="dev-toolbar-left">
-              <input type="text" id="bibBusca" placeholder="🔍 Buscar SKU ou descrição..." oninput="bibRenderLista()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="bibCount">0 SKUs</span>
-              <button class="btn btn-ghost btn-sm" onclick="etqTestarRegua()" title="Imprime marcas de mm pra calibrar o alinhamento entre colunas">📐 Régua</button>
-              <button class="btn btn-ghost btn-sm" onclick="etqTestarImpressao()" title="Imprime uma etiqueta de teste, sem gastar SKU nenhum">🧪 Testar impressão</button>
-              <button class="btn btn-primary btn-sm" onclick="bibAbrirNovo()">+ Nova etiqueta</button>
-            </div>
-          </div>
-          <div class="cards">
-            <div class="card c-accent"><div class="card-label">SKUs cadastrados</div><div class="card-value" id="bibTotalSkus">0</div><div class="card-sub">com ZPL salvo na biblioteca</div></div>
-            <div class="card c-green"><div class="card-label">Estoque pré-impresso</div><div class="card-value" id="bibTotalEstoque">0</div><div class="card-sub">etiquetas prontas, aguardando uso</div></div>
-            <div class="card"><div class="card-label">Impressora</div><div class="card-value" style="font-size:15px" id="bibStatusImpressora">—</div><div class="card-sub">status do QZ Tray</div></div>
-          </div>
-          <div class="full-table-wrap">
-            <div class="table-head"><div class="table-head-title">Etiquetas na biblioteca</div><span style="font-size:10px;color:var(--muted)">clique no SKU pra editar o ZPL</span></div>
-            <div style="overflow-x:auto"><table><thead><tr><th>SKU</th><th>Descrição</th><th>Estoque pré-impresso</th><th>Atualizado</th><th></th></tr></thead><tbody id="bibBody"></tbody></table></div>
-          </div>
-        </div>
+        
         <div class="view" id="view-enviados">
 
           <!-- toolbar -->
@@ -2752,7 +2775,6 @@ function showPage(name) {
   if (name==='saidas') { renderSaidas(); setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100); }
   if (name==='dashboard') renderDashboard();
   if (name==='insumos') insInit();
-  if (name==='etiquetas') bibRenderView();
   if (name==='painel-kpi') painelKpiInit();
 }
 
@@ -10231,11 +10253,20 @@ const FULL_ESTOQUE_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/
 let _efDados = null;
 
 function switchFullsTab(tab, btn) {
-  document.querySelectorAll('#fullsTab-agenda,#fullsTab-estoque').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#fullsTab-agenda,#fullsTab-estoque,#fullsTab-espelho').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('fullsPane-agenda').style.display  = tab==='agenda'  ? '' : 'none';
   document.getElementById('fullsPane-estoque').style.display = tab==='estoque' ? '' : 'none';
-  if (tab === 'estoque') carregarEstoqueFull(false);
+  document.getElementById('fullsPane-espelho').style.display = tab==='espelho' ? '' : 'none';
+  if (tab === 'estoque' || tab === 'espelho') carregarEstoqueFull(false);
+}
+
+function switchEstoqueFullSub(sub, btn) {
+  document.querySelectorAll('#efSubTab-mov,#efSubTab-etq').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('efSub-mov').style.display = sub==='mov' ? '' : 'none';
+  document.getElementById('efSub-etq').style.display = sub==='etq' ? '' : 'none';
+  if (sub === 'etq') bibRenderView();
 }
 
 async function carregarEstoqueFull(forcar) {
@@ -10269,7 +10300,9 @@ function renderEstoqueFull() {
   document.getElementById('efAguardBaixa').textContent = saiuSemBaixa.length;
 
   // Espelho do estoque principal
-  const espelhoOrdenado = [...espelho].sort((a,b) => (a.sku||'').localeCompare(b.sku||''));
+  const filtroPositivo = document.getElementById('efFiltroPositivo')?.checked ?? true;
+  const espelhoFiltrado = filtroPositivo ? espelho.filter(e => (e.quantidade||0) > 0) : espelho;
+  const espelhoOrdenado = [...espelhoFiltrado].sort((a,b) => (a.sku||'').localeCompare(b.sku||''));
   const ultimaSync = espelho.reduce((max, e) => {
     const t = new Date(e.sincronizado_em).getTime();
     return t > max ? t : max;
@@ -10341,47 +10374,128 @@ function abrirNovaSolicitacaoFull() {
     modal.onclick = e => { if (e.target === modal) modal.remove(); };
     document.body.appendChild(modal);
   }
-  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;width:440px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:28px;width:560px;max-height:88vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <span style="font-weight:800;font-size:16px">+ Solicitar estoque para o Full</span>
       <button onclick="document.getElementById('efModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
     </div>
-    <div style="display:flex;flex-direction:column;gap:14px">
-      <div>
-        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">SKU</label>
-        <input id="ef_sku" placeholder="Ex: VA-BA02" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+
+    <div>
+      <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Vincular a um Full existente? (opcional)</label>
+      <div style="position:relative">
+        <input id="ef_fullid" placeholder="Digite o ID do Full..." autocomplete="off" oninput="efAutocompleteFull(this.value)" onfocus="efAutocompleteFull(this.value)" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+        <div id="ef_fullid_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:10"></div>
       </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Produto (opcional)</label>
-        <input id="ef_produto" placeholder="Nome do produto" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Quantidade</label>
-        <input id="ef_qtd" type="number" min="1" placeholder="0" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
-      </div>
-      <div>
-        <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Vincular a um Full existente? (opcional)</label>
-        <input id="ef_fullid" placeholder="ID do Full, ex: 8.2.4-L" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
-      </div>
-      <button onclick="efCriarSolicitacao()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer">Solicitar</button>
     </div>
+
+    <div style="margin-top:16px">
+      <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">SKUs solicitados</label>
+      <div id="ef_linhas_skus"></div>
+      <button type="button" onclick="efAdicionarLinhaSku()" style="background:none;border:1px dashed var(--border2);color:var(--accent);border-radius:8px;padding:8px;width:100%;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">+ Adicionar outro SKU</button>
+    </div>
+
+    <button onclick="efCriarSolicitacao()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:20px">Solicitar</button>
   </div>`;
   modal.style.display = 'flex';
+  document.getElementById('ef_linhas_skus').innerHTML = '';
+  efAdicionarLinhaSku();
 }
 
+let _efLinhaId = 0;
+function efAdicionarLinhaSku() {
+  const id = ++_efLinhaId;
+  const wrap = document.getElementById('ef_linhas_skus');
+  const div = document.createElement('div');
+  div.id = `ef_linha_${id}`;
+  div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:flex-start';
+  div.innerHTML = `
+    <div style="position:relative;flex:2">
+      <input id="ef_sku_${id}" placeholder="SKU" autocomplete="off" oninput="efAutocompleteSku(${id}, this.value)" onfocus="efAutocompleteSku(${id}, this.value)" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+      <div id="ef_sku_${id}_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:180px;overflow-y:auto;z-index:10"></div>
+      <input type="hidden" id="ef_produto_${id}">
+    </div>
+    <input id="ef_qtd_${id}" type="number" min="1" placeholder="Qtd" style="width:90px;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+    <button type="button" onclick="document.getElementById('ef_linha_${id}').remove()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:8px">✕</button>
+  `;
+  wrap.appendChild(div);
+}
+
+function efAutocompleteSku(linhaId, valor) {
+  const box = document.getElementById(`ef_sku_${linhaId}_sugestoes`);
+  if (!box) return;
+  const termo = (valor||'').toLowerCase().trim();
+  if (!termo) { box.style.display = 'none'; return; }
+  const lista = (window.SKU_DB || []).filter(s =>
+    (s.sku||'').toLowerCase().includes(termo) || (s.descricao||'').toLowerCase().includes(termo)
+  ).slice(0, 8);
+  if (!lista.length) { box.style.display = 'none'; return; }
+  box.innerHTML = lista.map(s => `
+    <div style="padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border2)"
+         onmousedown="efSelecionarSku(${linhaId}, '${(s.sku||'').replace(/'/g,"\\'")}', '${(s.descricao||'').replace(/'/g,"\\'")}')">
+      <span style="font-family:'DM Mono',monospace;color:var(--accent);font-weight:700">${s.sku}</span>
+      ${s.descricao ? ' — <span style="color:var(--muted)">'+s.descricao+'</span>' : ''}
+    </div>`).join('');
+  box.style.display = 'block';
+}
+
+function efSelecionarSku(linhaId, sku, descricao) {
+  document.getElementById(`ef_sku_${linhaId}`).value = sku;
+  document.getElementById(`ef_produto_${linhaId}`).value = descricao;
+  document.getElementById(`ef_sku_${linhaId}_sugestoes`).style.display = 'none';
+}
+
+function efAutocompleteFull(valor) {
+  const box = document.getElementById('ef_fullid_sugestoes');
+  if (!box) return;
+  const termo = (valor||'').toLowerCase().trim();
+  const todos = Object.values(window.FULLS_DATA || {})
+    .filter(f => f.status !== 'Enviado' && f.status !== 'Cancelado')
+    .filter(f => !termo || (f.id||'').toLowerCase().includes(termo));
+  if (!todos.length) { box.style.display = 'none'; return; }
+  box.innerHTML = todos.slice(0, 10).map(f => `
+    <div style="padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border2)"
+         onmousedown="efSelecionarFull('${(f.id||'').replace(/'/g,"\\'")}')">
+      <span style="font-weight:700">${f.id}</span>
+      <span style="color:var(--muted)"> — ${f.status||''} · ${f.destino||''}</span>
+    </div>`).join('');
+  box.style.display = 'block';
+}
+
+function efSelecionarFull(fullId) {
+  document.getElementById('ef_fullid').value = fullId;
+  document.getElementById('ef_fullid_sugestoes').style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#ef_fullid, #ef_fullid_sugestoes')) {
+    const b = document.getElementById('ef_fullid_sugestoes'); if (b) b.style.display = 'none';
+  }
+  if (!e.target.closest('[id^="ef_sku_"]')) {
+    document.querySelectorAll('[id$="_sugestoes"][id^="ef_sku_"]').forEach(b => b.style.display = 'none');
+  }
+});
+
 async function efCriarSolicitacao() {
-  const sku = document.getElementById('ef_sku')?.value?.trim();
-  const produto = document.getElementById('ef_produto')?.value?.trim();
-  const quantidade = parseInt(document.getElementById('ef_qtd')?.value || '0');
   const full_id = document.getElementById('ef_fullid')?.value?.trim() || null;
-  if (!sku || !quantidade) { alert('Preencha SKU e quantidade.'); return; }
+  const linhas = document.querySelectorAll('#ef_linhas_skus > div');
+  const itens = [];
+  for (const linha of linhas) {
+    const idNum = linha.id.replace('ef_linha_', '');
+    const sku = document.getElementById(`ef_sku_${idNum}`)?.value?.trim();
+    const produto = document.getElementById(`ef_produto_${idNum}`)?.value?.trim();
+    const quantidade = parseInt(document.getElementById(`ef_qtd_${idNum}`)?.value || '0');
+    if (sku && quantidade) itens.push({ sku, produto, quantidade });
+  }
+  if (!itens.length) { alert('Adicione ao menos um SKU com quantidade.'); return; }
   try {
-    const r = await fetch(FULL_ESTOQUE_API, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sku, produto, quantidade, full_id, solicitado_por: 'Max' })
-    });
-    const d = await r.json();
-    if (d.erro) throw new Error(d.erro);
+    for (const item of itens) {
+      const r = await fetch(FULL_ESTOQUE_API, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sku: item.sku, produto: item.produto, quantidade: item.quantidade, full_id, solicitado_por: 'Max' })
+      });
+      const d = await r.json();
+      if (d.erro) throw new Error(d.erro);
+    }
     document.getElementById('efModal')?.remove();
     await carregarEstoqueFull(true);
   } catch(e) { alert('Erro: ' + e.message); }
