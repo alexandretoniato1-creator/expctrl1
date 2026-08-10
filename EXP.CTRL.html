@@ -1344,7 +1344,7 @@ select:focus{border-color:var(--accent)}
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
                 <div class="form-group">
                   <label>SKU <span style="color:var(--accent);font-size:9px">↵ auto</span></label>
-                  <input type="text" id="cSku" placeholder="Ex: SKU-001" style="font-family:'DM Mono',monospace;font-size:12px" oninput="cSkuInput(this)" onblur="cSkuAuto()" onkeydown="if(event.key==='Enter')cSkuAuto()">
+                  <input type="text" id="cSku" placeholder="Ex: SKU-001" style="font-family:'DM Mono',monospace;font-size:12px" oninput="cSkuInput(this)" onblur="cSkuAuto();checarSkuGenerico('cSku')" onkeydown="if(event.key==='Enter')cSkuAuto()">
                 </div>
                 <div class="form-group">
                   <label>Descrição</label>
@@ -1958,7 +1958,7 @@ select:focus{border-color:var(--accent)}
     <div class="form-grid">
       <div class="form-group"><label>Funcionário *</label><select class="form-sel" id="pFuncionario"><option value="—">—</option></select></div>
       <div class="form-group"><label>Full relacionado *</label><select class="form-sel" id="pFull"><option value="">—</option></select></div>
-      <div class="form-group"><label>SKU <span style="color:var(--logbox);font-size:9px">↵ auto</span></label><input class="form-sel" type="text" id="pSku" placeholder="Ex: SKU-001" oninput="pSkuInput()" onkeydown="if(event.key==='Enter')pSkuAuto()"></div>
+      <div class="form-group"><label>SKU <span style="color:var(--logbox);font-size:9px">↵ auto</span></label><input class="form-sel" type="text" id="pSku" placeholder="Ex: SKU-001" oninput="pSkuInput()" onblur="checarSkuGenerico('pSku')" onkeydown="if(event.key==='Enter')pSkuAuto()"></div>
       <div class="form-group"><label>Descrição</label><input class="form-sel" type="text" id="pDesc" placeholder="Preenchido pelo SKU" readonly style="color:var(--muted)"></div>
       <div class="form-group"><label>Qtd Caixas *</label><input class="form-sel" type="number" id="pCaixas" placeholder="0" min="1" oninput="pCalcTempo()"></div>
       <div class="form-group"><label>Qtd Produtos</label><input class="form-sel" type="number" id="pProdutos" placeholder="0" min="0"></div>
@@ -1990,7 +1990,7 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title"><span id="modalDevTitulo">Nova Devolução</span> <button class="modal-close" onclick="closeModal('modalDev')">✕</button></div>
     <div class="section-divider">Produto</div>
     <div class="form-grid-3">
-      <div class="form-group"><label>SKU *</label><input class="form-sel" id="dSku" type="text"></div>
+      <div class="form-group"><label>SKU *</label><input class="form-sel" id="dSku" type="text" onblur="checarSkuGenerico('dSku')"></div>
       <div class="form-group span2"><label>Descrição *</label><input class="form-sel" id="dDesc" type="text"></div>
     </div>
     <div class="form-grid-3">
@@ -2041,7 +2041,7 @@ select:focus{border-color:var(--accent)}
   <div class="modal modal-lg" style="max-width:660px">
     <div class="modal-title"><span id="skuModalTitle">Novo SKU</span><button class="modal-close" onclick="closeModal('modalSku')">✕</button></div>
     <div class="section-divider">Identificação</div>
-    <div class="form-grid-3"><div class="form-group"><label>SKU *</label><input class="form-sel" id="sk-sku" type="text" placeholder="SKU-001"></div><div class="form-group span2"><label>Descrição *</label><input class="form-sel" id="sk-desc" type="text"></div></div>
+    <div class="form-grid-3"><div class="form-group"><label>SKU *</label><input class="form-sel" id="sk-sku" type="text" placeholder="SKU-001" onblur="checarSkuGenerico('sk-sku')"></div><div class="form-group span2"><label>Descrição *</label><input class="form-sel" id="sk-desc" type="text"></div></div>
     <div class="form-grid"><div class="form-group"><label>EAN</label><input class="form-sel" id="sk-ean" type="text"></div><div class="form-group"><label>Galpão *</label><select class="form-sel" id="sk-galpao"><option value="">Selecione</option><option value="LogBox">LogBox</option></select></div></div>
     <div class="section-divider">Dimensões da caixa</div>
     <div class="form-grid-3"><div class="form-group"><label>C (cm)</label><input class="form-sel" id="sk-comp" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>L (cm)</label><input class="form-sel" id="sk-larg" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>A (cm)</label><input class="form-sel" id="sk-altu" type="number" oninput="calcSkuVol()"></div></div>
@@ -2057,7 +2057,7 @@ select:focus{border-color:var(--accent)}
   <div class="modal modal-lg" style="max-width:560px">
     <div class="modal-title"><span id="bibModalTitle">Nova etiqueta na biblioteca</span><button class="modal-close" onclick="closeModal('modalBibEtq')">✕</button></div>
     <div class="form-grid">
-      <div class="form-group"><label>SKU *</label><input class="form-sel" id="bib-sku" type="text" placeholder="Ex: VA_2DBA02"></div>
+      <div class="form-group"><label>SKU *</label><input class="form-sel" id="bib-sku" type="text" placeholder="Ex: VA_2DBA02" onblur="checarSkuGenerico('bib-sku')"></div>
       <div class="form-group"><label>Descrição</label><input class="form-sel" id="bib-desc" type="text" placeholder="Nome do produto"></div>
     </div>
     <div class="form-group" style="margin-top:8px;margin-bottom:8px">
@@ -10247,6 +10247,97 @@ window.showPage = function(name){
 })();
 
 // ═══════════════════════════════════════════════════════
+// VALIDAÇÃO GLOBAL DE SKU — todo SKU digitado no OUTBOX
+// precisa bater com o catálogo real do Magis5
+// ═══════════════════════════════════════════════════════
+window._espelhoGlobal = null;
+
+async function garantirEspelhoGlobal(forcar) {
+  if (window._espelhoGlobal && !forcar) return window._espelhoGlobal;
+  try {
+    const r = await fetch(FULL_ESTOQUE_API, { cache: 'no-store' });
+    const d = await r.json();
+    window._espelhoGlobal = d.espelho || [];
+  } catch(e) { window._espelhoGlobal = window._espelhoGlobal || []; }
+  return window._espelhoGlobal;
+}
+
+async function skuExisteNoMagis(sku) {
+  const lista = await garantirEspelhoGlobal(false);
+  return lista.some(e => (e.sku||'').toLowerCase() === (sku||'').trim().toLowerCase());
+}
+
+function criarAvisoSkuInline(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return null;
+  let aviso = document.getElementById(inputId+'_aviso');
+  if (!aviso) {
+    aviso = document.createElement('div');
+    aviso.id = inputId+'_aviso';
+    aviso.style.cssText = 'display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:6px;padding:5px 8px;margin-top:4px;font-size:10px;color:var(--orange);align-items:center;justify-content:space-between;gap:6px';
+    aviso.innerHTML = `<span>⚠️ SKU não encontrado no Magis5</span><button type="button" onclick="abrirVinculoSkuGenerico('${inputId}')" style="background:var(--orange);color:#000;border:none;border-radius:5px;padding:3px 8px;font-size:10px;font-weight:700;cursor:pointer;white-space:nowrap">🔗 Vincular</button>`;
+    input.insertAdjacentElement('afterend', aviso);
+  }
+  return aviso;
+}
+
+async function checarSkuGenerico(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const valor = (input.value||'').trim();
+  const aviso = criarAvisoSkuInline(inputId);
+  if (!valor) { if(aviso) aviso.style.display='none'; return; }
+  const existe = await skuExisteNoMagis(valor);
+  if (aviso) aviso.style.display = existe ? 'none' : 'flex';
+}
+
+function abrirVinculoSkuGenerico(inputId) {
+  garantirEspelhoGlobal(false).then(lista => {
+    if (!lista.length) { alert('Sincronize o Estoque Principal com o Magis5 primeiro (Fulls → 🏭 Estoque Principal).'); return; }
+    let modal = document.getElementById('vincSkuModal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'vincSkuModal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
+      document.body.appendChild(modal);
+    }
+    const ordenado = [...lista].sort((a,b)=> (a.sku||'').localeCompare(b.sku||''));
+    modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:20px;width:420px;max-height:70vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-weight:800;font-size:14px">🔗 Selecionar SKU real (Magis5)</span>
+        <button onclick="document.getElementById('vincSkuModal').remove()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
+      </div>
+      <input id="vincSkuBusca" placeholder="Buscar SKU ou produto..." autocomplete="off" oninput="filtrarVincSkuLista()" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;margin-bottom:10px;box-sizing:border-box">
+      <div id="vincSkuLista"></div>
+    </div>`;
+    window._vincSkuTargetInput = inputId;
+    window._vincSkuListaCompleta = ordenado;
+    filtrarVincSkuLista();
+    modal.style.display = 'flex';
+    setTimeout(() => document.getElementById('vincSkuBusca')?.focus(), 50);
+  });
+}
+
+function filtrarVincSkuLista() {
+  const termo = (document.getElementById('vincSkuBusca')?.value||'').toLowerCase();
+  const lista = (window._vincSkuListaCompleta||[]).filter(s => !termo || (s.sku||'').toLowerCase().includes(termo) || (s.produto||'').toLowerCase().includes(termo));
+  document.getElementById('vincSkuLista').innerHTML = lista.slice(0,50).map(s => `
+    <div style="padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border2)" onclick="selecionarVincSku('${(s.sku||'').replace(/'/g,"\\'")}')">
+      <span style="font-family:'DM Mono',monospace;color:var(--accent);font-weight:700">${s.sku}</span>
+      ${s.produto ? ' — <span style="color:var(--muted)">'+s.produto+'</span>' : ''}
+    </div>`).join('') || '<p style="color:var(--muted);font-size:12px;padding:10px">Nenhum resultado</p>';
+}
+
+function selecionarVincSku(sku) {
+  const inputId = window._vincSkuTargetInput;
+  const input = document.getElementById(inputId);
+  if (input) { input.value = sku; input.dispatchEvent(new Event('input')); }
+  document.getElementById('vincSkuModal')?.remove();
+  checarSkuGenerico(inputId);
+}
+
+// ═══════════════════════════════════════════════════════
 // ESTOQUE FULL — Solicitações Max ↔ Edipo + saldo pré-etiquetagem
 // ═══════════════════════════════════════════════════════
 const FULL_ESTOQUE_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/full-estoque';
@@ -10405,19 +10496,56 @@ let _efLinhaId = 0;
 function efAdicionarLinhaSku() {
   const id = ++_efLinhaId;
   const wrap = document.getElementById('ef_linhas_skus');
-  const div = document.createElement('div');
-  div.id = `ef_linha_${id}`;
-  div.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:flex-start';
-  div.innerHTML = `
-    <div style="position:relative;flex:2">
-      <input id="ef_sku_${id}" placeholder="SKU" autocomplete="off" oninput="efAutocompleteSku(${id}, this.value)" onfocus="efAutocompleteSku(${id}, this.value)" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
-      <div id="ef_sku_${id}_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:180px;overflow-y:auto;z-index:10"></div>
-      <input type="hidden" id="ef_produto_${id}">
+  const outer = document.createElement('div');
+  outer.id = `ef_linha_${id}`;
+  outer.style.cssText = 'margin-bottom:10px';
+  outer.innerHTML = `
+    <div style="display:flex;gap:8px;align-items:flex-start">
+      <div style="position:relative;flex:2">
+        <input id="ef_sku_${id}" placeholder="SKU" autocomplete="off"
+          oninput="efAutocompleteSku(${id}, this.value)"
+          onfocus="efAutocompleteSku(${id}, this.value)"
+          onblur="setTimeout(()=>efCheckSkuValido(${id}), 150)"
+          style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+        <div id="ef_sku_${id}_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:180px;overflow-y:auto;z-index:10"></div>
+        <input type="hidden" id="ef_produto_${id}">
+      </div>
+      <input id="ef_qtd_${id}" type="number" min="1" placeholder="Qtd" style="width:90px;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+      <button type="button" onclick="document.getElementById('ef_linha_${id}').remove()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:8px">✕</button>
     </div>
-    <input id="ef_qtd_${id}" type="number" min="1" placeholder="Qtd" style="width:90px;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
-    <button type="button" onclick="document.getElementById('ef_linha_${id}').remove()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:8px">✕</button>
+    <div id="ef_aviso_${id}" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:8px;padding:8px 10px;margin-top:4px;font-size:11px;color:var(--orange);align-items:center;justify-content:space-between;gap:8px">
+      <span>⚠️ Esse SKU não foi encontrado no Magis5.</span>
+      <button type="button" onclick="efForcarVinculo(${id})" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🔗 Vincular SKU real</button>
+    </div>
   `;
-  wrap.appendChild(div);
+  wrap.appendChild(outer);
+}
+
+function efCheckSkuValido(id) {
+  const input = document.getElementById(`ef_sku_${id}`);
+  const aviso = document.getElementById(`ef_aviso_${id}`);
+  if (!input || !aviso) return;
+  const valor = (input.value||'').trim();
+  if (!valor) { aviso.style.display = 'none'; return; }
+  const espelho = _efDados?.espelho || [];
+  const existe = espelho.some(e => (e.sku||'').toLowerCase() === valor.toLowerCase());
+  aviso.style.display = existe ? 'none' : 'flex';
+}
+
+function efForcarVinculo(id) {
+  const box = document.getElementById(`ef_sku_${id}_sugestoes`);
+  const input = document.getElementById(`ef_sku_${id}`);
+  if (!box) return;
+  const espelho = (_efDados?.espelho || []).slice().sort((a,b) => (a.sku||'').localeCompare(b.sku||''));
+  if (!espelho.length) { alert('Sincronize o Estoque Principal com o Magis5 primeiro (aba 🏭 Estoque Principal).'); return; }
+  box.innerHTML = espelho.map(s => `
+    <div style="padding:8px 10px;cursor:pointer;font-size:12px;border-bottom:1px solid var(--border2)"
+         onmousedown="efSelecionarSku(${id}, '${(s.sku||'').replace(/'/g,"\\'")}', '${(s.produto||'').replace(/'/g,"\\'")}')">
+      <span style="font-family:'DM Mono',monospace;color:var(--accent);font-weight:700">${s.sku}</span>
+      ${s.produto ? ' — <span style="color:var(--muted)">'+s.produto+'</span>' : ''}
+    </div>`).join('');
+  box.style.display = 'block';
+  input?.focus();
 }
 
 function efAutocompleteSku(linhaId, valor) {
@@ -10442,6 +10570,8 @@ function efSelecionarSku(linhaId, sku, descricao) {
   document.getElementById(`ef_sku_${linhaId}`).value = sku;
   document.getElementById(`ef_produto_${linhaId}`).value = descricao;
   document.getElementById(`ef_sku_${linhaId}_sugestoes`).style.display = 'none';
+  const aviso = document.getElementById(`ef_aviso_${linhaId}`);
+  if (aviso) aviso.style.display = 'none';
 }
 
 function efAutocompleteFull(valor) {
