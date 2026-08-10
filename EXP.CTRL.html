@@ -963,7 +963,7 @@ select:focus{border-color:var(--accent)}
     <div class="nav-item active" onclick="navTo(this,'dashboard')"><span class="nav-icon">▣</span>Dashboard</div>
     <div class="nav-item" onclick="navTo(this,'fulls')"><span class="nav-icon">◈</span>Fulls</div>
     <div class="nav-item" onclick="navTo(this,'volumetria')"><span class="nav-icon">◻</span>Carga</div>
-    <div class="nav-item" onclick="navTo(this,'enviados')"><span class="nav-icon">✈</span>Arquivo</div>
+    
     <div class="nav-section">Equipe</div>
     <div class="nav-item" onclick="navTo(this,'produtividade')"><span class="nav-icon">◎</span>Produtividade</div>
     <div class="nav-section">Registro</div>
@@ -1144,6 +1144,8 @@ select:focus{border-color:var(--accent)}
             <button class="saida-tab active" id="fullsTab-agenda" onclick="switchFullsTab('agenda',this)">📅 Agenda</button>
             <button class="saida-tab" id="fullsTab-estoque" onclick="switchFullsTab('estoque',this)">📦 Estoque Full</button>
             <button class="saida-tab" id="fullsTab-espelho" onclick="switchFullsTab('espelho',this)">🏭 Estoque Principal</button>
+            <button class="saida-tab" id="fullsTab-mldeposito" onclick="switchFullsTab('mldeposito',this)">📊 Estoque ML (Full)</button>
+            <button class="saida-tab" id="fullsTab-envios" onclick="switchFullsTab('envios',this)">📈 Histórico de Envios</button>
           </div>
 
           <div id="fullsPane-agenda">
@@ -1304,6 +1306,88 @@ select:focus{border-color:var(--accent)}
               <div id="efEspelhoBody"></div>
             </div>
           </div><!-- /fullsPane-espelho -->
+
+          <div id="fullsPane-mldeposito" style="display:none">
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+              <input type="text" id="mlDepBusca" placeholder="🔍 Buscar SKU ou título..." oninput="renderMlDeposito()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
+                <input type="checkbox" id="mlDepSoComEstoque" onchange="renderMlDeposito()" style="width:15px;height:15px;cursor:pointer">
+                Só com estoque no ML
+              </label>
+              <button class="btn btn-ghost btn-sm" onclick="carregarMlDeposito(true)" id="mlDepReloadBtn">↻ Atualizar</button>
+              <span id="mlDepStatus" style="font-size:11px;color:var(--muted)"></span>
+            </div>
+
+            <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+              <div class="card"><div class="card-label">SKUs com produto Full</div><div class="card-value" id="mlDepTotalSkus">—</div><div class="card-sub">catálogo verificado</div></div>
+              <div class="card c-accent"><div class="card-label">Unidades no depósito ML</div><div class="card-value" id="mlDepTotalFull">—</div><div class="card-sub">Cajamar e outros CDs</div></div>
+              <div class="card"><div class="card-label">Unidades com você</div><div class="card-value" id="mlDepTotalProprio" style="font-size:22px">—</div><div class="card-sub">estoque próprio (ML)</div></div>
+              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Zerados no ML</div><div class="card-value" id="mlDepZerados" style="color:var(--red)">—</div><div class="card-sub">sem estoque no depósito</div></div>
+            </div>
+
+            <div class="full-table-wrap">
+              <div class="table-head">
+                <div class="table-head-title">Estoque por SKU — Full (Mercado Livre)</div>
+                <span style="font-size:10px;color:var(--muted)">clique na linha para ver o histórico de movimentação (30 dias)</span>
+              </div>
+              <div style="overflow-x:auto">
+                <table>
+                  <thead><tr><th>SKU</th><th>Título</th><th>No depósito ML</th><th>Com você</th><th>Status</th></tr></thead>
+                  <tbody id="mlDepBody"><tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Clique em "↻ Atualizar" para carregar</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div><!-- /fullsPane-mldeposito -->
+
+<div id="fullsPane-envios" style="display:none">
+
+          <!-- toolbar -->
+          <div class="dev-toolbar">
+            <div class="dev-toolbar-left">
+              <input type="text" id="enviadosBusca" placeholder="🔍 Buscar por ID, destino ou empresa..." oninput="renderEnviados()" style="width:280px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+              <select id="enviadosFiltroEmpresa" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px"><option value="LogBox">LogBox</option></select>
+              <select id="enviadosFiltroDestino" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px">
+                <option value="">Todos os destinos</option>
+                <option value="ML Cajamar/SP">ML Cajamar/SP</option>
+                <option value="ML Perus/SP">ML Perus/SP</option>
+                <option value="ML Sumaré/SP">ML Sumaré/SP</option>
+                <option value="ML Franco da Rocha/SP">ML Franco da Rocha/SP</option>
+                <option value="ML Guarulhos/SP">ML Guarulhos/SP</option>
+                <option value="ML Embu das Artes/SP">ML Embu das Artes/SP</option>
+                <option value="Amazon SP">Amazon SP</option>
+                <option value="Shopee SP">Shopee SP</option>
+              </select>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="enviadosCount">0 Fulls</span>
+            </div>
+          </div>
+
+          <!-- cards resumo -->
+          <div class="cards" style="grid-template-columns:repeat(4,1fr)">
+            <div class="card c-green"><div class="card-label">Total enviados</div><div class="card-value" id="envTotal">0</div><div class="card-sub">todos os tempos</div></div>
+            <div class="card"><div class="card-label">LogBox</div><div class="card-value" id="envLogbox" style="font-size:22px">0</div><div class="card-sub">Fulls</div></div>
+            
+            <div class="card c-accent"><div class="card-label">Caixas enviadas</div><div class="card-value" id="envCaixas" style="font-size:22px">0</div><div class="card-sub">unidades</div></div>
+          </div>
+
+          <!-- tabela -->
+          <div class="full-table-wrap">
+            <div class="table-head">
+              <div class="table-head-title">Fulls Enviados</div>
+              <span style="font-size:10px;color:var(--muted)">clique para ver detalhes · Fulls arquivados automaticamente ao serem enviados</span>
+            </div>
+            <table>
+              <thead><tr>
+                <th>ID Full</th><th>Empresa</th><th>Responsável</th>
+                <th>Agendado</th><th>Enviado em</th><th>Destino</th>
+                <th>Itens</th><th>Caixas</th><th>Ações</th>
+              </tr></thead>
+              <tbody id="enviadosBody"></tbody>
+            </table>
+          </div>
+
+        </div><!-- /fullsPane-envios -->
         </div>
 
         <!-- ══ VOLUMETRIA ══ -->
@@ -1770,55 +1854,7 @@ select:focus{border-color:var(--accent)}
           <div id="painel-kpi-root" style="padding:32px 40px"></div>
         </div>
         
-        <div class="view" id="view-enviados">
-
-          <!-- toolbar -->
-          <div class="dev-toolbar">
-            <div class="dev-toolbar-left">
-              <input type="text" id="enviadosBusca" placeholder="🔍 Buscar por ID, destino ou empresa..." oninput="renderEnviados()" style="width:280px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
-              <select id="enviadosFiltroEmpresa" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px"><option value="LogBox">LogBox</option></select>
-              <select id="enviadosFiltroDestino" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px">
-                <option value="">Todos os destinos</option>
-                <option value="ML Cajamar/SP">ML Cajamar/SP</option>
-                <option value="ML Perus/SP">ML Perus/SP</option>
-                <option value="ML Sumaré/SP">ML Sumaré/SP</option>
-                <option value="ML Franco da Rocha/SP">ML Franco da Rocha/SP</option>
-                <option value="ML Guarulhos/SP">ML Guarulhos/SP</option>
-                <option value="ML Embu das Artes/SP">ML Embu das Artes/SP</option>
-                <option value="Amazon SP">Amazon SP</option>
-                <option value="Shopee SP">Shopee SP</option>
-              </select>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="enviadosCount">0 Fulls</span>
-            </div>
-          </div>
-
-          <!-- cards resumo -->
-          <div class="cards" style="grid-template-columns:repeat(4,1fr)">
-            <div class="card c-green"><div class="card-label">Total enviados</div><div class="card-value" id="envTotal">0</div><div class="card-sub">todos os tempos</div></div>
-            <div class="card"><div class="card-label">LogBox</div><div class="card-value" id="envLogbox" style="font-size:22px">0</div><div class="card-sub">Fulls</div></div>
-            
-            <div class="card c-accent"><div class="card-label">Caixas enviadas</div><div class="card-value" id="envCaixas" style="font-size:22px">0</div><div class="card-sub">unidades</div></div>
-          </div>
-
-          <!-- tabela -->
-          <div class="full-table-wrap">
-            <div class="table-head">
-              <div class="table-head-title">Fulls Enviados</div>
-              <span style="font-size:10px;color:var(--muted)">clique para ver detalhes · Fulls arquivados automaticamente ao serem enviados</span>
-            </div>
-            <table>
-              <thead><tr>
-                <th>ID Full</th><th>Empresa</th><th>Responsável</th>
-                <th>Agendado</th><th>Enviado em</th><th>Destino</th>
-                <th>Itens</th><th>Caixas</th><th>Ações</th>
-              </tr></thead>
-              <tbody id="enviadosBody"></tbody>
-            </table>
-          </div>
-
-        </div>
+        
 
       </div><!-- /content -->
 
@@ -2770,7 +2806,6 @@ function showPage(name) {
   if (name==='volumetria') renderVolDia();
   if (name==='devolucoes') renderDev();
   if (name==='catalogo') renderCatalogo();
-  if (name==='enviados') renderEnviados();
   if (name==='produtividade') renderProdutividade();
   if (name==='saidas') { renderSaidas(); setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100); }
   if (name==='dashboard') renderDashboard();
@@ -10247,6 +10282,125 @@ window.showPage = function(name){
 })();
 
 // ═══════════════════════════════════════════════════════
+// ESTOQUE ML (FULL) — estoque dentro do depósito do Mercado Livre
+// ═══════════════════════════════════════════════════════
+const ML_FULL_STOCK_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/ml-full-stock';
+const ML_FULL_HISTORY_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/ml-full-stock-history';
+let _mlDepDados = null;
+
+async function carregarMlDeposito(forcar) {
+  if (_mlDepDados && !forcar) { renderMlDeposito(); return; }
+  const btn = document.getElementById('mlDepReloadBtn');
+  const status = document.getElementById('mlDepStatus');
+  if (btn) btn.disabled = true;
+  if (status) status.textContent = 'Carregando do Mercado Livre...';
+  try {
+    const r = await fetch(ML_FULL_STOCK_API, { cache: 'no-store' });
+    _mlDepDados = await r.json();
+    if (_mlDepDados.erro) throw new Error(_mlDepDados.erro);
+    if (status) status.textContent = '';
+    renderMlDeposito();
+  } catch(e) {
+    document.getElementById('mlDepBody').innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--red)">Erro: ${e.message}</td></tr>`;
+    if (status) status.textContent = '';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderMlDeposito() {
+  if (!_mlDepDados) return;
+  const produtos = _mlDepDados.products || [];
+  const busca = (document.getElementById('mlDepBusca')?.value || '').toLowerCase().trim();
+  const soComEstoque = document.getElementById('mlDepSoComEstoque')?.checked;
+
+  document.getElementById('mlDepTotalSkus').textContent = produtos.length;
+  document.getElementById('mlDepTotalFull').textContent = produtos.reduce((s,p) => s + (p.estoque_full||0), 0);
+  document.getElementById('mlDepTotalProprio').textContent = produtos.reduce((s,p) => s + (p.estoque_proprio||0), 0);
+  document.getElementById('mlDepZerados').textContent = produtos.filter(p => (p.estoque_full||0) === 0).length;
+
+  let lista = produtos;
+  if (busca) lista = lista.filter(p => (p.sku||'').toLowerCase().includes(busca) || (p.title||'').toLowerCase().includes(busca));
+  if (soComEstoque) lista = lista.filter(p => (p.estoque_full||0) > 0);
+  lista = [...lista].sort((a,b) => (b.estoque_full||0) - (a.estoque_full||0));
+
+  const linhas = lista.map(p => {
+    const full = p.estoque_full || 0;
+    const proprio = p.estoque_proprio || 0;
+    const statusBadge = full === 0
+      ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red)">Zerado no ML</span>`
+      : full <= 5
+      ? `<span class="badge" style="background:rgba(210,153,34,.15);color:var(--orange)">Baixo</span>`
+      : `<span class="badge b-done">OK</span>`;
+    const itemId = (p.item_ids||[])[0];
+    return `<tr style="cursor:pointer" onclick="abrirHistoricoMlDeposito('${itemId}','${(p.sku||'').replace(/'/g,"\\'")}')">
+      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:12px">${p.sku||'—'}</td>
+      <td style="font-size:12px;max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${p.title||''}">${p.title||'—'}</td>
+      <td style="font-size:13px;font-weight:800">${full}</td>
+      <td style="font-size:13px;color:var(--muted2)">${proprio}</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--muted)">Nenhum produto encontrado</td></tr>';
+
+  document.getElementById('mlDepBody').innerHTML = linhas;
+}
+
+const ML_EVENTO_PT = {
+  SALE_CONFIRMATION: '🛒 Venda confirmada',
+  SALE_DELIVERY_CANCELATION: '↩ Cancelamento de entrega',
+  INBOUND_RECEPTION: '📦 Recebido no depósito',
+};
+
+async function abrirHistoricoMlDeposito(itemId, sku) {
+  if (!itemId) { alert('Este SKU não tem item_id associado.'); return; }
+  let modal = document.getElementById('mlDepModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'mlDepModal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:24px;width:480px;max-height:75vh;overflow-y:auto">
+    <div style="text-align:center;padding:30px;color:var(--muted)">⏳ Carregando histórico...</div>
+  </div>`;
+  modal.style.display = 'flex';
+
+  try {
+    const r = await fetch(`${ML_FULL_HISTORY_API}?item_id=${itemId}`);
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    const eventos = d.eventos_recentes || [];
+    const linhas = eventos.map(ev => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border2)">
+        <div>
+          <div style="font-size:12px;font-weight:700">${ML_EVENTO_PT[ev.tipo]||ev.tipo}</div>
+          <div style="font-size:10px;color:var(--muted)">${new Date(ev.data).toLocaleString('pt-BR')}</div>
+        </div>
+        <div style="text-align:right;font-size:11px;color:var(--muted2)">saldo: ${ev.disponivel_apos}</div>
+      </div>`).join('') || `<p style="color:var(--muted);font-size:12px;padding:12px 0">Nenhuma movimentação nos últimos ${d.periodo_dias||30} dias.</p>`;
+
+    modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:24px;width:480px;max-height:75vh;overflow-y:auto">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-weight:800;font-size:15px">${sku}</span>
+        <button onclick="document.getElementById('mlDepModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <p style="font-size:11px;color:var(--muted);margin-bottom:16px">${d.titulo||''}</p>
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:800;letter-spacing:.04em;margin-bottom:8px">Movimentação — últimos ${d.periodo_dias||30} dias</div>
+      ${linhas}
+    </div>`;
+  } catch(e) {
+    modal.innerHTML = `<div style="background:var(--bg);border:1px solid var(--border);border-radius:16px;padding:24px;width:420px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <span style="font-weight:800">Erro</span>
+        <button onclick="document.getElementById('mlDepModal').remove()" style="background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer">✕</button>
+      </div>
+      <p style="color:var(--red);font-size:13px">${e.message}</p>
+    </div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
 // VALIDAÇÃO GLOBAL DE SKU — todo SKU digitado no OUTBOX
 // precisa bater com o catálogo real do Magis5
 // ═══════════════════════════════════════════════════════
@@ -10344,12 +10498,16 @@ const FULL_ESTOQUE_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/
 let _efDados = null;
 
 function switchFullsTab(tab, btn) {
-  document.querySelectorAll('#fullsTab-agenda,#fullsTab-estoque,#fullsTab-espelho').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#fullsTab-agenda,#fullsTab-estoque,#fullsTab-espelho,#fullsTab-mldeposito,#fullsTab-envios').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  document.getElementById('fullsPane-agenda').style.display  = tab==='agenda'  ? '' : 'none';
-  document.getElementById('fullsPane-estoque').style.display = tab==='estoque' ? '' : 'none';
-  document.getElementById('fullsPane-espelho').style.display = tab==='espelho' ? '' : 'none';
+  document.getElementById('fullsPane-agenda').style.display     = tab==='agenda'     ? '' : 'none';
+  document.getElementById('fullsPane-estoque').style.display    = tab==='estoque'    ? '' : 'none';
+  document.getElementById('fullsPane-espelho').style.display    = tab==='espelho'    ? '' : 'none';
+  document.getElementById('fullsPane-mldeposito').style.display = tab==='mldeposito' ? '' : 'none';
+  document.getElementById('fullsPane-envios').style.display     = tab==='envios'     ? '' : 'none';
   if (tab === 'estoque' || tab === 'espelho') carregarEstoqueFull(false);
+  if (tab === 'mldeposito') carregarMlDeposito(false);
+  if (tab === 'envios') renderEnviados();
 }
 
 function switchEstoqueFullSub(sub, btn) {
