@@ -1634,13 +1634,13 @@ select:focus{border-color:var(--accent)}
             </div>
 
             <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
-              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Pendências reais</div><div class="card-value" id="concPendentes" style="color:var(--red)">—</div><div class="card-sub">awaiting_send no Magis5, sem bipagem no OUTBOX</div></div>
+              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Pendências reais</div><div class="card-value" id="concPendentes" style="color:var(--red)">—</div><div class="card-sub">awaiting_send, sem bipagem, exclui Full</div></div>
               <div class="card" style="border-color:rgba(88,166,255,.3)"><div class="card-label">Já bipado, aguardando baixa</div><div class="card-value" id="concJaBipados" style="color:var(--accent)">—</div><div class="card-sub">Magis5 ainda não atualizou (baixa é manual)</div></div>
               <div class="card"><div class="card-label">Valor pendente</div><div class="card-value" id="concValorPendente" style="font-size:16px;color:var(--red)">—</div><div class="card-sub">soma das pendências reais</div></div>
             </div>
 
             <div class="full-table-wrap">
-              <div class="table-head"><div class="table-head-title">⚠️ Vendas aguardando envio (Magis5) — clique na linha pra abrir o pedido</div></div>
+              <div class="table-head"><div class="table-head-title">⚠️ Vendas aguardando envio pela sua expedição (Full já excluído) — clique na linha pra abrir o pedido</div></div>
               <div style="overflow-x:auto"><table>
                 <thead><tr><th>Status</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Canal</th><th>Valor</th><th>Data do pedido</th></tr></thead>
                 <tbody id="concPendentesBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Sincronize para carregar</td></tr></tbody>
@@ -10514,14 +10514,14 @@ async function sincronizarMagis5Saidas() {
   const status = document.getElementById('saidasSyncStatus');
   const concStatus = document.getElementById('concStatus');
   if (btn) btn.disabled = true;
-  // Busca TODOS os pedidos awaiting_send do Magis5 (paginado) + cruza com bipagens — leva ~60-90s
-  if (status) status.textContent = 'Sincronizando com o Magis5 (pode levar até 1min30)...';
-  if (concStatus) concStatus.textContent = 'Sincronizando com o Magis5 (pode levar até 1min30)...';
+  // Busca TODOS os pedidos awaiting_send do Magis5 (paginado), descarta os Full e cruza com bipagens
+  if (status) status.textContent = 'Sincronizando com o Magis5 (pode levar até 30s)...';
+  if (concStatus) concStatus.textContent = 'Sincronizando com o Magis5 (pode levar até 30s)...';
   try {
     const r = await fetch(SAIDAS_MAGIS5_API, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
     const d = await r.json();
     if (d.erro) throw new Error(d.erro);
-    const msg = `✓ ${d.sincronizados} pedidos aguardando envio — ${d.pendentes_reais} pendências reais, ${d.ja_bipados} já bipados`;
+    const msg = `✓ ${d.pendentes_reais} pendências reais, ${d.ja_bipados} já bipados (${d.descartados_full} Full ignorados de ${d.total_brutos_magis5})`;
     if (status) status.textContent = msg;
     if (concStatus) concStatus.textContent = msg;
     await garantirMagis5SaidasCarregado(true);
