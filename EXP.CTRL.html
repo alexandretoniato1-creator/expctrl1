@@ -1552,7 +1552,6 @@ select:focus{border-color:var(--accent)}
           <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">
             <button class="saida-tab active" onclick="switchSaidaTab('hoje',this)">Hoje</button>
             <button class="saida-tab" onclick="switchSaidaTab('historico',this)">Histórico semanal</button>
-            <button class="saida-tab" onclick="switchSaidaTab('analise',this)">Análise</button>
             <button class="saida-tab" onclick="switchSaidaTab('conciliacao',this)">🔗 Conciliação</button>
           </div>
           <div id="saidaTab-hoje">
@@ -1598,18 +1597,6 @@ select:focus{border-color:var(--accent)}
               <div id="histBuscaGeralResultado" style="display:none;padding:12px 0"></div>
               <table id="histTabelaDias"><thead><tr><th>Data</th><th>Galpão</th><th>Total</th><th>Flex</th><th>Coleta</th><th>ML</th><th>Amazon</th><th>Shopee</th><th>Contas ML</th><th>Funcionários</th><th></th></tr></thead>
               <tbody id="saidaHistBody"></tbody></table>
-            </div>
-          </div>
-          <div id="saidaTab-analise" style="display:none">
-            <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:14px">
-              <div class="card c-green"><div class="card-label">Média diária Flex</div><div class="card-value" id="sMediaFlex">—</div><div class="card-sub">pacotes/dia</div></div>
-              <div class="card c-blue"><div class="card-label">Média diária Coleta</div><div class="card-value" id="sMediaColeta">—</div><div class="card-sub">pacotes/dia</div></div>
-              <div class="card"><div class="card-label">Melhor dia</div><div class="card-value" id="sMelhorDia" style="font-size:16px;margin-top:4px">—</div><div class="card-sub" id="sMelhorDiaSub">—</div></div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
-              <div style="font-size:13px;font-weight:700;margin-bottom:12px">Volume por dia</div>
-              <div id="sBarChart" style="display:flex;align-items:flex-end;gap:6px;height:110px"></div>
-              <div id="sBarLabels" style="display:flex;gap:6px;margin-top:5px"></div>
             </div>
           </div>
 
@@ -3418,11 +3405,10 @@ function switchHistTab(tab,btn){
 function switchSaidaTab(tab,btn){
   document.querySelectorAll('#view-saidas .saida-tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  ['hoje','historico','analise','conciliacao'].forEach(t=>{const el=document.getElementById('saidaTab-'+t);if(el)el.style.display=t===tab?'block':'none';});
-  if(tab==='historico'||tab==='analise'){
+  ['hoje','historico','conciliacao'].forEach(t=>{const el=document.getElementById('saidaTab-'+t);if(el)el.style.display=t===tab?'block':'none';});
+  if(tab==='historico'){
     const g=document.getElementById('saidaGalpao')?.value||'LogBox';
-    if(tab==='historico') renderSaidaHistorico(g);
-    if(tab==='analise') renderSaidaAnalise(g);
+    renderSaidaHistorico(g);
   }
   if(tab==='conciliacao') { garantirMagis5SaidasCarregado(false).then(renderConciliacao); }
 }
@@ -4784,9 +4770,8 @@ function renderSaidas(){
       </tr>`;
     }).join('');
   }
-  // ── histórico e análise sempre renderizam ──
+  // ── histórico sempre renderiza ──
   renderSaidaHistorico(galpao);
-  renderSaidaAnalise(galpao);
   const btnHoje = document.getElementById('btnImprimirHoje');
   if (btnHoje) btnHoje.onclick = () => abrirModalSaidaImpressao(new Date().toLocaleDateString('pt-BR'), galpao);
   // ── lista mobile ──
@@ -4847,27 +4832,6 @@ function renderSaidaHistorico(galpao){
       </td>
     </tr>`;
   }).join('');
-}
-function renderSaidaAnalise(galpao){
-  const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao);
-  if(!hist.length)return;
-  const mf=Math.round(hist.reduce((a,h)=>a+h.flex,0)/hist.length);
-  const mc=Math.round(hist.reduce((a,h)=>a+h.coleta,0)/hist.length);
-  const melhor=hist.reduce((a,b)=>a.total>b.total?a:b);
-  document.getElementById('sMediaFlex').textContent=mf;
-  document.getElementById('sMediaColeta').textContent=mc;
-  document.getElementById('sMelhorDia').textContent=melhor.data;
-  document.getElementById('sMelhorDiaSub').textContent=melhor.total+' pacotes';
-  const maxVal=Math.max(...hist.map(h=>h.total));
-  const chart=document.getElementById('sBarChart');
-  const labels=document.getElementById('sBarLabels');
-  if(!chart)return;
-  chart.innerHTML=hist.map(h=>{
-    const hf=maxVal?Math.round((h.flex/maxVal)*100):0;
-    const hc=maxVal?Math.round((h.coleta/maxVal)*100):0;
-    return `<div class="bar-col"><div class="bar-col-val">${h.total}</div><div style="display:flex;gap:2px;align-items:flex-end;width:100%"><div class="bar-col-bar" style="height:${hf}px;background:var(--green);flex:1"></div><div class="bar-col-bar" style="height:${hc}px;background:var(--logbox);flex:1"></div></div></div>`;
-  }).join('');
-  labels.innerHTML=hist.map(h=>`<div style="flex:1;text-align:center;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${h.data.substring(0,5)}</div>`).join('');
 }
 async function removerSaida(idx){
   const s=SAIDAS_HOJE[idx];
@@ -5097,7 +5061,6 @@ async function excluirDiaHist(data, galpao){
   const idx = SAIDAS_HIST.findIndex(h=>h.data===data&&h.galpao===galpao);
   if(idx!==-1) SAIDAS_HIST.splice(idx,1);
   renderSaidaHistorico(galpao);
-  renderSaidaAnalise(galpao);
   showToast('🗑 Dia '+data+' removido do histórico');
 }
 
