@@ -4765,7 +4765,7 @@ function renderSaidas(){
       const produtoCell = pedido
         ? `<span style="font-size:11px;cursor:pointer;color:var(--text)" title="${pedido.produto||''} · R$ ${(pedido.valor||0).toFixed(2)}" onclick="abrirDetalheVendaBipada('${s.num}')">${pedido.sku||'—'}</span>`
         : (window._magis5SaidasSincronizado
-            ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px" title="Não encontrado na última sincronização com o Magis5">✕ sem match</span>`
+            ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px;cursor:pointer" title="Não achado nas pendências atuais — clique pra copiar a chave e consultar no Magis5" onclick="consultarChaveNoMagis5('${s.num}')">🔍 consultar</span>`
             : `<span style="font-size:10px;color:var(--muted)">—</span>`);
       return `
       <tr>
@@ -5021,7 +5021,7 @@ function renderDetalheTabela(lista){
       const pedido = (window._magis5SaidasIndex||{})[p.num];
       skuCell = pedido
         ? `<span style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px;cursor:pointer" onclick="abrirDetalheVendaBipada('${p.num}')">${pedido.sku||'—'}</span>`
-        : `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px">✕ sem match</span>`;
+        : `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px;cursor:pointer" title="Não achado nas pendências atuais — clique pra copiar a chave e consultar no Magis5" onclick="consultarChaveNoMagis5('${p.num}')">🔍 consultar</span>`;
     }
     return `
     <tr style="border-bottom:1px solid var(--border)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
@@ -10540,6 +10540,16 @@ async function sincronizarMagis5Saidas() {
 function abrirPedidoMagis5(buyerId) {
   if (!buyerId) return;
   window.open(`https://app.magis5.com.br/v2/admin/order/edit.php?id=${buyerId}`, '_blank');
+}
+
+// A busca do Magis5 é via formulário (POST) — não dá pra montar link direto com resultado pronto.
+// Copia a chave de acesso pro clipboard e abre a tela de consulta em branco, pra colar e buscar manualmente.
+function consultarChaveNoMagis5(chave) {
+  if (!chave) return;
+  navigator.clipboard?.writeText(chave).then(() => {
+    showToast?.('📋 Chave copiada — cole na busca do Magis5');
+  }).catch(() => {});
+  window.open('https://app.magis5.com.br/v2/admin/order/consult.php', '_blank');
 }
 
 function abrirDetalheVendaBipada(chave) {
