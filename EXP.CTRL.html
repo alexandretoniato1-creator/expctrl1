@@ -1506,11 +1506,6 @@ select:focus{border-color:var(--accent)}
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
             <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-            <button class="btn btn-ghost btn-sm" onclick="sincronizarMagis5Saidas()" id="saidasSyncBtn">🔄 Sincronizar vendas com Magis5</button>
-            <span id="saidasSyncStatus" style="font-size:11px;color:var(--muted)"></span>
-            <span id="saidasSyncUltima" style="font-size:10px;color:var(--muted);margin-left:auto"></span>
-          </div>
           <div style="background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
             <div style="flex:1">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
@@ -1552,7 +1547,7 @@ select:focus{border-color:var(--accent)}
           <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">
             <button class="saida-tab active" onclick="switchSaidaTab('hoje',this)">Hoje</button>
             <button class="saida-tab" onclick="switchSaidaTab('historico',this)">Histórico semanal</button>
-            <button class="saida-tab" onclick="switchSaidaTab('conciliacao',this)">🔗 Conciliação</button>
+            <button class="saida-tab" onclick="switchSaidaTab('painel',this)">📊 Painel</button>
           </div>
           <div id="saidaTab-hoje">
             <div class="full-table-wrap">
@@ -1600,37 +1595,72 @@ select:focus{border-color:var(--accent)}
             </div>
           </div>
 
-          <!-- ── SUB-ABA: CONCILIAÇÃO ── -->
-          <!-- Mostra só o que o Magis5 sabe e o OUTBOX não: vendas "awaiting_send" (falta expedir). -->
-          <div id="saidaTab-conciliacao" style="display:none">
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-              <input type="text" id="concBusca" placeholder="🔍 SKU, chave, pedido, cliente..." oninput="renderConciliacao()" style="width:220px;font-size:11px;padding:5px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
-              <select id="concFiltroCanal" onchange="renderConciliacao()" style="font-size:11px;padding:5px 8px">
-                <option value="">Todos os canais</option>
-                <option value="Mercado Livre">Mercado Livre</option>
-                <option value="Amazon">Amazon</option>
-                <option value="Shopee">Shopee</option>
-                <option value="TikTok">TikTok Shop</option>
-                <option value="Magalu">Magalu</option>
-              </select>
-              <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer">
-                <input type="checkbox" id="concMostrarBipados" onchange="renderConciliacao()">
-                mostrar também os já bipados
-              </label>
-              <span id="concStatus" style="font-size:11px;color:var(--muted);margin-left:auto"></span>
+          <!-- ── SUB-ABA: PAINEL DA EXPEDIÇÃO ── -->
+          <!-- Fila viva (awaiting_send, sem Full) + auditoria de pedidos que saíram sem bipagem. -->
+          <div id="saidaTab-painel" style="display:none">
+
+            <!-- Faixa de status do sync -->
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+              <button class="btn btn-ghost btn-sm" onclick="sincronizarLedger()" id="ledgerSyncBtn">🔄 Atualizar agora</button>
+              <span id="ledgerSyncInfo" style="font-size:11px;color:var(--muted)"></span>
+              <span id="ledgerSyncAlerta" style="font-size:11px;color:var(--orange);margin-left:auto"></span>
             </div>
 
-            <div class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:16px">
-              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Pendências reais</div><div class="card-value" id="concPendentes" style="color:var(--red)">—</div><div class="card-sub">awaiting_send, sem bipagem, exclui Full</div></div>
-              <div class="card" style="border-color:rgba(88,166,255,.3)"><div class="card-label">Já bipado, aguardando baixa</div><div class="card-value" id="concJaBipados" style="color:var(--accent)">—</div><div class="card-sub">Magis5 ainda não atualizou (baixa é manual)</div></div>
-              <div class="card"><div class="card-label">Valor pendente</div><div class="card-value" id="concValorPendente" style="font-size:16px;color:var(--red)">—</div><div class="card-sub">soma das pendências reais</div></div>
+            <!-- HERO: quanto falta bipar -->
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px;margin-bottom:16px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
+              <div>
+                <div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">Falta bipar</div>
+                <div id="painelFaltaBipar" style="font-size:64px;font-weight:800;line-height:1;color:var(--red)">—</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:4px">de <span id="painelTotalFila">—</span> pedidos na fila do Magis5</div>
+              </div>
+              <div style="flex:1;min-width:200px">
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px">
+                  <span>Progresso da fila</span><span id="painelPctTexto">—</span>
+                </div>
+                <div style="height:12px;background:var(--border);border-radius:6px;overflow:hidden">
+                  <div id="painelBarra" style="height:100%;width:0%;background:var(--green);transition:width .4s"></div>
+                </div>
+                <div id="painelLogistica" style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap"></div>
+              </div>
             </div>
 
-            <div class="full-table-wrap">
-              <div class="table-head"><div class="table-head-title">⚠️ Vendas aguardando envio pela sua expedição (Full já excluído) — clique na linha pra abrir o pedido</div></div>
+            <!-- Por marketplace -->
+            <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Por marketplace</div>
+            <div id="painelMarketplaces" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:18px"></div>
+
+            <!-- Alerta de pedidos parados -->
+            <div id="painelParadosWrap" class="full-table-wrap" style="margin-bottom:16px;display:none">
+              <div class="table-head"><div class="table-head-title" style="color:var(--red)">🔴 Parados na fila há mais de 3 dias</div></div>
               <div style="overflow-x:auto"><table>
-                <thead><tr><th>Status</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Canal</th><th>Valor</th><th>Data do pedido</th></tr></thead>
-                <tbody id="concPendentesBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Sincronize para carregar</td></tr></tbody>
+                <thead><tr><th>Parado há</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Valor</th></tr></thead>
+                <tbody id="painelParadosBody"></tbody>
+              </table></div>
+            </div>
+
+            <!-- Fila detalhada -->
+            <div class="full-table-wrap" style="margin-bottom:16px">
+              <div class="table-head" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                <div class="table-head-title">📦 Fila atual — clique na linha pra abrir no Magis5</div>
+                <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;margin-left:auto">
+                  <input type="checkbox" id="painelMostrarBipados" onchange="renderPainelExpedicao()"> mostrar já bipados
+                </label>
+                <input type="text" id="painelBusca" placeholder="🔍 SKU, cliente, pedido..." oninput="renderPainelExpedicao()" style="width:190px;font-size:11px;padding:5px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+              </div>
+              <div style="overflow-x:auto"><table>
+                <thead><tr><th>Status</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Envio</th><th>Valor</th><th>Data</th></tr></thead>
+                <tbody id="painelFilaBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
+              </table></div>
+            </div>
+
+            <!-- Auditoria: saiu da fila sem bipagem -->
+            <div class="full-table-wrap">
+              <div class="table-head">
+                <div class="table-head-title">🔎 Saíram da fila sem bipagem registrada <span id="painelAuditCount" style="color:var(--muted);font-weight:400"></span></div>
+                <div style="font-size:10px;color:var(--muted);margin-top:3px">Pedidos que o Magis5 tirou da fila mas que nunca passaram pela conferência do OUTBOX</div>
+              </div>
+              <div style="overflow-x:auto"><table>
+                <thead><tr><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Valor</th><th>Data</th></tr></thead>
+                <tbody id="painelAuditBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
               </table></div>
             </div>
           </div>
@@ -3405,12 +3435,12 @@ function switchHistTab(tab,btn){
 function switchSaidaTab(tab,btn){
   document.querySelectorAll('#view-saidas .saida-tab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
-  ['hoje','historico','conciliacao'].forEach(t=>{const el=document.getElementById('saidaTab-'+t);if(el)el.style.display=t===tab?'block':'none';});
+  ['hoje','historico','painel'].forEach(t=>{const el=document.getElementById('saidaTab-'+t);if(el)el.style.display=t===tab?'block':'none';});
   if(tab==='historico'){
     const g=document.getElementById('saidaGalpao')?.value||'LogBox';
     renderSaidaHistorico(g);
   }
-  if(tab==='conciliacao') { garantirMagis5SaidasCarregado(false).then(renderConciliacao); }
+  if(tab==='painel') { carregarLedger(false).then(renderPainelExpedicao); }
 }
 
 // ══════════════════════════════════════════════════════
@@ -5006,7 +5036,7 @@ async function enriquecerDetalheDia() {
   const btn = document.getElementById('detalheEnriquecerBtn');
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Buscando no Magis5...'; }
   try {
-    await garantirMagis5SaidasCarregado(false);
+    await carregarLedger(false);
     window._detalheDiaEnriquecido = true;
     if (btn) btn.textContent = '✓ Enriquecido';
     filtrarDetalheDia();
@@ -10450,52 +10480,59 @@ async function abrirHistoricoMlDeposito(itemId, sku) {
 }
 
 // ═══════════════════════════════════════════════════════
-// SAÍDAS × MAGIS5 — enriquecimento e conciliação de bipagens
+// LIVRO-CAIXA DA EXPEDIÇÃO
+// Acumula todo pedido não-Full que passou pela fila awaiting_send do Magis5.
+// Alimenta o Painel (fila viva) e a auditoria (saiu da fila sem bipagem).
+// O sync roda sozinho de hora em hora via cron; o botão só força na hora.
 // ═══════════════════════════════════════════════════════
-const SAIDAS_MAGIS5_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/saidas-magis5-sync';
+const LEDGER_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/expedicao-ledger';
+window._ledgerFila = [];
+window._ledgerSemBipagem = [];
+window._ledgerUltimoSync = null;
+window._ledgerCarregado = false;
+
+// Índice chave_nf -> pedido, usado pelo enriquecimento das tabelas Hoje/Histórico
 window._magis5SaidasIndex = {};
 window._magis5SaidasSincronizado = false;
-window._magis5SaidasLista = [];
 
-async function garantirMagis5SaidasCarregado(forcar) {
-  if (window._magis5SaidasSincronizado && !forcar) return;
+async function carregarLedger(forcar) {
+  if (window._ledgerCarregado && !forcar) return;
   try {
-    const r = await fetch(SAIDAS_MAGIS5_API, { cache: 'no-store' });
+    const r = await fetch(LEDGER_API, { cache: 'no-store' });
     const d = await r.json();
     if (d.erro) throw new Error(d.erro);
-    window._magis5SaidasLista = d.pedidos || [];
+    window._ledgerFila = d.fila || [];
+    window._ledgerSemBipagem = d.sem_bipagem || [];
+    window._ledgerUltimoSync = d.ultimo_sync || null;
+    window._ledgerCarregado = true;
+    // Reaproveita o ledger pro enriquecimento de SKU nas tabelas de bipagem
     window._magis5SaidasIndex = {};
-    for (const p of window._magis5SaidasLista) if (p.chave_nf) window._magis5SaidasIndex[p.chave_nf] = p;
+    for (const p of [...window._ledgerFila, ...window._ledgerSemBipagem]) {
+      if (p.chave_nf) window._magis5SaidasIndex[p.chave_nf] = p;
+    }
     window._magis5SaidasSincronizado = true;
-    const el = document.getElementById('saidasSyncUltima');
-    if (el) el.textContent = d.ultima_sincronizacao ? 'Última sincronização: ' + new Date(d.ultima_sincronizacao).toLocaleString('pt-BR') : '';
-  } catch(e) { console.error('[Magis5 Saídas] erro ao carregar:', e); }
+  } catch(e) { console.error('[Ledger] erro ao carregar:', e); }
 }
 
-async function sincronizarMagis5Saidas() {
-  const btn = document.getElementById('saidasSyncBtn');
-  const status = document.getElementById('saidasSyncStatus');
-  const concStatus = document.getElementById('concStatus');
-  if (btn) btn.disabled = true;
-  // Busca TODOS os pedidos awaiting_send do Magis5 (paginado), descarta os Full e cruza com bipagens
-  if (status) status.textContent = 'Sincronizando com o Magis5 (pode levar até 30s)...';
-  if (concStatus) concStatus.textContent = 'Sincronizando com o Magis5 (pode levar até 30s)...';
+async function sincronizarLedger() {
+  const btn = document.getElementById('ledgerSyncBtn');
+  const info = document.getElementById('ledgerSyncInfo');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Atualizando...'; }
+  if (info) info.textContent = 'Consultando o Magis5 (~25s)...';
   try {
-    const r = await fetch(SAIDAS_MAGIS5_API, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    const r = await fetch(LEDGER_API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ origem: 'manual' })
+    });
     const d = await r.json();
     if (d.erro) throw new Error(d.erro);
-    const msg = `✓ ${d.pendentes_reais} pendências reais, ${d.ja_bipados} já bipados (${d.descartados_full} Full ignorados de ${d.total_brutos_magis5})`;
-    if (status) status.textContent = msg;
-    if (concStatus) concStatus.textContent = msg;
-    await garantirMagis5SaidasCarregado(true);
+    await carregarLedger(true);
+    renderPainelExpedicao();
     renderSaidas();
-    renderConciliacao();
   } catch(e) {
-    if (status) status.textContent = 'Erro: ' + e.message;
-    if (concStatus) concStatus.textContent = 'Erro: ' + e.message;
+    if (info) info.textContent = 'Erro: ' + e.message;
   } finally {
-    if (btn) btn.disabled = false;
-    setTimeout(() => { if (status) status.textContent = ''; }, 10000);
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 Atualizar agora'; }
   }
 }
 
@@ -10506,7 +10543,7 @@ function abrirPedidoMagis5(buyerId) {
 }
 
 // A busca do Magis5 é via formulário (POST) — não dá pra montar link direto com resultado pronto.
-// Copia a chave de acesso pro clipboard e abre a tela de consulta em branco, pra colar e buscar manualmente.
+// Copia a chave de acesso pro clipboard e abre a tela de consulta em branco, pra colar e buscar.
 function consultarChaveNoMagis5(chave) {
   if (!chave) return;
   navigator.clipboard?.writeText(chave).then(() => {
@@ -10536,7 +10573,7 @@ function abrirDetalheVendaBipada(chave) {
       <div><b>SKU:</b> <span style="font-family:'DM Mono',monospace;color:var(--accent)">${p.sku||'—'}</span></div>
       <div><b>Produto:</b> ${p.produto||'—'}</div>
       <div><b>Quantidade:</b> ${p.quantidade||'—'}</div>
-      <div><b>Valor:</b> R$ ${(p.valor||0).toFixed(2)}</div>
+      <div><b>Valor:</b> R$ ${(parseFloat(p.valor)||0).toFixed(2)}</div>
       <div><b>Cliente:</b> ${p.cliente||'—'}</div>
       <div><b>Cidade/UF:</b> ${p.cidade||'—'} / ${p.uf||'—'}</div>
       <div><b>Canal:</b> ${p.canal||'—'}</div>
@@ -10546,45 +10583,162 @@ function abrirDetalheVendaBipada(chave) {
   modal.style.display = 'flex';
 }
 
-// Renderiza a lista de pendências reais (awaiting_send no Magis5).
-// O cruzamento com bipagens já foi feito no servidor durante o sync (campo ja_bipado),
-// então aqui é só filtrar e exibir — sem varrer histórico no navegador.
-function renderConciliacao() {
-  const busca = (document.getElementById('concBusca')?.value || '').toLowerCase().trim();
-  const fCanal = document.getElementById('concFiltroCanal')?.value || '';
-  const mostrarBipados = document.getElementById('concMostrarBipados')?.checked || false;
+// Rótulo amigável do tipo de envio devolvido pelo Magis5
+const ENVIO_LABEL = { 'flex': 'Flex', 'self_service': 'Flex', 'dba': 'DBA', '-': 'Coleta', 'xd_drop_off': 'Agência', 'cross_docking': 'Coleta' };
+function labelEnvio(lt) { return ENVIO_LABEL[lt] || (lt || 'Coleta'); }
 
-  let lista = window._magis5SaidasLista || [];
-  if (!mostrarBipados) lista = lista.filter(v => !v.ja_bipado);
-  if (busca) {
-    lista = lista.filter(v => (v.sku||'').toLowerCase().includes(busca) || (v.chave_nf||'').toLowerCase().includes(busca) || (v.order_id||'').toLowerCase().includes(busca) || (v.cliente||'').toLowerCase().includes(busca));
+const MKT_COR = { 'ML': '#ffe600', 'Shopee': '#ee4d2d', 'Amazon': '#ff9900', 'TikTok': '#69c9d0', 'Magalu': '#0086ff', 'Outros': 'var(--muted)' };
+
+function diasParado(dataPedido) {
+  if (!dataPedido) return 0;
+  return Math.floor((Date.now() - new Date(dataPedido).getTime()) / 86400000);
+}
+
+function renderPainelExpedicao() {
+  const fila = window._ledgerFila || [];
+  const semBip = window._ledgerSemBipagem || [];
+  const faltaBipar = fila.filter(p => !p.ja_bipado);
+
+  // ── Hero ──
+  const elFalta = document.getElementById('painelFaltaBipar');
+  if (elFalta) {
+    elFalta.textContent = faltaBipar.length;
+    elFalta.style.color = faltaBipar.length === 0 ? 'var(--green)' : 'var(--red)';
   }
-  if (fCanal) lista = lista.filter(v => (v.canal||'').toLowerCase().includes(fCanal.toLowerCase()));
+  const elTotal = document.getElementById('painelTotalFila');
+  if (elTotal) elTotal.textContent = fila.length;
 
-  const todasPendentes = (window._magis5SaidasLista || []).filter(v => !v.ja_bipado);
-  const todasJaBipadas = (window._magis5SaidasLista || []).filter(v => v.ja_bipado);
-  document.getElementById('concPendentes').textContent = todasPendentes.length;
-  document.getElementById('concJaBipados').textContent = todasJaBipadas.length;
-  const valorPendente = todasPendentes.reduce((s,v) => s + (parseFloat(v.valor)||0), 0);
-  const elValor = document.getElementById('concValorPendente');
-  if (elValor) elValor.textContent = 'R$ ' + valorPendente.toLocaleString('pt-BR',{minimumFractionDigits:2});
+  const pct = fila.length ? Math.round(100 * (fila.length - faltaBipar.length) / fila.length) : 100;
+  const barra = document.getElementById('painelBarra');
+  if (barra) barra.style.width = pct + '%';
+  const pctTexto = document.getElementById('painelPctTexto');
+  if (pctTexto) pctTexto.textContent = `${fila.length - faltaBipar.length} de ${fila.length} bipados (${pct}%)`;
 
-  // Limita renderização a 200 linhas — evita travar com listas grandes
-  const LIMITE_LINHAS = 200;
+  // ── Split por tipo de envio (cutoffs diferentes) ──
+  const porEnvio = {};
+  for (const p of faltaBipar) {
+    const l = labelEnvio(p.logistic_type);
+    porEnvio[l] = (porEnvio[l] || 0) + 1;
+  }
+  const elLog = document.getElementById('painelLogistica');
+  if (elLog) {
+    const entradas = Object.entries(porEnvio).sort((a,b) => b[1]-a[1]);
+    elLog.innerHTML = entradas.length
+      ? entradas.map(([k,v]) => `<div style="display:flex;align-items:baseline;gap:5px"><span style="font-size:20px;font-weight:800">${v}</span><span style="font-size:11px;color:var(--muted)">${k}</span></div>`).join('')
+      : '<span style="font-size:11px;color:var(--green)">✓ fila zerada</span>';
+  }
 
-  document.getElementById('concPendentesBody').innerHTML = lista.slice(0, LIMITE_LINHAS).map(v => `
-    <tr onclick="abrirPedidoMagis5('${v.buyer_id||''}')" style="cursor:${v.buyer_id ? 'pointer' : 'default'}" title="${v.buyer_id ? 'Clique para abrir no Magis5' : 'Sem ID de comprador disponível'}">
-      <td>${v.ja_bipado ? '<span style="font-size:10px;color:var(--accent)">🔵 já bipado</span>' : '<span style="font-size:10px;color:var(--red)">⚠️ pendente</span>'}</td>
-      <td style="font-size:11px">${v.order_id||'—'}</td>
-      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${v.sku||'—'}</td>
-      <td style="font-size:11px">${v.cliente||'—'}</td>
-      <td style="font-size:11px">${v.canal||'—'}</td>
-      <td style="font-size:11px">R$ ${(parseFloat(v.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-      <td style="font-size:10px;color:var(--muted)">${v.data_pedido ? new Date(v.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
-    </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhuma pendência encontrada</td></tr>';
+  // ── Cards por marketplace ──
+  const porMkt = {};
+  for (const p of fila) {
+    const m = p.marketplace || 'Outros';
+    if (!porMkt[m]) porMkt[m] = { total: 0, falta: 0 };
+    porMkt[m].total++;
+    if (!p.ja_bipado) porMkt[m].falta++;
+  }
+  const elMkt = document.getElementById('painelMarketplaces');
+  if (elMkt) {
+    const ordenado = Object.entries(porMkt).sort((a,b) => b[1].falta - a[1].falta || b[1].total - a[1].total);
+    elMkt.innerHTML = ordenado.length ? ordenado.map(([m,v]) => {
+      const cor = MKT_COR[m] || 'var(--muted)';
+      const pctM = v.total ? Math.round(100*(v.total-v.falta)/v.total) : 100;
+      return `<div class="card" style="border-left:3px solid ${cor}">
+        <div class="card-label" style="color:${cor}">${m}</div>
+        <div class="card-value" style="color:${v.falta ? 'var(--red)' : 'var(--green)'}">${v.falta}</div>
+        <div class="card-sub">falta bipar &middot; ${v.total} na fila</div>
+        <div style="height:4px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden">
+          <div style="height:100%;width:${pctM}%;background:${cor}"></div>
+        </div>
+      </div>`;
+    }).join('') : '<div style="font-size:12px;color:var(--muted);padding:10px">Nenhum pedido na fila.</div>';
+  }
 
-  const avisoLimite = lista.length > LIMITE_LINHAS ? `<tr><td colspan="7" style="text-align:center;padding:8px;color:var(--muted);font-size:10px">+ ${lista.length - LIMITE_LINHAS} outras — refine a busca ou filtro pra ver mais</td></tr>` : '';
-  if (avisoLimite) document.getElementById('concPendentesBody').innerHTML += avisoLimite;
+  // ── Parados há mais de 3 dias ──
+  const parados = faltaBipar.filter(p => diasParado(p.data_pedido) > 3)
+    .sort((a,b) => new Date(a.data_pedido) - new Date(b.data_pedido));
+  const wrapPar = document.getElementById('painelParadosWrap');
+  if (wrapPar) wrapPar.style.display = parados.length ? 'block' : 'none';
+  const bodyPar = document.getElementById('painelParadosBody');
+  if (bodyPar && parados.length) {
+    bodyPar.innerHTML = parados.map(p => `
+      <tr onclick="abrirPedidoMagis5('${p.buyer_id||''}')" style="cursor:${p.buyer_id?'pointer':'default'}">
+        <td style="color:var(--red);font-weight:700;font-size:11px">${diasParado(p.data_pedido)} dias</td>
+        <td style="font-size:11px">${p.order_id||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${p.sku||'—'}</td>
+        <td style="font-size:11px">${p.cliente||'—'}</td>
+        <td style="font-size:11px">${p.marketplace||'—'}</td>
+        <td style="font-size:11px">R$ ${(parseFloat(p.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+      </tr>`).join('');
+  }
+
+  // ── Fila detalhada ──
+  const busca = (document.getElementById('painelBusca')?.value || '').toLowerCase().trim();
+  const mostrarBipados = document.getElementById('painelMostrarBipados')?.checked || false;
+  let lista = mostrarBipados ? fila : faltaBipar;
+  if (busca) {
+    lista = lista.filter(p => (p.sku||'').toLowerCase().includes(busca)
+      || (p.cliente||'').toLowerCase().includes(busca)
+      || (p.order_id||'').toLowerCase().includes(busca)
+      || (p.chave_nf||'').toLowerCase().includes(busca));
+  }
+  const LIMITE = 200;
+  const bodyFila = document.getElementById('painelFilaBody');
+  if (bodyFila) {
+    bodyFila.innerHTML = lista.slice(0, LIMITE).map(p => {
+      const d = diasParado(p.data_pedido);
+      return `<tr onclick="abrirPedidoMagis5('${p.buyer_id||''}')" style="cursor:${p.buyer_id?'pointer':'default'}">
+        <td>${p.ja_bipado
+          ? '<span style="font-size:10px;color:var(--green)">✓ bipado</span>'
+          : `<span style="font-size:10px;color:${d>3?'var(--red)':'var(--orange)'}">${d>3?'🔴':'⏳'} falta</span>`}</td>
+        <td style="font-size:11px">${p.order_id||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${p.sku||'—'}</td>
+        <td style="font-size:11px">${p.cliente||'—'}</td>
+        <td style="font-size:11px">${p.marketplace||'—'}</td>
+        <td style="font-size:11px;color:var(--muted)">${labelEnvio(p.logistic_type)}</td>
+        <td style="font-size:11px">R$ ${(parseFloat(p.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+        <td style="font-size:10px;color:var(--muted)">${p.data_pedido ? new Date(p.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--green)">✓ Fila zerada — nada pendente</td></tr>';
+    if (lista.length > LIMITE) {
+      bodyFila.innerHTML += `<tr><td colspan="8" style="text-align:center;padding:8px;color:var(--muted);font-size:10px">+ ${lista.length - LIMITE} — refine a busca</td></tr>`;
+    }
+  }
+
+  // ── Auditoria: saiu da fila sem bipagem ──
+  const elAudCount = document.getElementById('painelAuditCount');
+  if (elAudCount) elAudCount.textContent = semBip.length ? `(${semBip.length})` : '';
+  const bodyAud = document.getElementById('painelAuditBody');
+  if (bodyAud) {
+    bodyAud.innerHTML = semBip.slice(0, LIMITE).map(p => `
+      <tr onclick="abrirPedidoMagis5('${p.buyer_id||''}')" style="cursor:${p.buyer_id?'pointer':'default'}">
+        <td style="font-size:11px">${p.order_id||'—'}</td>
+        <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${p.sku||'—'}</td>
+        <td style="font-size:11px">${p.cliente||'—'}</td>
+        <td style="font-size:11px">${p.marketplace||'—'}</td>
+        <td style="font-size:11px">R$ ${(parseFloat(p.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
+        <td style="font-size:10px;color:var(--muted)">${p.data_pedido ? new Date(p.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
+      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhum pedido saiu da fila sem bipagem</td></tr>';
+  }
+
+  // ── Status do sync + alerta de cron parado ──
+  const info = document.getElementById('ledgerSyncInfo');
+  const alerta = document.getElementById('ledgerSyncAlerta');
+  const s = window._ledgerUltimoSync;
+  if (info) {
+    info.textContent = s
+      ? `Última atualização: ${new Date(s.executado_em).toLocaleString('pt-BR')}${s.erro ? ' (com erro)' : ''}`
+      : 'Ainda não sincronizado';
+  }
+  if (alerta) {
+    if (!s) { alerta.textContent = ''; }
+    else {
+      const horas = (Date.now() - new Date(s.executado_em).getTime()) / 3600000;
+      // O cron roda de hora em hora entre 7h e 21h — mais de 3h sem sync indica falha
+      alerta.textContent = (horas > 3 || s.erro)
+        ? `⚠️ Sem atualização há ${Math.floor(horas)}h — pedidos desse período podem não ter entrado no livro`
+        : '';
+    }
+  }
 }
 
 // ═══════════════════════════════════════════════════════
