@@ -1574,7 +1574,7 @@ select:focus{border-color:var(--accent)}
                   <button class="btn-danger-sm" onclick="limparSaidaHoje()">🗑 Limpar</button>
                 </div>
               </div>
-              <table><thead><tr><th>#</th><th>Nº da Venda</th><th>Produto</th><th>Canal</th><th>Marketplace</th><th>Conta</th><th>Funcionário</th><th>Galpão</th><th>Hora</th><th></th></tr></thead>
+              <table><thead><tr><th>#</th><th>Nº da Venda</th><th>Produto</th><th>Canal</th><th>Marketplace</th><th>Funcionário</th><th>Galpão</th><th>Hora</th><th></th></tr></thead>
               <tbody id="saidaBody"></tbody></table>
               <div class="saida-mobile-list" id="saidaMobileList" style="display:none"></div>
             </div>
@@ -1590,7 +1590,7 @@ select:focus{border-color:var(--accent)}
                 </div>
               </div>
               <div id="histBuscaGeralResultado" style="display:none;padding:12px 0"></div>
-              <table id="histTabelaDias"><thead><tr><th>Data</th><th>Galpão</th><th>Total</th><th>Flex</th><th>Coleta</th><th>ML</th><th>Amazon</th><th>Shopee</th><th>Contas ML</th><th>Funcionários</th><th></th></tr></thead>
+              <table id="histTabelaDias"><thead><tr><th>Data</th><th>Galpão</th><th>Total</th><th>Flex</th><th>Coleta</th><th>ML</th><th>Amazon</th><th>Shopee</th><th>Funcionários</th><th></th></tr></thead>
               <tbody id="saidaHistBody"></tbody></table>
             </div>
           </div>
@@ -2212,7 +2212,6 @@ select:focus{border-color:var(--accent)}
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0" id="detalheThSku">SKU</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Canal</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Market</th>
-          <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Conta</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Hora</th>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">Funcionário</th>
         </tr></thead>
@@ -4783,7 +4782,6 @@ function renderSaidas(){
       const func = s.funcionario||'—';
       const av   = func!=='—' ? func.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase() : '?';
       const cor  = funcCorCss(FUNC_INFO[func]?.empresa||'');
-      const contaColor = CONTA_COLOR[s.conta]||'var(--muted)';
       const pedido = (window._magis5SaidasIndex||{})[s.num];
       const badgeManual = s.origem === 'manual'
         ? ' <span class="badge" style="background:rgba(210,153,34,.15);color:var(--orange);font-size:9px" title="Registrado manualmente pelo Painel, sem bipagem física">✋ manual</span>'
@@ -4801,9 +4799,6 @@ function renderSaidas(){
         <td>${produtoCellFinal}</td>
         <td><span class="badge ${s.canal==='Flex'?'b-done':'b-blue'}">${s.canal}</span></td>
         <td><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[s.market]||'b-pending'}">${s.market}</span></td>
-        <td>${s.conta
-          ? `<span style="padding:2px 9px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;color:${contaColor};background:${contaColor}18;border:1px solid ${contaColor}44">${s.conta}</span>`
-          : '<span style="color:var(--muted);font-size:10px">—</span>'}</td>
         <td><div style="display:flex;align-items:center;gap:6px"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.2);color:${cor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:1px solid currentColor;opacity:.8">${av}</div><span style="font-size:11px;color:var(--muted)">${func}</span></div></td>
         <td style="font-size:11px;color:var(--muted)">${s.galpao}</td>
         <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${s.hora}</td>
@@ -4829,17 +4824,13 @@ function filtrarContaHoje(conta) {
   document.getElementById('saidaBody')?.closest('.full-table-wrap')?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function renderSaidaHistorico(galpao){
-  const filtroConta=document.getElementById('histFiltroConta')?.value||'';
-  const CONTAS = ['Logbox'];
-  const CONTA_COLOR = { Logbox:'var(--logbox)' };
   const _parseData = d => { const [dd,mm,aaaa] = d.split('/'); return new Date(`${aaaa}-${mm}-${dd}`); };
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao).sort((a,b)=>_parseData(b.data)-_parseData(a.data));
   const tbody=document.getElementById('saidaHistBody');
-  if(!hist.length){tbody.innerHTML='<tr><td colspan="11" style="text-align:center;padding:24px;color:var(--muted)">Sem histórico</td></tr>';return;}
+  if(!hist.length){tbody.innerHTML='<tr><td colspan="10" style="text-align:center;padding:24px;color:var(--muted)">Sem histórico</td></tr>';return;}
   tbody.innerHTML=hist.map(h=>{
     const chave=h.data+'_'+h.galpao;
     let pedidos=SAIDAS_HIST_PEDIDOS[chave]||[];
-    if(filtroConta) pedidos=pedidos.filter(p=>p.conta===filtroConta);
     // resumo por funcionário
     const porFunc={};
     pedidos.forEach(p=>{ const f=p.funcionario||'—'; porFunc[f]=(porFunc[f]||0)+1; });
@@ -4847,14 +4838,6 @@ function renderSaidaHistorico(galpao){
       .sort((a,b)=>b[1]-a[1])
       .map(([f,n])=>`<span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2)">${f.split(' ')[0]} <span style="color:var(--accent);font-weight:700">${n}</span></span>`)
       .join('<span style="color:var(--border2);margin:0 3px">·</span>');
-    // mini-badges por conta — compacto, sem quebra
-    const todosOsPedidos = SAIDAS_HIST_PEDIDOS[chave]||[];
-    const contaBadges = CONTAS
-      .filter(c => todosOsPedidos.some(p=>p.conta===c))
-      .map(c => {
-        const n = todosOsPedidos.filter(p=>p.conta===c).length;
-        return `<span style="padding:1px 6px;border-radius:4px;font-size:10px;font-family:'DM Mono',monospace;font-weight:700;color:${CONTA_COLOR[c]};white-space:nowrap">${c}&nbsp;${n}</span>`;
-      }).join('<span style="color:var(--border2)"> · </span>');
     return `
     <tr class="full-row">
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.data} <span style="font-size:9px;color:var(--accent)">↗</span></td>
@@ -4865,7 +4848,6 @@ function renderSaidaHistorico(galpao){
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.ml}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.amazon}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px" onclick="abrirDetalheDia('${h.data}','${h.galpao}')">${h.shopee}</td>
-      <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')" style="white-space:nowrap">${contaBadges||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
       <td onclick="abrirDetalheDia('${h.data}','${h.galpao}')" style="max-width:160px">${funcResumo||'<span style="color:var(--muted);font-size:10px">—</span>'}</td>
       <td style="display:flex;gap:5px">
         <button class="action-btn" style="font-size:10px;color:var(--accent);white-space:nowrap" onclick="event.stopPropagation();abrirModalSaidaImpressao('${h.data}','${h.galpao}')">🖨 Imprimir</button>
@@ -5012,15 +4994,10 @@ function filtrarDetalheDia(){
 }
 
 function renderDetalheTabela(lista){
-  const CONTA_COLOR = { Logbox:'var(--logbox)' };
   const enriquecido = window._detalheDiaEnriquecido;
   const tbody=document.getElementById('detalheBody');
-  if(!lista.length){tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
+  if(!lista.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Nenhum pedido encontrado</td></tr>';return;}
   tbody.innerHTML=lista.map((p,i)=>{
-    const cc = CONTA_COLOR[p.conta]||'';
-    const contaCell = p.conta
-      ? `<span style="padding:1px 8px;border-radius:100px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;color:${cc};background:${cc}18;border:1px solid ${cc}33">${p.conta}</span>`
-      : '<span style="color:var(--muted);font-size:10px">—</span>';
     let skuCell = '<span style="color:var(--muted);font-size:10px">—</span>';
     if (enriquecido) {
       const pedido = (window._magis5SaidasIndex||{})[p.num];
@@ -5035,7 +5012,6 @@ function renderDetalheTabela(lista){
       <td style="padding:8px 11px">${skuCell}</td>
       <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
       <td style="padding:8px 11px"><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[p.market]||'b-pending'}">${p.market}</span></td>
-      <td style="padding:8px 11px">${contaCell}</td>
       <td style="padding:8px 11px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted)">${p.hora}</td>
       <td style="padding:8px 11px;font-size:11px;color:var(--muted2)">${p.funcionario||'—'}</td>
       <td style="padding:4px 8px">${p._id?`<button class="btn-danger-sm" style="font-size:10px" onclick="excluirPedidoHist(${p._id})">✕</button>`:''}</td>
@@ -7434,6 +7410,56 @@ async function confCarregar(fullId, totalEsperado) {
   confRenderSecao(fullId, totalEsperado);
 }
 
+// ── Entrada por leitor de código de barras (beep) ─────
+// O leitor físico digita o código e manda Enter. Reaproveita exatamente a mesma
+// lógica do scanner de câmera — muda só a origem do texto. Funciona no desktop,
+// onde a câmera não está disponível.
+function beepOnEnter(ev, modo, fullId, totalEsperado) {
+  if (ev.key !== 'Enter') return;
+  const input = ev.target;
+  const raw = input.value.trim();
+  if (!raw) return;
+  input.value = '';
+
+  // confOnCodigoLido/carrOnCodigoLido só processam com o scanner "armado".
+  // Ativa na hora pra não depender do ciclo da câmera (que tem trava de 2s
+  // pra evitar releitura do mesmo QR — irrelevante e atrapalha no leitor).
+  _scannerActive = true;
+  if (modo === 'carr') carrOnCodigoLido(raw, fullId, totalEsperado);
+  else confOnCodigoLido(raw, fullId, totalEsperado);
+
+  // A seção re-renderiza a cada bipada, então devolve o foco pro campo e espelha
+  // o retorno do scanner (que fica no overlay da câmera, invisível no desktop).
+  setTimeout(() => {
+    const id = modo === 'carr' ? 'carrBeepInput' : 'confBeepInput';
+    const el = document.getElementById(id);
+    if (el) { el.focus(); el.select(); }
+    const st = document.getElementById('scannerStatus');
+    const msg = document.getElementById(id + 'Msg');
+    if (st && msg && st.textContent) {
+      msg.textContent = st.textContent;
+      msg.style.color = st.style.color || 'var(--muted)';
+    }
+  }, 120);
+}
+
+function beepInputHtml(modo, fullId, totalEsperado) {
+  const id = modo === 'carr' ? 'carrBeepInput' : 'confBeepInput';
+  return `<div style="margin-bottom:10px">
+    <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px">
+      🔫 Leitor de código de barras
+    </div>
+    <input type="text" id="${id}" autocomplete="off"
+      placeholder="Bipe a caixa aqui — Enter registra"
+      onkeydown="beepOnEnter(event,'${modo}','${fullId}',${totalEsperado})"
+      style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;outline:none"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+    <div id="${id}Msg" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px">
+      Mantenha o cursor no campo e vá bipando as caixas
+    </div>
+  </div>`;
+}
+
 // ── Renderiza a seção de conferência no detalhe ───────
 function confRenderSecao(fullId, totalEsperado) {
   const el = document.getElementById('fdConferenciaSecao');
@@ -7502,11 +7528,12 @@ function confRenderSecao(fullId, totalEsperado) {
           <span class="conf-doc-status ${autOk ? 'conf-badge-ok' : 'conf-badge-pend'}">${autOk ? '✓ bipada' : 'pendente'}</span>
         </div>
 
-        <!-- Botões -->
+        <!-- Entrada por leitor + botões -->
         ${!concluida ? `
+          ${beepInputHtml('conf', fullId, totalEsperado)}
           <button class="conf-btn-scan ${_confScannerMode ? 'active' : ''}"
             onclick="${_confScannerMode ? 'confFecharScanner()' : `confAbrirScanner('${fullId}',${totalEsperado})`}">
-            ${_confScannerMode ? '⏹ Parar scanner' : '📷 Escanear caixas e documentos'}
+            ${_confScannerMode ? '⏹ Parar scanner' : '📷 Escanear com a câmera'}
           </button>
           ${bipados > 0 ? `
             <button class="conf-btn-scan" style="margin-top:6px;border-color:rgba(248,81,73,.3);color:var(--red)"
@@ -7937,9 +7964,10 @@ function carrRenderSecaoHtml(fullId, totalEsperado) {
         </div>
 
         ${!concluido ? `
+          ${beepInputHtml('carr', fullId, totalEsperado)}
           <button class="conf-btn-scan ${_carrScannerMode ? 'active' : ''}" style="border-color:rgba(224,122,48,.3);color:var(--orange)"
             onclick="${_carrScannerMode ? `carrFecharScanner('${fullId}',${totalEsperado})` : `carrAbrirScanner('${fullId}',${totalEsperado})`}">
-            ${_carrScannerMode ? '⏹ Parar scanner' : '📷 Escanear caixas'}
+            ${_carrScannerMode ? '⏹ Parar scanner' : '📷 Escanear com a câmera'}
           </button>
           ${bipados > 0 ? `
             <button class="conf-btn-scan" style="margin-top:6px;border-color:rgba(248,81,73,.3);color:var(--red)"
