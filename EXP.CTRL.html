@@ -1504,7 +1504,6 @@ select:focus{border-color:var(--accent)}
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
           
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
-            <button class="btn btn-ghost btn-sm" onclick="fecharDiaSaidas()" style="white-space:nowrap">✓ Fechar dia</button>
           </div>
           <div style="background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
             <div style="flex:1">
@@ -1551,7 +1550,8 @@ select:focus{border-color:var(--accent)}
           </div>
           <div id="saidaTab-hoje">
             <div class="full-table-wrap">
-              <div class="table-head">
+              <div id="saidasAvisoAberto" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.35);border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:var(--orange)"></div>
+            <div class="table-head">
                 <div class="table-head-title">Registros do dia</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                   <input type="text" id="saidaHojeBusca" placeholder="🔍 Buscar pedido..." oninput="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:180px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
@@ -2494,7 +2494,7 @@ const db = {
         _id: s.id,
         num: s.numero, canal: s.canal, market: s.market,
         funcionario: s.funcionario, hora: s.hora, galpao: s.galpao,
-        conta: s.conta||''
+        conta: s.conta||'', data: s.data||'', origem: s.origem||'bipagem'
       }));
 
       SAIDAS_HIST = (saidasHist||[]).map(h => ({
@@ -4806,6 +4806,7 @@ function renderSaidas(){
       </tr>`;
     }).join('');
   }
+  checarDiasEmAberto();
   // ── histórico sempre renderiza ──
   renderSaidaHistorico(galpao);
   const btnHoje = document.getElementById('btnImprimirHoje');
@@ -4863,35 +4864,23 @@ async function removerSaida(idx){
   renderSaidas();
 }
 function limparSaidaHoje(){if(!confirm('Limpar registros?'))return;const g=document.getElementById('saidaGalpao').value;SAIDAS_HOJE=SAIDAS_HOJE.filter(s=>s.galpao!==g);renderSaidas();showToast('🗑 Limpo');}
-async function fecharDiaSaidas(){
-  const g=document.getElementById('saidaGalpao').value;
-  const lista=SAIDAS_HOJE.filter(s=>s.galpao===g);
-  if(!lista.length){showToast('⚠️ Nenhum registro para fechar');return;}
-  if(!confirm('Fechar o dia de '+g+'?\n'+lista.length+' pacotes serão arquivados no histórico.'))return;
-  const hoje=new Date().toLocaleDateString('pt-BR');
-  const hist={
-    data:hoje, galpao:g, total:lista.length,
-    flex:lista.filter(s=>s.canal==='Flex').length,
-    coleta:lista.filter(s=>s.canal==='Coleta').length,
-    ml:lista.filter(s=>s.market==='ML').length,
-    amazon:lista.filter(s=>s.market==='Amazon').length,
-    shopee:lista.filter(s=>s.market==='Shopee').length
-  };
-  const chave=hoje+'_'+g;
-  // salva no banco acumulando — retorna o resumo já somado
-  const histAcumulado = await db.fecharDia(hist, lista);
-  // atualiza memória local
-  SAIDAS_HOJE=SAIDAS_HOJE.filter(s=>s.galpao!==g);
-  // atualiza/insere SAIDAS_HIST em memória com o total acumulado
-  const idxExist=SAIDAS_HIST.findIndex(h=>h.data===hoje&&h.galpao===g);
-  if(idxExist>=0) SAIDAS_HIST[idxExist]={...SAIDAS_HIST[idxExist], ...histAcumulado};
-  else SAIDAS_HIST.push(histAcumulado);
-  // acrescenta os novos pedidos em memória (sem apagar os anteriores)
-  if(!SAIDAS_HIST_PEDIDOS[chave]) SAIDAS_HIST_PEDIDOS[chave]=[];
-  lista.forEach(s=>SAIDAS_HIST_PEDIDOS[chave].push({...s}));
-  renderSaidas();
-  renderDashboard();
-  showToast('✅ Dia fechado! '+hist.total+' pacotes arquivados');
+// O fechamento do dia agora e automatico (cron no Supabase, 00:05 de Brasilia,
+// funcao fechar_dias_pendentes). Fecha por data armazenada, nao por "ontem", entao
+// se uma noite falhar a proxima execucao recupera os dias acumulados sozinha.
+// Aqui so avisamos na tela caso sobre algum dia anterior em aberto.
+function checarDiasEmAberto(){
+  const el = document.getElementById('saidasAvisoAberto');
+  if (!el) return;
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const antigos = {};
+  (SAIDAS_HOJE||[]).forEach(s => {
+    if (s.data && s.data !== hoje) antigos[s.data] = (antigos[s.data]||0) + 1;
+  });
+  const dias = Object.keys(antigos);
+  if (!dias.length) { el.style.display = 'none'; return; }
+  el.style.display = 'block';
+  el.innerHTML = '⚠️ ' + dias.map(d => `<b>${d}</b> com ${antigos[d]} registro(s)`).join(' · ') +
+    ' ainda em aberto. O fechamento automatico roda 00:05 e deve arquivar na proxima execucao.';
 }
 
 // ══════════════════════════════════════════════════════
