@@ -1629,7 +1629,7 @@ select:focus{border-color:var(--accent)}
 
             <!-- Etapas do funil -->
             <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Etapas</div>
-            <div id="painelEtapas" class="cards" style="grid-template-columns:repeat(3,1fr);margin-bottom:18px"></div>
+            <div id="painelEtapas" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:18px"></div>
 
             <!-- Por marketplace -->
             <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Falta bipar por marketplace</div>
@@ -1646,12 +1646,20 @@ select:focus{border-color:var(--accent)}
 
             <!-- Fila detalhada -->
             <div class="full-table-wrap" style="margin-bottom:16px">
-              <div class="table-head" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <div class="table-head" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
                 <div class="table-head-title">📦 Fila atual — clique na linha pra abrir no Magis5</div>
+                <div id="painelFiltrosAtivos" style="display:flex;gap:6px;flex-wrap:wrap"></div>
                 <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;margin-left:auto">
                   <input type="checkbox" id="painelMostrarBipados" onchange="renderPainelExpedicao()"> mostrar já bipados
                 </label>
-                <input type="text" id="painelBusca" placeholder="🔍 SKU, cliente, pedido..." oninput="renderPainelExpedicao()" style="width:190px;font-size:11px;padding:5px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+                <select id="painelFiltroEnvio" onchange="renderPainelExpedicao()" style="font-size:11px;padding:5px 8px">
+                  <option value="">Todo tipo de envio</option>
+                  <option value="Flex">Flex</option>
+                  <option value="Coleta">Coleta</option>
+                  <option value="DBA">DBA</option>
+                </select>
+                <input type="text" id="painelBusca" placeholder="🔍 SKU, cliente, pedido..." oninput="renderPainelExpedicao()" style="width:180px;font-size:11px;padding:5px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+                <button class="btn btn-ghost btn-sm" id="painelBtnLote" onclick="registrarLoteDoPainel()" style="font-size:10px;white-space:nowrap">✓ Registrar todos filtrados</button>
               </div>
               <div style="overflow-x:auto"><table>
                 <thead><tr><th>Etapa</th><th>Status</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Envio</th><th>Liberado em</th><th></th></tr></thead>
@@ -10624,6 +10632,76 @@ function abrirDetalheVendaBipada(chave) {
 // Registra manualmente um pedido da fila como saída de hoje.
 // NÃO é bipagem: entra com origem='manual' pra auditoria conseguir distinguir
 // um clique de uma conferência física real.
+// Registra em lote todos os pedidos atualmente filtrados na fila.
+// Mesma regra do registro individual: entra com origem='manual', nunca se passa
+// por bipagem fisica. Usado quando alguem despachou sem bipar e sao centenas.
+async function registrarLoteDoPainel() {
+  const lista = (window._painelListaFiltrada || []).filter(p =>
+    !p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado');
+  if (!lista.length) { showToast('Nada elegivel no filtro atual'); return; }
+
+  const galpao = document.getElementById('saidaGalpao')?.value || 'LogBox';
+  const funcionario = document.getElementById('saidaFuncionario')?.value || '—';
+  if (funcionario === '—') { showToast('⚠️ Selecione o funcionário na aba Hoje antes de registrar'); return; }
+
+  // Nao registra de novo o que ja esta em Hoje
+  const jaHoje = new Set(SAIDAS_HOJE.filter(s => s.galpao === galpao).map(s => s.num));
+  const novos = lista.filter(p => !jaHoje.has(p.chave_nf));
+  if (!novos.length) { showToast('Todos ja estao registrados hoje'); return; }
+
+  const porMkt = {};
+  novos.forEach(p => { const m = p.marketplace||'Outros'; porMkt[m] = (porMkt[m]||0)+1; });
+  const resumo = Object.entries(porMkt).map(([m,n]) => `  ${m}: ${n}`).join('\n');
+
+  if (!confirm(
+    `Registrar MANUALMENTE ${novos.length} pedido(s) como saída de hoje?\n\n${resumo}\n\n` +
+    `Funcionário: ${funcionario}  ·  Galpão: ${galpao}\n\n` +
+    `Isso NÃO substitui a bipagem física — todos ficarão marcados como registro manual.\n` +
+    `Ação em lote, não dá pra desfazer de uma vez.`
+  )) return;
+
+  const btn = document.getElementById('painelBtnLote');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Registrando...'; }
+
+  const now = new Date();
+  const hora = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const data = now.toLocaleDateString('pt-BR');
+  const linhas = novos.map(p => ({
+    numero: p.chave_nf,
+    canal: (p.logistic_type === 'self_service' || p.logistic_type === 'flex') ? 'Flex' : 'Coleta',
+    market: p.marketplace, funcionario, hora, data, galpao, conta: '', origem: 'manual',
+  }));
+
+  let gravados = 0, falhas = 0;
+  // Insere em blocos — um insert unico com centenas de linhas pode estourar limite
+  for (let i = 0; i < linhas.length; i += 100) {
+    const bloco = linhas.slice(i, i + 100);
+    try {
+      const { data: ret, error } = await _sb.from('saidas_hoje').insert(bloco).select();
+      if (error) throw error;
+      (ret||[]).forEach(r => {
+        SAIDAS_HOJE.push({ _id: r.id, num: r.numero, canal: r.canal, market: r.market,
+          funcionario: r.funcionario, hora: r.hora, galpao: r.galpao, conta: '',
+          data: r.data, origem: 'manual' });
+      });
+      gravados += (ret||[]).length;
+    } catch (e) {
+      console.error('[lote] falha no bloco', i, e);
+      falhas += bloco.length;
+    }
+    if (btn) btn.textContent = `⏳ ${gravados}/${linhas.length}...`;
+  }
+
+  // Reflete na tela na hora; o proximo sync confirma no ledger
+  const chaves = new Set(linhas.map(l => l.numero));
+  (window._ledgerFila||[]).forEach(p => { if (chaves.has(p.chave_nf)) p.ja_bipado = true; });
+
+  if (btn) btn.disabled = false;
+  renderSaidas();
+  renderPainelExpedicao();
+  showToast(falhas ? `⚠️ ${gravados} registrados, ${falhas} falharam` : `✅ ${gravados} registrados manualmente`);
+}
+
 async function registrarManualDoPainel(orderId) {
   const p = (window._ledgerFila||[]).find(x => x.order_id === orderId);
   if (!p) { showToast('⚠️ Pedido não encontrado na fila'); return; }
@@ -10661,6 +10739,35 @@ async function registrarManualDoPainel(orderId) {
   renderSaidas();
   renderPainelExpedicao();
   showToast('✅ Registrado manualmente — '+(p.sku||p.order_id));
+}
+
+// Etapas do funil, na ordem em que aparecem no painel.
+// "bloqueado" e "aguardando" nao sao trabalho da expedicao ainda — o pedido existe
+// mas algo fora da expedicao trava (sem estoque, sem pagamento, etiqueta nao liberada).
+const ETAPA_INFO = {
+  bloqueado:  { rotulo: 'Travado',                cor: 'var(--red)',    sub: 'sem estoque / sem pagamento — resolver antes' },
+  aguardando: { rotulo: 'Aguardando marketplace', cor: 'var(--muted2)', sub: 'etiqueta nao liberada — nao da pra trabalhar' },
+  pronto:     { rotulo: 'Pronto para separar',    cor: 'var(--orange)', sub: 'faturado, e a fila de trabalho real' },
+  despachar:  { rotulo: 'Falta despachar',        cor: 'var(--accent)', sub: 'separado, so falta sair' },
+};
+
+// Filtros ativos do painel (cards clicaveis)
+let _painelFiltroMkt = '';
+let _painelFiltroEtapa = '';
+
+function filtrarPainelPorMarketplace(m) {
+  _painelFiltroMkt = (_painelFiltroMkt === m) ? '' : m;   // clicar de novo limpa
+  renderPainelExpedicao();
+}
+function filtrarPainelPorEtapa(et) {
+  _painelFiltroEtapa = (_painelFiltroEtapa === et) ? '' : et;
+  renderPainelExpedicao();
+}
+function limparFiltrosPainel() {
+  _painelFiltroMkt = ''; _painelFiltroEtapa = '';
+  const b = document.getElementById('painelBusca'); if (b) b.value = '';
+  const e = document.getElementById('painelFiltroEnvio'); if (e) e.value = '';
+  renderPainelExpedicao();
 }
 
 // Rótulo amigável do tipo de envio devolvido pelo Magis5
@@ -10733,21 +10840,19 @@ function renderPainelExpedicao() {
   }
 
   // ── Cards das 3 etapas do funil ──
-  const ETAPA_INFO = {
-    aguardando: { rotulo: 'Aguardando marketplace', cor: 'var(--muted2)', sub: 'etiqueta nao liberada — nao da pra trabalhar' },
-    pronto:     { rotulo: 'Pronto para separar',    cor: 'var(--orange)', sub: 'faturado, e a fila de trabalho real' },
-    despachar:  { rotulo: 'Falta despachar',        cor: 'var(--accent)', sub: 'separado, so falta sair' },
-  };
   const elEtapas = document.getElementById('painelEtapas');
   if (elEtapas) {
-    elEtapas.innerHTML = ['aguardando','pronto','despachar'].map(et => {
+    elEtapas.innerHTML = Object.keys(ETAPA_INFO).map(et => {
       const info = ETAPA_INFO[et];
       const doEtapa = fila.filter(p => p.etapa === et);
       const faltam = doEtapa.filter(p => !p.ja_bipado).length;
-      return `<div class="card" style="border-left:3px solid ${info.cor}">
+      const ativo = _painelFiltroEtapa === et;
+      const naoTrabalhavel = (et === 'aguardando' || et === 'bloqueado');
+      return `<div class="card" onclick="filtrarPainelPorEtapa('${et}')" title="Clique para filtrar a fila"
+        style="border-left:3px solid ${info.cor};cursor:pointer;${ativo ? 'outline:2px solid '+info.cor+';outline-offset:-1px' : ''}">
         <div class="card-label" style="color:${info.cor}">${info.rotulo}</div>
         <div class="card-value">${doEtapa.length}</div>
-        <div class="card-sub">${et === 'aguardando' ? info.sub : faltam + ' sem bipagem · ' + info.sub}</div>
+        <div class="card-sub">${naoTrabalhavel ? info.sub : faltam + ' sem bipagem · ' + info.sub}</div>
       </div>`;
     }).join('');
   }
@@ -10766,7 +10871,9 @@ function renderPainelExpedicao() {
     elMkt.innerHTML = ordenado.length ? ordenado.map(([m,v]) => {
       const cor = MKT_COR[m] || 'var(--muted)';
       const pctM = v.total ? Math.round(100*(v.total-v.falta)/v.total) : 100;
-      return `<div class="card" style="border-left:3px solid ${cor}">
+      const ativoM = _painelFiltroMkt === m;
+      return `<div class="card" onclick="filtrarPainelPorMarketplace('${m}')" title="Clique para filtrar a fila"
+        style="border-left:3px solid ${cor};cursor:pointer;${ativoM ? 'outline:2px solid '+cor+';outline-offset:-1px' : ''}">
         <div class="card-label" style="color:${cor}">${m}</div>
         <div class="card-value" style="color:${v.falta ? 'var(--red)' : 'var(--green)'}">${v.falta}</div>
         <div class="card-sub">falta bipar &middot; ${v.total} na fila</div>
@@ -10797,13 +10904,44 @@ function renderPainelExpedicao() {
 
   // ── Fila detalhada ──
   const busca = (document.getElementById('painelBusca')?.value || '').toLowerCase().trim();
+  const fEnvio = document.getElementById('painelFiltroEnvio')?.value || '';
   const mostrarBipados = document.getElementById('painelMostrarBipados')?.checked || false;
-  let lista = mostrarBipados ? fila : faltaBipar;  // 'fila' inclui os aguardando, pra dar visao completa
+
+  // Base: se um card de etapa esta selecionado, a fila mostra aquela etapa (inclusive
+  // as nao-trabalhaveis); senao, o padrao continua sendo o trabalho pendente.
+  let lista;
+  if (_painelFiltroEtapa) {
+    lista = fila.filter(p => p.etapa === _painelFiltroEtapa);
+    if (!mostrarBipados) lista = lista.filter(p => !p.ja_bipado);
+  } else {
+    lista = mostrarBipados ? fila : faltaBipar;
+  }
+  if (_painelFiltroMkt) lista = lista.filter(p => (p.marketplace||'Outros') === _painelFiltroMkt);
+  if (fEnvio) lista = lista.filter(p => labelEnvio(p.logistic_type) === fEnvio);
   if (busca) {
     lista = lista.filter(p => (p.sku||'').toLowerCase().includes(busca)
       || (p.cliente||'').toLowerCase().includes(busca)
       || (p.order_id||'').toLowerCase().includes(busca)
       || (p.chave_nf||'').toLowerCase().includes(busca));
+  }
+  window._painelListaFiltrada = lista;   // usada pelo registro em lote
+
+  // Chips dos filtros ativos, com clique pra limpar
+  const elChips = document.getElementById('painelFiltrosAtivos');
+  if (elChips) {
+    const chips = [];
+    if (_painelFiltroEtapa) chips.push(`<span onclick="filtrarPainelPorEtapa('${_painelFiltroEtapa}')" style="cursor:pointer;font-size:10px;padding:2px 8px;border-radius:100px;background:var(--surface2);border:1px solid var(--border2);color:var(--text)">${ETAPA_INFO[_painelFiltroEtapa]?.rotulo||_painelFiltroEtapa} ✕</span>`);
+    if (_painelFiltroMkt) chips.push(`<span onclick="filtrarPainelPorMarketplace('${_painelFiltroMkt}')" style="cursor:pointer;font-size:10px;padding:2px 8px;border-radius:100px;background:var(--surface2);border:1px solid var(--border2);color:var(--text)">${_painelFiltroMkt} ✕</span>`);
+    if (chips.length) chips.push(`<span onclick="limparFiltrosPainel()" style="cursor:pointer;font-size:10px;padding:2px 8px;color:var(--muted)">limpar tudo</span>`);
+    elChips.innerHTML = chips.join('');
+  }
+
+  // Botao de lote: so faz sentido pra pedidos trabalhaveis, com NF e nao bipados
+  const btnLote = document.getElementById('painelBtnLote');
+  if (btnLote) {
+    const elegiveis = lista.filter(p => !p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado');
+    btnLote.style.display = elegiveis.length ? '' : 'none';
+    btnLote.textContent = `✓ Registrar ${elegiveis.length} filtrado(s)`;
   }
   const LIMITE = 200;
   const bodyFila = document.getElementById('painelFilaBody');
