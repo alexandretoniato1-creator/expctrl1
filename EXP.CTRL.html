@@ -1208,6 +1208,7 @@ select:focus{border-color:var(--accent)}
             <!-- ── SEÇÃO DE ETIQUETAS ML ── -->
             <div id="fdEtiquetasSecao" style="padding:0 18px 18px"></div>
             <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
+              <button class="btn btn-ghost btn-sm" onclick="imprimirRequisicaoFull(window._fdFullId)">📋 Requisição</button>
               <button class="btn btn-ghost btn-sm" onclick="fecharFullDetalhe();abrirImpressao(window._fdFullId)">🖨 Imprimir</button>
               <button class="btn-danger-sm" style="font-size:11px;padding:5px 12px" onclick="excluirFull(window._fdFullId)">🗑 Excluir</button>
             </div>
@@ -1298,6 +1299,7 @@ select:focus{border-color:var(--accent)}
                 Só com estoque positivo
               </label>
               <button class="btn btn-ghost btn-sm" onclick="efSincronizarEspelho()" id="efSyncBtn">🔄 Sincronizar com Magis5</button>
+              <button class="btn btn-ghost btn-sm" onclick="abrirInventario()" style="border-color:rgba(167,139,250,.4);color:var(--accent)">📋 Inventário do Mês</button>
               <span id="efSyncStatus" style="font-size:11px;color:var(--muted)"></span>
               <span id="efEspelhoAtualizadoEm" style="font-size:10px;color:var(--muted);margin-left:auto"></span>
             </div>
@@ -1320,6 +1322,59 @@ select:focus{border-color:var(--accent)}
                 </table>
               </div>
             </div>
+
+          <!-- ══ PAINEL DE INVENTÁRIO FÍSICO ══ -->
+          <div id="invPanel" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
+            <div style="padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface2)">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+                <div>
+                  <div style="font-size:14px;font-weight:800">📋 Inventário Físico Mensal</div>
+                  <div style="font-size:11px;color:var(--muted)" id="invDataLabel">—</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                  <select id="invFiltroBrand" onchange="renderInventario()" style="font-size:11px;padding:6px 8px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+                    <option value="">Todas as marcas</option>
+                  </select>
+                  <input type="text" id="invBusca" placeholder="🔍 SKU ou produto..." oninput="renderInventario()" style="width:160px;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
+                  <button class="btn btn-primary btn-sm" id="invSalvarBtn" onclick="salvarInventario()">💾 Salvar</button>
+                  <button class="btn btn-ghost btn-sm" onclick="fecharInventario()" style="padding:5px 10px">✕</button>
+                </div>
+              </div>
+              <div id="invStatusBar" style="margin-top:10px;min-height:20px"></div>
+            </div>
+            <div style="padding:14px 18px">
+              <div class="cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px">
+                <div class="card"><div class="card-label">Total SKUs</div><div class="card-value" id="invTotalSkus">—</div><div class="card-sub">no espelho</div></div>
+                <div class="card"><div class="card-label">Já contados</div><div class="card-value" id="invContados" style="color:var(--green)">0</div><div class="card-sub">nesta sessão</div></div>
+                <div class="card c-accent"><div class="card-label">Total contado</div><div class="card-value" id="invTotalContado">0</div><div class="card-sub">unidades</div></div>
+                <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Divergências</div><div class="card-value" id="invDivergencias" style="color:var(--red)">0</div><div class="card-sub">vs Magis5</div></div>
+              </div>
+              <div class="full-table-wrap">
+                <div class="table-head">
+                  <div class="table-head-title">Contagem física por SKU</div>
+                  <span style="font-size:10px;color:var(--muted)">Campo "Contado" começa em branco — preencha com o valor real. Magis5 é só referência.</span>
+                </div>
+                <div style="overflow-x:auto">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th style="white-space:nowrap">SKU</th>
+                        <th>Produto</th>
+                        <th style="min-width:110px">Marca</th>
+                        <th style="text-align:center;white-space:nowrap;color:var(--muted)">Magis5 ↗</th>
+                        <th style="text-align:center;min-width:90px">Contado</th>
+                        <th style="text-align:center;white-space:nowrap">Diferença</th>
+                      </tr>
+                    </thead>
+                    <tbody id="invBody">
+                      <tr><td colspan="6" style="text-align:center;padding:30px;color:var(--muted)">Carregando...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div><!-- /invPanel -->
+
           </div><!-- /fullsPane-espelho -->
 
           <div id="fullsPane-mldeposito" style="display:none">
@@ -11608,6 +11663,322 @@ async function efSincronizarEspelho() {
 async function efConfirmarBaixaMagis(id) {
   try { await efPatch(id, 'confirmar_baixa_magis', { por: 'Max' }); await carregarEstoqueFull(true); }
   catch(e) { alert('Erro: ' + e.message); }
+}
+
+// ══════════════════════════════════════════════════════
+// REQUISIÇÃO DE SEPARAÇÃO (impressão Max → Edipo)
+// ══════════════════════════════════════════════════════
+function imprimirRequisicaoFull(id) {
+  const f = FULLS_DATA[id] || FULLS_ENVIADOS.find(e => e.id === id);
+  if (!f) { showToast('Full não encontrado.'); return; }
+
+  const agora = new Date();
+  const dataImpressao = agora.toLocaleDateString('pt-BR') + ' ' + agora.getHours().toString().padStart(2,'0') + ':' + agora.getMinutes().toString().padStart(2,'0');
+  const totalCaixas = (f.itens || []).reduce((a, i) => a + (parseInt(i.qtde) || 0), 0);
+
+  const itensHTML = (f.itens || []).map((item, i) => `
+    <tr style="border-bottom:1px solid #e5e7eb${i % 2 === 1 ? ';background:#f9fafb' : ''}">
+      <td style="padding:8px 10px;font-size:12px;text-align:center;color:#6b7280;width:30px">${i+1}</td>
+      <td style="padding:8px 10px;font-size:12px;font-family:monospace;color:#374151;white-space:nowrap">${item.codigo || '—'}</td>
+      <td style="padding:8px 10px;font-size:12px;color:#111827;font-weight:500">${item.nome || '—'}</td>
+      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;color:#111827;width:70px">${item.qtde}</td>
+      <td style="padding:8px 10px;font-size:20px;text-align:center;width:50px">☐</td>
+    </tr>`).join('');
+
+  const obsHTML = f.obs
+    ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:#92400e"><strong>Obs:</strong> ${f.obs}</div>`
+    : '';
+
+  document.getElementById('printDoc').innerHTML = `
+    <div style="max-width:720px;margin:0 auto;font-family:Arial,sans-serif;color:#111">
+
+      <!-- CABEÇALHO -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:14px;margin-bottom:18px">
+        <div>
+          <div style="font-size:26px;font-weight:900;letter-spacing:-1px">OUT<span style="color:#d97706">.</span>BOX</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-family:monospace;letter-spacing:.5px;text-transform:uppercase">Requisição de Separação</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;background:#7c3aed;color:#fff">📦 SEPARAR</div>
+          <div style="font-size:10px;color:#6b7280;margin-top:6px;font-family:monospace">Emitido em ${dataImpressao}</div>
+        </div>
+      </div>
+
+      <!-- DADOS DO FULL -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">ID Full</div>
+          <div style="font-size:22px;font-weight:900;color:#d97706">${f.id}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Solicitante</div>
+          <div style="font-size:15px;font-weight:700">${f.responsavel || 'Max'}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Destino</div>
+          <div style="font-size:13px;font-weight:700">${f.destino || '—'}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Agendado para</div>
+          <div style="font-size:13px;font-weight:700">${f.agendado || '—'}</div>
+        </div>
+        <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">SKUs</div>
+          <div style="font-size:22px;font-weight:900;color:#d97706">${(f.itens || []).length}</div>
+        </div>
+        <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total caixas</div>
+          <div style="font-size:22px;font-weight:900;color:#d97706">${totalCaixas}</div>
+        </div>
+      </div>
+
+      <!-- TABELA DE ITENS -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Itens para separação</div>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+          <thead>
+            <tr style="background:#111;color:#fff">
+              <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">#</th>
+              <th style="padding:9px 10px;font-size:10px;text-align:left;font-family:monospace;letter-spacing:.5px">SKU</th>
+              <th style="padding:9px 10px;font-size:10px;text-align:left;font-family:monospace;letter-spacing:.5px">Produto</th>
+              <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">Qtde Cx</th>
+              <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">✓ Separado</th>
+            </tr>
+          </thead>
+          <tbody>${itensHTML}</tbody>
+          <tfoot>
+            <tr style="background:#f9fafb;border-top:2px solid #111">
+              <td colspan="3" style="padding:9px 10px;font-size:12px;font-weight:700;text-align:right;font-family:monospace">TOTAL</td>
+              <td style="padding:9px 10px;font-size:16px;font-weight:900;text-align:center;color:#d97706">${totalCaixas}</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      ${obsHTML}
+
+      <!-- ASSINATURAS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:32px">
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:6px;font-family:monospace">Solicitante (Max)</div>
+          <div style="border-bottom:2px solid #111;height:48px;margin-bottom:6px;border-radius:2px"></div>
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace">Nome / Data / Assinatura</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:6px;font-family:monospace">Responsável pela separação (Edipo)</div>
+          <div style="border-bottom:2px solid #111;height:48px;margin-bottom:6px;border-radius:2px"></div>
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace">Nome / Data / Assinatura</div>
+        </div>
+      </div>
+
+      <!-- RODAPÉ -->
+      <div style="margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;font-family:monospace">
+        <span>OUTBOX — Sistema de Controle de Expedição</span>
+        <span>${f.id} · REQUISIÇÃO DE SEPARAÇÃO · ${dataImpressao}</span>
+      </div>
+    </div>`;
+
+  document.getElementById('printDoc').style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.getElementById('printDoc').style.display = 'none'; }, 500);
+  }, 150);
+}
+
+// ══════════════════════════════════════════════════════
+// INVENTÁRIO FÍSICO MENSAL
+// ══════════════════════════════════════════════════════
+let _invDados = {};   // {sku: qty_contada | null}
+let _invMarcas = {};  // {sku: marca} — overrides manuais
+let _invDataContagem = null;
+
+async function abrirInventario() {
+  const espelho = _efDados?.espelho;
+  if (!espelho || espelho.length === 0) {
+    showToast('⚠️ Sincronize o Estoque Principal primeiro.');
+    return;
+  }
+  const panel = document.getElementById('invPanel');
+  if (!panel) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  _invDataContagem = today;
+  const todayBR = new Date().toLocaleDateString('pt-BR');
+  document.getElementById('invDataLabel').textContent = 'Contagem de ' + todayBR;
+
+  // Inicializa marcas a partir do espelho
+  espelho.forEach(e => {
+    if (!(_invMarcas[e.sku] !== undefined)) _invMarcas[e.sku] = e.marca || '';
+  });
+
+  panel.style.display = 'block';
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // Monta filtro de marcas
+  const marcasSet = new Set(espelho.map(e => (_invMarcas[e.sku] || e.marca || '')).filter(Boolean));
+  const marcas = [...marcasSet].sort();
+  const sel = document.getElementById('invFiltroBrand');
+  if (sel) sel.innerHTML = '<option value="">Todas as marcas</option>' + marcas.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  document.getElementById('invStatusBar').innerHTML = '<span style="font-size:11px;color:var(--muted)">Verificando contagem salva para hoje...</span>';
+  renderInventario();
+
+  // Carrega contagem salva para hoje (se existir)
+  try {
+    const r = await fetch(FULL_ESTOQUE_API + '?acao=inventario&data=' + today, { cache: 'no-store' });
+    const d = await r.json();
+    if (d.itens && d.itens.length > 0) {
+      d.itens.forEach(i => {
+        _invDados[i.sku] = i.qty_contada;
+        if (i.marca) _invMarcas[i.sku] = i.marca;
+      });
+      document.getElementById('invStatusBar').innerHTML =
+        `<span style="font-size:11px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 10px;color:var(--green)">✓ Contagem de hoje carregada — ${d.itens.length} SKUs já registrados</span>`;
+      // Atualiza filtro de marcas com overrides carregados
+      const marcasSet2 = new Set(espelho.map(e => (_invMarcas[e.sku] || e.marca || '')).filter(Boolean));
+      const marcas2 = [...marcasSet2].sort();
+      if (sel) sel.innerHTML = '<option value="">Todas as marcas</option>' + marcas2.map(m => `<option value="${m}">${m}</option>`).join('');
+      renderInventario();
+    } else {
+      document.getElementById('invStatusBar').innerHTML =
+        '<span style="font-size:11px;color:var(--muted)">Nenhuma contagem salva para hoje — comece do zero.</span>';
+    }
+  } catch(e) {
+    document.getElementById('invStatusBar').innerHTML =
+      `<span style="font-size:11px;color:var(--orange)">⚠️ Erro ao verificar contagem salva: ${e.message}</span>`;
+  }
+}
+
+function fecharInventario() {
+  const panel = document.getElementById('invPanel');
+  if (panel) panel.style.display = 'none';
+}
+
+function renderInventario() {
+  const espelho = _efDados?.espelho || [];
+  const busca = (document.getElementById('invBusca')?.value || '').toLowerCase().trim();
+  const marcaFiltro = document.getElementById('invFiltroBrand')?.value || '';
+
+  let lista = espelho.filter(e => {
+    const marca = _invMarcas[e.sku] !== undefined ? _invMarcas[e.sku] : (e.marca || '');
+    if (marcaFiltro && marca !== marcaFiltro) return false;
+    if (busca && !((e.sku||'').toLowerCase().includes(busca) || (e.produto||'').toLowerCase().includes(busca))) return false;
+    return true;
+  }).sort((a, b) => {
+    const ma = _invMarcas[a.sku] || a.marca || '';
+    const mb = _invMarcas[b.sku] || b.marca || '';
+    return ma.localeCompare(mb) || (a.sku||'').localeCompare(b.sku||'');
+  });
+
+  // Stats (sobre todo o espelho, não só o filtrado)
+  const contados = espelho.filter(e => _invDados[e.sku] !== undefined && _invDados[e.sku] !== null).length;
+  const totalContado = espelho.reduce((s, e) => s + (_invDados[e.sku] || 0), 0);
+  const divergencias = espelho.filter(e => _invDados[e.sku] !== undefined && _invDados[e.sku] !== null && _invDados[e.sku] !== (e.quantidade || 0)).length;
+  const el = id => document.getElementById(id);
+  if (el('invTotalSkus')) el('invTotalSkus').textContent = espelho.length;
+  if (el('invContados')) el('invContados').textContent = contados;
+  if (el('invTotalContado')) el('invTotalContado').textContent = totalContado;
+  if (el('invDivergencias')) el('invDivergencias').textContent = divergencias;
+
+  const tbody = document.getElementById('invBody');
+  if (!tbody) return;
+  tbody.innerHTML = lista.map(e => {
+    const marca = _invMarcas[e.sku] !== undefined ? _invMarcas[e.sku] : (e.marca || '');
+    const qtdMagis = e.quantidade || 0;
+    const contado = _invDados[e.sku];
+    const diff = (contado !== undefined && contado !== null) ? (contado - qtdMagis) : null;
+    const diffStr = diff === null ? '—' : (diff > 0 ? '+' + diff : '' + diff);
+    const diffColor = diff === null ? 'var(--muted)' : diff > 0 ? 'var(--green)' : diff < 0 ? 'var(--red)' : 'var(--muted2)';
+    const safeId = (e.sku || '').replace(/[^a-zA-Z0-9]/g, '_');
+    const contadoVal = (contado !== undefined && contado !== null) ? contado : '';
+    const marcaEsc = marca.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    const skuEsc = (e.sku || '').replace(/'/g, "\\'");
+    return `<tr>
+      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:12px;white-space:nowrap">${e.sku||'—'}</td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${e.produto||''}">${e.produto||'—'}</td>
+      <td>
+        <input type="text" value="${marcaEsc}" placeholder="—"
+          style="width:100%;min-width:90px;padding:4px 7px;font-size:11px;background:var(--surface2);border:1px solid var(--border2);border-radius:5px;color:var(--text);outline:none;box-sizing:border-box"
+          onchange="invMarcaChange('${skuEsc}', this.value)"
+          data-sku="${e.sku}">
+      </td>
+      <td style="font-size:12px;color:var(--muted);text-align:center;font-family:'DM Mono',monospace">${qtdMagis}</td>
+      <td style="text-align:center;padding:4px">
+        <input type="number" min="0" value="${contadoVal}" placeholder="—"
+          style="width:72px;padding:7px 4px;font-size:14px;font-weight:700;text-align:center;background:var(--surface2);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none;box-sizing:border-box"
+          oninput="invQtdChange('${skuEsc}', this.value, ${qtdMagis})"
+          inputmode="numeric">
+      </td>
+      <td id="invDiff_${safeId}" style="text-align:center;font-size:13px;font-weight:700;color:${diffColor};font-family:'DM Mono',monospace;white-space:nowrap">${diffStr}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Nenhum SKU encontrado</td></tr>';
+}
+
+function invQtdChange(sku, valor, qtdMagis) {
+  const v = valor === '' ? null : (parseInt(valor) >= 0 ? parseInt(valor) : null);
+  _invDados[sku] = v;
+  // Atualiza só a célula de diferença (sem re-render completo para não tirar o foco)
+  const safeId = (sku || '').replace(/[^a-zA-Z0-9]/g, '_');
+  const diffEl = document.getElementById('invDiff_' + safeId);
+  if (diffEl) {
+    const diff = v !== null ? (v - qtdMagis) : null;
+    const diffStr = diff === null ? '—' : (diff > 0 ? '+' + diff : '' + diff);
+    const diffColor = diff === null ? 'var(--muted)' : diff > 0 ? 'var(--green)' : diff < 0 ? 'var(--red)' : 'var(--muted2)';
+    diffEl.textContent = diffStr;
+    diffEl.style.color = diffColor;
+  }
+  // Atualiza stats sem re-render
+  const espelho = _efDados?.espelho || [];
+  const contados = espelho.filter(e => _invDados[e.sku] !== undefined && _invDados[e.sku] !== null).length;
+  const totalContado = espelho.reduce((s, e) => s + (_invDados[e.sku] || 0), 0);
+  const divergencias = espelho.filter(e => _invDados[e.sku] !== undefined && _invDados[e.sku] !== null && _invDados[e.sku] !== (e.quantidade || 0)).length;
+  const el = id => document.getElementById(id);
+  if (el('invContados')) el('invContados').textContent = contados;
+  if (el('invTotalContado')) el('invTotalContado').textContent = totalContado;
+  if (el('invDivergencias')) el('invDivergencias').textContent = divergencias;
+}
+
+function invMarcaChange(sku, valor) {
+  _invMarcas[sku] = valor.trim();
+}
+
+async function salvarInventario() {
+  const espelho = _efDados?.espelho || [];
+  const today = _invDataContagem || new Date().toISOString().slice(0, 10);
+  const itens = espelho
+    .filter(e => _invDados[e.sku] !== undefined && _invDados[e.sku] !== null)
+    .map(e => ({
+      sku: e.sku,
+      marca: _invMarcas[e.sku] !== undefined ? _invMarcas[e.sku] : (e.marca || ''),
+      qty_magis: e.quantidade || 0,
+      qty_contada: _invDados[e.sku],
+    }));
+
+  if (itens.length === 0) {
+    showToast('⚠️ Preencha pelo menos uma quantidade antes de salvar.');
+    return;
+  }
+
+  const btn = document.getElementById('invSalvarBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando...'; }
+
+  try {
+    const r = await fetch(FULL_ESTOQUE_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'salvar_inventario', data_contagem: today, itens }),
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    showToast('✅ Inventário salvo — ' + d.salvos + ' SKUs');
+    document.getElementById('invStatusBar').innerHTML =
+      `<span style="font-size:11px;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:6px;padding:4px 10px;color:var(--green)">✓ Salvo às ${new Date().toLocaleTimeString('pt-BR')} · ${itens.length} SKUs</span>`;
+  } catch(e) {
+    showToast('❌ Erro ao salvar: ' + e.message);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '💾 Salvar'; }
+  }
 }
 
 </script>
