@@ -1669,13 +1669,17 @@ select:focus{border-color:var(--accent)}
 
             <!-- Auditoria: saiu da fila sem bipagem -->
             <div class="full-table-wrap">
-              <div class="table-head">
-                <div class="table-head-title">🔎 Saíram da fila sem bipagem registrada <span id="painelAuditCount" style="color:var(--muted);font-weight:400"></span></div>
-                <div style="font-size:10px;color:var(--muted);margin-top:3px">Pedidos que o Magis5 tirou da fila mas que nunca passaram pela conferência do OUTBOX</div>
+              <div class="table-head" style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+                <div style="flex:1;min-width:240px">
+                  <div class="table-head-title">🔎 Saíram da fila sem bipagem registrada <span id="painelAuditCount" style="color:var(--muted);font-weight:400"></span></div>
+                  <div style="font-size:10px;color:var(--muted);margin-top:3px">Pedidos que o Magis5 tirou da fila mas que nunca passaram pela conferência do OUTBOX</div>
+                  <div id="painelAuditExtra" style="font-size:10px;color:var(--muted2);margin-top:3px"></div>
+                </div>
+                <button class="btn btn-ghost btn-sm" id="painelAuditBtnLote" onclick="resolverAuditoriaLote()" style="font-size:10px;white-space:nowrap">✓ Dar baixa em todos</button>
               </div>
               <div style="overflow-x:auto"><table>
-                <thead><tr><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Valor</th><th>Data</th></tr></thead>
-                <tbody id="painelAuditBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
+                <thead><tr><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Valor</th><th>Data</th><th></th></tr></thead>
+                <tbody id="painelAuditBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
               </table></div>
             </div>
           </div>
@@ -4647,6 +4651,30 @@ document.addEventListener('DOMContentLoaded', () => {
   const galpaoSel = document.getElementById('saidaGalpao');
   if(galpaoSel) galpaoSel.addEventListener('change', filtrarFuncionariosPorGalpao);
 });
+// Digito verificador da chave da NFe: modulo 11 com pesos ciclicos 2..9,
+// aplicados da direita pra esquerda sobre os 43 primeiros digitos.
+function _dvChaveValido(ch) {
+  if (!/^\d{44}$/.test(ch)) return false;
+  const base = ch.slice(0, 43);
+  let soma = 0, peso = 2;
+  for (let i = base.length - 1; i >= 0; i--) {
+    soma += parseInt(base[i]) * peso;
+    peso = peso === 9 ? 2 : peso + 1;
+  }
+  const r = soma % 11;
+  const dv = (r === 0 || r === 1) ? 0 : 11 - r;
+  return dv === parseInt(ch[43]);
+}
+
+// Procura, dentro de uma sequencia maior, a janela de 44 digitos com DV valido.
+function _extraiChavePorDV(digitos) {
+  for (let i = 0; i + 44 <= digitos.length; i++) {
+    const cand = digitos.substr(i, 44);
+    if (_dvChaveValido(cand)) return cand;
+  }
+  return null;
+}
+
 async function registrarSaida(){
   const input=document.getElementById('saidaBipe');
   const raw=input.value.trim();if(!raw)return;
@@ -4656,9 +4684,33 @@ async function registrarSaida(){
     '2607113369': 'Logbox',
   };
 
-  // Extrai número do pedido (id)
-  const qrMatch = raw.match(/id[^0-9]*([0-9]{8,})/i);
-  const num = qrMatch ? qrMatch[1] : raw.replace(/[\r\n\t]/g,'').trim();
+  // ── Validacao: so aceita chave de acesso da NF (44 digitos) ──────
+  // Padronizado com a equipe. Antes entrava codigo de rastreio, numero de pedido e
+  // QR de etiqueta, que nunca casam com o Magis5 e viravam pendencia falsa na auditoria.
+  const soDigitos = raw.replace(/\D/g, '');
+  if (soDigitos.length < 44) {
+    input.value = '';
+    input.style.borderColor = 'var(--red)';
+    setTimeout(()=>{ input.style.borderColor='var(--border2)'; }, 2000);
+    const preview = raw.length > 22 ? raw.slice(0,22)+'…' : raw;
+    showToast(`❌ Nao e chave de acesso (${soDigitos.length} digitos): ${preview}`);
+    if (typeof _somDuplicata === 'function') _somDuplicata();
+    input.focus();
+    return;
+  }
+
+  let num;
+  if (soDigitos.length === 44) {
+    // Leitura limpa: aceita sempre. O DV so avisa, nunca bloqueia — uma chave
+    // legitima que falhe no digito nao pode travar a expedicao.
+    num = soDigitos;
+    if (!_dvChaveValido(num)) showToast('⚠️ Digito verificador nao confere — confira a leitura');
+  } else {
+    // Leitura com sujeira (prefixo do leitor, zero a esquerda). Usa o DV pra achar
+    // a janela correta de 44 digitos; sem isso o corte pode pegar a chave deslocada.
+    num = _extraiChavePorDV(soDigitos) || soDigitos.slice(-44);
+    showToast('⚠️ Chave extraida de leitura suja — confira o leitor');
+  }
 
   // ── Checa duplicata (desktop e mobile) ────────────
   const galpao=document.getElementById('saidaGalpao').value;
@@ -7195,15 +7247,19 @@ function _somDuplicata() {
   } catch(e) {}
 }
 
-// ── Extrai número do pedido do QR (mesma lógica do registrarSaida) ──
+// ── Extrai a chave de acesso do texto lido (mesma regra do registrarSaida) ──
+// Precisa ser identica, senao a checagem de duplicata compara coisas diferentes.
 function _extrairNumPedido(raw) {
-  const qrMatch = raw.match(/id[^0-9]*([0-9]{8,})/i);
-  return qrMatch ? qrMatch[1] : raw.replace(/[\r\n\t]/g,'').trim();
+  const d = (raw||'').replace(/\D/g, '');
+  if (d.length < 44) return null;
+  if (d.length === 44) return d;
+  return _extraiChavePorDV(d) || d.slice(-44);
 }
 
 // ── Checa se pedido já foi bipado hoje ──
 function _isDuplicata(raw) {
   const num = _extrairNumPedido(raw);
+  if (!num) return false;   // leitura invalida nao e duplicata; registrarSaida recusa
   const galpao = document.getElementById('saidaGalpao')?.value || 'LogBox';
   return SAIDAS_HOJE.some(s => s.galpao === galpao && s.num === num);
 }
@@ -10550,6 +10606,8 @@ async function carregarLedger(forcar) {
     window._ledgerFila = _norm(d.fila);
     window._ledgerSemBipagem = _norm(d.sem_bipagem);
     window._ledgerUltimoSync = d.ultimo_sync || null;
+    window._ledgerSemNf = d.sem_nf || 0;
+    window._ledgerResolvidos = d.total_resolvidos || 0;
     window._ledgerCarregado = true;
     // Reaproveita o ledger pro enriquecimento de SKU nas tabelas de bipagem
     window._magis5SaidasIndex = {};
@@ -10632,6 +10690,67 @@ function abrirDetalheVendaBipada(chave) {
 // Registra manualmente um pedido da fila como saída de hoje.
 // NÃO é bipagem: entra com origem='manual' pra auditoria conseguir distinguir
 // um clique de uma conferência física real.
+// Dá baixa numa pendência de auditoria: o registro continua no livro, mas sai da
+// lista ativa com quem resolveu e por quê. Não apaga nada — a auditoria histórica
+// continua consultável, e uma bipagem tardia ainda é detectada pelo sync.
+const MOTIVOS_BAIXA = [
+  'Despachado sem bipar (confirmado)',
+  'Pedido cancelado',
+  'Bipado com código errado',
+  'Enviado pelo marketplace (Full/coleta direta)',
+  'Outro',
+];
+
+async function resolverAuditoria(orderIds, motivoPre) {
+  if (!orderIds || !orderIds.length) return;
+  const quem = document.getElementById('saidaFuncionario')?.value || '—';
+
+  let motivo = motivoPre;
+  if (!motivo) {
+    const opcoes = MOTIVOS_BAIXA.map((m,i) => `${i+1}. ${m}`).join('\n');
+    const escolha = prompt(
+      `Dar baixa em ${orderIds.length} pedido(s).\n\nMotivo:\n${opcoes}\n\n` +
+      `Digite o número (ou escreva um motivo livre):`, '1');
+    if (escolha === null) return;
+    const n = parseInt(escolha);
+    motivo = (n >= 1 && n <= MOTIVOS_BAIXA.length) ? MOTIVOS_BAIXA[n-1] : String(escolha).trim();
+    if (!motivo) return;
+    if (motivo === 'Outro') {
+      const livre = prompt('Descreva o motivo:');
+      if (!livre) return;
+      motivo = livre.trim();
+    }
+  }
+
+  try {
+    const r = await fetch(LEDGER_API, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'resolver', order_ids: orderIds, motivo, por: quem })
+    });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    await carregarLedger(true);
+    renderPainelExpedicao();
+    showToast(`✅ Baixa em ${d.resolvidos} pedido(s)`);
+  } catch (e) {
+    showToast('❌ Erro: ' + e.message);
+  }
+}
+
+async function resolverAuditoriaLote() {
+  const lista = window._ledgerSemBipagem || [];
+  if (!lista.length) { showToast('Nada para dar baixa'); return; }
+  const porMkt = {};
+  lista.forEach(p => { const m = p.marketplace||'Outros'; porMkt[m] = (porMkt[m]||0)+1; });
+  const resumo = Object.entries(porMkt).map(([m,n]) => `  ${m}: ${n}`).join('\n');
+  if (!confirm(
+    `Dar baixa em TODOS os ${lista.length} pedidos da auditoria?\n\n${resumo}\n\n` +
+    `Eles saem da lista mas continuam no histórico.\n` +
+    `Só faça isso depois de conferir — é o registro de que a venda saiu sem conferência.`
+  )) return;
+  await resolverAuditoria(lista.map(p => p.order_id));
+}
+
 // Registra em lote todos os pedidos atualmente filtrados na fila.
 // Mesma regra do registro individual: entra com origem='manual', nunca se passa
 // por bipagem fisica. Usado quando alguem despachou sem bipar e sao centenas.
@@ -10973,6 +11092,18 @@ function renderPainelExpedicao() {
   // ── Auditoria: saiu da fila sem bipagem ──
   const elAudCount = document.getElementById('painelAuditCount');
   if (elAudCount) elAudCount.textContent = semBip.length ? `(${semBip.length})` : '';
+  const elAudExtra = document.getElementById('painelAuditExtra');
+  if (elAudExtra) {
+    const partes = [];
+    if (window._ledgerSemNf) partes.push(`${window._ledgerSemNf} pedido(s) sem NF emitida ficam fora desta lista — sem chave, nunca poderiam casar`);
+    if (window._ledgerResolvidos) partes.push(`${window._ledgerResolvidos} já com baixa`);
+    elAudExtra.textContent = partes.join(' · ');
+  }
+  const btnAudLote = document.getElementById('painelAuditBtnLote');
+  if (btnAudLote) {
+    btnAudLote.style.display = semBip.length ? '' : 'none';
+    btnAudLote.textContent = `✓ Dar baixa em ${semBip.length}`;
+  }
   const bodyAud = document.getElementById('painelAuditBody');
   if (bodyAud) {
     bodyAud.innerHTML = semBip.slice(0, LIMITE).map(p => `
@@ -10983,7 +11114,9 @@ function renderPainelExpedicao() {
         <td style="font-size:11px">${p.marketplace||'—'}</td>
         <td style="font-size:11px">R$ ${(parseFloat(p.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
         <td style="font-size:10px;color:var(--muted)">${p.data_pedido ? new Date(p.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
-      </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhum pedido saiu da fila sem bipagem</td></tr>';
+        <td style="padding:4px 8px"><button class="btn btn-ghost btn-sm" style="font-size:10px;white-space:nowrap"
+          onclick="event.stopPropagation();resolverAuditoria(['${p.order_id}'])">✓ baixa</button></td>
+      </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhum pedido saiu da fila sem bipagem</td></tr>';
   }
 
   // ── Status do sync + alerta de cron parado ──
