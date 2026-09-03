@@ -1654,43 +1654,47 @@ select:focus{border-color:var(--accent)}
           <!-- Fila viva (awaiting_send, sem Full) + auditoria de pedidos que saíram sem bipagem. -->
           <div id="saidaTab-painel" style="display:none">
 
-            <!-- Faixa de status do sync -->
+            <!-- Barra de sync -->
             <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
               <button class="btn btn-ghost btn-sm" onclick="sincronizarLedger()" id="ledgerSyncBtn">🔄 Atualizar agora</button>
+              <button class="btn btn-ghost btn-sm" onclick="sincronizarSlaMl()" id="slaSyncBtn" title="Busca o prazo exato de despacho de cada pedido Coleta direto no ML" style="border-color:rgba(255,230,0,.3);color:#ffe600">⏱ Sincronizar SLA do ML</button>
+              <span id="slaSyncInfo" style="font-size:11px;color:var(--muted)"></span>
               <span id="ledgerSyncInfo" style="font-size:11px;color:var(--muted)"></span>
               <span id="ledgerSyncAlerta" style="font-size:11px;color:var(--orange);margin-left:auto"></span>
             </div>
 
-            <!-- HERO: quanto falta bipar -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px 24px;margin-bottom:16px;display:flex;align-items:center;gap:28px;flex-wrap:wrap">
-              <div>
-                <div style="font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:2px">Falta bipar agora</div>
-                <div id="painelFaltaBipar" style="font-size:64px;font-weight:800;line-height:1;color:var(--red)">—</div>
-                <div style="font-size:11px;color:var(--muted);margin-top:4px">pedidos prontos para separar e despachar</div>
-                <div style="font-size:11px;color:var(--muted2);margin-top:6px">⏳ <span id="painelAguardando">—</span> ainda travados no marketplace</div>
-                <div style="font-size:11px;color:var(--accent);margin-top:3px">🆕 <span id="painelEntraramHoje">—</span> liberados hoje</div>
+            <!-- ══ CARD DE STATUS PRINCIPAL ══ -->
+            <div id="painelStatusCard" style="border-radius:14px;padding:24px 28px;margin-bottom:18px;display:flex;align-items:center;gap:28px;flex-wrap:wrap;background:rgba(248,81,73,.07);border:2px solid rgba(248,81,73,.35);transition:background .4s,border-color .4s">
+              <div style="flex:1;min-width:220px">
+                <div id="painelStatusBadge" style="display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:3px 12px;border-radius:100px;margin-bottom:10px;background:rgba(248,81,73,.15);color:var(--red)">EM ANDAMENTO</div>
+                <div id="painelFaltaBipar" style="font-size:72px;font-weight:800;line-height:1;color:var(--red)">—</div>
+                <div id="painelStatusSub" style="font-size:13px;color:var(--muted2);margin-top:8px">pedidos sem bipagem na fila de trabalho</div>
+                <div style="display:flex;gap:18px;margin-top:12px;flex-wrap:wrap">
+                  <span style="font-size:11px;color:var(--muted)">⏳ <span id="painelAguardando">—</span> aguardando marketplace</span>
+                  <span style="font-size:11px;color:var(--accent)">🆕 <span id="painelEntraramHoje">—</span> liberados hoje</span>
+                </div>
               </div>
               <div style="flex:1;min-width:200px">
-                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:5px">
-                  <span>Progresso da fila</span><span id="painelPctTexto">—</span>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
+                  <span>Progresso da bipagem</span><span id="painelPctTexto">—</span>
                 </div>
-                <div style="height:12px;background:var(--border);border-radius:6px;overflow:hidden">
-                  <div id="painelBarra" style="height:100%;width:0%;background:var(--green);transition:width .4s"></div>
+                <div style="height:14px;background:var(--border);border-radius:7px;overflow:hidden">
+                  <div id="painelBarra" style="height:100%;width:0%;background:var(--green);transition:width .5s"></div>
                 </div>
-                <div id="painelLogistica" style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap"></div>
+                <div id="painelLogistica" style="display:flex;gap:16px;margin-top:14px;flex-wrap:wrap"></div>
                 <div id="painelDivergencia" style="font-size:11px;color:var(--orange);margin-top:8px"></div>
               </div>
             </div>
 
-            <!-- Etapas do funil -->
-            <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Etapas</div>
-            <div id="painelEtapas" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:18px"></div>
+            <!-- ══ PARA FAZER AGORA ══ -->
+            <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Para fazer agora</div>
+            <div id="painelAcaoCards" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:18px"></div>
 
             <!-- Por marketplace -->
-            <div style="font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:8px">Falta bipar por marketplace</div>
+            <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;margin-bottom:8px">Por marketplace</div>
             <div id="painelMarketplaces" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin-bottom:18px"></div>
 
-            <!-- Alerta de pedidos parados -->
+            <!-- Alerta de pedidos parados há mais de 3 dias -->
             <div id="painelParadosWrap" class="full-table-wrap" style="margin-bottom:16px;display:none">
               <div class="table-head"><div class="table-head-title" style="color:var(--red)">🔴 Liberados há mais de 3 dias e ainda não bipados</div></div>
               <div style="overflow-x:auto"><table>
@@ -1702,7 +1706,7 @@ select:focus{border-color:var(--accent)}
             <!-- Fila detalhada -->
             <div class="full-table-wrap" style="margin-bottom:16px">
               <div class="table-head" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-                <div class="table-head-title">📦 Fila atual — clique na linha pra abrir no Magis5</div>
+                <div class="table-head-title">📋 Fila de bipagem — clique para abrir no Magis5</div>
                 <div id="painelFiltrosAtivos" style="display:flex;gap:6px;flex-wrap:wrap"></div>
                 <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;margin-left:auto">
                   <input type="checkbox" id="painelMostrarBipados" onchange="renderPainelExpedicao()"> mostrar já bipados
@@ -1717,16 +1721,26 @@ select:focus{border-color:var(--accent)}
                 <button class="btn btn-ghost btn-sm" id="painelBtnLote" onclick="registrarLoteDoPainel()" style="font-size:10px;white-space:nowrap">✓ Registrar todos filtrados</button>
               </div>
               <div style="overflow-x:auto"><table>
-                <thead><tr><th>Etapa</th><th>Status</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Envio</th><th>Liberado em</th><th></th></tr></thead>
-                <tbody id="painelFilaBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
+                <thead><tr><th>Etapa</th><th>Status</th><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Envio</th><th>Prazo</th><th>Liberado em</th><th></th></tr></thead>
+                <tbody id="painelFilaBody"><tr><td colspan="10" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
               </table></div>
             </div>
+
+            <!-- Separador: informativo / não acionável -->
+            <div style="display:flex;align-items:center;gap:12px;margin:4px 0 16px">
+              <div style="height:1px;flex:1;background:var(--border)"></div>
+              <span style="font-size:10px;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;white-space:nowrap">Não requer ação agora</span>
+              <div style="height:1px;flex:1;background:var(--border)"></div>
+            </div>
+
+            <!-- Etapas bloqueadas / aguardando marketplace -->
+            <div id="painelEtapas" class="cards" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:18px"></div>
 
             <!-- Auditoria: saiu da fila sem bipagem -->
             <div class="full-table-wrap">
               <div class="table-head" style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
                 <div style="flex:1;min-width:240px">
-                  <div class="table-head-title">🔎 Saíram da fila sem bipagem registrada <span id="painelAuditCount" style="color:var(--muted);font-weight:400"></span></div>
+                  <div class="table-head-title">🔎 Saíram da fila sem bipagem <span id="painelAuditCount" style="color:var(--muted);font-weight:400"></span></div>
                   <div style="font-size:10px;color:var(--muted);margin-top:3px">Pedidos que o Magis5 tirou da fila mas que nunca passaram pela conferência do OUTBOX</div>
                   <div id="painelAuditExtra" style="font-size:10px;color:var(--muted2);margin-top:3px"></div>
                 </div>
@@ -10657,6 +10671,9 @@ async function carregarLedger(forcar) {
       valor: _num(p.valor),
       quantidade: p.quantidade == null ? null : parseInt(p.quantidade),
       barcode_validado: p.barcode_validado == null ? null : parseInt(p.barcode_validado),
+      // data_limite_envio vem como string ISO do postgres — mantém como string (calcPrazo usa new Date())
+      data_limite_envio: p.data_limite_envio || null,
+      ml_shipping_id: p.ml_shipping_id || null,
     }));
     window._ledgerFila = _norm(d.fila);
     window._ledgerSemBipagem = _norm(d.sem_bipagem);
@@ -10692,6 +10709,29 @@ async function sincronizarLedger() {
     if (info) info.textContent = 'Erro: ' + e.message;
   } finally {
     if (btn) { btn.disabled = false; btn.textContent = '🔄 Atualizar agora'; }
+  }
+}
+
+// Sincroniza prazo exato de despacho (SLA) do ML para pedidos Coleta
+const ML_SLA_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/ml-sla-sync';
+async function sincronizarSlaMl() {
+  const btn  = document.getElementById('slaSyncBtn');
+  const info = document.getElementById('slaSyncInfo');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Buscando no ML...'; }
+  if (info) info.textContent = 'Consultando API do Mercado Livre...';
+  try {
+    const r = await fetch(ML_SLA_API, { method: 'POST', cache: 'no-store' });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    if (info) info.textContent = `✓ ${d.ok} prazo(s) atualizados${d.erros ? ' · ' + d.erros + ' erro(s)' : ''} · ${new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}`;
+    // Recarrega ledger para refletir data_limite_envio atualizado
+    await carregarLedger(true);
+    renderPainelExpedicao();
+  } catch(e) {
+    if (info) info.textContent = 'Erro: ' + e.message;
+    console.error('[SLA sync] erro:', e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '⏱ Sincronizar SLA do ML'; }
   }
 }
 
@@ -10963,20 +11003,105 @@ function ehDeHoje(p) {
   return new Date(base).toDateString() === new Date().toDateString();
 }
 
+// Calcula prazo de envio por tipo logístico.
+// Prioridade: data_limite_envio (do ML via SLA sync) > bloco_expedicao > regra Flex
+// Retorna { texto, cor, passou, minutosRestantes, tipo, fonte }
+function calcPrazo(p) {
+  const agora = new Date();
+  const lt = (p.logistic_type || '').toLowerCase();
+
+  // ── Flex (self_service): cutoff às 12:00 do dia atual ──────────────────
+  if (lt === 'self_service' || lt === 'flex') {
+    const cutoff = new Date(agora);
+    cutoff.setHours(12, 0, 0, 0);
+    const minutos = Math.round((cutoff - agora) / 60000);
+    const passou  = agora >= cutoff;
+    return {
+      texto: '12:00',
+      cor: passou ? 'var(--red)' : (minutos < 60 ? 'var(--orange)' : 'var(--green)'),
+      passou,
+      minutosRestantes: Math.abs(minutos),
+      tipo: 'flex',
+      fonte: 'regra'
+    };
+  }
+
+  // ── Coleta ML (cross_docking) ───────────────────────────────────────────
+  if (lt === 'cross_docking') {
+
+    // 1ª opção: data_limite_envio vinda do ML via SLA sync (mais precisa)
+    if (p.data_limite_envio) {
+      const cutoff  = new Date(p.data_limite_envio);
+      const minutos = Math.round((cutoff - agora) / 60000);
+      const passou  = agora >= cutoff;
+      const hh = String(cutoff.getHours()).padStart(2, '0');
+      const mi = String(cutoff.getMinutes()).padStart(2, '0');
+      return {
+        texto: `${hh}:${mi}`,
+        cor: passou ? 'var(--red)' : (minutos < 30 ? 'var(--orange)' : 'var(--green)'),
+        passou,
+        minutosRestantes: Math.abs(minutos),
+        tipo: 'coleta',
+        fonte: 'ml_api'
+      };
+    }
+
+    // 2ª opção: bloco_expedicao do Magis5 — "Bloco_DD-MM-YYYY_HH:MM:SS"
+    if (p.bloco_expedicao) {
+      const m = p.bloco_expedicao.match(/Bloco_(\d{2})-(\d{2})-(\d{4})_(\d{2}):(\d{2})/);
+      if (m) {
+        const [, dd, mm, yyyy, hh, mi] = m;
+        const cutoff  = new Date(`${yyyy}-${mm}-${dd}T${hh}:${mi}:00`);
+        const minutos = Math.round((cutoff - agora) / 60000);
+        const passou  = agora >= cutoff;
+        return {
+          texto: `${hh}:${mi}`,
+          cor: passou ? 'var(--red)' : (minutos < 30 ? 'var(--orange)' : 'var(--green)'),
+          passou,
+          minutosRestantes: Math.abs(minutos),
+          tipo: 'coleta',
+          fonte: 'bloco'
+        };
+      }
+    }
+  }
+
+  return { texto: '—', cor: 'var(--muted)', passou: false, minutosRestantes: null, tipo: null, fonte: null };
+}
+
 function renderPainelExpedicao() {
   const fila = window._ledgerFila || [];
   const semBip = window._ledgerSemBipagem || [];
-  // "aguardando" = marketplace ainda nao liberou, nao e trabalho da expedicao ainda.
-  // O numero que importa pro operador e o que esta pronto/despachar e sem bipagem.
-  const trabalhaveis = fila.filter(p => p.etapa === 'pronto' || p.etapa === 'despachar');
-  const aguardando = fila.filter(p => p.etapa === 'aguardando');
-  const faltaBipar = trabalhaveis.filter(p => !p.ja_bipado);
 
-  // ── Hero ──
+  // Classifica pedidos por etapa
+  const trabalhaveis = fila.filter(p => p.etapa === 'pronto' || p.etapa === 'despachar');
+  const aguardando   = fila.filter(p => p.etapa === 'aguardando');
+  const bloqueados   = fila.filter(p => p.etapa === 'bloqueado');
+  const faltaBipar   = trabalhaveis.filter(p => !p.ja_bipado);
+  const zerado       = faltaBipar.length === 0 && trabalhaveis.length > 0;
+
+  // ── Card de status principal ──
+  const card = document.getElementById('painelStatusCard');
+  if (card) {
+    card.style.background    = zerado ? 'rgba(63,185,80,.07)'   : 'rgba(248,81,73,.07)';
+    card.style.borderColor   = zerado ? 'rgba(63,185,80,.35)'   : 'rgba(248,81,73,.35)';
+  }
+  const badge = document.getElementById('painelStatusBadge');
+  if (badge) {
+    badge.textContent        = zerado ? '✓ BIPAGEM COMPLETA'   : 'EM ANDAMENTO';
+    badge.style.background   = zerado ? 'rgba(63,185,80,.15)'  : 'rgba(248,81,73,.15)';
+    badge.style.color        = zerado ? 'var(--green)'          : 'var(--red)';
+  }
   const elFalta = document.getElementById('painelFaltaBipar');
   if (elFalta) {
-    elFalta.textContent = faltaBipar.length;
-    elFalta.style.color = faltaBipar.length === 0 ? 'var(--green)' : 'var(--red)';
+    elFalta.textContent      = faltaBipar.length;
+    elFalta.style.color      = zerado ? 'var(--green)'          : 'var(--red)';
+  }
+  const elSub = document.getElementById('painelStatusSub');
+  if (elSub) {
+    elSub.textContent = zerado
+      ? 'Todos os pedidos foram bipados — ótimo trabalho! 🎉'
+      : `pedido${faltaBipar.length !== 1 ? 's' : ''} sem bipagem na fila de trabalho`;
   }
   const elAg = document.getElementById('painelAguardando');
   if (elAg) elAg.textContent = aguardando.length;
@@ -10987,7 +11112,7 @@ function renderPainelExpedicao() {
   const pctTexto = document.getElementById('painelPctTexto');
   if (pctTexto) pctTexto.textContent = `${trabalhaveis.length - faltaBipar.length} de ${trabalhaveis.length} bipados (${pct}%)`;
 
-  // Liberados pra expedição hoje + divergência contra a conferência do próprio Magis5
+  // Liberados hoje + divergências
   const deHoje = trabalhaveis.filter(ehDeHoje);
   const divergentes = trabalhaveis.filter(p => p.ja_bipado && (p.barcode_validado === 0 || p.barcode_validado === null));
   const elHoje = document.getElementById('painelEntraramHoje');
@@ -10999,7 +11124,7 @@ function renderPainelExpedicao() {
       : '';
   }
 
-  // ── Split por tipo de envio (cutoffs diferentes) ──
+  // Split por tipo de envio
   const porEnvio = {};
   for (const p of faltaBipar) {
     const l = labelEnvio(p.logistic_type);
@@ -11009,26 +11134,70 @@ function renderPainelExpedicao() {
   if (elLog) {
     const entradas = Object.entries(porEnvio).sort((a,b) => b[1]-a[1]);
     elLog.innerHTML = entradas.length
-      ? entradas.map(([k,v]) => `<div style="display:flex;align-items:baseline;gap:5px"><span style="font-size:20px;font-weight:800">${v}</span><span style="font-size:11px;color:var(--muted)">${k}</span></div>`).join('')
-      : '<span style="font-size:11px;color:var(--green)">✓ fila zerada</span>';
+      ? entradas.map(([k,v]) => `<div style="display:flex;align-items:baseline;gap:5px"><span style="font-size:22px;font-weight:800">${v}</span><span style="font-size:11px;color:var(--muted)">${k}</span></div>`).join('')
+      : (trabalhaveis.length ? '<span style="font-size:12px;color:var(--green)">✓ nada pendente por envio</span>' : '');
   }
 
-  // ── Cards das 3 etapas do funil ──
-  const elEtapas = document.getElementById('painelEtapas');
-  if (elEtapas) {
-    elEtapas.innerHTML = Object.keys(ETAPA_INFO).map(et => {
-      const info = ETAPA_INFO[et];
+  // ── Cards de AÇÃO: somente pronto + despachar ──
+  const ACAO_INFO = {
+    pronto:    { rotulo: 'Pronto para separar',      emoji: '📦', cor: 'var(--orange)', sub: 'Faturado, etiqueta liberada — separar e bipar' },
+    despachar: { rotulo: 'Separado, falta despachar', emoji: '🚚', cor: 'var(--blue)',   sub: 'Já separado — bipar e entregar ao transportador' },
+  };
+  const elAcao = document.getElementById('painelAcaoCards');
+  if (elAcao) {
+    // Calcula urgências de prazo nos trabalháveis ainda não bipados
+    const agora = new Date();
+    const trabNaoBipados = trabalhaveis.filter(p => !p.ja_bipado);
+    const flexUrgentes   = trabNaoBipados.filter(p => {
+      const lt = (p.logistic_type||'').toLowerCase();
+      return lt === 'self_service' || lt === 'flex';
+    });
+    const coletaVencida  = trabNaoBipados.filter(p => {
+      const pz = calcPrazo(p);
+      return pz.tipo === 'coleta' && pz.passou;
+    });
+    const coletaProxima  = trabNaoBipados.filter(p => {
+      const pz = calcPrazo(p);
+      return pz.tipo === 'coleta' && !pz.passou && pz.minutosRestantes !== null && pz.minutosRestantes < 30;
+    });
+
+    // Monta alerta de prazo (exibe logo abaixo dos cards se houver urgência)
+    const alertas = [];
+    const flexCutoff = new Date(agora); flexCutoff.setHours(12,0,0,0);
+    const flexPassou = agora >= flexCutoff;
+    if (flexUrgentes.length > 0) {
+      const corFlex = flexPassou ? 'var(--red)' : (Math.round((flexCutoff-agora)/60000) < 60 ? 'var(--orange)' : 'var(--green)');
+      const textoFlex = flexPassou
+        ? `🚨 ${flexUrgentes.length} Flex — prazo 12:00 já passou`
+        : `⏰ ${flexUrgentes.length} Flex — vence às 12:00`;
+      alertas.push(`<span style="font-size:11px;font-weight:700;color:${corFlex}">${textoFlex}</span>`);
+    }
+    if (coletaVencida.length > 0) {
+      alertas.push(`<span style="font-size:11px;font-weight:700;color:var(--red)">🚨 ${coletaVencida.length} Coleta — bloco venceu</span>`);
+    }
+    if (coletaProxima.length > 0) {
+      alertas.push(`<span style="font-size:11px;font-weight:700;color:var(--orange)">⚠ ${coletaProxima.length} Coleta — bloco em menos de 30 min</span>`);
+    }
+
+    const alertaHtml = alertas.length
+      ? `<div style="grid-column:1/-1;display:flex;gap:16px;flex-wrap:wrap;padding:8px 12px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);border-radius:8px">${alertas.join('<span style="color:var(--border2)">·</span>')}</div>`
+      : '';
+
+    elAcao.innerHTML = Object.entries(ACAO_INFO).map(([et, info]) => {
       const doEtapa = fila.filter(p => p.etapa === et);
-      const faltam = doEtapa.filter(p => !p.ja_bipado).length;
-      const ativo = _painelFiltroEtapa === et;
-      const naoTrabalhavel = (et === 'aguardando' || et === 'bloqueado');
+      const faltam  = doEtapa.filter(p => !p.ja_bipado).length;
+      const cor     = faltam > 0 ? info.cor : 'var(--green)';
+      const ativo   = _painelFiltroEtapa === et;
       return `<div class="card" onclick="filtrarPainelPorEtapa('${et}')" title="Clique para filtrar a fila"
-        style="border-left:3px solid ${info.cor};cursor:pointer;${ativo ? 'outline:2px solid '+info.cor+';outline-offset:-1px' : ''}">
-        <div class="card-label" style="color:${info.cor}">${info.rotulo}</div>
-        <div class="card-value">${doEtapa.length}</div>
-        <div class="card-sub">${naoTrabalhavel ? info.sub : faltam + ' sem bipagem · ' + info.sub}</div>
+        style="border-left:4px solid ${cor};cursor:pointer;${ativo ? 'outline:2px solid '+cor+';outline-offset:-1px' : ''}">
+        <div class="card-label" style="color:${cor};font-size:12px;font-weight:700">${info.emoji} ${info.rotulo}</div>
+        <div style="display:flex;align-items:baseline;gap:10px;margin:8px 0 4px">
+          <div style="font-size:42px;font-weight:800;color:${cor};line-height:1">${faltam}</div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.4">sem bipar<br><span style="color:var(--muted2)">${doEtapa.length} total</span></div>
+        </div>
+        <div class="card-sub" style="font-size:10px">${info.sub}</div>
       </div>`;
-    }).join('');
+    }).join('') + alertaHtml;
   }
 
   // ── Cards por marketplace ──
@@ -11043,19 +11212,19 @@ function renderPainelExpedicao() {
   if (elMkt) {
     const ordenado = Object.entries(porMkt).sort((a,b) => b[1].falta - a[1].falta || b[1].total - a[1].total);
     elMkt.innerHTML = ordenado.length ? ordenado.map(([m,v]) => {
-      const cor = MKT_COR[m] || 'var(--muted)';
+      const cor  = MKT_COR[m] || 'var(--muted)';
       const pctM = v.total ? Math.round(100*(v.total-v.falta)/v.total) : 100;
       const ativoM = _painelFiltroMkt === m;
       return `<div class="card" onclick="filtrarPainelPorMarketplace('${m}')" title="Clique para filtrar a fila"
         style="border-left:3px solid ${cor};cursor:pointer;${ativoM ? 'outline:2px solid '+cor+';outline-offset:-1px' : ''}">
         <div class="card-label" style="color:${cor}">${m}</div>
         <div class="card-value" style="color:${v.falta ? 'var(--red)' : 'var(--green)'}">${v.falta}</div>
-        <div class="card-sub">falta bipar &middot; ${v.total} na fila</div>
+        <div class="card-sub">sem bipar · ${v.total} na fila</div>
         <div style="height:4px;background:var(--border);border-radius:2px;margin-top:7px;overflow:hidden">
           <div style="height:100%;width:${pctM}%;background:${cor}"></div>
         </div>
       </div>`;
-    }).join('') : '<div style="font-size:12px;color:var(--muted);padding:10px">Nenhum pedido na fila.</div>';
+    }).join('') : '<div style="font-size:12px;color:var(--muted);padding:10px">Nenhum pedido trabalhável na fila.</div>';
   }
 
   // ── Parados há mais de 3 dias ──
@@ -11081,8 +11250,6 @@ function renderPainelExpedicao() {
   const fEnvio = document.getElementById('painelFiltroEnvio')?.value || '';
   const mostrarBipados = document.getElementById('painelMostrarBipados')?.checked || false;
 
-  // Base: se um card de etapa esta selecionado, a fila mostra aquela etapa (inclusive
-  // as nao-trabalhaveis); senao, o padrao continua sendo o trabalho pendente.
   let lista;
   if (_painelFiltroEtapa) {
     lista = fila.filter(p => p.etapa === _painelFiltroEtapa);
@@ -11098,9 +11265,9 @@ function renderPainelExpedicao() {
       || (p.order_id||'').toLowerCase().includes(busca)
       || (p.chave_nf||'').toLowerCase().includes(busca));
   }
-  window._painelListaFiltrada = lista;   // usada pelo registro em lote
+  window._painelListaFiltrada = lista;
 
-  // Chips dos filtros ativos, com clique pra limpar
+  // Chips dos filtros ativos
   const elChips = document.getElementById('painelFiltrosAtivos');
   if (elChips) {
     const chips = [];
@@ -11110,7 +11277,6 @@ function renderPainelExpedicao() {
     elChips.innerHTML = chips.join('');
   }
 
-  // Botao de lote: so faz sentido pra pedidos trabalhaveis, com NF e nao bipados
   const btnLote = document.getElementById('painelBtnLote');
   if (btnLote) {
     const elegiveis = lista.filter(p => !p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado');
@@ -11121,9 +11287,22 @@ function renderPainelExpedicao() {
   const bodyFila = document.getElementById('painelFilaBody');
   if (bodyFila) {
     bodyFila.innerHTML = lista.slice(0, LIMITE).map(p => {
-      const d = diasParado(p);
-      const etLabel = { aguardando:'⏸ aguardando', pronto:'📦 pronto', despachar:'🚚 despachar' }[p.etapa] || p.etapa || '—';
-      return `<tr onclick="abrirPedidoMagis5('${p.buyer_id||''}')" style="cursor:${p.buyer_id?'pointer':'default'}">
+      const d  = diasParado(p);
+      const pz = calcPrazo(p);
+      const etLabel = { aguardando:'⏸ aguardando', pronto:'📦 pronto', despachar:'🚚 despachar', bloqueado:'🔒 travado' }[p.etapa] || p.etapa || '—';
+      // Destaca linha se prazo urgente e ainda não bipado
+      const linhaBg = (!p.ja_bipado && pz.tipo && pz.passou)
+        ? 'background:rgba(248,81,73,.06);'
+        : (!p.ja_bipado && pz.tipo && pz.minutosRestantes !== null && pz.minutosRestantes < 30)
+        ? 'background:rgba(210,153,34,.06);'
+        : '';
+      // Formato da célula de prazo
+      const pzLabel = pz.texto === '—'
+        ? `<span style="color:var(--muted)">—</span>`
+        : pz.passou
+          ? `<span style="font-size:11px;font-weight:700;color:${pz.cor}" title="Prazo vencido">${pz.texto} ⚠</span>`
+          : `<span style="font-size:11px;font-weight:700;color:${pz.cor}">${pz.texto}</span>`;
+      return `<tr onclick="abrirPedidoMagis5('${p.buyer_id||''}')" style="cursor:${p.buyer_id?'pointer':'default'};${linhaBg}">
         <td style="font-size:10px;color:var(--muted)">${etLabel}</td>
         <td>${p.ja_bipado
           ? '<span style="font-size:10px;color:var(--green)">✓ bipado</span>'
@@ -11133,15 +11312,35 @@ function renderPainelExpedicao() {
         <td style="font-size:11px">${p.cliente||'—'}</td>
         <td style="font-size:11px">${p.marketplace||'—'}</td>
         <td style="font-size:11px;color:var(--muted)">${labelEnvio(p.logistic_type)}</td>
+        <td style="padding:4px 10px">${pzLabel}</td>
         <td style="font-size:10px;color:var(--muted)">${p.data_expedicao ? new Date(p.data_expedicao).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}</td>
-        <td style="padding:4px 8px">${(!p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando')
+        <td style="padding:4px 8px">${(!p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado')
           ? `<button class="btn btn-ghost btn-sm" style="font-size:10px;white-space:nowrap" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✓ Registrar</button>`
           : ''}</td>
       </tr>`;
-    }).join('') || '<tr><td colspan="9" style="text-align:center;padding:16px;color:var(--green)">✓ Fila zerada — nada pendente</td></tr>';
+    }).join('') || '<tr><td colspan="10" style="text-align:center;padding:16px;color:var(--green)">✓ Fila zerada — nada pendente</td></tr>';
     if (lista.length > LIMITE) {
-      bodyFila.innerHTML += `<tr><td colspan="9" style="text-align:center;padding:8px;color:var(--muted);font-size:10px">+ ${lista.length - LIMITE} — refine a busca</td></tr>`;
+      bodyFila.innerHTML += `<tr><td colspan="10" style="text-align:center;padding:8px;color:var(--muted);font-size:10px">+ ${lista.length - LIMITE} — refine a busca</td></tr>`;
     }
+  }
+
+  // ── Etapas passivas (aguardando + bloqueado) — abaixo do separador ──
+  const ETAPA_PASSIVA = {
+    bloqueado:  { rotulo: 'Travados',                cor: 'var(--red)',    sub: 'Sem estoque ou pagamento — resolver antes de trabalhar' },
+    aguardando: { rotulo: 'Aguardando marketplace',  cor: 'var(--muted)', sub: 'Marketplace ainda não liberou a etiqueta — aguardar' },
+  };
+  const elEtapas = document.getElementById('painelEtapas');
+  if (elEtapas) {
+    elEtapas.innerHTML = Object.entries(ETAPA_PASSIVA).map(([et, info]) => {
+      const doEtapa = fila.filter(p => p.etapa === et);
+      const ativo   = _painelFiltroEtapa === et;
+      return `<div class="card" onclick="filtrarPainelPorEtapa('${et}')" title="Clique para ver na fila"
+        style="border-left:3px solid ${info.cor};cursor:pointer;opacity:${ativo?'1':'.65'};${ativo ? 'outline:2px solid '+info.cor+';outline-offset:-1px' : ''}">
+        <div class="card-label" style="color:${info.cor}">${info.rotulo}</div>
+        <div class="card-value">${doEtapa.length}</div>
+        <div class="card-sub">${info.sub}</div>
+      </div>`;
+    }).join('');
   }
 
   // ── Auditoria: saiu da fila sem bipagem ──
@@ -11187,7 +11386,6 @@ function renderPainelExpedicao() {
     if (!s) { alerta.textContent = ''; }
     else {
       const horas = (Date.now() - new Date(s.executado_em).getTime()) / 3600000;
-      // O cron roda de hora em hora entre 7h e 21h — mais de 3h sem sync indica falha
       alerta.textContent = (horas > 3 || s.erro)
         ? `⚠️ Sem atualização há ${Math.floor(horas)}h — pedidos desse período podem não ter entrado no livro`
         : '';
