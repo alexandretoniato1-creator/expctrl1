@@ -1166,7 +1166,8 @@ select:focus{border-color:var(--accent)}
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.06)"></div>Pendente</div>
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(245,95,95,.12)"></div>Atrasado</div>
               </div>
-              <select id="calFiltroEmpresa" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">LogBox</option></select>
+              <select id="calFiltroMkt" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Todos MKT</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok</option><option value="Magalu">Magalu</option></select>
+              <select id="calFiltroTipo" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Coleta + Envio</option><option value="Coleta">Coleta ML</option><option value="Envio próprio">Envio próprio</option></select>
               <button class="btn btn-primary btn-sm" onclick="openModal('modalFull')">+ Novo Full</button>
             </div>
           </div>
@@ -1209,6 +1210,7 @@ select:focus{border-color:var(--accent)}
             <div id="fdEtiquetasSecao" style="padding:0 18px 18px"></div>
             <div style="padding:12px 18px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end">
               <button class="btn btn-ghost btn-sm" onclick="imprimirRequisicaoFull(window._fdFullId)">📋 Requisição</button>
+              <button class="btn btn-ghost btn-sm" onclick="imprimirDelegacaoMax(window._fdFullId)">🗂️ Folha Max</button>
               <button class="btn btn-ghost btn-sm" onclick="fecharFullDetalhe();abrirImpressao(window._fdFullId)">🖨 Imprimir</button>
               <button class="btn-danger-sm" style="font-size:11px;padding:5px 12px" onclick="excluirFull(window._fdFullId)">🗑 Excluir</button>
             </div>
@@ -2060,7 +2062,8 @@ select:focus{border-color:var(--accent)}
     <div class="modal-title">Novo Full <button class="modal-close" onclick="closeModal('modalFull')">✕</button></div>
     <div class="form-grid">
       <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="nf-id" placeholder="FULL-070" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
-      <div class="form-group"><label>Empresa</label><select class="form-sel" id="nf-empresa"><option value="LogBox">LogBox</option></select></div>
+      <div class="form-group"><label>Marketplace</label><select class="form-sel" id="nf-marketplace" onchange="nfAtualizarDestinos()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
+      <div class="form-group"><label>Tipo de envio</label><select class="form-sel" id="nf-tipo"><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
       <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date" id="nf-agendado"></div>
       <div class="form-group"><label>Responsável</label><select class="form-sel" id="nf-responsavel"><option>Edipo</option><option>Max</option></select></div>
@@ -2527,7 +2530,10 @@ const db = {
 
       // mapeia snake_case do banco → camelCase do frontend
       FULLS_DATA = Object.fromEntries((fulls||[]).map(f => [f.id, {
-        id: f.id, empresa: f.empresa, destino: f.destino,
+        id: f.id, empresa: f.empresa,
+        tipo_envio: derivarTipoLabel(f.empresa),
+        marketplace: derivarMarketplace(f.destino),
+        destino: f.destino,
         agendado: f.agendado, criadoEm: f.criado_em,
         responsavel: f.responsavel, status: f.status,
         obs: f.obs, vol: f.vol||[], itens: f.itens||[],
@@ -2535,14 +2541,20 @@ const db = {
       }]));
 
       CAL_FULLS = (calFulls||[]).map(c => ({
-        id: c.id, empresa: c.empresa, dia: c.dia,
+        id: c.id, empresa: c.empresa,
+        tipo_envio: derivarTipoLabel(c.empresa),
+        marketplace: derivarMarketplace(c.destino),
+        dia: c.dia,
         destino: c.destino, status: c.status,
         itens: c.itens, responsavel: c.responsavel,
         dateKey: c.date_key||''
       }));
 
       FULLS_ENVIADOS = (enviados||[]).map(f => ({
-        id: f.id, empresa: f.empresa, destino: f.destino,
+        id: f.id, empresa: f.empresa,
+        tipo_envio: derivarTipoLabel(f.empresa),
+        marketplace: derivarMarketplace(f.destino),
+        destino: f.destino,
         agendado: f.agendado, criadoEm: f.criado_em,
         responsavel: f.responsavel, enviadoEm: f.enviado_em,
         totalItens: f.total_itens, totalCaixas: f.total_caixas,
@@ -2623,7 +2635,7 @@ const db = {
   // Salva um full (cria ou atualiza)
   async saveFull(f) {
     const row = {
-      id: f.id, empresa: f.empresa, destino: f.destino,
+      id: f.id, empresa: f.tipo_envio||f.empresa||'', destino: f.destino,
       agendado: f.agendado||'', criado_em: f.criadoEm||'',
       responsavel: f.responsavel||'', status: f.status||'Pendente',
       obs: f.obs||'', vol: f.vol||[], itens: f.itens||[],
@@ -2636,7 +2648,7 @@ const db = {
   // Salva entrada do calendário
   async saveCalFull(c) {
     const row = {
-      id: c.id, empresa: c.empresa, dia: c.dia||'Segunda',
+      id: c.id, empresa: c.tipo_envio||c.empresa||'', dia: c.dia||'Segunda',
       destino: c.destino||'', status: c.status||'Pendente',
       itens: c.itens||'0/0', responsavel: c.responsavel||'',
       date_key: c.dateKey||''
@@ -2911,6 +2923,42 @@ const FUNC_INFO = new Proxy({},{
   get(_,nome){ const f=FUNCIONARIOS_DATA.find(x=>x.nome===nome); if(!f)return {empresa:'',av:funcAv(nome),cor:'av-amber',corCss:'var(--muted)'}; return {empresa:f.empresa,av:funcAv(nome),cor:funcCor(f.empresa),corCss:funcCorCss(f.empresa)}; }
 });
 
+// ── Marketplace derivado do destino ──────────────────
+function derivarMarketplace(destino) {
+  if (!destino) return '';
+  const d = destino.toUpperCase();
+  if (d.startsWith('ML') || d.includes('MERCADO')) return 'ML';
+  if (d.includes('AMAZON')) return 'Amazon';
+  if (d.includes('SHOPEE')) return 'Shopee';
+  if (d.includes('TIKTOK') || d.includes('TIK TOK')) return 'TikTok';
+  if (d.includes('MAGALU') || d.includes('MAGAZINE')) return 'Magalu';
+  return '';
+}
+function derivarTipoLabel(tipo) {
+  if (!tipo || tipo === 'LogBox' || tipo === '') return '';
+  return tipo; // "Coleta" ou "Envio próprio"
+}
+function mktBadgeHtml(mkt) {
+  const map = { ML:'#ffe600;color:#111', Amazon:'#ff9900;color:#111', Shopee:'#ee4d2d;color:#fff', TikTok:'#69c9d0;color:#111', Magalu:'#0086ff;color:#fff' };
+  const s = map[mkt];
+  if (!mkt || !s) return '';
+  return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${s};font-weight:700;font-family:'DM Mono',monospace">${mkt}</span>`;
+}
+function tipoBadgeHtml(tipo) {
+  if (!tipo || tipo === 'LogBox') return '';
+  const isColeta = tipo === 'Coleta';
+  return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${isColeta?'rgba(88,166,255,.15);color:#58a6ff':'rgba(63,185,80,.15);color:#3fb950'};font-family:'DM Mono',monospace;font-weight:700">${isColeta?'🚚 Coleta':'📦 Env. próprio'}</span>`;
+}
+
+// ── BarcodeDetector (leitura de códigos lineares na câmera) ──
+if ('BarcodeDetector' in window) {
+  try {
+    window._barcodeDetector = new BarcodeDetector({
+      formats: ['code_128','code_39','itf','code_93','ean_13','ean_8','codabar']
+    });
+  } catch(e) { window._barcodeDetector = null; }
+}
+
 let editingFullId = null;
 let editingSkuIdx = null;
 let checklistFullId = null;
@@ -3018,7 +3066,7 @@ function renderCalMobile(){
   container.style.flexDirection = 'column';
 
   const fulls = Object.values(FULLS_DATA || {});
-  const filtroEmpresa = document.getElementById('calFiltroEmpresa')?.value||'';
+  const filtroEmpresa = document.getElementById('calFiltroMkt')?.value||'';
 
   const statuses = ['', 'Pendente', 'Produzindo', 'Em conferência', 'Pronto', 'Atrasado'];
   const statusLabels = {'':'Todos','Pendente':'Pendente','Produzindo':'Produzindo','Em conferência':'Conferência','Pronto':'Pronto','Atrasado':'Atrasado'};
@@ -4091,7 +4139,7 @@ function openFullDetalheInline(id) {
   const pct = total ? Math.round((done/total)*100) : 0;
 
   document.getElementById('fdTitle').textContent = f.id;
-  document.getElementById('fdSub').innerHTML = `${f.empresa} · ${f.destino} · ${f.agendado} <span class="badge ${statusClass(f.status)}" style="margin-left:6px">${statusIcon(f.status)} ${f.status}</span>`;
+  document.getElementById('fdSub').innerHTML = `${mktBadgeHtml(f.marketplace||derivarMarketplace(f.destino))} ${tipoBadgeHtml(f.tipo_envio)} · ${f.destino} · ${f.agendado} <span class="badge ${statusClass(f.status)}" style="margin-left:6px">${statusIcon(f.status)} ${f.status}</span>`;
 
   document.getElementById('fdBtnEditar').onclick = () => openEditFull(id);
   const btnConf = document.getElementById('fdBtnConferencia');
@@ -4265,12 +4313,17 @@ function getWeekNum(d){
 }
 function renderCal(){
   console.log('[OUTBOX] renderCal() chamado. CAL_FULLS:', CAL_FULLS?.length, 'FULLS_DATA:', Object.keys(FULLS_DATA||{}).length);
-  const empresa = document.getElementById('calFiltroEmpresa')?.value||'';
+  const filtroMkt  = document.getElementById('calFiltroMkt')?.value||'';
+  const filtroTipo = document.getElementById('calFiltroTipo')?.value||'';
   // Build 3 weeks of dates
   const weeks = [0,1,2].map(w=>getWeekDates(calOffset+w));
   const firstDay = weeks[0][0], lastDay = weeks[2][4];
   document.getElementById('calWeekLabel').textContent = fmtDate(firstDay)+' – '+fmtDate(lastDay);
-  let lista = CAL_FULLS.filter(f=>!empresa||f.empresa?.toLowerCase()===empresa.toLowerCase());
+  let lista = CAL_FULLS.filter(f=>{
+    if (filtroMkt && derivarMarketplace(f.destino) !== filtroMkt) return false;
+    if (filtroTipo && derivarTipoLabel(f.empresa) !== filtroTipo) return false;
+    return true;
+  });
   document.getElementById('calWeekSub').textContent = lista.length+' fulls · 3 semanas · arraste para reagendar';
   const grid = document.getElementById('calGrid');
 
@@ -4305,7 +4358,7 @@ function renderCal(){
               style="width:14px;height:14px;border-radius:3px;border:none;background:rgba(245,95,95,.15);color:var(--red);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;flex-shrink:0;transition:opacity .15s"
               onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">✕</button>
           </div>
-          <span class="cal-full-empresa ${ec}">${f.empresa}</span>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:2px">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
           <div class="cal-full-dest">${f.destino}</div>
         </div>`;
       }).join('') || '<div class="cal-empty">—</div>';
@@ -4720,6 +4773,10 @@ document.addEventListener('DOMContentLoaded', () => {
   const galpaoSel = document.getElementById('saidaGalpao');
   if(galpaoSel) galpaoSel.addEventListener('change', filtrarFuncionariosPorGalpao);
 });
+// Conjunto de códigos de UF válidos para NF-e (tabela IBGE/SEFAZ)
+// Qualquer chave cujos 2 primeiros dígitos não estejam aqui não é NF-e
+const _UF_VALIDOS_NFE = new Set([11,12,13,14,15,16,17,21,22,23,24,25,26,27,28,29,31,32,33,35,41,42,43,50,51,52,53]);
+
 // Digito verificador da chave da NFe: modulo 11 com pesos ciclicos 2..9,
 // aplicados da direita pra esquerda sobre os 43 primeiros digitos.
 function _dvChaveValido(ch) {
@@ -4742,6 +4799,27 @@ function _extraiChavePorDV(digitos) {
     if (_dvChaveValido(cand)) return cand;
   }
   return null;
+}
+
+// Retorna true quando uma string de 44 dígitos parece ser barcode de etiqueta de envio
+// (não é chave NF-e): DV inválido E cUF fora da tabela SEFAZ.
+// Nesses casos o sistema orienta o funcionário a escanear o DANFE em vez da etiqueta.
+function _pareceBarcodeEnvio(ch44) {
+  if (!ch44 || ch44.length !== 44) return false;
+  const cUF = parseInt(ch44.slice(0, 2));
+  return !_dvChaveValido(ch44) && !_UF_VALIDOS_NFE.has(cUF);
+}
+
+// Mensagem padronizada para barcode de etiqueta detectado
+function _alertaBarcodeEnvio(input) {
+  if (input) {
+    input.value = '';
+    input.style.borderColor = 'var(--orange)';
+    setTimeout(() => { if(input) input.style.borderColor = 'var(--border2)'; }, 3000);
+    input.focus();
+  }
+  showToast('📋 Barcode da etiqueta de envio — escaneie o barcode da Nota Fiscal (DANFE) colada no pacote');
+  if (typeof _somDuplicata === 'function') _somDuplicata();
 }
 
 async function registrarSaida(){
@@ -4772,13 +4850,25 @@ async function registrarSaida(){
   if (soDigitos.length === 44) {
     // Leitura limpa: aceita sempre. O DV so avisa, nunca bloqueia — uma chave
     // legitima que falhe no digito nao pode travar a expedicao.
+    // Exceção: se DV inválido E cUF fora da tabela SEFAZ → barcode de etiqueta, não NF-e.
     num = soDigitos;
+    if (_pareceBarcodeEnvio(num)) { _alertaBarcodeEnvio(input); return; }
     if (!_dvChaveValido(num)) showToast('⚠️ Digito verificador nao confere — confira a leitura');
   } else {
     // Leitura com sujeira (prefixo do leitor, zero a esquerda). Usa o DV pra achar
     // a janela correta de 44 digitos; sem isso o corte pode pegar a chave deslocada.
-    num = _extraiChavePorDV(soDigitos) || soDigitos.slice(-44);
-    showToast('⚠️ Chave extraida de leitura suja — confira o leitor');
+    const extraido = _extraiChavePorDV(soDigitos);
+    if (extraido) {
+      num = extraido;
+      showToast('⚠️ Chave extraida de leitura suja — confira o leitor');
+    } else {
+      // Nenhuma janela com DV válido encontrada.
+      // Se o fallback também tem cUF inválido → com certeza é etiqueta de envio, não NF-e.
+      const fallback = soDigitos.slice(-44);
+      if (_pareceBarcodeEnvio(fallback)) { _alertaBarcodeEnvio(input); return; }
+      num = fallback;
+      showToast('⚠️ Chave extraida de leitura suja — confira o leitor');
+    }
   }
 
   // ── Checa duplicata (desktop e mobile) ────────────
@@ -5722,7 +5812,8 @@ async function salvarNovoFull() {
     setTimeout(()=>{if(document.getElementById('nf-id'))document.getElementById('nf-id').style.borderColor='';},2000);
     return;
   }
-  const empresa = document.getElementById('nf-empresa')?.value||'LogBox';
+  const marketplace = document.getElementById('nf-marketplace')?.value||'ML';
+  const tipo_envio  = document.getElementById('nf-tipo')?.value||'';
   const criadoEm = (() => { const v=document.getElementById('nf-criadoEm')?.value; if(!v)return ''; const p=v.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; })();
   // campo com id correto agora
   const agendadoVal = document.getElementById('nf-agendado')?.value||'';
@@ -5739,8 +5830,8 @@ async function salvarNovoFull() {
     codigo: s.sku, nome: s.descricao, funcionario:'—',
     qtde: s.qtde, status:'pending', avatar:'?', cor:'av-amber'
   }));
-  const novoFull = { id, empresa, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens, dateKey };
-  const calEntry = { id, empresa, dia, destino, status, itens:'0/'+itens.length, responsavel, dateKey };
+  const novoFull = { id, empresa: tipo_envio, tipo_envio, marketplace, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens, dateKey };
+  const calEntry = { id, empresa: tipo_envio, tipo_envio, marketplace, dia, destino, status, itens:'0/'+itens.length, responsavel, dateKey };
   FULLS_DATA[id] = novoFull;
   CAL_FULLS.push(calEntry);
   await db.saveFull(novoFull);
@@ -5839,6 +5930,22 @@ function nfRenderSkus() {
     </div>`;
   }).join('');
   nfUpdateTotal();
+}
+
+// Filtra destinos no modal Novo Full de acordo com marketplace selecionado
+const _NF_DESTINOS = {
+  ML:['ML Cajamar/SP','ML Perus/SP','ML Sumaré/SP','ML Franco da Rocha/SP','ML Guarulhos/SP','ML Embu das Artes/SP'],
+  Amazon:['Amazon SP','Amazon RJ','Amazon MG'],
+  Shopee:['Shopee SP','Shopee RJ'],
+  TikTok:['TikTok SP'],
+  Magalu:['Magalu SP']
+};
+function nfAtualizarDestinos() {
+  const mkt = document.getElementById('nf-marketplace')?.value||'ML';
+  const sel = document.getElementById('nf-destino');
+  if (!sel) return;
+  const opts = _NF_DESTINOS[mkt] || [];
+  sel.innerHTML = opts.map(d=>`<option>${d}</option>`).join('');
 }
 
 function closeModal(id){document.getElementById(id).classList.remove('open');if(id==='modalSku')editingSkuIdx=null;if(id==='modalFull'){window._nfSkus=[];}}
@@ -7341,6 +7448,27 @@ function onCodigoLido(codigo) {
   const status = document.getElementById('scannerStatus');
   const num    = _extrairNumPedido(codigo);
 
+  // ── Barcode de etiqueta de envio (não NF-e) ────────
+  // Detecta quando nenhuma janela com DV válido foi encontrada E o cUF é inválido.
+  // Orienta o funcionário a escanear o DANFE em vez da etiqueta do transportador.
+  if (num && _pareceBarcodeEnvio(num)) {
+    flash.style.background = 'rgba(210,153,34,.3)';
+    flash.classList.add('flash');
+    setTimeout(() => { flash.classList.remove('flash'); flash.style.background = ''; }, 350);
+    _somDuplicata?.();
+    if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+    status.textContent = '📋 Etiqueta de envio — escaneie o barcode da Nota Fiscal';
+    status.style.color = 'var(--orange)';
+    setTimeout(() => {
+      status.style.color = '';
+      status.textContent = 'Aponte para o próximo QR Code…';
+      _scannerActive = true;
+      const video = document.getElementById('scannerVideo');
+      if (video && _scannerStream) _tickScan(video);
+    }, 2500);
+    return;
+  }
+
   // ── Duplicata ──────────────────────────────────────
   if(_isDuplicata(codigo)) {
     flash.style.background = 'rgba(248,81,73,.3)';
@@ -7752,7 +7880,7 @@ async function confAbrirScanner(fullId, totalEsperado) {
   }
 }
 
-function _confTickScan(video, fullId, totalEsperado) {
+async function _confTickScan(video, fullId, totalEsperado) {
   if (!_scannerActive) return;
   if (video.readyState === video.HAVE_ENOUGH_DATA) {
     const w = video.videoWidth, h = video.videoHeight;
@@ -7760,10 +7888,21 @@ function _confTickScan(video, fullId, totalEsperado) {
       _scannerCanvas.width = w; _scannerCanvas.height = h;
       _scannerCtx.drawImage(video, 0, 0, w, h);
       const imageData = _scannerCtx.getImageData(0, 0, w, h);
+      // 1. Tenta QR code (jsQR)
       const code = jsQR(imageData.data, w, h, { inversionAttempts: 'dontInvert' });
       if (code?.data) {
         confOnCodigoLido(code.data, fullId, totalEsperado);
         return;
+      }
+      // 2. Tenta código de barras linear (BarcodeDetector API — Chrome 83+)
+      if (window._barcodeDetector) {
+        try {
+          const barcodes = await window._barcodeDetector.detect(_scannerCanvas);
+          if (barcodes.length > 0) {
+            confOnCodigoLido(barcodes[0].rawValue, fullId, totalEsperado);
+            return;
+          }
+        } catch(e) { /* não suportado neste frame */ }
       }
     }
   }
@@ -11653,7 +11792,8 @@ function abrirNovaSolicitacaoFull() {
       <button type="button" onclick="efAdicionarLinhaSku()" style="background:none;border:1px dashed var(--border2);color:var(--accent);border-radius:8px;padding:8px;width:100%;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">+ Adicionar outro SKU</button>
     </div>
 
-    <button onclick="efCriarSolicitacao()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:20px">Solicitar</button>
+    <div id="efTotaisModal" style="display:none;gap:12px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:600;color:var(--text)"></div>
+    <button onclick="efCriarSolicitacao()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:12px">Solicitar</button>
   </div>`;
   modal.style.display = 'flex';
   document.getElementById('ef_linhas_skus').innerHTML = '';
@@ -11678,9 +11818,13 @@ function efAdicionarLinhaSku() {
         <div id="ef_sku_${id}_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:180px;overflow-y:auto;z-index:10"></div>
         <input type="hidden" id="ef_produto_${id}">
       </div>
-      <input id="ef_qtd_${id}" type="number" min="1" placeholder="Qtd" style="width:90px;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
-      <button type="button" onclick="document.getElementById('ef_linha_${id}').remove()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:8px">✕</button>
+      <div style="display:flex;flex-direction:column;gap:3px">
+        <label style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase">Caixas</label>
+        <input id="ef_qtd_${id}" type="number" min="1" placeholder="0" oninput="efAtualizarTotaisModal()" style="width:80px;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box;text-align:center">
+      </div>
+      <button type="button" onclick="document.getElementById('ef_linha_${id}').remove();efAtualizarTotaisModal()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:8px;margin-top:18px">✕</button>
     </div>
+    <div id="ef_info_${id}" style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;padding:3px 2px 0;min-height:14px"></div>
     <div id="ef_aviso_${id}" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:8px;padding:8px 10px;margin-top:4px;font-size:11px;color:var(--orange);align-items:center;justify-content:space-between;gap:8px">
       <span>⚠️ Esse SKU não foi encontrado no Magis5.</span>
       <button type="button" onclick="efForcarVinculo(${id})" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🔗 Vincular SKU real</button>
@@ -11740,6 +11884,44 @@ function efSelecionarSku(linhaId, sku, descricao) {
   document.getElementById(`ef_sku_${linhaId}_sugestoes`).style.display = 'none';
   const aviso = document.getElementById(`ef_aviso_${linhaId}`);
   if (aviso) aviso.style.display = 'none';
+  // Preenche dados do catálogo (caixas, peso)
+  const infoEl = document.getElementById(`ef_info_${linhaId}`);
+  if (infoEl) {
+    const sk = (window.SKU_DB || []).find(s => s.sku === sku);
+    if (sk) {
+      const parts = [];
+      if (sk.qtdecx) parts.push(`${sk.qtdecx} un/cx`);
+      if (sk.peso)   parts.push(`${sk.peso} kg/cx`);
+      infoEl.textContent = parts.length ? `📦 ${parts.join(' · ')}` : '';
+      // Auto-preenche qtd com qtdecx se campo estiver vazio
+      const qtdEl = document.getElementById(`ef_qtd_${linhaId}`);
+      if (qtdEl && (!qtdEl.value || qtdEl.value === '0') && sk.qtdecx) {
+        qtdEl.value = sk.qtdecx;
+      }
+    } else {
+      infoEl.textContent = '';
+    }
+  }
+  efAtualizarTotaisModal();
+}
+
+function efAtualizarTotaisModal() {
+  const totaisEl = document.getElementById('efTotaisModal');
+  if (!totaisEl) return;
+  const linhas = document.querySelectorAll('#ef_linhas_skus > div[id^="ef_linha_"]');
+  let totalCx = 0, totalKg = 0, hasKg = false;
+  linhas.forEach(linha => {
+    const idNum = linha.id.replace('ef_linha_', '');
+    const sku = (document.getElementById(`ef_sku_${idNum}`)?.value || '').trim();
+    const qtd = parseInt(document.getElementById(`ef_qtd_${idNum}`)?.value || '0') || 0;
+    if (!sku || !qtd) return;
+    totalCx += qtd;
+    const sk = (window.SKU_DB || []).find(s => s.sku === sku);
+    if (sk && sk.peso) { totalKg += qtd * (parseFloat(sk.peso) || 0); hasKg = true; }
+  });
+  if (!linhas.length || totalCx === 0) { totaisEl.style.display = 'none'; return; }
+  totaisEl.style.display = 'flex';
+  totaisEl.innerHTML = `<span>📦 <strong>${totalCx}</strong> caixas</span>${hasKg && totalKg > 0 ? `<span>⚖️ <strong>${totalKg.toFixed(1)} kg</strong> peso total</span>` : ''}`;
 }
 
 function efAutocompleteFull(valor) {
@@ -11974,6 +12156,145 @@ function imprimirRequisicaoFull(id) {
       <div style="margin-top:28px;padding-top:12px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;font-family:monospace">
         <span>OUTBOX — Sistema de Controle de Expedição</span>
         <span>${f.id} · REQUISIÇÃO DE SEPARAÇÃO · ${dataImpressao}</span>
+      </div>
+    </div>`;
+
+  document.getElementById('printDoc').style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => { document.getElementById('printDoc').style.display = 'none'; }, 500);
+  }, 150);
+}
+
+// ══════════════════════════════════════════════════════
+// FOLHA DE DELEGAÇÃO MAX (controle de quem faz cada produto)
+// ══════════════════════════════════════════════════════
+function imprimirDelegacaoMax(id) {
+  const f = FULLS_DATA[id] || FULLS_ENVIADOS.find(e => e.id === id);
+  if (!f) { showToast('Full não encontrado.'); return; }
+
+  const agora = new Date();
+  const dataImpressao = agora.toLocaleDateString('pt-BR') + ' ' + agora.getHours().toString().padStart(2,'0') + ':' + agora.getMinutes().toString().padStart(2,'0');
+  const totalCaixas = (f.itens || []).reduce((a, i) => a + (parseInt(i.qtde) || 0), 0);
+  const mkt = derivarMarketplace(f.destino);
+  const tipo = derivarTipoLabel(f.empresa);
+
+  // Tenta calcular peso total a partir do catálogo
+  let pesoTotal = 0, hasPeso = false;
+  (f.itens || []).forEach(item => {
+    const sk = (window.SKU_DB || []).find(s => s.sku === item.codigo);
+    const qtd = parseInt(item.qtde) || 0;
+    if (sk && sk.peso && qtd) { pesoTotal += qtd * parseFloat(sk.peso); hasPeso = true; }
+  });
+
+  const itensHTML = (f.itens || []).map((item, i) => {
+    const sk = (window.SKU_DB || []).find(s => s.sku === item.codigo);
+    const unCx = sk?.qtdecx ? `${sk.qtdecx} un/cx` : '—';
+    const pesoCx = sk?.peso ? `${sk.peso} kg` : '—';
+    return `<tr style="border-bottom:1px solid #e5e7eb${i % 2 === 1 ? ';background:#f9fafb' : ''}">
+      <td style="padding:9px 10px;font-size:11px;text-align:center;color:#6b7280;width:28px">${i+1}</td>
+      <td style="padding:9px 10px;font-size:11px;font-family:monospace;color:#374151;white-space:nowrap">${item.codigo || '—'}</td>
+      <td style="padding:9px 10px;font-size:11px;color:#111827;font-weight:600">${item.nome || '—'}</td>
+      <td style="padding:9px 10px;font-size:13px;text-align:center;font-weight:900;color:#111827;width:55px">${item.qtde}</td>
+      <td style="padding:9px 10px;font-size:10px;text-align:center;color:#6b7280;width:55px">${unCx}</td>
+      <td style="padding:9px 10px;font-size:10px;text-align:center;color:#6b7280;width:55px">${pesoCx}</td>
+      <td style="padding:9px 10px;width:130px"><div style="border-bottom:1.5px solid #9ca3af;height:26px"></div></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('printDoc').innerHTML = `
+    <div style="max-width:720px;margin:0 auto;font-family:Arial,sans-serif;color:#111">
+
+      <!-- CABEÇALHO -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #111;padding-bottom:14px;margin-bottom:18px">
+        <div>
+          <div style="font-size:26px;font-weight:900;letter-spacing:-1px">OUT<span style="color:#059669">.</span>BOX</div>
+          <div style="font-size:11px;color:#6b7280;margin-top:2px;font-family:monospace;letter-spacing:.5px;text-transform:uppercase">Folha de Delegação — Max</div>
+        </div>
+        <div style="text-align:right">
+          <div style="display:inline-block;padding:6px 16px;border-radius:20px;font-size:13px;font-weight:700;background:#059669;color:#fff">📋 DELEGAÇÃO</div>
+          <div style="font-size:10px;color:#6b7280;margin-top:6px;font-family:monospace">Emitido em ${dataImpressao}</div>
+        </div>
+      </div>
+
+      <!-- DADOS DO FULL -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:11px">
+          <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">ID Full</div>
+          <div style="font-size:20px;font-weight:900;color:#059669">${f.id}</div>
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:11px">
+          <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Destino</div>
+          <div style="font-size:12px;font-weight:700">${f.destino || '—'}</div>
+          ${mkt ? `<div style="margin-top:3px;font-size:10px;font-weight:700;color:#059669">${mkt}</div>` : ''}
+        </div>
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:11px">
+          <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Agendado</div>
+          <div style="font-size:12px;font-weight:700">${f.agendado || '—'}</div>
+          ${tipo ? `<div style="margin-top:3px;font-size:10px;color:#6b7280">${tipo === 'Coleta' ? '🚚 Coleta' : '📦 Env. próprio'}</div>` : ''}
+        </div>
+        <div style="background:#111;border-radius:8px;padding:11px;text-align:center">
+          <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Total Cx</div>
+          <div style="font-size:22px;font-weight:900;color:#059669">${totalCaixas}</div>
+          ${hasPeso ? `<div style="font-size:9px;color:#9ca3af;margin-top:2px">⚖️ ${pesoTotal.toFixed(1)} kg</div>` : ''}
+        </div>
+      </div>
+
+      <!-- TABELA DE DELEGAÇÃO -->
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Delegação por produto</div>
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+          <thead>
+            <tr style="background:#111;color:#fff">
+              <th style="padding:8px 10px;font-size:9px;text-align:center;font-family:monospace;letter-spacing:.5px">#</th>
+              <th style="padding:8px 10px;font-size:9px;text-align:left;font-family:monospace;letter-spacing:.5px">SKU</th>
+              <th style="padding:8px 10px;font-size:9px;text-align:left;font-family:monospace;letter-spacing:.5px">Produto</th>
+              <th style="padding:8px 10px;font-size:9px;text-align:center;font-family:monospace;letter-spacing:.5px">Qtde Cx</th>
+              <th style="padding:8px 10px;font-size:9px;text-align:center;font-family:monospace;letter-spacing:.5px">Un/Cx</th>
+              <th style="padding:8px 10px;font-size:9px;text-align:center;font-family:monospace;letter-spacing:.5px">Kg/Cx</th>
+              <th style="padding:8px 10px;font-size:9px;text-align:center;font-family:monospace;letter-spacing:.5px">Responsável (assinatura)</th>
+            </tr>
+          </thead>
+          <tbody>${itensHTML}</tbody>
+          <tfoot>
+            <tr style="background:#f9fafb;border-top:2px solid #111">
+              <td colspan="3" style="padding:8px 10px;font-size:11px;font-weight:700;text-align:right;font-family:monospace">TOTAL</td>
+              <td style="padding:8px 10px;font-size:15px;font-weight:900;text-align:center;color:#059669">${totalCaixas}</td>
+              <td colspan="3" style="padding:8px 10px;font-size:11px;text-align:center;color:#6b7280;font-family:monospace">${hasPeso ? `⚖️ ${pesoTotal.toFixed(1)} kg` : ''}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- ANOTAÇÕES -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Anotações / Observações</div>
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;min-height:80px;background:#fafafa">
+          ${f.obs ? `<div style="font-size:11px;color:#374151;margin-bottom:8px"><strong>Obs:</strong> ${f.obs}</div>` : ''}
+          <div style="border-bottom:1px dashed #d1d5db;margin-bottom:10px;height:20px"></div>
+          <div style="border-bottom:1px dashed #d1d5db;margin-bottom:10px;height:20px"></div>
+          <div style="border-bottom:1px dashed #d1d5db;height:20px"></div>
+        </div>
+      </div>
+
+      <!-- ASSINATURA MAX -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:16px">
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:6px;font-family:monospace">Delegado por (Max)</div>
+          <div style="border-bottom:2px solid #111;height:48px;margin-bottom:6px;border-radius:2px"></div>
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace">Nome / Data / Assinatura</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:6px;font-family:monospace">Conferência concluída</div>
+          <div style="border-bottom:2px solid #111;height:48px;margin-bottom:6px;border-radius:2px"></div>
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace">Nome / Data / Assinatura</div>
+        </div>
+      </div>
+
+      <!-- RODAPÉ -->
+      <div style="margin-top:24px;padding-top:10px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:10px;color:#9ca3af;font-family:monospace">
+        <span>OUTBOX — Sistema de Controle de Expedição</span>
+        <span>${f.id} · DELEGAÇÃO MAX · ${dataImpressao}</span>
       </div>
     </div>`;
 
