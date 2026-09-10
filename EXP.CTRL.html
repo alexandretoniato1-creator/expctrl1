@@ -14,66 +14,66 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0a0e16;--surface:#121a29;--surface2:#1a2436;--border:#243044;--border2:#34415a;
-  --text:#eef2f8;--muted:#7987a0;--muted2:#a4b0c4;
-  --accent:#eef2f8;
-  --green:#3ecf8e;--red:#f56565;--blue:#4a7fe8;--orange:#e0a23c;--purple:#a78bfa;
-  --logbox:#4a7fe8;--logbox-bg:rgba(74,127,232,.12);--logbox-border:rgba(74,127,232,.28);
-  --fokus:#e0a23c;--fokus-bg:rgba(224,162,60,.12);--fokus-border:rgba(224,162,60,.28);
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2128;--border:#21262d;--border2:#30363d;
+  --text:#e6edf3;--muted:#6e7681;--muted2:#8b949e;
+  --accent:#e6edf3;
+  --green:#3fb950;--red:#f85149;--blue:#58a6ff;--orange:#d29922;--purple:#bc8cff;
+  --logbox:#58a6ff;--logbox-bg:rgba(88,166,255,.10);--logbox-border:rgba(88,166,255,.22);
+  --fokus:#d29922;--fokus-bg:rgba(210,153,34,.10);--fokus-border:rgba(210,153,34,.22);
 }
 body.light-mode{
-  --bg:#f3f6fb;--surface:#ffffff;--surface2:#eef2f8;--border:#dfe6f0;--border2:#c3cede;
-  --text:#151b28;--muted:#6c7789;--muted2:#8994a6;
-  --accent:#151b28;
-  --green:#1a9d63;--red:#dc3545;--blue:#3b6fd6;--orange:#b9720f;--purple:#7c5cd6;
-  --logbox:#3b6fd6;--logbox-bg:rgba(59,111,214,.08);--logbox-border:rgba(59,111,214,.22);
-  --fokus:#b9720f;--fokus-bg:rgba(185,114,15,.08);--fokus-border:rgba(185,114,15,.20);
+  --bg:#f6f8fa;--surface:#ffffff;--surface2:#f6f8fa;--border:#d0d7de;--border2:#afb8c1;
+  --text:#1f2328;--muted:#656d76;--muted2:#636c76;
+  --accent:#1f2328;
+  --green:#1a7f37;--red:#cf222e;--blue:#0969da;--orange:#9a6700;--purple:#8250df;
+  --logbox:#0969da;--logbox-bg:rgba(9,105,218,.08);--logbox-border:rgba(9,105,218,.20);
+  --fokus:#9a6700;--fokus-bg:rgba(154,103,0,.08);--fokus-border:rgba(154,103,0,.20);
 }
-body.light-mode .nav-item.active{color:#fff;background:var(--logbox)}
-body.light-mode .btn-primary{background:#1a9d63;color:#fff;border:1px solid rgba(26,157,99,.3)}
-body.light-mode .btn-primary:hover{background:#158552}
+body.light-mode .nav-item.active{color:var(--logbox);border-left-color:var(--logbox);background:rgba(9,105,218,.06)}
+body.light-mode .btn-primary{background:#1a7f37;color:#fff;border:1px solid rgba(26,127,55,.3)}
+body.light-mode .btn-primary:hover{background:#218b3a}
 /* toggle theme button */
 .theme-toggle{width:36px;height:20px;border-radius:100px;border:1px solid var(--border2);background:var(--surface2);cursor:pointer;position:relative;transition:all .2s;flex-shrink:0}
 .theme-toggle::after{content:'';position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:var(--muted2);transition:all .2s}
 body.light-mode .theme-toggle::after{left:18px;background:var(--accent)}
 html,body{height:100%}
 body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-size:13px;display:flex;flex-direction:column}
-.app{display:grid;grid-template-columns:240px 1fr;flex:1;overflow:hidden;height:100vh}
+.app{display:grid;grid-template-columns:228px 1fr;flex:1;overflow:hidden;height:100vh}
 
 /* ── SIDEBAR ─────────────────────────────────── */
 .sidebar{background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden}
-.logo{padding:24px 22px 20px;border-bottom:1px solid var(--border)}
+.logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
 .logo-name{font-size:17px;font-weight:800;letter-spacing:-.5px;color:var(--text)}
 .logo-name span{color:var(--border2)}
 .logo-tag{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:1.4px;text-transform:uppercase;margin-top:4px}
-.nav-section{padding:22px 22px 6px;font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
-.nav-item{display:flex;align-items:center;gap:10px;margin:2px 12px;padding:9px 12px;border-radius:14px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--muted2);transition:color .12s,background .12s;white-space:nowrap}
+.nav-section{padding:20px 20px 5px;font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 20px;cursor:pointer;font-size:12px;font-weight:600;color:var(--muted2);transition:color .12s,background .12s;border-left:2px solid transparent;white-space:nowrap}
 .nav-item:hover{color:var(--text);background:var(--surface2)}
-.nav-item.active{color:#fff;background:var(--logbox)}
-.nav-icon{font-size:13px;width:15px;text-align:center;flex-shrink:0;opacity:.7}
+.nav-item.active{color:var(--logbox);border-left-color:var(--logbox);background:rgba(88,166,255,.06)}
+.nav-icon{font-size:12px;width:15px;text-align:center;flex-shrink:0;opacity:.7}
 .nav-item.active .nav-icon{opacity:1}
 .company-badges{padding:14px 16px;border-top:1px solid var(--border);margin-top:auto;display:flex;flex-direction:column;gap:6px}
-.company-badge{padding:7px 11px;border-radius:9px;font-size:11px;font-family:'DM Mono',monospace;font-weight:600;display:flex;align-items:center;justify-content:space-between}
+.company-badge{padding:7px 11px;border-radius:7px;font-size:11px;font-family:'DM Mono',monospace;font-weight:600;display:flex;align-items:center;justify-content:space-between}
 .logbox-badge{background:var(--logbox-bg);border:1px solid var(--logbox-border);color:var(--logbox)}
 .fokus-badge{background:var(--fokus-bg);border:1px solid var(--fokus-border);color:var(--fokus)}
 .badge-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
 
 /* ── MAIN ────────────────────────────────────── */
 .main{display:flex;flex-direction:column;overflow:hidden}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--border);flex-shrink:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 24px;border-bottom:1px solid var(--border);flex-shrink:0}
 .topbar-title{font-size:17px;font-weight:800;letter-spacing:-.5px;color:var(--text)}
 .topbar-title small{display:block;font-size:11px;font-weight:400;color:var(--muted2);margin-top:2px;letter-spacing:0}
 .topbar-right{display:flex;align-items:center;gap:8px}
 .dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .conn{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);display:flex;align-items:center;gap:5px}
-.btn{padding:9px 16px;border-radius:14px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all .12s}
+.btn{padding:7px 14px;border-radius:7px;border:none;cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all .12s}
 .btn-primary{background:#238636;color:#fff;border:1px solid rgba(63,185,80,.3)}.btn-primary:hover{background:#2ea043}
 .btn-ghost{background:transparent;border:1px solid var(--border2);color:var(--muted2)}.btn-ghost:hover{background:var(--surface2);color:var(--text)}
 .btn-green{background:var(--green);color:#0a0a0a}.btn-green:hover{filter:brightness(1.1)}
 .btn-sm{padding:5px 11px;font-size:11px}
 .content-area{display:flex;flex:1;overflow:hidden}
-.content{padding:28px;overflow-y:auto;flex:1}
+.content{padding:24px;overflow-y:auto;flex:1}
 .view{display:none}.view.active{display:block}
 
 /* DETAIL PANEL */
@@ -86,7 +86,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .detail-close:hover{color:var(--text)}
 .detail-body{padding:20px;overflow-y:auto;flex:1;min-width:400px}
 .detail-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-.detail-stat{background:var(--surface2);border-radius:10px;padding:10px;text-align:center}
+.detail-stat{background:var(--surface2);border-radius:8px;padding:10px;text-align:center}
 .detail-stat-val{font-size:18px;font-weight:700;letter-spacing:-.3px}
 .detail-stat-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;margin-top:2px}
 .progress-wrap{margin-bottom:16px}
@@ -95,7 +95,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--green),#5de6a8);transition:width .6s ease}
 .item-section-title{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
 .item-list{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.item-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.item-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
 .item-card.done{border-color:rgba(255,255,255,.12)}
 .item-card.doing{border-color:rgba(255,255,255,.12)}
 .item-card.conferencia{border-color:rgba(167,139,250,.2)}
@@ -110,8 +110,8 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .dot-done{background:var(--green)}.dot-doing{background:var(--accent)}.dot-pending{background:var(--muted)}.dot-conferencia{background:var(--purple)}
 
 /* ── CARDS ───────────────────────────────────── */
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px}
 .card-label{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px}
 .card-value{font-size:24px;font-weight:700;letter-spacing:-.5px;color:var(--text)}
 .card-sub{font-size:11px;color:var(--muted2);margin-top:3px}
@@ -122,7 +122,7 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .card.c-blue{border-color:rgba(96,165,250,.18)}.card.c-blue .card-value{color:var(--logbox)}
 
 /* DUCATO */
-.ducato{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:20px}
+.ducato{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px;margin-bottom:20px}
 .ducato-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
 .ducato-title{font-size:13px;font-weight:700}
 .ducato-meta{font-size:11px;color:var(--muted2);margin-top:2px}
@@ -134,13 +134,13 @@ body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;font-s
 .bar-legend{display:flex;justify-content:space-between;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
 
 /* TABLES */
-.tables{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
-.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
-.table-head{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border-bottom:1px solid var(--border)}
+.tables{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden}
+.table-head{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border-bottom:1px solid var(--border)}
 .table-head-title{font-size:13px;font-weight:700}
 table{width:100%;border-collapse:collapse}
-th{padding:10px 14px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--surface2)}
-td{padding:12px 14px;font-size:12px;border-bottom:1px solid var(--border)}
+th{padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid var(--border);background:var(--surface2)}
+td{padding:9px 11px;font-size:12px;border-bottom:1px solid var(--border)}
 tr:last-child td{border-bottom:none}
 .full-row{cursor:pointer;transition:background .1s}
 .full-row:hover td{background:var(--surface2)}
@@ -155,18 +155,18 @@ tr:last-child td{border-bottom:none}
 .b-purple{background:rgba(167,139,250,.10);color:var(--purple);border:1px solid rgba(167,139,250,.22)}
 .b-red{background:rgba(248,113,113,.10);color:var(--red);border:1px solid rgba(248,113,113,.22)}
 /* ── INSUMOS ─────────────────────────────────── */
-.ins-tabs-bar{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:15px;padding:3px;width:fit-content}
-.ins-tab-btn{padding:7px 18px;border-radius:9px;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all .18s;letter-spacing:.01em}
+.ins-tabs-bar{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:3px;width:fit-content}
+.ins-tab-btn{padding:7px 18px;border-radius:7px;border:none;background:transparent;color:var(--muted2);cursor:pointer;font-family:'Syne',sans-serif;font-size:12px;font-weight:600;transition:all .18s;letter-spacing:.01em}
 .ins-tab-btn.active{background:var(--bg);color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.35)}
 body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 
 /* Cards de estoque */
-.ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-bottom:24px}
-.ins-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 16px 14px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s,box-shadow .2s;cursor:default}
+.ins-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:24px}
+.ins-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 16px 14px;position:relative;overflow:hidden;transition:border-color .2s,transform .15s,box-shadow .2s;cursor:default}
 .ins-card:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .ins-card.alerta{border-color:rgba(248,113,113,.35);background:linear-gradient(135deg,var(--surface) 70%,rgba(248,113,113,.04))}
 .ins-card.ok{border-color:rgba(63,185,80,.18)}
-.ins-card-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:16px 12px 0 0}
+.ins-card-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0}
 .ins-card.alerta .ins-card-accent{background:linear-gradient(90deg,#f85149,rgba(248,81,73,0))}
 .ins-card.ok .ins-card-accent{background:linear-gradient(90deg,#3fb950,rgba(63,185,80,0))}
 .ins-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
@@ -181,7 +181,7 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .ins-card-sublabel{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.9px;margin-bottom:14px}
 .ins-card-divider{height:1px;background:var(--border);margin-bottom:12px}
 .ins-card-actions{display:grid;grid-template-columns:1fr 1fr auto;gap:5px}
-.ins-card-btn{padding:6px 0;border-radius:9px;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:700;transition:all .15s;letter-spacing:.01em}
+.ins-card-btn{padding:6px 0;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted2);cursor:pointer;font-size:11px;font-family:'Syne',sans-serif;font-weight:700;transition:all .15s;letter-spacing:.01em}
 .ins-card-btn:hover{background:var(--surface2);color:var(--text);border-color:var(--border2)}
 .ins-card-btn.entrada{border-color:rgba(63,185,80,.25);color:var(--green)}
 .ins-card-btn.entrada:hover{background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.4)}
@@ -191,10 +191,10 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .ins-card-btn.edit:hover{color:var(--text)}
 
 /* Banner de alertas */
-.ins-alertas-banner{border-radius:14px;padding:11px 15px;font-size:12px;margin-bottom:16px;display:flex;align-items:center;gap:10px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);color:var(--red);font-weight:600}
+.ins-alertas-banner{border-radius:9px;padding:11px 15px;font-size:12px;margin-bottom:16px;display:flex;align-items:center;gap:10px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);color:var(--red);font-weight:600}
 
 /* Tabela movimentações */
-.ins-mov-table{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.ins-mov-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .ins-mov-header{display:grid;grid-template-columns:1fr 90px 90px 160px;gap:0;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
 .ins-mov-header span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.7px}
 .ins-mov-row{display:grid;grid-template-columns:1fr 90px 90px 160px;gap:0;align-items:center;padding:11px 16px;border-bottom:1px solid var(--border);transition:background .1s}
@@ -207,18 +207,18 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 
 /* Filtros toolbar */
 .ins-toolbar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
-.ins-select{font-size:11px;padding:6px 10px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;outline:none;cursor:pointer}
+.ins-select{font-size:11px;padding:6px 10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;outline:none;cursor:pointer}
 .ins-select:focus{border-color:var(--border2)}
 
 /* Histórico */
-.ins-hist-table{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden}
+.ins-hist-table{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .ins-hist-header{display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:0;padding:9px 16px;background:var(--surface2);border-bottom:1px solid var(--border)}
 .ins-hist-header span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted2);text-transform:uppercase;letter-spacing:.7px}
 .ins-hist-row{display:grid;grid-template-columns:120px 1fr 1fr 1fr;gap:0;padding:11px 16px;border-bottom:1px solid var(--border);font-size:12px;transition:background .1s}
 .ins-hist-row:last-child{border-bottom:none}
 .ins-hist-row:hover{background:var(--surface2)}
 .ins-hist-mes{font-family:'DM Mono',monospace;font-weight:700;font-size:11px;color:var(--text)}
-.ins-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px}
+.ins-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
 .ins-chart-title{font-size:13px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
 .ins-chart-title span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);font-weight:400;letter-spacing:.5px;text-transform:uppercase}
 
@@ -226,21 +226,21 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .ins-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
 .ins-topbar-left{display:flex;align-items:center;gap:10px}
 .ins-topbar-right{display:flex;gap:6px;align-items:center}
-.ins-mes-select{font-size:12px;padding:7px 12px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-weight:600;outline:none;cursor:pointer}
+.ins-mes-select{font-size:12px;padding:7px 12px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-weight:600;outline:none;cursor:pointer}
 .b-shopee{background:rgba(240,90,40,.10);color:#f05a28;border:1px solid rgba(240,90,40,.2)}
 .b-tiktok{background:rgba(0,0,0,.12);color:#69C9D0;border:1px solid rgba(105,201,208,.3)}
 .b-magalu{background:rgba(0,114,206,.12);color:#0072ce;border:1px solid rgba(0,114,206,.3)}
 .click-hint{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-left:6px;opacity:.5}
 
 /* ── ALERTS ──────────────────────────────────── */
-.alert{border-radius:9px;padding:9px 13px;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.alert{border-radius:7px;padding:9px 13px;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .alert-red{background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.18);color:var(--red)}
 .alert-amber{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);color:#aaa}
 .alert-purple{background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.18);color:var(--purple)}
 
 /* ── EM PROCESSO ─────────────────────────────── */
-.em-processo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
-.processo-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;cursor:pointer;transition:border-color .12s}
+.em-processo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px}
+.processo-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px;cursor:pointer;transition:border-color .12s}
 .processo-card:hover{border-color:var(--border2)}
 .processo-card.produzindo{border-left:2px solid var(--fokus)}
 .processo-card.conferencia{border-left:2px solid var(--purple)}
@@ -251,11 +251,11 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .processo-mini-fill{height:100%;border-radius:100px}
 
 /* CALENDÁRIO */
-.cal-nav{background:var(--surface);border:1px solid var(--border2);color:var(--text);width:28px;height:28px;border-radius:9px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.cal-nav{background:var(--surface);border:1px solid var(--border2);color:var(--text);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .cal-nav:hover{background:var(--surface2)}
 .cal-grid{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;overflow-x:auto;min-height:160px;flex:1}
 .cal-week-sep{grid-column:span 15;display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-bottom:2px}
-.cal-col{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;min-height:120px;transition:border-color .15s}
+.cal-col{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;min-height:120px;transition:border-color .15s}
 .cal-col.today{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.01)}
 .cal-col.drag-over{border-color:var(--accent);background:rgba(255,255,255,.03);border-style:dashed}
 .cal-col.week-start{border-left:2px solid var(--border2)}
@@ -286,7 +286,7 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .cal-empty{padding:8px 4px;text-align:center;color:var(--muted);font-size:10px;opacity:.3}
 
 /* PROD */
-.prod-section{background:var(--surface);border:1px solid var(--border);border-radius:15px;overflow:hidden;margin-bottom:20px}
+.prod-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px}
 .prod-header{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid var(--border)}
 .prod-list{padding:12px 14px;display:flex;flex-direction:column;gap:10px}
 .prod-item{display:flex;align-items:center;gap:10px}
@@ -318,13 +318,13 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .form-group.full{grid-column:1/-1}
 .form-group.span2{grid-column:span 2}
 label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
-input,select.form-sel{background:var(--bg);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;padding:9px 11px;outline:none;transition:border-color .15s;width:100%}
+input,select.form-sel{background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;padding:9px 11px;outline:none;transition:border-color .15s;width:100%}
 input:focus,select.form-sel:focus{border-color:var(--accent)}
 .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
 .section-divider{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:14px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
 
 /* CHECKLIST */
-.checklist-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+.checklist-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all .15s}
 .checklist-item:hover{border-color:var(--border2)}
 .checklist-item.checked{border-color:rgba(255,255,255,.18);background:rgba(62,207,142,.05)}
 .checklist-item input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--green);flex-shrink:0}
@@ -334,11 +334,11 @@ input:focus,select.form-sel:focus{border-color:var(--accent)}
 .checklist-progress-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--purple),var(--green));transition:width .4s ease}
 
 /* EDIT TABS */
-.edit-tab{padding:7px 14px;border-radius:9px 7px 0 0;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:-1px}
+.edit-tab{padding:7px 14px;border-radius:7px 7px 0 0;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:-1px}
 .edit-tab:hover{color:var(--text)}.edit-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .edit-tab-panel{display:none}.edit-tab-panel.active{display:block}
-.item-linha{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:11px;display:grid;grid-template-columns:0.8fr 1.2fr 1fr 0.6fr 1fr auto;gap:8px;align-items:end}
-.vol-linha{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:11px;display:grid;grid-template-columns:0.7fr 1fr 0.6fr 0.6fr 0.6fr 0.5fr auto;gap:8px;align-items:end}
+.item-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.8fr 1.2fr 1fr 0.6fr 1fr auto;gap:8px;align-items:end}
+.vol-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.7fr 1fr 0.6fr 0.6fr 0.6fr 0.5fr auto;gap:8px;align-items:end}
 .item-linha .form-group,.vol-linha .form-group{margin:0}
 .remove-btn{width:28px;height:28px;border-radius:6px;border:1px solid rgba(245,95,95,.3);background:rgba(245,95,95,.07);color:var(--red);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
 .remove-btn:hover{background:rgba(245,95,95,.18)}
@@ -352,7 +352,7 @@ input:focus,select.form-sel:focus{border-color:var(--accent)}
 .bar-col-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--text);font-weight:600}
 
 /* RELATÓRIO SEMANAL */
-.relatorio-semana{background:var(--surface);border:1px solid var(--border);border-radius:15px;overflow:hidden;margin-bottom:12px}
+.relatorio-semana{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px}
 .relatorio-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;transition:background .1s}
 .relatorio-header:hover{background:var(--surface2)}
 .relatorio-body{display:none;border-top:1px solid var(--border)}
@@ -368,18 +368,18 @@ input:focus,select.form-sel:focus{border-color:var(--accent)}
 
 /* MISC */
 .filter-row{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-select{background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;padding:7px 10px;outline:none;cursor:pointer}
+select{background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'Syne',sans-serif;font-size:12px;padding:7px 10px;outline:none;cursor:pointer}
 select:focus{border-color:var(--accent)}
-.full-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:15px;overflow:hidden}
+.full-table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden}
 .action-btn{padding:4px 10px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;cursor:pointer;transition:all .15s}
 .action-btn:hover{background:var(--surface2);color:var(--text)}
-.btn-excel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--green);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.btn-excel{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--green);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
 .btn-excel:hover{background:rgba(255,255,255,.1)}
 .btn-danger-sm{background:rgba(245,95,95,.08);border:1px solid rgba(245,95,95,.18);color:var(--red);font-family:'Syne',sans-serif;font-size:11px;padding:4px 10px;border-radius:5px;cursor:pointer;transition:all .15s}
 .btn-danger-sm:hover{background:rgba(245,95,95,.18)}
 .dev-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
 .dev-toolbar-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:15px;overflow:hidden;margin-bottom:10px}
+.hist-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px}
 .hist-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;transition:background .1s}
 .hist-header:hover{background:var(--surface2)}
 .hist-body{display:none;border-top:1px solid var(--border);padding:14px}
@@ -389,20 +389,20 @@ select:focus{border-color:var(--accent)}
 .badge-rev{background:rgba(255,255,255,.06);color:var(--green);border:1px solid rgba(255,255,255,.12)}
 .badge-desc{background:rgba(245,95,95,.12);color:var(--red);border:1px solid rgba(245,95,95,.2)}
 .badge-rep{background:rgba(255,255,255,.06);color:var(--accent);border:1px solid rgba(255,255,255,.12)}
-.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:8px;z-index:999;transform:translateY(60px);opacity:0;transition:all .25s;pointer-events:none}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;padding:10px 16px;font-size:12px;display:flex;align-items:center;gap:8px;z-index:999;transform:translateY(60px);opacity:0;transition:all .25s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
-.wpp-box{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--text);margin-bottom:12px;max-height:260px;overflow-y:auto}
+.wpp-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:13px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.8;white-space:pre-wrap;color:var(--text);margin-bottom:12px;max-height:260px;overflow-y:auto}
 .wpp-tabs{display:flex;gap:4px;margin-bottom:12px}
 .wpp-tab{padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
 /* MODAL IMPRESSÃO SAÍDAS */
-.simp-combo-card{background:var(--surface2);border:2px solid var(--border2);border-radius:15px;padding:14px;cursor:pointer;transition:all .15s;flex:1}
+.simp-combo-card{background:var(--surface2);border:2px solid var(--border2);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s;flex:1}
 .simp-combo-card:hover{border-color:var(--accent)}
 .simp-combo-card.selected{border-color:var(--accent);background:rgba(255,255,255,.04)}
 
 /* MODAL IMPRESSÃO */
 .modal-impressao{max-width:560px}
 .imp-tipo-row{display:flex;gap:10px;margin-bottom:20px}
-.imp-tipo-btn{flex:1;padding:14px;border-radius:15px;border:2px solid var(--border2);background:var(--surface2);cursor:pointer;text-align:center;transition:all .2s;font-family:'Syne',sans-serif}
+.imp-tipo-btn{flex:1;padding:14px;border-radius:10px;border:2px solid var(--border2);background:var(--surface2);cursor:pointer;text-align:center;transition:all .2s;font-family:'Syne',sans-serif}
 .imp-tipo-btn:hover{border-color:var(--accent)}
 .imp-tipo-btn.selected{border-color:var(--accent);background:rgba(255,255,255,.05)}
 .imp-tipo-btn .imp-icon{font-size:24px;margin-bottom:6px}
@@ -414,7 +414,7 @@ select:focus{border-color:var(--accent)}
 .scanner-overlay.open{display:flex}
 .scanner-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;flex-shrink:0;background:rgba(0,0,0,.6);backdrop-filter:blur(8px)}
 .scanner-title{color:#fff;font-size:15px;font-weight:700;letter-spacing:-.3px}
-.scanner-close{width:36px;height:36px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
+.scanner-close{width:36px;height:36px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center}
 .scanner-viewport{flex:1;position:relative;overflow:hidden}
 #scannerVideo{width:100%;height:100%;object-fit:cover}
 .scanner-frame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
@@ -433,7 +433,7 @@ select:focus{border-color:var(--accent)}
 .scanner-status{padding:10px 20px;text-align:center;font-size:11px;font-family:'DM Mono',monospace;color:rgba(255,255,255,.5);flex-shrink:0;background:rgba(0,0,0,.8)}
 
 /* Botão câmera no campo de bipe */
-.btn-camera{width:44px;height:44px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:20px;transition:all .15s;flex-shrink:0}
+.btn-camera{width:44px;height:44px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--muted2);cursor:pointer;display:none;align-items:center;justify-content:center;font-size:20px;transition:all .15s;flex-shrink:0}
 .btn-camera:hover{background:var(--logbox-bg);border-color:var(--logbox);color:var(--logbox)}
 @media(max-width:768px){.btn-camera{display:flex}}
 
@@ -476,7 +476,7 @@ select:focus{border-color:var(--accent)}
 .saida-card-mobile{
   background:var(--surface2);
   border:1px solid var(--border);
-  border-radius:10px;
+  border-radius:8px;
   padding:10px 12px;
   display:flex;
   align-items:center;
@@ -498,7 +498,7 @@ select:focus{border-color:var(--accent)}
 .saida-card-del:hover{background:rgba(248,81,73,.15)}
 
 /* ── CONFERÊNCIA DE EMBARQUE ─────────────────── */
-.conf-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px}
+.conf-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:16px}
 .conf-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
 .conf-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 .conf-badge{font-size:10px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:100px}
@@ -517,16 +517,16 @@ select:focus{border-color:var(--accent)}
 .conf-vol-chip{font-size:10px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:5px;font-weight:600}
 .conf-vol-ok{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.2)}
 .conf-vol-miss{background:rgba(248,81,73,.10);color:var(--red);border:1px solid rgba(248,81,73,.18)}
-.conf-doc-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:10px;margin-bottom:6px}
+.conf-doc-row{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;margin-bottom:6px}
 .conf-doc-label{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted2)}
 .conf-doc-val{font-size:11px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace}
 .conf-doc-status{font-size:10px;padding:2px 8px;border-radius:100px}
-.conf-btn-scan{width:100%;padding:10px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
+.conf-btn-scan{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-family:'Syne',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:4px}
 .conf-btn-scan:hover{background:var(--logbox-bg);border-color:var(--logbox);color:var(--logbox)}
 .conf-btn-scan.active{background:var(--logbox-bg);border-color:var(--logbox);color:var(--logbox)}
 
 /* ── SCANNER ─────────────────────────────────── */
-.hamburger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;border-radius:10px;border:1px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;transition:all .15s;z-index:301}
+.hamburger{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:36px;height:36px;border-radius:8px;border:1px solid var(--border2);background:transparent;cursor:pointer;flex-shrink:0;transition:all .15s;z-index:301}
 .hamburger:hover{background:var(--surface2)}
 .hamburger span{display:block;width:16px;height:1.5px;background:var(--muted2);border-radius:2px;transition:all .25s ease}
 .hamburger.open span:nth-child(1){transform:translateY(6.5px) rotate(45deg);background:var(--text)}
@@ -550,14 +550,14 @@ select:focus{border-color:var(--accent)}
 #printDoc { display: none; }
 
 /* VOLUMETRIA CARDS */
-.vol-full-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;transition:border-color .12s}
+.vol-full-card{background:var(--surface);border:1px solid var(--border);border-radius:9px;overflow:hidden;transition:border-color .12s}
 .vol-full-card.expanded{border-color:var(--border2)}
 .vol-full-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;user-select:none;transition:background .1s}
 .vol-full-header:hover{background:var(--surface2)}
 .vol-full-body{display:none;border-top:1px solid var(--border);padding:14px 16px}
 .vol-full-body.open{display:block}
 .vol-linha{display:grid;grid-template-columns:1fr 1.5fr 60px 60px 60px 60px 28px;gap:6px;align-items:end;margin-bottom:8px}
-.vol-linha-total{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:9px;font-size:12px;font-family:'DM Mono',monospace;margin-top:8px}
+.vol-linha-total{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:7px;font-size:12px;font-family:'DM Mono',monospace;margin-top:8px}
 
 .wpp-tab.active{background:var(--surface2);color:var(--text);border-color:var(--border2)}
 
@@ -570,12 +570,12 @@ select:focus{border-color:var(--accent)}
 .login-tagline{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:32px;text-align:center;letter-spacing:1px;text-transform:uppercase}
 .login-label{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:1px;align-self:flex-start;margin-bottom:7px}
 .login-input-wrap{position:relative;width:100%;margin-bottom:16px}
-.login-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 44px 12px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;letter-spacing:3px;outline:none;transition:border-color .15s}
+.login-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px 44px 12px 14px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;letter-spacing:3px;outline:none;transition:border-color .15s}
 .login-input:focus{border-color:rgba(255,255,255,.25)}
 .login-input.error{border-color:var(--red);animation:shake .3s ease}
 .login-eye{position:absolute;right:13px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--muted);cursor:pointer;font-size:15px;padding:2px;transition:color .15s}
 .login-eye:hover{color:var(--text)}
-.login-btn{width:100%;background:#238636;color:#fff;border:1px solid rgba(63,185,80,.3);border-radius:10px;padding:13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .12s;margin-bottom:0}
+.login-btn{width:100%;background:#238636;color:#fff;border:1px solid rgba(63,185,80,.3);border-radius:8px;padding:13px;font-family:'Syne',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .12s;margin-bottom:0}
 .login-btn:hover{background:#2ea043}
 .login-error{font-size:11px;color:var(--red);font-family:'DM Mono',monospace;margin-top:10px;opacity:0;transition:opacity .2s;text-align:center}
 .login-error.show{opacity:1}
@@ -766,7 +766,7 @@ select:focus{border-color:var(--accent)}
 .cal-mobile-card{
   background:var(--surface);
   border:1px solid var(--border);
-  border-radius:16px;
+  border-radius:12px;
   padding:14px;
   cursor:pointer;
   transition:border-color .15s, background .15s;
@@ -841,7 +841,7 @@ select:focus{border-color:var(--accent)}
 
 /* ── ETIQUETAS ML ────────────────────────────── */
 /* ── ETIQUETAS ML v4 ─────────────────────────── */
-.etq-section{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-top:16px}
+.etq-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-top:16px}
 .etq-header{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border);background:var(--surface2)}
 .etq-title{font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px}
 /* Barra geral */
@@ -856,12 +856,12 @@ select:focus{border-color:var(--accent)}
 /* Lista */
 .etq-list{display:flex;flex-direction:column;gap:10px;padding:14px 14px}
 /* Card ticket */
-.etq-card{background:var(--surface2);border:1px solid var(--border);border-radius:15px;overflow:hidden;position:relative;transition:border-color .15s,box-shadow .15s}
+.etq-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;position:relative;transition:border-color .15s,box-shadow .15s}
 .etq-card:hover{border-color:var(--border2);box-shadow:0 2px 12px rgba(0,0,0,.18)}
 .etq-card.done{border-color:rgba(63,185,80,.25);background:linear-gradient(135deg,var(--surface2) 80%,rgba(63,185,80,.04))}
 .etq-card.partial{border-color:rgba(210,153,34,.2)}
 /* Borda colorida esquerda estilo ticket */
-.etq-card-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:15px 0 0 10px}
+.etq-card-stripe{position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:10px 0 0 10px}
 .etq-card-stripe.done{background:var(--green)}
 .etq-card-stripe.partial{background:var(--orange)}
 .etq-card-stripe.none{background:var(--muted);opacity:.3}
@@ -898,15 +898,15 @@ select:focus{border-color:var(--accent)}
 .etq-card-bar-label{display:flex;justify-content:space-between;margin-top:4px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
 /* Ações do card */
 .etq-card-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.etq-btn-print{display:flex;align-items:center;gap:5px;padding:5px 14px;border-radius:9px;border:1px solid var(--logbox-border);background:var(--logbox-bg);color:var(--logbox);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.etq-btn-print{display:flex;align-items:center;gap:5px;padding:5px 14px;border-radius:7px;border:1px solid var(--logbox-border);background:var(--logbox-bg);color:var(--logbox);font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
 .etq-btn-print:hover{background:rgba(88,166,255,.2);border-color:var(--logbox)}
-.etq-btn-done-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:9px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.22);color:var(--green)}
-.etq-btn-del{width:28px;height:28px;border-radius:9px;border:1px solid rgba(248,81,73,.2);background:rgba(248,81,73,.06);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.etq-btn-done-tag{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;font-size:11px;font-family:'DM Mono',monospace;font-weight:700;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.22);color:var(--green)}
+.etq-btn-del{width:28px;height:28px;border-radius:7px;border:1px solid rgba(248,81,73,.2);background:rgba(248,81,73,.06);color:var(--red);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .etq-btn-del:hover{background:rgba(248,81,73,.15)}
-.etq-btn-reset{width:28px;height:28px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.etq-btn-reset{width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
 .etq-btn-reset:hover{background:var(--surface2);color:var(--text)}
 /* Lote parcial */
-.etq-lote-box{margin-top:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:10px}
+.etq-lote-box{margin-top:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border2);border-radius:8px}
 /* Empty state */
 .etq-empty{padding:32px 16px;text-align:center}
 .etq-empty-icon{font-size:32px;margin-bottom:10px;opacity:.3}
@@ -921,17 +921,13 @@ select:focus{border-color:var(--accent)}
 .etq-config-input{width:72px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;font-weight:700;padding:5px 8px;outline:none;text-align:center;transition:border-color .15s}
 .etq-config-input:focus{border-color:var(--accent)}
 .etq-config-badge{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);padding:4px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;white-space:nowrap}
-.etq-zpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:10px;color:var(--muted2);font-family:'DM Mono',monospace;font-size:10px;padding:10px;resize:vertical;outline:none;transition:border-color .15s;min-height:90px;max-height:180px;line-height:1.5}
+.etq-zpl-textarea{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--muted2);font-family:'DM Mono',monospace;font-size:10px;padding:10px;resize:vertical;outline:none;transition:border-color .15s;min-height:90px;max-height:180px;line-height:1.5}
 .etq-zpl-textarea:focus{border-color:var(--accent);color:var(--text)}
 /* QZ status */
 .etq-qztray-status{display:flex;align-items:center;gap:5px;font-size:10px;font-family:'DM Mono',monospace}
 .etq-dot-conn{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
 .etq-dot-disc{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0}
 .etq-dot-wait{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.5s infinite;flex-shrink:0}
-
-/* soft elevation — hub redesign */
-.card,.ins-card,.table-wrap,.full-table-wrap,.ducato,.prod-section,.conf-section,.etq-section,.relatorio-semana,.hist-item,.vol-full-card,.processo-card,.modal,.ins-mov-table,.ins-hist-table,.ins-chart-wrap,.detail-panel{box-shadow:0 1px 2px rgba(16,24,40,.06),0 1px 8px rgba(16,24,40,.04)}
-body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body.light-mode .full-table-wrap,body.light-mode .ducato,body.light-mode .prod-section,body.light-mode .conf-section,body.light-mode .etq-section,body.light-mode .relatorio-semana,body.light-mode .hist-item,body.light-mode .vol-full-card,body.light-mode .processo-card,body.light-mode .modal,body.light-mode .ins-mov-table,body.light-mode .ins-hist-table,body.light-mode .ins-chart-wrap,body.light-mode .detail-panel{box-shadow:0 1px 3px rgba(16,24,40,.06),0 4px 14px rgba(16,24,40,.06)}
 </style>
 </head>
 <body>
@@ -1049,7 +1045,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           </div>
 
           <!-- EM PROCESSO AGORA -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:16px;margin-bottom:20px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
               <div style="font-size:14px;font-weight:700">⚡ Em processo agora</div>
               <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">clique para ver detalhes</span>
@@ -1087,7 +1083,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           </div>
 
           <!-- FULLS ESTOCADOS AGUARDANDO CARREGAMENTO -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
               <div style="font-size:13px;font-weight:700">📦 Estocados — aguardando embarque</div>
               <span class="badge" id="dashEstocadosBadge" style="font-size:10px">0 fulls</span>
@@ -1098,7 +1094,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           </div>
 
           <!-- SAÍDAS DA SEMANA -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
               <div style="font-size:13px;font-weight:700">📤 Saídas da semana</div>
               <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--accent)" id="dashSaidasSemanaTotal">—</span>
@@ -1110,7 +1106,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           </div>
 
           <!-- FULLS CONCLUÍDOS NA SEMANA -->
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;margin-bottom:16px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
               <div style="font-size:13px;font-weight:700">✅ Fulls concluídos na semana</div>
               <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="dashFullsConcluidosSub">—</span>
@@ -1131,7 +1127,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           </div>
 
           <!-- PAINEL DE STATUS (aparece quando clica nos cards) -->
-          <div id="dashStatusPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:16px;margin-bottom:20px">
+          <div id="dashStatusPanel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
               <div style="font-size:13px;font-weight:700" id="dashStatusPanelTitle">Fulls</div>
               <button onclick="dashFecharFiltro()" style="background:transparent;border:none;color:var(--muted);cursor:pointer;font-size:18px;line-height:1">✕</button>
@@ -1181,7 +1177,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           <div id="calMobileList" style="display:none"></div>
 
           <!-- DETALHE INLINE DO FULL (abre abaixo do calendário) -->
-          <div id="fullDetalheInline" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div id="fullDetalheInline" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface2)">
               <div>
                 <div style="font-size:15px;font-weight:800;letter-spacing:-.3px" id="fdTitle">—</div>
@@ -1190,7 +1186,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
               <div style="display:flex;gap:8px;align-items:center">
                 <button class="btn btn-primary btn-sm" id="fdBtnEditar" onclick="">✏️ Editar</button>
                 <button class="btn btn-ghost btn-sm" id="fdBtnConferencia" onclick="">◎ Conferência</button>
-                <button onclick="fecharFullDetalhe()" style="width:28px;height:28px;border-radius:9px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
+                <button onclick="fecharFullDetalhe()" style="width:28px;height:28px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--muted);cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">✕</button>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0">
@@ -1247,19 +1243,19 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
             </div>
 
             <!-- Seção 1: Fila de solicitações -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
               <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">📋 Fila de solicitações (Max → Edipo)</div>
               <div id="efFilaBody"></div>
             </div>
 
             <!-- Seção 2: Saldo atual no espaço Full -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;margin-bottom:16px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
               <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:12px">📦 Saldo no espaço Full (pré-etiquetagem)</div>
               <div id="efSaldoBody"></div>
             </div>
 
             <!-- Seção 3: Saiu do galpão — aguardando baixa Magis5 -->
-            <div style="background:var(--surface);border:1px solid rgba(210,153,34,.3);border-radius:16px;padding:18px">
+            <div style="background:var(--surface);border:1px solid rgba(210,153,34,.3);border-radius:12px;padding:18px">
               <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--orange);margin-bottom:12px">⚠️ Saiu do galpão — confirmar baixa no Magis5</div>
               <div id="efBaixaBody"></div>
             </div>
@@ -1270,7 +1266,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
             <div id="efSub-etq" style="display:none">
               <div class="dev-toolbar">
                 <div class="dev-toolbar-left">
-                  <input type="text" id="bibBusca" placeholder="🔍 Buscar SKU ou descrição..." oninput="bibRenderLista()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+                  <input type="text" id="bibBusca" placeholder="🔍 Buscar SKU ou descrição..." oninput="bibRenderLista()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
                 </div>
                 <div style="display:flex;gap:8px;align-items:center">
                   <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="bibCount">0 SKUs</span>
@@ -1294,12 +1290,12 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
 
           <!-- ══ SUB-ABA: ESTOQUE PRINCIPAL (ESPELHO) ══ -->
           <div id="fullsPane-espelho" style="display:none">
-            <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:10px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:var(--muted)">
+            <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:8px;padding:8px 12px;margin-bottom:14px;font-size:11px;color:var(--muted)">
               ℹ️ Este é um espelho — só atualiza quando você clica em "Sincronizar". Vendas normais no Magis5 não refletem aqui automaticamente. Ao confirmar uma entrega no Full, este saldo é descontado localmente.
             </div>
 
             <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-              <input type="text" id="efEspelhoBusca" placeholder="🔍 Buscar SKU ou produto..." oninput="renderEstoqueFull()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+              <input type="text" id="efEspelhoBusca" placeholder="🔍 Buscar SKU ou produto..." oninput="renderEstoqueFull()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
               <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
                 <input type="checkbox" id="efFiltroPositivo" checked onchange="renderEstoqueFull()" style="width:15px;height:15px;cursor:pointer">
                 Só com estoque positivo
@@ -1330,7 +1326,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
             </div>
 
           <!-- ══ PAINEL DE INVENTÁRIO FÍSICO ══ -->
-          <div id="invPanel" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden">
+          <div id="invPanel" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden">
             <div style="padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface2)">
               <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
                 <div>
@@ -1338,10 +1334,10 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
                   <div style="font-size:11px;color:var(--muted)" id="invDataLabel">—</div>
                 </div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <select id="invFiltroBrand" onchange="renderInventario()" style="font-size:11px;padding:6px 8px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+                  <select id="invFiltroBrand" onchange="renderInventario()" style="font-size:11px;padding:6px 8px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
                     <option value="">Todas as marcas</option>
                   </select>
-                  <input type="text" id="invBusca" placeholder="🔍 SKU ou produto..." oninput="renderInventario()" style="width:160px;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+                  <input type="text" id="invBusca" placeholder="🔍 SKU ou produto..." oninput="renderInventario()" style="width:160px;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
                   <button class="btn btn-primary btn-sm" id="invSalvarBtn" onclick="salvarInventario()">💾 Salvar</button>
                   <button class="btn btn-ghost btn-sm" onclick="fecharInventario()" style="padding:5px 10px">✕</button>
                 </div>
@@ -1385,7 +1381,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
 
           <div id="fullsPane-mldeposito" style="display:none">
             <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
-              <input type="text" id="mlDepBusca" placeholder="🔍 Buscar SKU ou título..." oninput="renderMlDeposito()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+              <input type="text" id="mlDepBusca" placeholder="🔍 Buscar SKU ou título..." oninput="renderMlDeposito()" style="width:240px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
               <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer">
                 <input type="checkbox" id="mlDepSoComEstoque" onchange="renderMlDeposito()" style="width:15px;height:15px;cursor:pointer">
                 Só com estoque no ML
@@ -1419,7 +1415,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           <!-- toolbar -->
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
-              <input type="text" id="enviadosBusca" placeholder="🔍 Buscar por ID, destino ou empresa..." oninput="renderEnviados()" style="width:280px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+              <input type="text" id="enviadosBusca" placeholder="🔍 Buscar por ID, destino ou empresa..." oninput="renderEnviados()" style="width:280px;font-size:12px;padding:7px 11px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
               <select id="enviadosFiltroEmpresa" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px"><option value="LogBox">LogBox</option></select>
               <select id="enviadosFiltroDestino" onchange="renderEnviados()" style="font-size:11px;padding:5px 8px">
                 <option value="">Todos os destinos</option>
@@ -1498,7 +1494,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
             </div>
 
             <!-- CALCULADORA RÁPIDA -->
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:14px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px">
               <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Calculadora rápida</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
                 <div class="form-group">
@@ -1566,7 +1562,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
           </div>
-          <div style="background:var(--surface);border:2px solid var(--accent);border-radius:16px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
+          <div style="background:var(--surface);border:2px solid var(--accent);border-radius:12px;padding:18px 22px;margin-bottom:18px;display:flex;align-items:center;gap:14px">
             <div style="flex:1">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px">
                 <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);text-transform:uppercase;letter-spacing:.8px">📦 Bipe ou digite o número da venda — Enter para registrar</div>
@@ -1576,7 +1572,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
                 </div>
               </div>
               <div style="display:flex;gap:8px;align-items:center">
-                <input type="text" id="saidaBipe" placeholder="Ex: 12345678901234567" style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:11px 13px;outline:none;transition:border-color .15s" onkeydown="if(event.key==='Enter')registrarSaida()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                <input type="text" id="saidaBipe" placeholder="Ex: 12345678901234567" style="flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:15px;padding:11px 13px;outline:none;transition:border-color .15s" onkeydown="if(event.key==='Enter')registrarSaida()" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
                 <button class="btn-camera" onclick="abrirScanner()" title="Escanear QR Code">📷</button>
               </div>
             </div>
@@ -1590,7 +1586,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           </div>
           <!-- Painel por conta -->
           
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:14px;margin-bottom:18px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
               <div style="font-size:13px;font-weight:700">Flex vs Coleta</div>
               <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="sFlexColetaLabel">5 Flex · 3 Coleta</div>
@@ -1611,17 +1607,17 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           </div>
           <div id="saidaTab-hoje">
             <div class="full-table-wrap">
-              <div id="saidasAvisoAberto" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.35);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:var(--orange)"></div>
+              <div id="saidasAvisoAberto" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.35);border-radius:8px;padding:9px 12px;margin-bottom:10px;font-size:11px;color:var(--orange)"></div>
             <div class="table-head">
                 <div class="table-head-title">Registros do dia</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <input type="text" id="saidaHojeBusca" placeholder="🔍 Buscar pedido..." oninput="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:180px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
-                  <select id="saidaHojeFiltroCanal" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:9px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
+                  <input type="text" id="saidaHojeBusca" placeholder="🔍 Buscar pedido..." oninput="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:180px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                  <select id="saidaHojeFiltroCanal" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
                     <option value="">Flex + Coleta</option>
                     <option value="Flex">Flex</option>
                     <option value="Coleta">Coleta</option>
                   </select>
-                  <select id="saidaHojeFiltroMkt" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:9px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
+                  <select id="saidaHojeFiltroMkt" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
                     <option value="">Todos markets</option>
                     <option value="ML">ML</option>
                     <option value="Amazon">Amazon</option>
@@ -1645,7 +1641,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
               <div class="table-head">
                 <div class="table-head-title">Histórico por dia</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <input type="text" id="histBuscaGeral" placeholder="🔍 Buscar nº do pedido..." oninput="buscarHistoricoGeral()" style="background:var(--bg);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:200px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                  <input type="text" id="histBuscaGeral" placeholder="🔍 Buscar nº do pedido..." oninput="buscarHistoricoGeral()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:200px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
                   
                   <span style="font-size:10px;color:var(--muted)">clique para ver pedidos · 🖨 imprimir</span>
                 </div>
@@ -1684,7 +1680,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
                 <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px">
                   <span>Progresso da bipagem</span><span id="painelPctTexto">—</span>
                 </div>
-                <div style="height:14px;background:var(--border);border-radius:9px;overflow:hidden">
+                <div style="height:14px;background:var(--border);border-radius:7px;overflow:hidden">
                   <div id="painelBarra" style="height:100%;width:0%;background:var(--green);transition:width .5s"></div>
                 </div>
                 <div id="painelLogistica" style="display:flex;gap:16px;margin-top:14px;flex-wrap:wrap"></div>
@@ -1723,7 +1719,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
                   <option value="Coleta">Coleta</option>
                   <option value="DBA">DBA</option>
                 </select>
-                <input type="text" id="painelBusca" placeholder="🔍 SKU, cliente, pedido..." oninput="renderPainelExpedicao()" style="width:180px;font-size:11px;padding:5px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+                <input type="text" id="painelBusca" placeholder="🔍 SKU, cliente, pedido..." oninput="renderPainelExpedicao()" style="width:180px;font-size:11px;padding:5px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
                 <button class="btn btn-ghost btn-sm" id="painelBtnLote" onclick="registrarLoteDoPainel()" style="font-size:10px;white-space:nowrap">✓ Registrar todos filtrados</button>
               </div>
               <div style="overflow-x:auto"><table>
@@ -1925,7 +1921,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
 
           <!-- ── REGISTRO MANUAL (outros marketplaces) ── -->
           <div id="devPane-manual" style="display:none">
-            <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:15px;padding:12px 18px;margin-bottom:16px;font-size:12px;color:var(--muted)">
+            <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:12px;color:var(--muted)">
               ✏️ <strong>Registro manual</strong> — para devoluções de Shopee, TikTok, Amazon e Magalu enquanto as APIs desses marketplaces não estão conectadas. As claims do Mercado Livre são automáticas na aba "Claims ML".
             </div>
             <div class="dev-toolbar" style="flex-wrap:wrap;gap:8px">
@@ -1995,7 +1991,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
               <select id="catFiltroGalpao" onchange="renderCatalogo()" style="font-size:11px;padding:5px 8px"><option value="LogBox">LogBox</option></select>
-              <input type="text" id="catBusca" placeholder="Buscar SKU ou descrição..." oninput="renderCatalogo()" style="width:200px;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:9px;color:var(--text);outline:none">
+              <input type="text" id="catBusca" placeholder="Buscar SKU ou descrição..." oninput="renderCatalogo()" style="width:200px;font-size:12px;padding:6px 10px;background:var(--surface);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none">
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="catCount">0 SKUs</span>
@@ -2165,7 +2161,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
       <div class="form-group"><label>Descrição</label><input class="form-sel" type="text" id="pDesc" placeholder="Preenchido pelo SKU" readonly style="color:var(--muted)"></div>
       <div class="form-group"><label>Qtd Caixas *</label><input class="form-sel" type="number" id="pCaixas" placeholder="0" min="1" oninput="pCalcTempo()"></div>
       <div class="form-group"><label>Qtd Produtos</label><input class="form-sel" type="number" id="pProdutos" placeholder="0" min="0"></div>
-      <div class="form-group"><label>Tempo estimado</label><input type="text" id="pTempo" readonly style="color:var(--green);background:var(--bg);border:1px solid var(--border2);border-radius:9px;padding:9px 11px;font-size:12px;width:100%"></div>
+      <div class="form-group"><label>Tempo estimado</label><input type="text" id="pTempo" readonly style="color:var(--green);background:var(--bg);border:1px solid var(--border2);border-radius:7px;padding:9px 11px;font-size:12px;width:100%"></div>
       <div class="form-group"><label>Status</label><select class="form-sel" id="pStatus"><option>Concluído</option><option>Produzindo</option></select></div>
     </div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalProd')">Cancelar</button><button class="btn btn-primary" onclick="salvarProd()">Salvar</button></div>
@@ -2251,7 +2247,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
     <div class="form-grid"><div class="form-group"><label>Peso (kg)</label><input class="form-sel" id="sk-peso" type="number" step="0.01"></div><div class="form-group"><label>Volume (L)</label><input type="text" id="sk-vol" readonly style="color:var(--green)"></div></div>
     <div class="section-divider">Produção</div>
     <div class="form-grid"><div class="form-group"><label>Qtde produtos/caixa</label><input class="form-sel" id="sk-qtdecx" type="number" min="1"></div><div class="form-group"><label>Tempo/caixa (min)</label><input class="form-sel" id="sk-tempo" type="number" step="0.5" oninput="calcSkuTempoun()"></div></div>
-    <div style="background:var(--surface2);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--muted);margin-bottom:4px">💡 10 caixas deste SKU = <strong style="color:var(--accent)" id="sk-preview-tempo">—</strong></div>
+    <div style="background:var(--surface2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--muted);margin-bottom:4px">💡 10 caixas deste SKU = <strong style="color:var(--accent)" id="sk-preview-tempo">—</strong></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalSku')">Cancelar</button><button class="btn btn-primary" onclick="salvarSku()">Salvar SKU</button></div>
   </div>
 </div>
@@ -2277,22 +2273,22 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
   <div class="modal modal-lg" style="max-width:700px">
     <div class="modal-title"><div><div id="detalheDiaTitulo">Pedidos</div><div id="detalheDiaSub" style="font-size:11px;font-weight:400;color:var(--muted);margin-top:2px"></div></div><button class="modal-close" onclick="closeModal('modalDetalheDia')">✕</button></div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
-      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL</div><div style="font-size:20px;font-weight:800;color:var(--accent)" id="ddTotal">0</div></div>
-      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">FLEX</div><div style="font-size:20px;font-weight:800;color:var(--green)" id="ddFlex">0</div></div>
-      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">COLETA</div><div style="font-size:20px;font-weight:800;color:var(--logbox)" id="ddColeta">0</div></div>
-      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">MARKETS</div><div style="font-size:11px;font-weight:700;margin-top:4px" id="ddMkt">—</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL</div><div style="font-size:20px;font-weight:800;color:var(--accent)" id="ddTotal">0</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">FLEX</div><div style="font-size:20px;font-weight:800;color:var(--green)" id="ddFlex">0</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">COLETA</div><div style="font-size:20px;font-weight:800;color:var(--logbox)" id="ddColeta">0</div></div>
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center"><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">MARKETS</div><div style="font-size:11px;font-weight:700;margin-top:4px" id="ddMkt">—</div></div>
     </div>
     <!-- Painel contas ML -->
     <div id="ddContasGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px"></div>
     <div id="ddFuncRanking" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;margin-bottom:12px"></div>
     <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap">
       <div style="position:relative;flex:1;min-width:200px">
-        <input type="text" id="detalheBusca" placeholder="🔍  Buscar número do pedido..." oninput="filtrarDetalheDia()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+        <input type="text" id="detalheBusca" placeholder="🔍  Buscar número do pedido..." oninput="filtrarDetalheDia()" style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:10px 13px;outline:none;transition:border-color .15s" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
         <div style="position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)" id="detalheContador">0 resultados</div>
       </div>
       <button class="btn btn-ghost btn-sm" onclick="enriquecerDetalheDia()" id="detalheEnriquecerBtn" style="white-space:nowrap">🔍 Enriquecer com Magis5</button>
     </div>
-    <div style="max-height:340px;overflow-y:auto;border-radius:10px;border:1px solid var(--border)">
+    <div style="max-height:340px;overflow-y:auto;border-radius:8px;border:1px solid var(--border)">
       <table style="width:100%;border-collapse:collapse">
         <thead><tr>
           <th style="padding:7px 11px;text-align:left;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;border-bottom:1px solid var(--border);background:var(--surface2);position:sticky;top:0">#</th>
@@ -2319,7 +2315,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
     <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--accent);margin-bottom:14px" id="saidaImpData">—</div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Selecione a combinação que deseja imprimir:</div>
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px" id="saidaImpCombos"></div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:15px;padding:14px;margin-bottom:16px" id="saidaImpPreview" style="display:none"></div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px" id="saidaImpPreview" style="display:none"></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" onclick="closeModal('modalSaidaImpressao')">Cancelar</button>
       <button class="btn btn-primary" id="btnImprimirSaida" disabled>🖨 Imprimir</button>
@@ -2346,7 +2342,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
       </div>
     </div>
 
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:15px;padding:14px;margin-bottom:16px" id="impPreview">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:16px" id="impPreview">
       <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.8px">Prévia do comprovante</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px" id="impPreviewGrid">—</div>
     </div>
@@ -2366,7 +2362,7 @@ body.light-mode .card,body.light-mode .ins-card,body.light-mode .table-wrap,body
     <input type="hidden" id="insMovTipo">
     <div class="form-group" style="margin-bottom:12px">
       <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Produto</label>
-      <div id="insMovProdNome" style="font-size:13px;font-weight:700;padding:8px 12px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)"></div>
+      <div id="insMovProdNome" style="font-size:13px;font-weight:700;padding:8px 12px;background:var(--surface2);border-radius:7px;border:1px solid var(--border)"></div>
     </div>
     <div class="form-group" style="margin-bottom:12px">
       <label style="font-size:11px;color:var(--muted2);display:block;margin-bottom:5px">Quantidade</label>
@@ -3383,7 +3379,7 @@ function renderVolDia() {
   if (!container) return;
 
   if (!fulls.length) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:15px">
+    container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:10px">
       <div style="font-size:24px;margin-bottom:8px">📦</div>
       <div style="font-size:13px;font-weight:600;margin-bottom:4px">Nenhum full agendado para ${dateKey}</div>
       <div style="font-size:11px">Crie um full na aba Fulls e defina o dia da semana.</div>
@@ -3450,7 +3446,7 @@ function renderVolFullBody(f) {
     const vun = ((parseFloat(g.comp)||0)*(parseFloat(g.larg)||0)*(parseFloat(g.altu)||0))/1000;
     const vtot = vun * g.qtde;
     const temDim = g.comp && g.larg && g.altu;
-    return `<div style="display:grid;grid-template-columns:1fr 2fr 60px 60px auto;gap:8px;align-items:center;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:6px">
+    return `<div style="display:grid;grid-template-columns:1fr 2fr 60px 60px auto;gap:8px;align-items:center;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
       <div style="font-family:'DM Mono',monospace;font-size:11px;color:var(--logbox)">${g.codigo}</div>
       <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.descricao||'—'}</div>
       <div style="text-align:center">
@@ -3471,7 +3467,7 @@ function renderVolFullBody(f) {
       <button class="btn btn-primary btn-sm" onclick="volAdicionarSku('${f.id}')">+ Adicionar SKU</button>
     </div>
     ${grupos.length ? `
-      <div style="background:var(--surface2);border-radius:10px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:12px">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;margin-bottom:12px;display:flex;align-items:center;gap:12px">
         <div style="flex:1">
           <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:4px">OCUPAÇÃO DA DUCATO — este full</div>
           <div style="background:var(--bg);border-radius:100px;height:7px;overflow:hidden">
@@ -3748,7 +3744,7 @@ async function renderDashSemana() {
       const diffDias = Math.floor((hoje - desde) / (1000*60*60*24));
       const diasLabel = diffDias === 0 ? 'hoje' : diffDias === 1 ? '1 dia' : `${diffDias} dias`;
 
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:10px;cursor:pointer;border:1px solid var(--border)" onclick="dashAbrirFullEstocado('${c.full_id}')">
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:var(--surface2);border-radius:8px;cursor:pointer;border:1px solid var(--border)" onclick="dashAbrirFullEstocado('${c.full_id}')">
         <div style="display:flex;align-items:center;gap:10px">
           <div style="width:3px;height:32px;border-radius:2px;background:${empCor};flex-shrink:0"></div>
           <div>
@@ -3845,7 +3841,7 @@ async function renderDashSemana() {
       const done = (f.itens||[]).filter(i=>i.status==='done').length;
       const total = (f.itens||[]).length;
       const empCor = 'var(--logbox)';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(63,185,80,.04);border:1px solid rgba(63,185,80,.12);border-radius:9px">
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(63,185,80,.04);border:1px solid rgba(63,185,80,.12);border-radius:7px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="color:var(--green);font-size:12px">✓</span>
           <span style="font-size:11px;font-weight:700;font-family:'DM Mono',monospace;color:${empCor}">${f.id}</span>
@@ -4030,7 +4026,7 @@ function dashFiltrarStatus(status) {
       const total = f.itens.length;
       const pct = total ? Math.round((done/total)*100) : 0;
       const cor = f.status==='Em conferência'?'var(--purple)':f.status==='Atrasado'?'var(--red)':f.status==='Pronto'?'var(--green)':f.status==='Produzindo'?'var(--orange)':'var(--muted)';
-      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:border-color .15s" onclick="openDetail('${f.id}')" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      return `<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color .15s" onclick="openDetail('${f.id}')" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
         <div style="font-family:'DM Mono',monospace;font-size:12px;color:var(--accent);width:72px;flex-shrink:0">${f.id}</div>
         <div style="flex:1;min-width:0">
           <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${f.destino}</div>
@@ -4088,11 +4084,11 @@ function _openDetailPanel(id) {
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--muted)">${pending}</div><div class="detail-stat-label">Pend.</div></div>
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${total}</div><div class="detail-stat-label">SKUs</div></div>
     </div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
       <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL CAIXAS</span>
       <span style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px">${totalCaixas}</span>
     </div>
-    ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:10px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
+    ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
     <div class="progress-wrap">
       <div class="progress-label"><span>Progresso</span><span style="color:var(--text)">${pct}%</span></div>
       <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
@@ -4159,7 +4155,7 @@ function openFullDetalheInline(id) {
     <div class="detail-stat"><div class="detail-stat-val" style="color:var(--orange)">${doing}</div><div class="detail-stat-label">Prod.</div></div>
     <div class="detail-stat"><div class="detail-stat-val" style="color:var(--muted)">${pending}</div><div class="detail-stat-label">Pend.</div></div>
     <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${total}</div><div class="detail-stat-label">SKUs</div></div>
-    <div class="detail-stat" style="border:1px solid rgba(63,185,80,.2);border-radius:10px;background:rgba(63,185,80,.04)">
+    <div class="detail-stat" style="border:1px solid rgba(63,185,80,.2);border-radius:8px;background:rgba(63,185,80,.04)">
       <div class="detail-stat-val" style="color:var(--green)">${totalCaixas}</div>
       <div class="detail-stat-label">Total cx</div>
     </div>`;
@@ -4181,7 +4177,7 @@ function openFullDetalheInline(id) {
   document.getElementById('fdSkuList').innerHTML = Object.values(skuMap).map(s => {
     const dotCls = s.status==='done'?'dot-done':s.status==='doing'?'dot-doing':s.status==='conferencia'?'dot-conferencia':'dot-pending';
     const funcs = [...new Set(s.funcionarios)].join(', ') || '—';
-    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 12px">
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
         <div style="display:flex;align-items:center;gap:7px">
           <div class="sdot ${dotCls}"></div>
@@ -4206,7 +4202,7 @@ function openFullDetalheInline(id) {
     ? prodEntries.map(([nome, d]) => {
         const av = funcAv(nome);
         const cor = funcCor(d.empresa||FUNC_INFO[nome]?.empresa||'');
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
           <div class="prod-avatar ${cor}" style="width:28px;height:28px;font-size:10px;flex-shrink:0">${av}</div>
           <div style="flex:1;min-width:0">
             <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nome}</div>
@@ -4553,7 +4549,7 @@ function updateTempoEstimado(itens){
   itens.forEach(item=>{const s=SKU_DB.find(s=>s.sku===item.codigo);if(s&&item.qtde)min+=s.tempo*(parseInt(item.qtde)||0);});
   const old=document.getElementById('editTempoEstimado');
   if(old)old.innerHTML='';
-  if(min>0){const h=Math.floor(min/60),m=min%60;const el=document.getElementById('editTempoEstimado');if(el)el.innerHTML=`<div style="background:var(--surface2);border-radius:9px;padding:9px 12px;font-size:12px;color:var(--muted);margin-top:8px">⏱ Tempo estimado: <strong style="color:var(--accent)">${h>0?h+'h ':''}${m>0?m+'min':''}</strong></div>`;}
+  if(min>0){const h=Math.floor(min/60),m=min%60;const el=document.getElementById('editTempoEstimado');if(el)el.innerHTML=`<div style="background:var(--surface2);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--muted);margin-top:8px">⏱ Tempo estimado: <strong style="color:var(--accent)">${h>0?h+'h ':''}${m>0?m+'min':''}</strong></div>`;}
 }
 async function salvarEditFull(){
   if(!editingFullId)return;
@@ -4709,8 +4705,8 @@ function openEnviadoDetail(id) {
       <div class="detail-stat"><div class="detail-stat-val" style="font-size:13px;color:var(--muted)">${f.agendado}</div><div class="detail-stat-label">Agendado</div></div>
       <div class="detail-stat"><div class="detail-stat-val" style="font-size:12px;color:var(--green)">${f.enviadoEm.substring(0,10)}</div><div class="detail-stat-label">Enviado</div></div>
     </div>
-    <div style="background:rgba(62,207,142,.06);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--green);margin-bottom:8px">✈ Full enviado com sucesso · ${f.destino}</div>
-    ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:10px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
+    <div style="background:rgba(62,207,142,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--green);margin-bottom:8px">✈ Full enviado com sucesso · ${f.destino}</div>
+    ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
     <div class="item-section-title">Itens enviados (${f.itens.length})</div>
     <div class="item-list">${(f.itens||[]).map(item=>{
       const av=item.funcionario&&item.funcionario!=='—'?item.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2):'?';
@@ -4805,6 +4801,16 @@ function _extraiChavePorDV(digitos) {
   return null;
 }
 
+// Fallback: primeira janela de 44 digitos cujo cUF (2 primeiros digits) seja estado SEFAZ válido.
+// Usado quando o leitor acrescenta sufixo (ex: "010" do GS1-128 do DANFE) e o DV falha.
+function _extraiChavePorUF(digitos) {
+  for (let i = 0; i + 44 <= digitos.length; i++) {
+    const cand = digitos.substr(i, 44);
+    if (_UF_VALIDOS_NFE.has(parseInt(cand.slice(0, 2)))) return cand;
+  }
+  return null;
+}
+
 // Retorna true quando uma string de 44 dígitos parece ser barcode de etiqueta de envio
 // (não é chave NF-e): DV inválido E cUF fora da tabela SEFAZ.
 // Nesses casos o sistema orienta o funcionário a escanear o DANFE em vez da etiqueta.
@@ -4866,12 +4872,21 @@ async function registrarSaida(){
       num = extraido;
       showToast('⚠️ Chave extraida de leitura suja — confira o leitor');
     } else {
-      // Nenhuma janela com DV válido encontrada.
-      // Se o fallback também tem cUF inválido → com certeza é etiqueta de envio, não NF-e.
-      const fallback = soDigitos.slice(-44);
-      if (_pareceBarcodeEnvio(fallback)) { _alertaBarcodeEnvio(input); return; }
-      num = fallback;
-      showToast('⚠️ Chave extraida de leitura suja — confira o leitor');
+      // DV não achou janela válida. Tenta por cUF — cobre leitores que acrescentam
+      // sufixo "010" (GS1-128 do DANFE): chave fica 47 dígitos, DV falha, mas cUF
+      // começa em posição 0 (ex: cUF=35 SP) e é encontrado aqui.
+      const extraidoUF = _extraiChavePorUF(soDigitos);
+      if (extraidoUF) {
+        num = extraidoUF;
+        if (!_dvChaveValido(num)) showToast('⚠️ Chave extraida (sufixo no leitor) — DV nao confere, confira');
+        else showToast('⚠️ Chave extraida de leitura com sufixo — confira o leitor');
+      } else {
+        // Nenhuma janela com cUF válido encontrada — provavelmente etiqueta de envio.
+        const fallback = soDigitos.slice(-44);
+        if (_pareceBarcodeEnvio(fallback)) { _alertaBarcodeEnvio(input); return; }
+        num = fallback;
+        showToast('⚠️ Chave extraida de leitura suja — confira o leitor');
+      }
     }
   }
 
@@ -4975,7 +4990,7 @@ function renderSaidas(){
   if (_sContasTotal) _sContasTotal.textContent = mlTotal ? ml+' pedidos ML no total' : 'Nenhum pedido ML hoje';
 
   const _sContasGrid = document.getElementById('sContasGrid'); if (_sContasGrid) _sContasGrid.innerHTML = porConta.map(({label,qtd,flex,coleta,color}) => `
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:11px 13px;cursor:pointer;transition:border-color .15s"
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;cursor:pointer;transition:border-color .15s"
          onclick="filtrarContaHoje('${label}')"
          title="Clique para filtrar por ${label}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
@@ -4990,7 +5005,7 @@ function renderSaidas(){
         <span>🚚 ${coleta}</span>
       </div>
     </div>`).join('') +
-    (semConta ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:11px 13px;opacity:.6">
+    (semConta ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px 13px;opacity:.6">
       <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px">Sem conta</div>
       <div style="font-size:20px;font-weight:900;color:var(--muted)">${semConta}</div>
     </div>` : '');
@@ -5139,7 +5154,7 @@ function abrirDetalheDia(data,galpao){
     const nFlex = pedidos.filter(p=>p.conta===c&&p.canal==='Flex').length;
     const nColeta = pedidos.filter(p=>p.conta===c&&p.canal==='Coleta').length;
     const color = CONTA_COLOR[c];
-    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:9px 11px;cursor:pointer;transition:border-color .15s"
+    return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;cursor:pointer;transition:border-color .15s"
         onclick="filtrarDetalheContaClick('${c}')" title="Filtrar por ${c}">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
         <span style="font-size:11px;font-weight:800;color:${color}">${c}</span>
@@ -5168,7 +5183,7 @@ function abrirDetalheDia(data,galpao){
     const cor=fi?.cor||'av-amber';
     const corCss=fi?.corCss||'var(--muted)';
     const pct=pedidos.length?Math.round((n/pedidos.length)*100):0;
-    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
       <div class="prod-avatar ${cor}" style="width:26px;height:26px;font-size:9px;flex-shrink:0">${av}</div>
       <div style="flex:1;min-width:0">
         <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:3px">
@@ -5561,15 +5576,15 @@ function abrirDevDetalhe(idx) {
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px">
-      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Qtde</div>
         <div style="font-size:20px;font-weight:800">${d.qtde||'—'}</div>
       </div>
-      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Gasto total</div>
         <div style="font-size:16px;font-weight:800;color:var(--red)">${d.total?'R$ '+parseFloat(d.total).toFixed(2):'—'}</div>
       </div>
-      <div style="background:var(--surface2);border-radius:10px;padding:10px;text-align:center">
+      <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;margin-bottom:3px">Cobrou?</div>
         <div style="font-size:18px">${d.cobrou==='Sim'?'✅':d.cobrou==='Não'?'❌':'—'}</div>
       </div>
@@ -5589,13 +5604,13 @@ function abrirDevDetalhe(idx) {
         ['Mediação',      d.mediacao],
         ['Responsável',   d.responsavel],
       ].filter(([,v]) => v).map(([l,v]) => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border-radius:7px;border:1px solid var(--border)">
           <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${l}</span>
           <span style="font-size:12px;font-weight:600">${v}</span>
         </div>`).join('')}
     </div>
 
-    ${d.obs ? `<div style="background:var(--fokus-bg);border:1px solid var(--fokus-border);border-radius:10px;padding:10px;font-size:12px;margin-bottom:14px">💬 ${d.obs}</div>` : ''}
+    ${d.obs ? `<div style="background:var(--fokus-bg);border:1px solid var(--fokus-border);border-radius:8px;padding:10px;font-size:12px;margin-bottom:14px">💬 ${d.obs}</div>` : ''}
 
     <div style="display:flex;gap:8px;margin-top:4px">
       <button class="btn btn-primary btn-sm" style="flex:1" onclick="editarDevModal(${idx})">✏️ Editar</button>
@@ -5906,14 +5921,14 @@ function nfRenderSkus() {
   const lista = document.getElementById('nf-skus-lista');
   if (!lista) return;
   if (!window._nfSkus.length) {
-    lista.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;border:1px dashed var(--border);border-radius:10px">Clique em "+ SKU" para adicionar produtos a este full</div>';
+    lista.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;border:1px dashed var(--border);border-radius:8px">Clique em "+ SKU" para adicionar produtos a este full</div>';
     nfUpdateTotal();
     return;
   }
   lista.innerHTML = window._nfSkus.map((s, i) => {
     const sk = SKU_DB.find(x=>x.sku===s.sku);
     const volInfo = sk ? `<span style="color:var(--green);font-size:10px">${(sk.vol*s.qtde).toFixed(1)}L</span>` : '';
-    return `<div style="display:grid;grid-template-columns:130px 1fr 80px auto;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:8px 10px">
+    return `<div style="display:grid;grid-template-columns:130px 1fr 80px auto;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
       <div>
         <input class="form-sel nf-sku-input" value="${s.sku||''}" placeholder="SKU-001"
           style="font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase"
@@ -6207,15 +6222,15 @@ function selecionarSaidaCombo(el) {
   document.getElementById('saidaImpPreview').innerHTML = `
     <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px">Prévia do comprovante</div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-      <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+      <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">MARKETPLACE</div>
         <div style="font-size:16px;font-weight:800;margin-top:3px">${market}</div>
       </div>
-      <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+      <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">LOGÍSTICA</div>
         <div style="font-size:15px;font-weight:800;margin-top:3px">${canalIcon} ${canal}</div>
       </div>
-      <div style="background:var(--bg);border-radius:10px;padding:10px;text-align:center">
+      <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL</div>
         <div style="font-size:22px;font-weight:900;color:var(--accent);margin-top:2px">${filtrados.length}</div>
       </div>
@@ -6274,19 +6289,19 @@ function executarImpressaoSaida(market, canal) {
 
       <!-- INFO PRINCIPAL -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:20px">
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;text-align:center">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Data</div>
           <div style="font-size:14px;font-weight:800">${data}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;text-align:center">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Galpão</div>
           <div style="font-size:14px;font-weight:800">${galpao}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px;text-align:center">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Logística</div>
           <div style="font-size:13px;font-weight:800;color:${canalColor}">${canalIcon} ${canal}</div>
         </div>
-        <div style="background:#111;border-radius:10px;padding:12px;text-align:center">
+        <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total</div>
           <div style="font-size:28px;font-weight:900;color:#f59e0b;line-height:1">${filtrados.length}</div>
           <div style="font-size:9px;color:#9ca3af;margin-top:2px">pacotes</div>
@@ -6296,7 +6311,7 @@ function executarImpressaoSaida(market, canal) {
       <!-- RESUMO POR FUNCIONÁRIO -->
       <div style="margin-bottom:18px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Resumo por funcionário</div>
-        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
           <thead><tr style="background:#f3f4f6">
             <th style="padding:7px 12px;text-align:left;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase">Funcionário</th>
             <th style="padding:7px 12px;text-align:center;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase">Pacotes</th>
@@ -6312,7 +6327,7 @@ function executarImpressaoSaida(market, canal) {
       <!-- LISTA DE PEDIDOS -->
       <div style="margin-bottom:24px">
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Pedidos (${filtrados.length})</div>
-        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
           <thead><tr style="background:#f3f4f6">
             <th style="padding:6px 10px;text-align:center;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase">#</th>
             <th style="padding:6px 10px;text-align:left;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase">Nº do Pedido</th>
@@ -6413,27 +6428,27 @@ function executarImpressao() {
 
       <!-- DADOS DO FULL -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:20px">
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">ID Full</div>
           <div style="font-size:20px;font-weight:900;color:#d97706">${f.id}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Empresa</div>
           <div style="font-size:16px;font-weight:700">${f.empresa}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total de caixas</div>
           <div style="font-size:20px;font-weight:900;color:#d97706">${totalCaixas}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Destino</div>
           <div style="font-size:13px;font-weight:700">${f.destino}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Criado em</div>
           <div style="font-size:13px;font-weight:700">${f.criadoEm || '—'}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Agendado para</div>
           <div style="font-size:13px;font-weight:700">${f.agendado || '—'}</div>
         </div>
@@ -6442,7 +6457,7 @@ function executarImpressao() {
       <!-- TABELA DE ITENS -->
       <div style="margin-bottom:24px">
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Itens do envio</div>
-        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
           <thead>
             <tr style="background:#f3f4f6">
               <th style="padding:8px 10px;font-size:10px;text-align:center;color:#6b7280;text-transform:uppercase;font-family:monospace;letter-spacing:.5px">#</th>
@@ -6655,7 +6670,7 @@ function renderProdutividade() {
     const h = Math.floor(d.tempo_min/60), m = Math.round(d.tempo_min%60);
     const tempoStr = d.tempo_min>0 ? (h>0?h+'h ':'')+(m>0?m+'min':'<1min') : '—';
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
-    return `<div class="prod-item" style="padding:10px 14px;background:var(--surface2);border-radius:10px;margin-bottom:6px">
+    return `<div class="prod-item" style="padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:6px">
       <div class="prod-rank" style="color:${i<3?'var(--logbox)':'var(--muted)'}">${medal||i+1}</div>
       <div class="prod-avatar ${cor}">${av}</div>
       <div class="prod-info">
@@ -6702,7 +6717,7 @@ function buscarHistoricoGeral(){
   }
   resultadoEl.innerHTML=`
     <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:8px">${resultados.length} resultado${resultados.length!==1?'s':''} encontrado${resultados.length!==1?'s':''}</div>
-    <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:10px;overflow:hidden">
+    <table style="width:100%;border-collapse:collapse;border:1px solid var(--border);border-radius:8px;overflow:hidden">
       <thead><tr>
         <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Nº do Pedido</th>
         <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Data</th>
@@ -6828,7 +6843,7 @@ function renderFuncList() {
     return;
   }
   lista.innerHTML = FUNCIONARIOS_DATA.map((f,i) => `
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
       <div class="prod-avatar ${funcCor(f.empresa)}" style="width:28px;height:28px;font-size:10px">${funcAv(f.nome)}</div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:600">${f.nome}</div>
@@ -7205,7 +7220,7 @@ function insAbrirModalFecharMes() {
     </div>`;
   }).join('');
   body.innerHTML = `<div style="margin-bottom:12px">O estoque final de <strong>${insMesLabel(INS_MES_ATUAL)}</strong> se tornará o estoque inicial de <strong>${insMesLabel(proximo)}</strong>.</div>
-    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px">${resumo}</div>`;
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:8px">${resumo}</div>`;
   openModal('modalInsFecharMes');
 }
 
@@ -7433,7 +7448,8 @@ function _extrairNumPedido(raw) {
   const d = (raw||'').replace(/\D/g, '');
   if (d.length < 44) return null;
   if (d.length === 44) return d;
-  return _extraiChavePorDV(d) || d.slice(-44);
+  // Tenta DV primeiro; se falhar, tenta cUF (cobre sufixo "010" do GS1-128 do DANFE).
+  return _extraiChavePorDV(d) || _extraiChavePorUF(d) || d.slice(-44);
 }
 
 // ── Checa se pedido já foi bipado hoje ──
@@ -7706,7 +7722,7 @@ function beepInputHtml(modo, fullId, totalEsperado) {
     <input type="text" id="${id}" autocomplete="off"
       placeholder="Bipe a caixa aqui — Enter registra"
       onkeydown="beepOnEnter(event,'${modo}','${fullId}',${totalEsperado})"
-      style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:10px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;outline:none"
+      style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;outline:none"
       onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
     <div id="${id}Msg" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px">
       Mantenha o cursor no campo e vá bipando as caixas
@@ -8642,10 +8658,10 @@ function bibRenderLista() {
       </td>
     </tr>
     <tr id="bibLoteRow_${r.sku}" style="display:none"><td colspan="5">
-      <div style="display:flex;gap:8px;align-items:center;padding:9px;background:var(--surface2);border-radius:9px;flex-wrap:wrap">
+      <div style="display:flex;gap:8px;align-items:center;padding:9px;background:var(--surface2);border-radius:7px;flex-wrap:wrap">
         <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Imprimir quantas agora (vai pro estoque pré-impresso):</span>
         <input type="number" id="bibQtd_${r.sku}" value="10" min="1" style="width:80px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:5px 8px;text-align:center">
-        <button onclick="bibConfirmarImprimir('${r.sku}')" style="padding:6px 14px;border-radius:9px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Imprimir</button>
+        <button onclick="bibConfirmarImprimir('${r.sku}')" style="padding:6px 14px;border-radius:7px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Imprimir</button>
         <button onclick="document.getElementById('bibLoteRow_${r.sku}').style.display='none'" class="etq-btn-reset">✕</button>
       </div>
     </td></tr>
@@ -8693,7 +8709,7 @@ function bibPreview(sku) {
   info.textContent=`${sku} — ${reg.descricao||''}`;
   const closeBtn=document.createElement('button');
   closeBtn.textContent='✕ Fechar';
-  closeBtn.style.cssText='padding:8px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.style.cssText='padding:8px 24px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer';
   closeBtn.onclick=()=>document.body.removeChild(overlay);
   overlay.appendChild(info);overlay.appendChild(canvas);overlay.appendChild(closeBtn);
   overlay.onclick=(e)=>{if(e.target===overlay)document.body.removeChild(overlay);};
@@ -8866,12 +8882,12 @@ async function etqRenderSecao(fullId) {
               </div>
             </div>
             ${!temZpl?`
-            <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:9px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px">
               <span>⚠️ ZPL não cadastrado na biblioteca pra esse SKU — não dá pra imprimir ainda</span>
               <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="bibAbrirNovo('${etq.sku}','${(descLbl||skuLbl).replace(/'/g,"\\'")}')">+ Cadastrar</button>
             </div>`:''}
             ${temZpl&&estoqueDisp>0&&faltam>0?`
-            <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.22);border-radius:9px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--green);display:flex;align-items:center;justify-content:space-between;gap:8px">
+            <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.22);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--green);display:flex;align-items:center;justify-content:space-between;gap:8px">
               <span>📦 ${estoqueDisp.toLocaleString('pt-BR')} etiqueta(s) já impressas no estoque pré-impresso</span>
               <button class="btn btn-sm" style="background:var(--green);color:#0a0a0a;font-size:10px;flex-shrink:0" onclick="etqUsarEstoque('${fullId}','${etq.id}')">Usar do estoque</button>
             </div>`:''}
@@ -8898,7 +8914,7 @@ async function etqRenderSecao(fullId) {
                 <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">de ${faltam.toLocaleString('pt-BR')} restantes</span>
                 <div style="flex:1"></div>
                 <button onclick="etqConfirmarLote('${fullId}','${etq.id}',${faltam})"
-                  style="padding:6px 16px;border-radius:9px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Confirmar</button>
+                  style="padding:6px 16px;border-radius:7px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Confirmar</button>
                 <button onclick="etqFecharLote('${etq.id}')" class="etq-btn-reset">✕</button>
               </div>
             </div>`:''}
@@ -8933,7 +8949,7 @@ async function etqRenderSecao(fullId) {
           <label>Cole o ZPL aqui</label>
           <textarea class="etq-zpl-textarea" id="etqZplInput_${fullId}" placeholder="^XA&#10;^FO...&#10;^XZ" oninput="etqAnalisarInput('${fullId}')"></textarea>
         </div>
-        <div id="etqDetectBox_${fullId}" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:10px">
+        <div id="etqDetectBox_${fullId}" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px">
           <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px">SKUs detectados</div>
           <div id="etqDetectList_${fullId}"></div>
         </div>
@@ -8946,13 +8962,13 @@ async function etqRenderSecao(fullId) {
       <div id="etqAddBib_${fullId}" style="display:none">
         <div class="form-group" style="margin-bottom:8px">
           <label>SKU já cadastrado na biblioteca</label>
-          <input type="text" id="etqBibSkuInput_${fullId}" list="etqBibSkuList_${fullId}" placeholder="Digite ou selecione o SKU" oninput="etqChecarSkuBib('${fullId}')" style="background:var(--bg);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 10px;width:100%;outline:none">
+          <input type="text" id="etqBibSkuInput_${fullId}" list="etqBibSkuList_${fullId}" placeholder="Digite ou selecione o SKU" oninput="etqChecarSkuBib('${fullId}')" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 10px;width:100%;outline:none">
           <datalist id="etqBibSkuList_${fullId}"></datalist>
         </div>
         <div id="etqBibSkuInfo_${fullId}" style="font-size:11px;color:var(--muted);margin-bottom:10px;min-height:14px"></div>
         <div class="form-group" style="margin-bottom:10px">
           <label>Quantidade necessária pra esse Full</label>
-          <input type="number" id="etqBibQtdInput_${fullId}" min="1" placeholder="Ex: 100" style="background:var(--bg);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 10px;width:100%;outline:none">
+          <input type="number" id="etqBibQtdInput_${fullId}" min="1" placeholder="Ex: 100" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:8px 10px;width:100%;outline:none">
         </div>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary btn-sm" style="flex:1" onclick="etqAdicionarDaBiblioteca('${fullId}')">✓ Adicionar</button>
@@ -8973,7 +8989,7 @@ function etqAnalisarInput(fullId) {
   if(!zpl){box.style.display='none';return;}
   const {total,skusDetectados,multiSku}=etqAnalisarZpl(zpl);
   box.style.display='';
-  const r=s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:5px">
+  const r=s=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;margin-bottom:5px">
     <div><div style="font-size:12px;font-weight:600;color:var(--text)">${s.nome||s.barcode}</div><div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${s.sku||s.barcode}</div></div>
     <span style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--logbox);background:var(--logbox-bg);padding:2px 8px;border-radius:5px;border:1px solid var(--logbox-border)">${s.count.toLocaleString('pt-BR')} etiquetas</span>
   </div>`;
@@ -9161,7 +9177,7 @@ async function etqPreview(fullId, etqId) {
 
   const closeBtn = document.createElement('button');
   closeBtn.textContent = '✕ Fechar';
-  closeBtn.style.cssText = 'padding:8px 24px;border-radius:10px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer';
+  closeBtn.style.cssText = 'padding:8px 24px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer';
   closeBtn.onclick = () => document.body.removeChild(overlay);
 
   overlay.appendChild(info);
@@ -9671,7 +9687,7 @@ function verMensagens(claimId) {
     return `<div style="text-align:${lado};margin-bottom:12px">
       <span style="font-size:10px;color:${cor};font-weight:700">${m.de}</span>
       <span style="font-size:10px;color:var(--muted);margin-left:8px">${data}</span>
-      <div style="background:var(--surface2);border-radius:10px;padding:8px 12px;margin-top:4px;font-size:12px;max-width:80%;display:inline-block;text-align:left">${m.texto}</div>
+      <div style="background:var(--surface2);border-radius:8px;padding:8px 12px;margin-top:4px;font-size:12px;max-width:80%;display:inline-block;text-align:left">${m.texto}</div>
     </div>`;
   }).join('');
   // Mostra num modal simples
@@ -9751,7 +9767,7 @@ async function abrirDetalhesClaim(claimId, orderId) {
       : '';
 
     const secao = (titulo, conteudo) => `
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:15px;padding:16px 18px;margin-bottom:14px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 18px;margin-bottom:14px">
         <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">${titulo}</div>
         ${conteudo}
       </div>`;
@@ -9767,7 +9783,7 @@ async function abrirDetalhesClaim(claimId, orderId) {
     // Produto
     if (m5.produto) {
       let prodHtml = '';
-      if (m5.imagem) prodHtml += `<img src="${m5.imagem}" style="width:64px;height:64px;object-fit:contain;border-radius:10px;border:1px solid var(--border);float:right;margin-left:12px">`;
+      if (m5.imagem) prodHtml += `<img src="${m5.imagem}" style="width:64px;height:64px;object-fit:contain;border-radius:8px;border:1px solid var(--border);float:right;margin-left:12px">`;
       prodHtml += linha('SKU', m5.sku, 'var(--accent)');
       prodHtml += linha('Produto', m5.produto);
       prodHtml += linha('EAN', m5.ean);
@@ -9835,7 +9851,7 @@ async function abrirDetalhesClaim(claimId, orderId) {
       let pgHtml = '';
       pgHtml += linha('Status pagamento', pg.status);
       pgHtml += linha('Detalhe', pg.statusDetail);
-      if (pg.bppRefunded) pgHtml += `<div style="background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:10px;padding:10px 12px;margin-top:8px;font-size:12px;color:var(--red)">⚠ <strong>BPP Refunded</strong> — O ML já reembolsou o comprador pelo Programa de Proteção. O valor pode ser descontado da sua conta caso a devolução não seja resolvida.</div>`;
+      if (pg.bppRefunded) pgHtml += `<div style="background:rgba(248,81,73,.1);border:1px solid rgba(248,81,73,.3);border-radius:8px;padding:10px 12px;margin-top:8px;font-size:12px;color:var(--red)">⚠ <strong>BPP Refunded</strong> — O ML já reembolsou o comprador pelo Programa de Proteção. O valor pode ser descontado da sua conta caso a devolução não seja resolvida.</div>`;
       if (pg.valorReembolsado) pgHtml += linha('Valor reembolsado', 'R$ ' + pg.valorReembolsado.toFixed(2), 'var(--red)');
       html += secao('💳 Pagamento', pgHtml);
     }
@@ -9849,7 +9865,7 @@ async function abrirDetalhesClaim(claimId, orderId) {
         const data = m.data ? new Date(m.data).toLocaleString('pt-BR') : '';
         return `<div style="display:flex;flex-direction:column;align-items:${lado};margin-bottom:12px">
           <div style="font-size:10px;color:${cor};font-weight:700;margin-bottom:3px">${m.de} <span style="color:var(--muted);font-weight:400">${data}</span></div>
-          <div style="background:${bg};border:1px solid var(--border);border-radius:15px;padding:9px 13px;max-width:85%;font-size:12px;line-height:1.5">${m.texto || '<em style="color:var(--muted)">sem texto</em>'}</div>
+          <div style="background:${bg};border:1px solid var(--border);border-radius:10px;padding:9px 13px;max-width:85%;font-size:12px;line-height:1.5">${m.texto || '<em style="color:var(--muted)">sem texto</em>'}</div>
         </div>`;
       }).join('');
       html += secao(`💬 Mensagens (${msgs.length})`, msgsHtml);
@@ -9884,7 +9900,7 @@ function renderSubAba(tab) {
 
 // Helpers compartilhados
 function pvCard(label, valor, cor, sub) {
-  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:14px 18px;flex:1;min-width:130px">
+  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 18px;flex:1;min-width:130px">
     <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px">${label}</div>
     <div style="font-size:32px;font-weight:800;color:${cor||'var(--text)'}">${valor}</div>
     ${sub ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${sub}</div>` : ''}
@@ -9892,7 +9908,7 @@ function pvCard(label, valor, cor, sub) {
 }
 
 function pvSecao(titulo, html) {
-  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px">
+  return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px">
     <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:14px">${titulo}</div>
     ${html}
   </div>`;
@@ -10192,7 +10208,7 @@ async function abrirConfirmacaoChegada(claimId, orderId) {
       <div>
         <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">O produto correto chegou?</label>
         <div style="display:flex;gap:8px">
-          ${['sim','nao','parcial'].map(v => `<label style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:12px">
+          ${['sim','nao','parcial'].map(v => `<label style="flex:1;text-align:center;padding:8px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px">
             <input type="radio" name="pv_correto" value="${v}" style="margin-right:6px">${PRODUTO_CORRETO_PT[v]}
           </label>`).join('')}
         </div>
@@ -10200,7 +10216,7 @@ async function abrirConfirmacaoChegada(claimId, orderId) {
 
       <div>
         <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Estado do produto</label>
-        <select id="pv_estado" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px">
+        <select id="pv_estado" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
           <option value="">Selecione...</option>
           ${Object.entries(ESTADO_PRODUTO_PT).map(([k,v]) => `<option value="${k}">${v}</option>`).join('')}
         </select>
@@ -10208,19 +10224,19 @@ async function abrirConfirmacaoChegada(claimId, orderId) {
 
       <div>
         <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Descreva o que chegou (opcional)</label>
-        <textarea id="pv_descricao" rows="3" placeholder="Ex: Chegou produto de outra marca, embalagem aberta, faltando acessórios..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;resize:vertical"></textarea>
+        <textarea id="pv_descricao" rows="3" placeholder="Ex: Chegou produto de outra marca, embalagem aberta, faltando acessórios..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:vertical"></textarea>
       </div>
 
       <div>
         <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Ação tomada</label>
-        <select id="pv_acao" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px">
+        <select id="pv_acao" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px">
           <option value="">Selecione...</option>
           ${Object.entries(ACAO_TOMADA_PT).map(([k,v]) => `<option value="${k}">${v}</option>`).join('')}
         </select>
       </div>
 
       <button onclick="salvarConfirmacao(${claimId},${orderId})"
-        style="background:var(--green);color:#000;border:none;border-radius:15px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%">
+        style="background:var(--green);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%">
         ✓ Confirmar e salvar
       </button>
     </div>
@@ -10284,8 +10300,8 @@ async function abrirEtiquetas(claimId, orderId) {
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <input id="pv_nova_tag" placeholder="Nova etiqueta personalizada..." style="flex:1;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px" onkeydown="if(event.key==='Enter')adicionarEtiqueta(${claimId},${orderId},document.getElementById('pv_nova_tag').value)">
-        <button onclick="adicionarEtiqueta(${claimId},${orderId},document.getElementById('pv_nova_tag').value)" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">+ Adicionar</button>
+        <input id="pv_nova_tag" placeholder="Nova etiqueta personalizada..." style="flex:1;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px" onkeydown="if(event.key==='Enter')adicionarEtiqueta(${claimId},${orderId},document.getElementById('pv_nova_tag').value)">
+        <button onclick="adicionarEtiqueta(${claimId},${orderId},document.getElementById('pv_nova_tag').value)" style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer">+ Adicionar</button>
       </div>`;
   };
 
@@ -10353,7 +10369,7 @@ async function abrirObservacoes(claimId, orderId) {
   }
 
   const obsHtml = obs.length
-    ? obs.map(o => `<div style="background:var(--surface2);border-radius:10px;padding:10px 14px;margin-bottom:10px">
+    ? obs.map(o => `<div style="background:var(--surface2);border-radius:8px;padding:10px 14px;margin-bottom:10px">
         <div style="font-size:10px;color:var(--muted);margin-bottom:4px">${new Date(o.data).toLocaleString('pt-BR')}</div>
         <div style="font-size:13px">${o.texto}</div>
       </div>`).join('')
@@ -10366,9 +10382,9 @@ async function abrirObservacoes(claimId, orderId) {
     </div>
     <div style="margin-bottom:20px">${obsHtml}</div>
     <div>
-      <textarea id="pv_nova_obs" rows="3" placeholder="Nova observação..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;resize:vertical;margin-bottom:8px"></textarea>
+      <textarea id="pv_nova_obs" rows="3" placeholder="Nova observação..." style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;resize:vertical;margin-bottom:8px"></textarea>
       <button onclick="salvarObservacao(${claimId},${orderId})"
-        style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">
+        style="background:var(--accent);color:#000;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;width:100%">
         + Salvar observação
       </button>
     </div>
@@ -10448,7 +10464,7 @@ function renderImpacto() {
     'Nenhum caso fechado favorável ao comprador na amostra'));
 
   // Aviso sobre amostra
-  html += `<div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:15px;padding:14px 18px;font-size:12px;color:var(--muted)">
+  html += `<div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:10px;padding:14px 18px;font-size:12px;color:var(--muted)">
     ℹ️ Os valores acima refletem a <strong>amostra carregada</strong> (até 50 claims abertas + 50 fechadas).
     Para análise financeira completa dos ${_claimsDados.totais?.fechadas?.toLocaleString('pt-BR')} casos históricos,
     o sistema precisaria paginar todo o histórico — o que pode demorar alguns minutos.
@@ -10531,7 +10547,7 @@ function renderKpiConfigBar(cfg){
   const mkts=[{k:"ml",e:"🟡",n:"Mercado Livre"},{k:"shopee",e:"🛍️",n:"Shopee"},{k:"tiktok",e:"🎵",n:"TikTok"},{k:"amazon",e:"📦",n:"Amazon"},{k:"magalu",e:"🛒",n:"Magalu"}];
   let html=`<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px">`;
   for(const m of mkts){
-    html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:15px;padding:12px 14px">
+    html+=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px">
       <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px">${m.e} ${m.n}</div>
       <div style="display:flex;flex-direction:column;gap:8px">
         <div style="display:flex;align-items:center;justify-content:space-between">
@@ -10562,9 +10578,9 @@ function renderKpiMLDetail(d,cfg){
   html+=`<p style="font-size:13px;color:var(--muted);margin-bottom:6px">${d.dataBR} · atualizado às ${d.horaAtual} · ${d.pedidosFullIgnorados} Full excluídos</p>`;
   html+=`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px">`;
   const cards=[[d.bipadosHoje,"Bipados hoje","rgba(63,185,80,.1)","#4ade80"],[d.totalAguardandoImpressao,"Aguardando impressão","rgba(88,166,255,.1)","#79b8ff"],[d.totalImpressoNaoBipado,"Impresso, falta bipar","rgba(88,166,255,.1)","#79b8ff"],[d.totalAtencao,"Atenção (<1h)","rgba(251,191,36,.1)","#fbbf24"],[d.totalAtrasados,"Atrasados","rgba(248,113,113,.1)","#f87171"],[d.problemasBipagem,"Bipagem c/ problema","rgba(248,113,113,.1)","#f87171"]];
-  for(const [n,l,bg,cor] of cards) html+=`<div style="background:${bg};border-radius:15px;padding:10px 14px;min-width:100px;text-align:center"><div style="font-size:28px;font-weight:800;color:${cor}">${n}</div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px">${l}</div></div>`;
+  for(const [n,l,bg,cor] of cards) html+=`<div style="background:${bg};border-radius:10px;padding:10px 14px;min-width:100px;text-align:center"><div style="font-size:28px;font-weight:800;color:${cor}">${n}</div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px">${l}</div></div>`;
   html+=`</div>`;
-  if(!d.pendentes||d.pendentes.length===0){ html+=`<div style="color:#4ade80;font-weight:700;padding:16px;text-align:center;background:rgba(63,185,80,.06);border-radius:15px">Tudo bipado!</div>`; }
+  if(!d.pendentes||d.pendentes.length===0){ html+=`<div style="color:#4ade80;font-weight:700;padding:16px;text-align:center;background:rgba(63,185,80,.06);border-radius:10px">Tudo bipado!</div>`; }
   else{
     html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">`;
     html+=`<thead><tr>${["Shipment","Pedido","Canal","Etapa","Prazo"].map(h=>`<th style="text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--border)">${h}</th>`).join("")}</tr></thead><tbody>`;
@@ -10584,9 +10600,9 @@ function renderKpiMagisDetail(nome,emoji,dados,sw,ss){
   html+=`<p style="font-size:13px;color:var(--muted);margin-bottom:14px">${kpiCorteLabel(sw,ss)}</p>`;
   html+=`<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px">`;
   const cards=[[dados.bipadosHoje,"Bipados hoje","rgba(63,185,80,.1)","#4ade80"],[dados.aguardandoNota,"Aguardando nota","rgba(88,166,255,.1)","#79b8ff"],[pendentes.length,"Pronto, falta bipar","rgba(251,191,36,.1)","#fbbf24"],[atrasados,"Atrasados","rgba(248,113,113,.1)","#f87171"],[atencao,"Atenção","rgba(251,191,36,.1)","#fbbf24"]];
-  for(const [n,l,bg,cor] of cards) html+=`<div style="background:${bg};border-radius:15px;padding:10px 14px;min-width:90px;text-align:center"><div style="font-size:28px;font-weight:800;color:${cor}">${n}</div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px">${l}</div></div>`;
+  for(const [n,l,bg,cor] of cards) html+=`<div style="background:${bg};border-radius:10px;padding:10px 14px;min-width:90px;text-align:center"><div style="font-size:28px;font-weight:800;color:${cor}">${n}</div><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px">${l}</div></div>`;
   html+=`</div>`;
-  if(pendentes.length===0){ html+=`<div style="color:#4ade80;font-weight:700;padding:16px;text-align:center;background:rgba(63,185,80,.06);border-radius:15px">Tudo bipado!</div>`; }
+  if(pendentes.length===0){ html+=`<div style="color:#4ade80;font-weight:700;padding:16px;text-align:center;background:rgba(63,185,80,.06);border-radius:10px">Tudo bipado!</div>`; }
   else{
     html+=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">`;
     html+=`<thead><tr>${["Pedido","Valor","Prazo estimado"].map(h=>`<th style="text-align:left;color:var(--muted);font-size:10px;text-transform:uppercase;padding:6px 10px;border-bottom:1px solid var(--border)">${h}</th>`).join("")}</tr></thead><tbody>`;
@@ -11323,7 +11339,7 @@ function renderPainelExpedicao() {
     }
 
     const alertaHtml = alertas.length
-      ? `<div style="grid-column:1/-1;display:flex;gap:16px;flex-wrap:wrap;padding:8px 12px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);border-radius:10px">${alertas.join('<span style="color:var(--border2)">·</span>')}</div>`
+      ? `<div style="grid-column:1/-1;display:flex;gap:16px;flex-wrap:wrap;padding:8px 12px;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.2);border-radius:8px">${alertas.join('<span style="color:var(--border2)">·</span>')}</div>`
       : '';
 
     elAcao.innerHTML = Object.entries(ACAO_INFO).map(([et, info]) => {
@@ -11598,7 +11614,7 @@ function abrirVinculoSkuGenerico(inputId) {
         <span style="font-weight:800;font-size:14px">🔗 Selecionar SKU real (Magis5)</span>
         <button onclick="document.getElementById('vincSkuModal').remove()" style="background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer">✕</button>
       </div>
-      <input id="vincSkuBusca" placeholder="Buscar SKU ou produto..." autocomplete="off" oninput="filtrarVincSkuLista()" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:12px;margin-bottom:10px;box-sizing:border-box">
+      <input id="vincSkuBusca" placeholder="Buscar SKU ou produto..." autocomplete="off" oninput="filtrarVincSkuLista()" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px;margin-bottom:10px;box-sizing:border-box">
       <div id="vincSkuLista"></div>
     </div>`;
     window._vincSkuTargetInput = inputId;
@@ -11785,19 +11801,19 @@ function abrirNovaSolicitacaoFull() {
     <div>
       <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">Vincular a um Full existente? (opcional)</label>
       <div style="position:relative">
-        <input id="ef_fullid" placeholder="Digite o ID do Full..." autocomplete="off" oninput="efAutocompleteFull(this.value)" onfocus="efAutocompleteFull(this.value)" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;box-sizing:border-box">
-        <div id="ef_fullid_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:10"></div>
+        <input id="ef_fullid" placeholder="Digite o ID do Full..." autocomplete="off" oninput="efAutocompleteFull(this.value)" onfocus="efAutocompleteFull(this.value)" style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+        <div id="ef_fullid_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:160px;overflow-y:auto;z-index:10"></div>
       </div>
     </div>
 
     <div style="margin-top:16px">
       <label style="font-size:12px;font-weight:700;color:var(--muted);display:block;margin-bottom:6px">SKUs solicitados</label>
       <div id="ef_linhas_skus"></div>
-      <button type="button" onclick="efAdicionarLinhaSku()" style="background:none;border:1px dashed var(--border2);color:var(--accent);border-radius:10px;padding:8px;width:100%;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">+ Adicionar outro SKU</button>
+      <button type="button" onclick="efAdicionarLinhaSku()" style="background:none;border:1px dashed var(--border2);color:var(--accent);border-radius:8px;padding:8px;width:100%;font-size:12px;font-weight:700;cursor:pointer;margin-top:6px">+ Adicionar outro SKU</button>
     </div>
 
-    <div id="efTotaisModal" style="display:none;gap:12px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:15px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:600;color:var(--text)"></div>
-    <button onclick="efCriarSolicitacao()" style="background:var(--accent);color:#000;border:none;border-radius:15px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:12px">Solicitar</button>
+    <div id="efTotaisModal" style="display:none;gap:12px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:12px;font-size:13px;font-weight:600;color:var(--text)"></div>
+    <button onclick="efCriarSolicitacao()" style="background:var(--accent);color:#000;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:800;cursor:pointer;width:100%;margin-top:12px">Solicitar</button>
   </div>`;
   modal.style.display = 'flex';
   document.getElementById('ef_linhas_skus').innerHTML = '';
@@ -11818,18 +11834,18 @@ function efAdicionarLinhaSku() {
           oninput="efAutocompleteSku(${id}, this.value)"
           onfocus="efAutocompleteSku(${id}, this.value)"
           onblur="setTimeout(()=>efCheckSkuValido(${id}), 150)"
-          style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;box-sizing:border-box">
-        <div id="ef_sku_${id}_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-top:4px;max-height:180px;overflow-y:auto;z-index:10"></div>
+          style="width:100%;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box">
+        <div id="ef_sku_${id}_sugestoes" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-top:4px;max-height:180px;overflow-y:auto;z-index:10"></div>
         <input type="hidden" id="ef_produto_${id}">
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">
         <label style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase">Caixas</label>
-        <input id="ef_qtd_${id}" type="number" min="1" placeholder="0" oninput="efAtualizarTotaisModal()" style="width:80px;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;box-sizing:border-box;text-align:center">
+        <input id="ef_qtd_${id}" type="number" min="1" placeholder="0" oninput="efAtualizarTotaisModal()" style="width:80px;padding:9px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;box-sizing:border-box;text-align:center">
       </div>
       <button type="button" onclick="document.getElementById('ef_linha_${id}').remove();efAtualizarTotaisModal()" style="background:none;border:none;color:var(--red);font-size:16px;cursor:pointer;padding:8px;margin-top:18px">✕</button>
     </div>
     <div id="ef_info_${id}" style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;padding:3px 2px 0;min-height:14px"></div>
-    <div id="ef_aviso_${id}" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:10px;padding:8px 10px;margin-top:4px;font-size:11px;color:var(--orange);align-items:center;justify-content:space-between;gap:8px">
+    <div id="ef_aviso_${id}" style="display:none;background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.3);border-radius:8px;padding:8px 10px;margin-top:4px;font-size:11px;color:var(--orange);align-items:center;justify-content:space-between;gap:8px">
       <span>⚠️ Esse SKU não foi encontrado no Magis5.</span>
       <button type="button" onclick="efForcarVinculo(${id})" style="background:var(--orange);color:#000;border:none;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🔗 Vincular SKU real</button>
     </div>
@@ -12070,7 +12086,7 @@ function imprimirRequisicaoFull(id) {
     </tr>`).join('');
 
   const obsHTML = f.obs
-    ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:#92400e"><strong>Obs:</strong> ${f.obs}</div>`
+    ? `<div style="background:#fef3c7;border:1px solid #fbbf24;border-radius:8px;padding:10px 14px;margin-bottom:20px;font-size:12px;color:#92400e"><strong>Obs:</strong> ${f.obs}</div>`
     : '';
 
   document.getElementById('printDoc').innerHTML = `
@@ -12090,27 +12106,27 @@ function imprimirRequisicaoFull(id) {
 
       <!-- DADOS DO FULL -->
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">ID Full</div>
           <div style="font-size:22px;font-weight:900;color:#d97706">${f.id}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Solicitante</div>
           <div style="font-size:15px;font-weight:700">${f.responsavel || 'Max'}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Destino</div>
           <div style="font-size:13px;font-weight:700">${f.destino || '—'}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:12px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Agendado para</div>
           <div style="font-size:13px;font-weight:700">${f.agendado || '—'}</div>
         </div>
-        <div style="background:#111;border-radius:10px;padding:12px;text-align:center">
+        <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">SKUs</div>
           <div style="font-size:22px;font-weight:900;color:#d97706">${(f.itens || []).length}</div>
         </div>
-        <div style="background:#111;border-radius:10px;padding:12px;text-align:center">
+        <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total caixas</div>
           <div style="font-size:22px;font-weight:900;color:#d97706">${totalCaixas}</div>
         </div>
@@ -12119,7 +12135,7 @@ function imprimirRequisicaoFull(id) {
       <!-- TABELA DE ITENS -->
       <div style="margin-bottom:20px">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Itens para separação</div>
-        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
           <thead>
             <tr style="background:#111;color:#fff">
               <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">#</th>
@@ -12223,21 +12239,21 @@ function imprimirDelegacaoMax(id) {
 
       <!-- DADOS DO FULL -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px">
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:11px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:11px">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">ID Full</div>
           <div style="font-size:20px;font-weight:900;color:#059669">${f.id}</div>
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:11px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:11px">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Destino</div>
           <div style="font-size:12px;font-weight:700">${f.destino || '—'}</div>
           ${mkt ? `<div style="margin-top:3px;font-size:10px;font-weight:700;color:#059669">${mkt}</div>` : ''}
         </div>
-        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:11px">
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:11px">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Agendado</div>
           <div style="font-size:12px;font-weight:700">${f.agendado || '—'}</div>
           ${tipo ? `<div style="margin-top:3px;font-size:10px;color:#6b7280">${tipo === 'Coleta' ? '🚚 Coleta' : '📦 Env. próprio'}</div>` : ''}
         </div>
-        <div style="background:#111;border-radius:10px;padding:11px;text-align:center">
+        <div style="background:#111;border-radius:8px;padding:11px;text-align:center">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px">Total Cx</div>
           <div style="font-size:22px;font-weight:900;color:#059669">${totalCaixas}</div>
           ${hasPeso ? `<div style="font-size:9px;color:#9ca3af;margin-top:2px">⚖️ ${pesoTotal.toFixed(1)} kg</div>` : ''}
@@ -12247,7 +12263,7 @@ function imprimirDelegacaoMax(id) {
       <!-- TABELA DE DELEGAÇÃO -->
       <div style="margin-bottom:20px">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Delegação por produto</div>
-        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
+        <table style="width:100%;border-collapse:collapse;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
           <thead>
             <tr style="background:#111;color:#fff">
               <th style="padding:8px 10px;font-size:9px;text-align:center;font-family:monospace;letter-spacing:.5px">#</th>
@@ -12273,7 +12289,7 @@ function imprimirDelegacaoMax(id) {
       <!-- ANOTAÇÕES -->
       <div style="margin-bottom:24px">
         <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:8px;font-family:monospace">Anotações / Observações</div>
-        <div style="border:1px solid #e5e7eb;border-radius:10px;padding:12px;min-height:80px;background:#fafafa">
+        <div style="border:1px solid #e5e7eb;border-radius:8px;padding:12px;min-height:80px;background:#fafafa">
           ${f.obs ? `<div style="font-size:11px;color:#374151;margin-bottom:8px"><strong>Obs:</strong> ${f.obs}</div>` : ''}
           <div style="border-bottom:1px dashed #d1d5db;margin-bottom:10px;height:20px"></div>
           <div style="border-bottom:1px dashed #d1d5db;margin-bottom:10px;height:20px"></div>
