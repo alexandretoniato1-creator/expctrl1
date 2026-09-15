@@ -22,14 +22,31 @@
   --fokus:#d29922;--fokus-bg:rgba(210,153,34,.10);--fokus-border:rgba(210,153,34,.22);
 }
 body.light-mode{
-  --bg:#f6f8fa;--surface:#ffffff;--surface2:#f6f8fa;--border:#d0d7de;--border2:#afb8c1;
-  --text:#1f2328;--muted:#656d76;--muted2:#636c76;
-  --accent:#1f2328;
+  --bg:#f5f7fa;--surface:#ffffff;--surface2:#f6f8fa;--border:#e2e8f0;--border2:#cbd5e1;
+  --text:#1f2328;--muted:#64748b;--muted2:#475569;
+  --accent:#2563eb;
   --green:#1a7f37;--red:#cf222e;--blue:#0969da;--orange:#9a6700;--purple:#8250df;
   --logbox:#0969da;--logbox-bg:rgba(9,105,218,.08);--logbox-border:rgba(9,105,218,.20);
   --fokus:#9a6700;--fokus-bg:rgba(154,103,0,.08);--fokus-border:rgba(154,103,0,.20);
 }
-body.light-mode .nav-item.active{color:var(--logbox);border-left-color:var(--logbox);background:rgba(9,105,218,.06)}
+/* ── Estilo Magis5 (tema claro): sidebar escura + accent azul + cantos menores ── */
+body.light-mode .sidebar{background:#0f172a;border-right-color:#1e293b}
+body.light-mode .logo{border-bottom-color:#1e293b}
+body.light-mode .logo-name{color:#f1f5f9}
+body.light-mode .logo-name span{color:#334155}
+body.light-mode .logo-tag{color:#64748b}
+body.light-mode .nav-item{color:#94a3b8}
+body.light-mode .nav-item:hover{color:#e2e8f0;background:rgba(255,255,255,.04)}
+body.light-mode .nav-item.active{color:#60a5fa;border-left-color:#2563eb;background:rgba(37,99,235,.12)}
+body.light-mode .nav-section{color:#475569}
+body.light-mode .company-badges{border-top-color:#1e293b}
+body.light-mode .card,body.light-mode .full-table-wrap{box-shadow:0 1px 2px rgba(15,23,42,.05)}
+body.light-mode .btn-primary{background:#2563eb;color:#fff;border:1px solid rgba(37,99,235,.3)}
+body.light-mode .btn-primary:hover{background:#1d4ed8}
+body.light-mode .card{border-radius:8px}
+body.light-mode .full-table-wrap{border-radius:8px}
+body.light-mode .modal{border-radius:10px}
+body.light-mode .btn,body.light-mode input,body.light-mode select.form-sel{border-radius:6px}
 body.light-mode .btn-primary{background:#1a7f37;color:#fff;border:1px solid rgba(26,127,55,.3)}
 body.light-mode .btn-primary:hover{background:#218b3a}
 /* toggle theme button */
@@ -1555,9 +1572,10 @@ select:focus{border-color:var(--accent)}
 
         <!-- ══ SAÍDAS ══ -->
         <div class="view" id="view-saidas">
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:10px;margin-bottom:16px;align-items:end">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px;align-items:end">
             <div class="form-group"><label>Galpão</label><select class="form-sel" id="saidaGalpao" onchange="renderSaidas()"><option value="LogBox">LogBox</option></select></div>
-            <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
+            <div class="form-group"><label>Canal</label><select class="form-sel" id="saidaCanal" onchange="toggleTranspField()"><option value="Flex">Flex</option><option value="Coleta">Coleta</option></select></div>
+            <div class="form-group" id="saidaTranspWrap"><label>Transportadora (Flex)</label><select class="form-sel" id="saidaTransp" onchange="document.getElementById('saidaBipe')?.focus()"><option value="">— selecione —</option></select></div>
             <div class="form-group"><label>Marketplace</label><select class="form-sel" id="saidaMarket" onchange="toggleContaField()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
           
             <div class="form-group"><label>Funcionário (bipe)</label><select class="form-sel" id="saidaFuncionario"><option value="—">—</option></select></div>
@@ -1578,9 +1596,29 @@ select:focus{border-color:var(--accent)}
             </div>
             <button class="btn btn-primary" onclick="registrarSaida()" style="height:44px;padding:0 18px">Registrar</button>
           </div>
+          <!-- ── EXPEDIÇÃO EM TEMPO REAL (fila do Magis5 × bipagem) ── -->
+          <div id="expStatus" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:18px">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span id="expStatusBadge" class="badge b-pending">—</span>
+                <span style="font-size:13px;font-weight:700">Expedição em tempo real</span>
+                <span id="expStatusSync" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)"></span>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center">
+                <button class="btn btn-ghost btn-sm" id="expRefreshBtn" onclick="atualizarStatusExpedicao()">🔄 Atualizar</button>
+                <button class="btn btn-ghost btn-sm" id="expPendToggle" onclick="toggleListaPendentes()">📋 Ver faltantes</button>
+              </div>
+            </div>
+            <div style="display:flex;gap:3px;height:10px;border-radius:100px;overflow:hidden;background:var(--bg);margin-bottom:8px">
+              <div id="expBarFeito" style="background:var(--green);width:0%;height:100%;transition:width .4s"></div>
+              <div id="expBarFalta" style="background:var(--red);width:0%;height:100%;transition:width .4s"></div>
+            </div>
+            <div id="expStatusNums" style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Abra a aba para carregar a fila do Magis5...</div>
+            <div id="expPendList" style="display:none;margin-top:10px;max-height:340px;overflow-y:auto;border-top:1px solid var(--border);padding-top:10px"></div>
+          </div>
           <div class="cards">
             <div class="card c-accent"><div class="card-label">Total do dia</div><div class="card-value" id="sTotal">8</div><div class="card-sub" id="sTotalSub">LogBox</div></div>
-            <div class="card c-green"><div class="card-label">Flex</div><div class="card-value" id="sFlex">5</div><div class="card-sub">pacotes</div></div>
+            <div class="card c-green"><div class="card-label">Flex</div><div class="card-value" id="sFlex">5</div><div class="card-sub" id="sFlexTransp">pacotes</div></div>
             <div class="card c-blue"><div class="card-label">Coleta</div><div class="card-value" id="sColeta">3</div><div class="card-sub">pacotes</div></div>
             <div class="card"><div class="card-label">Marketplaces</div><div class="card-value" id="sMkt" style="font-size:13px;margin-top:4px">ML:5 AMZ:2 SHP:1</div><div class="card-sub">distribuição</div></div>
           </div>
@@ -1617,6 +1655,11 @@ select:focus{border-color:var(--accent)}
                     <option value="Flex">Flex</option>
                     <option value="Coleta">Coleta</option>
                   </select>
+                  <select id="saidaHojeFiltroTransp" onchange="renderSaidas()" title="Transportadora (somente Flex)" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
+                    <option value="">Todas transp.</option>
+                    <option value="__sem">Flex sem transp.</option>
+                  </select>
+                  <button class="btn btn-ghost btn-sm" onclick="gerenciarTransportadoras()" title="Cadastrar/desativar transportadoras Flex" style="padding:4px 8px">⚙</button>
                   <select id="saidaHojeFiltroMkt" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
                     <option value="">Todos markets</option>
                     <option value="ML">ML</option>
@@ -1647,6 +1690,15 @@ select:focus{border-color:var(--accent)}
                 </div>
               </div>
               <div id="histBuscaGeralResultado" style="display:none;padding:12px 0"></div>
+              <div style="padding:12px 14px;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+                  <div style="font-size:12px;font-weight:700">🏍 Flex por transportadora</div>
+                  <select id="transpRelMes" onchange="renderRelatorioTransp()" class="form-sel" style="width:auto;font-size:11px;padding:4px 8px"></select>
+                  <button class="btn btn-ghost btn-sm" onclick="copiarRelatorioTransp()" title="Copiar CSV dia a dia para conferir fatura">📋 Copiar CSV</button>
+                  <span style="font-size:10px;color:var(--muted)">use para conferir a fatura das transportadoras</span>
+                </div>
+                <div id="transpRelGrid" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+              </div>
               <table id="histTabelaDias"><thead><tr><th>Data</th><th>Galpão</th><th>Total</th><th>Flex</th><th>Coleta</th><th>ML</th><th>Amazon</th><th>Shopee</th><th>Funcionários</th><th></th></tr></thead>
               <tbody id="saidaHistBody"></tbody></table>
             </div>
@@ -2587,7 +2639,8 @@ const db = {
         _id: s.id,
         num: s.numero, canal: s.canal, market: s.market,
         funcionario: s.funcionario, hora: s.hora, galpao: s.galpao,
-        conta: s.conta||'', data: s.data||'', origem: s.origem||'bipagem'
+        conta: s.conta||'', data: s.data||'', origem: s.origem||'bipagem',
+        transportadora: s.transportadora||''
       }));
 
       SAIDAS_HIST = (saidasHist||[]).map(h => ({
@@ -2603,7 +2656,7 @@ const db = {
           _id: row.id,
           num: row.numero, canal: row.canal, market: row.market,
           funcionario: row.funcionario, hora: row.hora,
-          conta: row.conta||''
+          conta: row.conta||'', transportadora: row.transportadora||''
         });
         return acc;
       }, {});
@@ -2709,7 +2762,8 @@ const db = {
       numero: s.num, canal: s.canal, market: s.market,
       funcionario: s.funcionario||'—', hora: s.hora,
       data: new Date().toLocaleDateString('pt-BR'), galpao: s.galpao,
-      conta: s.conta||'', origem: s.origem||'bipagem'
+      conta: s.conta||'', origem: s.origem||'bipagem',
+      transportadora: s.canal==='Flex' ? (s.transportadora||'') : ''
     };
     const { data, error } = await _sb.from('saidas_hoje').insert(row).select().single();
     if (error) { console.error('[Supabase] insertSaida:', error); return null; }
@@ -2751,7 +2805,8 @@ const db = {
       const rows = pedidos.map(p => ({
         data_galpao: chave, numero: p.num||'', canal: p.canal||'',
         market: p.market||'', funcionario: p.funcionario||'', hora: p.hora||'',
-        conta: p.conta||'', origem: p.origem||'bipagem'
+        conta: p.conta||'', origem: p.origem||'bipagem',
+        transportadora: p.transportadora||''
       }));
       const { error: ePed } = await _sb.from('saidas_hist_pedidos').insert(rows);
       if (ePed) { console.error('[Supabase] fecharDia pedidos:', ePed); }
@@ -2852,6 +2907,53 @@ let FULLS_ENVIADOS      = [];
 let DEVS                = [];
 let SKU_DB              = [];
 let SAIDAS_HOJE         = [];
+// ── Transportadoras Flex: tabela `transportadoras` no Supabase; fallback fixo se a leitura falhar
+const TRANSP_FALLBACK = ['Flash','RND','Speed'];
+let TRANSPORTADORAS = [...TRANSP_FALLBACK];
+async function carregarTransportadoras(){
+  try {
+    const { data, error } = await _sb.from('transportadoras').select('nome,ativo').order('nome');
+    if (error) throw error;
+    const ativas = (data||[]).filter(t=>t.ativo).map(t=>t.nome);
+    if (ativas.length) TRANSPORTADORAS = ativas;
+  } catch(e) { console.warn('[transportadoras] usando lista padrão:', e?.message||e); }
+  popularSelectsTransp();
+}
+function popularSelectsTransp(){
+  const sel = document.getElementById('saidaTransp');
+  if (sel) {
+    const atual = sel.value;
+    sel.innerHTML = '<option value="">— selecione —</option>' + TRANSPORTADORAS.map(t=>`<option value="${t}">${t}</option>`).join('');
+    if (TRANSPORTADORAS.includes(atual)) sel.value = atual;
+  }
+  const filtro = document.getElementById('saidaHojeFiltroTransp');
+  if (filtro) {
+    const atual = filtro.value;
+    filtro.innerHTML = '<option value="">Todas transp.</option>' + TRANSPORTADORAS.map(t=>`<option value="${t}">🏍 ${t}</option>`).join('') + '<option value="__sem">Flex sem transp.</option>';
+    if ([...TRANSPORTADORAS,'__sem'].includes(atual)) filtro.value = atual;
+  }
+}
+async function gerenciarTransportadoras(){
+  const nome = prompt('Cadastro de transportadoras\n\nAtivas: '+TRANSPORTADORAS.join(', ')+'\n\nDigite um NOME para adicionar, ou um nome existente precedido de "-" para desativar (ex: -Speed):');
+  if (!nome) return;
+  const desativar = nome.startsWith('-');
+  const alvo = (desativar ? nome.slice(1) : nome).trim();
+  if (!alvo) return;
+  try {
+    if (desativar) {
+      const { error } = await _sb.from('transportadoras').update({ativo:false}).eq('nome', alvo);
+      if (error) throw error;
+      showToast('🗑 '+alvo+' desativada');
+    } else {
+      const { error } = await _sb.from('transportadoras').upsert({nome: alvo, ativo:true}, {onConflict:'nome'});
+      if (error) throw error;
+      showToast('✅ '+alvo+' ativa');
+    }
+    await carregarTransportadoras();
+    renderSaidas();
+  } catch(e) { showToast('❌ Erro ao salvar transportadora: '+(e?.message||e)); }
+}
+document.addEventListener('DOMContentLoaded', carregarTransportadoras);
 let SAIDAS_HIST         = [];
 let SAIDAS_HIST_PEDIDOS = {};
 let SEMANAS_HIST        = [];
@@ -3015,7 +3117,13 @@ function showPage(name) {
   if (name==='devolucoes') renderDev();
   if (name==='catalogo') renderCatalogo();
   if (name==='produtividade') renderProdutividade();
-  if (name==='saidas') { renderSaidas(); setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100); }
+  if (name==='saidas') {
+    renderSaidas();
+    carregarLedger(false).then(()=>{ renderSaidas(); });
+    clearInterval(window._saidasLedgerTimer);
+    window._saidasLedgerTimer = setInterval(()=>{ carregarLedger(true).then(()=>{ if(document.getElementById('view-saidas')?.classList.contains('active')) renderSaidas(); }); }, 60000);
+    setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100);
+  } else { clearInterval(window._saidasLedgerTimer); }
   if (name==='dashboard') renderDashboard();
   if (name==='insumos') insInit();
   if (name==='painel-kpi') painelKpiInit();
@@ -4767,7 +4875,7 @@ function atualizarBipeFuncionario() {
 // bind funcionario change
 document.addEventListener('DOMContentLoaded', () => {
   const sel = document.getElementById('saidaFuncionario');
-  if(sel) { sel.addEventListener('change', atualizarBipeFuncionario); atualizarBipeFuncionario(); }
+  if(sel) { sel.addEventListener('change', ()=>{ atualizarBipeFuncionario(); document.getElementById('saidaBipe')?.focus(); }); atualizarBipeFuncionario(); }
 
   // Filtra funcionários sempre que galpão mudar
   const galpaoSel = document.getElementById('saidaGalpao');
@@ -4906,8 +5014,49 @@ async function registrarSaida(){
   const senderMatch = raw.match(/sender_id[^0-9]*([0-9]{6,})/i);
   const senderConta = senderMatch ? (SENDER_CONTA[senderMatch[1]] || '') : null;
 
-  const canal=document.getElementById('saidaCanal').value;
-  let market=document.getElementById('saidaMarket').value;
+  // ── Funcionário obrigatório: registro sem dono não serve pra auditoria ──
+  const funcionario=document.getElementById('saidaFuncionario')?.value||'—';
+  if (funcionario === '—') {
+    const fSel = document.getElementById('saidaFuncionario');
+    if (fSel) { fSel.style.borderColor='var(--red)'; setTimeout(()=>{ fSel.style.borderColor=''; },2000); }
+    showToast('⚠️ Selecione o funcionário antes de bipar');
+    if (typeof _somDuplicata === 'function') _somDuplicata();
+    input.focus();
+    return;
+  }
+
+  // ── Classificação automática via Magis5: a chave da NF diz qual pedido é,
+  //    e o ledger diz o canal (logistic_type) e o marketplace. O select vira
+  //    fallback só pra pedido que o Magis5 não conhece.
+  const pedidoML = (window._magis5SaidasIndex||{})[num] || null;
+  let canal, market, classifAuto = false;
+  if (pedidoML) {
+    const lt = (pedidoML.logistic_type||'').toLowerCase();
+    canal  = (lt==='self_service' || lt==='flex') ? 'Flex' : 'Coleta';
+    const mktLedger = pedidoML.marketplace || '';
+    classifAuto = true;
+    // Reflete nos selects pra tela mostrar a verdade (e o toggle da transportadora acompanhar)
+    const cSel=document.getElementById('saidaCanal');
+    if (cSel && cSel.value!==canal) { cSel.value=canal; toggleTranspField(); }
+    const mSel=document.getElementById('saidaMarket');
+    market = (mSel && [...mSel.options].some(o=>o.value===mktLedger)) ? mktLedger : (mSel?.value||'ML');
+    if (mSel && mSel.value!==market) { mSel.value=market; toggleContaField(); }
+  } else {
+    canal  = document.getElementById('saidaCanal').value;
+    market = document.getElementById('saidaMarket').value;
+  }
+
+  const transportadora = canal==='Flex' ? (document.getElementById('saidaTransp')?.value||'') : '';
+  if (canal==='Flex' && !transportadora) {
+    const tSel = document.getElementById('saidaTransp');
+    if (tSel) { tSel.style.borderColor='var(--red)'; setTimeout(()=>{ tSel.style.borderColor=''; },2000); }
+    showToast(classifAuto
+      ? '⚠️ O Magis5 diz que este pedido é FLEX — selecione a transportadora e bipe de novo'
+      : '⚠️ Selecione a transportadora antes de bipar Flex');
+    if (typeof _somDuplicata === 'function') _somDuplicata();
+    input.focus();
+    return;
+  }
   let conta=market==='ML'?(document.getElementById('saidaConta')?.value||''):'';
 
   // Se detectou sender_id: força ML e preenche a conta automaticamente
@@ -4922,17 +5071,18 @@ async function registrarSaida(){
     if (wrapEl)  wrapEl.style.display = '';
   }
 
-  const funcionario=document.getElementById('saidaFuncionario')?.value||'—';
   const now=new Date();
   const hora=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
-  const saida={num,canal,market,galpao,hora,funcionario,conta,origem:'bipagem'};
+  const saida={num,canal,market,galpao,hora,funcionario,conta,origem:'bipagem',transportadora};
   input.value='';input.focus();
   const newId = await db.insertSaida(saida);
   if(newId) saida._id=newId;
   SAIDAS_HOJE.push(saida);
+  if (pedidoML) pedidoML.ja_bipado = true; // fila em tempo real responde na hora
   renderSaidas();
   const contaLabel = conta ? ' · '+conta : '';
-  showToast('✅ '+canal+' — '+num.substring(0,8)+'...'+contaLabel+' ('+funcionario+')');
+  const skuLabel = pedidoML?.sku ? ' · '+pedidoML.sku : (classifAuto ? '' : ' · classif. manual');
+  showToast('✅ '+canal+(transportadora?' · '+transportadora:'')+skuLabel+' — '+num.substring(0,8)+'...'+contaLabel+' ('+funcionario+')');
 }
 function renderSaidas(){
   const galpao   = document.getElementById('saidaGalpao')?.value||'LogBox';
@@ -4940,6 +5090,10 @@ function renderSaidas(){
   const fCanal   = document.getElementById('saidaHojeFiltroCanal')?.value||'';
   const fMkt     = document.getElementById('saidaHojeFiltroMkt')?.value||'';
   const fContaH  = document.getElementById('saidaHojeFiltroContaHoje')?.value||'';
+  const fTransp  = document.getElementById('saidaHojeFiltroTransp')?.value||'';
+  // Filtro de transportadora só faz sentido fora de "Coleta"
+  const fTranspEl = document.getElementById('saidaHojeFiltroTransp');
+  if (fTranspEl) fTranspEl.style.display = fCanal==='Coleta' ? 'none' : '';
 
   const listaFull = SAIDAS_HOJE.filter(s => s.galpao === galpao);
   const lista = listaFull.filter(s => {
@@ -4947,6 +5101,10 @@ function renderSaidas(){
     if (fCanal  && s.canal   !== fCanal)  return false;
     if (fMkt    && s.market  !== fMkt)    return false;
     if (fContaH && s.conta   !== fContaH) return false;
+    if (fTransp && fCanal !== 'Coleta') {
+      if (s.canal !== 'Flex') return false;
+      if (fTransp === '__sem' ? !!s.transportadora : s.transportadora !== fTransp) return false;
+    }
     return true;
   });
 
@@ -4962,6 +5120,12 @@ function renderSaidas(){
   document.getElementById('sTotal').textContent = total;
   document.getElementById('sTotalSub').textContent = galpao;
   document.getElementById('sFlex').textContent = flex;
+  const _tCount = t => listaFull.filter(s => s.canal==='Flex' && (s.transportadora||'')===t).length;
+  const _semT = _tCount('');
+  const _sFT = document.getElementById('sFlexTransp');
+  if (_sFT) _sFT.textContent = flex
+    ? TRANSPORTADORAS.map(t=>t+' '+_tCount(t)).join(' · ') + (_semT ? ' · s/ transp. '+_semT : '')
+    : 'pacotes';
   document.getElementById('sColeta').textContent = coleta;
   document.getElementById('sMkt').textContent = [ml?'ML:'+ml:'',amz?'AMZ:'+amz:'',shp?'SHP:'+shp:'',tkt?'TKT:'+tkt:'',mgl?'MGL:'+mgl:''].filter(Boolean).join(' · ')||'—';
   const fp = total ? Math.round((flex/total)*100) : 50;
@@ -5035,7 +5199,7 @@ function renderSaidas(){
         <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px">${lista.length-i}</td>
         <td style="font-family:'DM Mono',monospace;font-size:12px">${s.num}</td>
         <td>${produtoCellFinal}</td>
-        <td><span class="badge ${s.canal==='Flex'?'b-done':'b-blue'}">${s.canal}</span></td>
+        <td><span class="badge ${s.canal==='Flex'?'b-done':'b-blue'}">${s.canal}</span>${s.canal==='Flex' ? (s.transportadora ? ` <span class="badge b-pending" style="font-size:9px">${s.transportadora}</span>` : ` <span class="badge" style="font-size:9px;background:rgba(210,153,34,.15);color:var(--orange)" title="Registrado sem transportadora">s/ transp.</span>`) : ''}</td>
         <td><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[s.market]||'b-pending'}">${s.market}</span></td>
         <td><div style="display:flex;align-items:center;gap:6px"><div style="width:20px;height:20px;border-radius:50%;background:rgba(0,0,0,.2);color:${cor};display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;border:1px solid currentColor;opacity:.8">${av}</div><span style="font-size:11px;color:var(--muted)">${func}</span></div></td>
         <td style="font-size:11px;color:var(--muted)">${s.galpao}</td>
@@ -5045,6 +5209,7 @@ function renderSaidas(){
     }).join('');
   }
   checarDiasEmAberto();
+  renderStatusExpedicao();
   // ── histórico sempre renderiza ──
   renderSaidaHistorico(galpao);
   const btnHoje = document.getElementById('btnImprimirHoje');
@@ -5063,6 +5228,7 @@ function filtrarContaHoje(conta) {
   document.getElementById('saidaBody')?.closest('.full-table-wrap')?.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 function renderSaidaHistorico(galpao){
+  if (typeof renderRelatorioTransp === 'function') { try { renderRelatorioTransp(); } catch(e){} }
   const _parseData = d => { const [dd,mm,aaaa] = d.split('/'); return new Date(`${aaaa}-${mm}-${dd}`); };
   const hist=SAIDAS_HIST.filter(h=>h.galpao===galpao).sort((a,b)=>_parseData(b.data)-_parseData(a.data));
   const tbody=document.getElementById('saidaHistBody');
@@ -5106,6 +5272,157 @@ function limparSaidaHoje(){if(!confirm('Limpar registros?'))return;const g=docum
 // funcao fechar_dias_pendentes). Fecha por data armazenada, nao por "ontem", entao
 // se uma noite falhar a proxima execucao recupera os dias acumulados sozinha.
 // Aqui so avisamos na tela caso sobre algum dia anterior em aberto.
+// ── Relatório mensal Flex × transportadora (fonte: saidas_hist_pedidos + hoje) ──
+function _transpColetaPedidosDoMes(mesAno){ // mesAno "MM/AAAA"
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const linhas = []; // {data, transportadora}
+  Object.entries(SAIDAS_HIST_PEDIDOS||{}).forEach(([chave, peds]) => {
+    const dataStr = chave.split(/_(?=[^_]+$)/)[0];
+    if (dataStr.slice(3) !== mesAno) return;
+    peds.forEach(p => { if (p.canal==='Flex') linhas.push({data:dataStr, t:p.transportadora||''}); });
+  });
+  if (hoje.slice(3) === mesAno) {
+    (SAIDAS_HOJE||[]).forEach(s => { if (s.canal==='Flex' && (s.data===hoje || !s.data)) linhas.push({data:hoje, t:s.transportadora||''}); });
+  }
+  return linhas;
+}
+function renderRelatorioTransp(){
+  const selMes = document.getElementById('transpRelMes');
+  const grid = document.getElementById('transpRelGrid');
+  if (!selMes || !grid) return;
+  // popula meses disponíveis (histórico + hoje), mais recente primeiro
+  const meses = new Set([new Date().toLocaleDateString('pt-BR').slice(3)]);
+  Object.keys(SAIDAS_HIST_PEDIDOS||{}).forEach(ch => { const d = ch.split(/_(?=[^_]+$)/)[0]; if (d.length===10) meses.add(d.slice(3)); });
+  const ordenados = [...meses].sort((a,b) => (b.slice(3)+b.slice(0,2)).localeCompare(a.slice(3)+a.slice(0,2)));
+  const atual = selMes.value || ordenados[0];
+  selMes.innerHTML = ordenados.map(m=>`<option value="${m}">${m}</option>`).join('');
+  selMes.value = ordenados.includes(atual) ? atual : ordenados[0];
+  const linhas = _transpColetaPedidosDoMes(selMes.value);
+  const nomes = [...new Set([...TRANSPORTADORAS, ...linhas.map(l=>l.t).filter(Boolean)])];
+  const cont = {}; nomes.forEach(n=>cont[n]=0); let sem = 0;
+  linhas.forEach(l => { if (l.t) cont[l.t]=(cont[l.t]||0)+1; else sem++; });
+  const total = linhas.length;
+  grid.innerHTML = nomes.map(n => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase">${n}</div>
+      <div style="font-size:20px;font-weight:900;color:var(--green)">${cont[n]||0}</div>
+    </div>`).join('') +
+    (sem ? `<div style="background:var(--surface2);border:1px dashed var(--border2);border-radius:8px;padding:8px 14px;text-align:center;min-width:90px" title="Registros Flex antigos/manuais sem transportadora informada">
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">S/ TRANSP.</div>
+      <div style="font-size:20px;font-weight:900;color:var(--orange)">${sem}</div>
+    </div>` : '') +
+    `<div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 14px;text-align:center;min-width:90px">
+      <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL FLEX</div>
+      <div style="font-size:20px;font-weight:900">${total}</div>
+    </div>`;
+}
+function copiarRelatorioTransp(){
+  const mes = document.getElementById('transpRelMes')?.value;
+  if (!mes) return;
+  const linhas = _transpColetaPedidosDoMes(mes);
+  const porDia = {};
+  linhas.forEach(l => {
+    if (!porDia[l.data]) porDia[l.data] = {};
+    const k = l.t || 'Sem transportadora';
+    porDia[l.data][k] = (porDia[l.data][k]||0)+1;
+  });
+  const nomes = [...new Set(linhas.map(l=>l.t||'Sem transportadora'))].sort();
+  let csv = 'Data;'+nomes.join(';')+';Total\n';
+  Object.keys(porDia).sort((a,b)=>a.split('/').reverse().join('').localeCompare(b.split('/').reverse().join(''))).forEach(d => {
+    const vals = nomes.map(n=>porDia[d][n]||0);
+    csv += d+';'+vals.join(';')+';'+vals.reduce((x,y)=>x+y,0)+'\n';
+  });
+  navigator.clipboard.writeText(csv).then(()=>showToast('📋 CSV copiado — cole no Excel/Sheets'))
+    .catch(()=>showToast('❌ Não consegui copiar'));
+}
+
+// ══ EXPEDIÇÃO EM TEMPO REAL — fila Magis5 × bipagem ══
+function _expPendentes(){
+  const fila = window._ledgerFila || [];
+  const trab = fila.filter(p => p.etapa === 'pronto' || p.etapa === 'despachar');
+  const bip  = new Set((SAIDAS_HOJE||[]).map(s => s.num));
+  const comNf = trab.filter(p => p.chave_nf);
+  const pend  = comNf.filter(p => !p.ja_bipado && !bip.has(p.chave_nf));
+  return { trab, comNf, semNf: trab.length - comNf.length, pend };
+}
+function renderStatusExpedicao(){
+  const nums = document.getElementById('expStatusNums');
+  if (!nums) return;
+  const badge = document.getElementById('expStatusBadge');
+  const syncEl = document.getElementById('expStatusSync');
+  if (!window._ledgerCarregado) { nums.textContent = '⏳ Carregando fila do Magis5...'; return; }
+  const { comNf, semNf, pend } = _expPendentes();
+  const feitos = comNf.length - pend.length;
+  const pFlex  = pend.filter(p => { const lt=(p.logistic_type||'').toLowerCase(); return lt==='self_service'||lt==='flex'; }).length;
+  const pCol   = pend.length - pFlex;
+  let atrasados = 0;
+  pend.forEach(p => { try { if (calcPrazo(p).passou) atrasados++; } catch(e){} });
+  const pct = comNf.length ? Math.round((feitos/comNf.length)*100) : 0;
+  document.getElementById('expBarFeito').style.width = pct+'%';
+  document.getElementById('expBarFalta').style.width = (comNf.length?100-pct:0)+'%';
+  if (badge) {
+    if (!comNf.length) { badge.textContent='SEM FILA'; badge.className='badge b-pending'; }
+    else if (!pend.length) { badge.textContent='✓ TUDO BIPADO'; badge.className='badge b-done'; }
+    else { badge.textContent='FALTAM '+pend.length; badge.className='badge'; badge.style.background='rgba(248,81,73,.15)'; badge.style.color='var(--red)'; }
+  }
+  nums.innerHTML =
+    `<span>Esperado hoje: <b style="color:var(--text)">${comNf.length}</b></span>`+
+    `<span>Bipado: <b style="color:var(--green)">${feitos}</b></span>`+
+    `<span>Faltam: <b style="color:${pend.length?'var(--red)':'var(--green)'}">${pend.length}</b> (🏍 ${pFlex} · 🚚 ${pCol})</span>`+
+    (atrasados ? `<span style="color:var(--red);font-weight:700">⏰ ${atrasados} com prazo estourado</span>` : '')+
+    (semNf ? `<span title="Pedidos na fila ainda sem NF emitida — não dá pra bipar">s/ NF: ${semNf}</span>` : '');
+  if (syncEl) {
+    try {
+      const d = window._ledgerUltimoSync ? new Date(window._ledgerUltimoSync) : null;
+      syncEl.textContent = d ? 'Magis5 · sync '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') : '';
+    } catch(e){ syncEl.textContent=''; }
+  }
+  const listEl = document.getElementById('expPendList');
+  if (listEl && listEl.style.display !== 'none') renderListaPendentes();
+}
+function toggleListaPendentes(){
+  const el = document.getElementById('expPendList');
+  const btn = document.getElementById('expPendToggle');
+  if (!el) return;
+  const abrir = el.style.display === 'none';
+  el.style.display = abrir ? 'block' : 'none';
+  if (btn) btn.textContent = abrir ? '▲ Ocultar' : '📋 Ver faltantes';
+  if (abrir) renderListaPendentes();
+}
+function renderListaPendentes(){
+  const el = document.getElementById('expPendList');
+  if (!el) return;
+  const { pend } = _expPendentes();
+  if (!pend.length) { el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--green);font-size:12px">✓ Nenhum pedido pendente — tudo que o Magis5 liberou foi bipado.</div>'; return; }
+  const comPrazo = pend.map(p => { let pr=null; try { pr=calcPrazo(p); } catch(e){}; return {p, pr}; });
+  comPrazo.sort((a,b) => {
+    const ap=a.pr?.passou?0:1, bp=b.pr?.passou?0:1;
+    if (ap!==bp) return ap-bp;
+    return (a.pr?.minutosRestantes??9e9) - (b.pr?.minutosRestantes??9e9);
+  });
+  el.innerHTML = comPrazo.map(({p,pr}) => {
+    const lt=(p.logistic_type||'').toLowerCase();
+    const flex = lt==='self_service'||lt==='flex';
+    const prazoTag = pr ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:${pr.cor};font-weight:700">${pr.passou?'⏰ estourado':'até '+pr.texto}</span>` : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px">
+      ${prazoTag}
+      <span>${flex?'🏍':'🚚'}</span>
+      <span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[p.marketplace]||'b-pending'}" style="font-size:9px">${p.marketplace||'—'}</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--muted2)">${p.order_id||''}</span>
+      <span style="font-weight:600">${p.sku||'—'}</span>
+      <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.cliente||''}</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="registrarManualDoPainel('${p.order_id}')">✋ manual</button>
+    </div>`;
+  }).join('');
+}
+async function atualizarStatusExpedicao(){
+  const btn = document.getElementById('expRefreshBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+  await carregarLedger(true);
+  renderSaidas();
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Atualizar'; }
+}
+
 function checarDiasEmAberto(){
   const el = document.getElementById('saidasAvisoAberto');
   if (!el) return;
@@ -6162,8 +6479,9 @@ function abrirModalSaidaImpressao(data, galpao) {
   // Calcula combinações disponíveis
   const combos = {};
   pedidos.forEach(p => {
-    const k = p.market + '||' + p.canal;
-    if (!combos[k]) combos[k] = { market: p.market, canal: p.canal, count: 0 };
+    const tr = p.canal === 'Flex' ? (p.transportadora||'') : '';
+    const k = p.market + '||' + p.canal + '||' + tr;
+    if (!combos[k]) combos[k] = { market: p.market, canal: p.canal, transp: tr, count: 0 };
     combos[k].count++;
   });
 
@@ -6172,14 +6490,15 @@ function abrirModalSaidaImpressao(data, galpao) {
   const canalIcons   = { Flex: '🏍', Coleta: '🚚' };
 
   const combosHTML = Object.values(combos).sort((a,b) => b.count - a.count).map(c => {
-    const mk = c.market; const cn = c.canal;
+    const mk = c.market; const cn = c.canal; const tr = c.transp||'';
+    const trLabel = cn === 'Flex' ? (tr || 's/ transp.') : '';
     return `
-      <div class="simp-combo-card" data-market="${mk}" data-canal="${cn}" onclick="selecionarSaidaCombo(this)">
+      <div class="simp-combo-card" data-market="${mk}" data-canal="${cn}" data-transp="${tr}" onclick="selecionarSaidaCombo(this)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
           <span style="font-size:18px">${canalIcons[cn]}</span>
           <div>
             <div style="font-size:13px;font-weight:700">${mk}</div>
-            <div style="font-size:11px;color:var(--muted)">${cn}</div>
+            <div style="font-size:11px;color:var(--muted)">${cn}${trLabel ? ' · <strong>'+trLabel+'</strong>' : ''}</div>
           </div>
         </div>
         <div style="font-size:24px;font-weight:900;color:var(--accent)">${c.count}</div>
@@ -6203,8 +6522,9 @@ function selecionarSaidaCombo(el) {
   el.classList.add('selected');
   const market = el.dataset.market;
   const canal  = el.dataset.canal;
+  const transp = el.dataset.transp || '';
   const { data, galpao, pedidos } = _saidaImpCtx;
-  const filtrados = pedidos.filter(p => p.market === market && p.canal === canal);
+  const filtrados = pedidos.filter(p => p.market === market && p.canal === canal && (canal !== 'Flex' || (p.transportadora||'') === transp));
 
   // agrupa por funcionário
   const porFunc = {};
@@ -6228,7 +6548,7 @@ function selecionarSaidaCombo(el) {
       </div>
       <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">LOGÍSTICA</div>
-        <div style="font-size:15px;font-weight:800;margin-top:3px">${canalIcon} ${canal}</div>
+        <div style="font-size:15px;font-weight:800;margin-top:3px">${canalIcon} ${canal}${canal==='Flex' ? ' · '+(transp||'s/ transp.') : ''}</div>
       </div>
       <div style="background:var(--bg);border-radius:8px;padding:10px;text-align:center">
         <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL</div>
@@ -6239,12 +6559,14 @@ function selecionarSaidaCombo(el) {
     <div style="display:flex;flex-wrap:wrap;gap:5px">${funcRows || '<span style="font-size:11px;color:var(--muted)">—</span>'}</div>`;
 
   document.getElementById('btnImprimirSaida').disabled = false;
-  document.getElementById('btnImprimirSaida').onclick = () => executarImpressaoSaida(market, canal);
+  document.getElementById('btnImprimirSaida').onclick = () => executarImpressaoSaida(market, canal, transp);
 }
 
-function executarImpressaoSaida(market, canal) {
+function executarImpressaoSaida(market, canal, transp) {
   const { data, galpao, pedidos } = _saidaImpCtx;
-  const filtrados = pedidos.filter(p => p.market === market && p.canal === canal);
+  transp = transp || '';
+  const filtrados = pedidos.filter(p => p.market === market && p.canal === canal && (canal !== 'Flex' || (p.transportadora||'') === transp));
+  const transpTxt = canal === 'Flex' ? (transp || 'Sem transportadora') : '';
   if (!filtrados.length) return;
 
   const agora = new Date();
@@ -6281,7 +6603,7 @@ function executarImpressaoSaida(market, canal) {
           <div style="font-size:10px;color:#6b7280;margin-top:3px;font-family:monospace;letter-spacing:.8px;text-transform:uppercase">Comprovante de Saídas</div>
         </div>
         <div style="text-align:right">
-          <div style="display:inline-flex;gap:6px;align-items:center;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;background:${canalColor};color:#fff;margin-bottom:4px">${canalIcon} ${canal}</div>
+          <div style="display:inline-flex;gap:6px;align-items:center;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;background:${canalColor};color:#fff;margin-bottom:4px">${canalIcon} ${canal}${transpTxt ? ' · '+transpTxt : ''}</div>
           <div style="display:inline-flex;gap:6px;align-items:center;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;background:${mkColor}22;color:${mkColor};border:1px solid ${mkColor}55;margin-left:4px">${market}</div>
           <div style="font-size:10px;color:#6b7280;margin-top:6px;font-family:monospace">Impresso em ${dataImpressao}</div>
         </div>
@@ -6299,7 +6621,7 @@ function executarImpressaoSaida(market, canal) {
         </div>
         <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Logística</div>
-          <div style="font-size:13px;font-weight:800;color:${canalColor}">${canalIcon} ${canal}</div>
+          <div style="font-size:13px;font-weight:800;color:${canalColor}">${canalIcon} ${canal}</div>${transpTxt ? `<div style="font-size:12px;font-weight:800;margin-top:2px">${transpTxt}</div>` : ''}
         </div>
         <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:9px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total</div>
@@ -6348,7 +6670,7 @@ function executarImpressaoSaida(market, canal) {
         </div>
         <div>
           <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:5px;font-family:monospace">Assinatura Transportadora</div>
-          <div style="font-size:11px;color:${canalColor};font-weight:700;margin-bottom:10px">${canalIcon} ${canal} · ${market}</div>
+          <div style="font-size:11px;color:${canalColor};font-weight:700;margin-bottom:10px">${canalIcon} ${canal} · ${market}${transpTxt ? ' · '+transpTxt : ''}</div>
           <div style="border-bottom:2px solid #111;height:46px;margin-bottom:6px"></div>
           <div style="font-size:10px;color:#9ca3af;font-family:monospace">Nome / Empresa / Data / Assinatura</div>
         </div>
@@ -6357,7 +6679,7 @@ function executarImpressaoSaida(market, canal) {
       <!-- RODAPÉ -->
       <div style="margin-top:22px;padding-top:10px;border-top:1px solid #e5e7eb;display:flex;justify-content:space-between;font-size:9px;color:#9ca3af;font-family:monospace">
         <span>OUTBOX — Sistema de Controle de Expedição</span>
-        <span>${galpao} · ${market} · ${canal} · ${data} · ${filtrados.length} pacotes</span>
+        <span>${galpao} · ${market} · ${canal}${transpTxt ? ' · '+transpTxt : ''} · ${data} · ${filtrados.length} pacotes</span>
       </div>
     </div>`;
 
@@ -6688,10 +7010,18 @@ function renderProdutividade() {
   }).join('');
 }
 
+function toggleTranspField(){
+  const canal=document.getElementById('saidaCanal')?.value;
+  const wrap=document.getElementById('saidaTranspWrap');
+  if(wrap) wrap.style.display = canal==='Flex' ? '' : 'none';
+  const inp=document.getElementById('saidaBipe'); if(inp) inp.focus();
+}
+
 function toggleContaField(){
   const market=document.getElementById('saidaMarket')?.value;
   const wrap=document.getElementById('saidaContaWrap');
   if(wrap){ wrap.style.display=market==='ML'?'':'none'; if(market!=='ML'){const sel=document.getElementById('saidaConta');if(sel)sel.value='';} }
+  document.getElementById('saidaBipe')?.focus();
 }
 
 function buscarHistoricoGeral(){
@@ -6758,7 +7088,8 @@ async function arquivarPedidosAntigos(){
   const rows = antigos.map(p=>({
     id: p._id, data_galpao: p.chave, numero: p.num||'',
     canal: p.canal||'', market: p.market||'',
-    funcionario: p.funcionario||'', hora: p.hora||'', conta: p.conta||''
+    funcionario: p.funcionario||'', hora: p.hora||'', conta: p.conta||'',
+    transportadora: p.transportadora||''
   }));
   const { error: eArq } = await _sb.from('saidas_hist_pedidos_arquivo').upsert(rows, {onConflict:'id'});
   if(eArq){ console.error('[Supabase] arquivar:', eArq); return; }
@@ -6884,7 +7215,7 @@ function toggleTheme(){
   localStorage.setItem('expctrl_theme', light?'light':'dark');
 }
 // Aplicar tema salvo ao carregar
-(()=>{ if(localStorage.getItem('expctrl_theme')==='light') document.body.classList.add('light-mode'); })();
+(()=>{ if(localStorage.getItem('expctrl_theme')!=='dark') document.body.classList.add('light-mode'); })();
 // Pula tela de login se sessão ainda ativa (mesmo F5, mesma aba)
 (()=>{ if(sessionStorage.getItem('outbox_auth')==='1'){ const o=document.getElementById('loginOverlay'); if(o) o.style.display='none'; } })();
 
@@ -7606,6 +7937,7 @@ function renderSaidasMobile(saidas) {
         <div class="saida-card-venda">${s.num || s.venda || s.pedido || '—'}</div>
         <div class="saida-card-meta">
           ${canalBadge(s.canal||'Flex')}
+          ${(s.canal||'Flex')==='Flex' && s.transportadora ? `<span class="badge b-pending" style="font-size:9px">${s.transportadora}</span>` : ''}
           ${mktBadge(s.market||s.marketplace||'ML')}
           ${s.conta ? `<span style="font-size:10px;color:var(--muted)">${s.conta}</span>` : ''}
           ${s.funcionario && s.funcionario!=='—' ? `<span style="font-size:10px;color:var(--muted2)">· ${s.funcionario}</span>` : ''}
@@ -10803,7 +11135,7 @@ async function abrirHistoricoMlDeposito(itemId, sku) {
 // LIVRO-CAIXA DA EXPEDIÇÃO
 // Acumula todo pedido não-Full que passou pela fila awaiting_send do Magis5.
 // Alimenta o Painel (fila viva) e a auditoria (saiu da fila sem bipagem).
-// O sync roda sozinho de hora em hora via cron; o botão só força na hora.
+// O sync com o Magis5 roda a cada 10 min via cron (07h-21h BRT); a tela relê a cada 60s.
 // ═══════════════════════════════════════════════════════
 const LEDGER_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/expedicao-ledger';
 window._ledgerFila = [];
@@ -11022,13 +11354,21 @@ async function registrarLoteDoPainel() {
   const novos = lista.filter(p => !jaHoje.has(p.chave_nf));
   if (!novos.length) { showToast('Todos ja estao registrados hoje'); return; }
 
+  // Transportadora para os Flex do lote (mesma regra da bipagem)
+  const temFlex = novos.some(p => p.logistic_type === 'self_service' || p.logistic_type === 'flex');
+  const transpLote = document.getElementById('saidaTransp')?.value || '';
+  if (temFlex && !transpLote) {
+    showToast('⚠️ O lote tem pedidos Flex — selecione a transportadora na aba Hoje antes de registrar');
+    return;
+  }
+
   const porMkt = {};
   novos.forEach(p => { const m = p.marketplace||'Outros'; porMkt[m] = (porMkt[m]||0)+1; });
   const resumo = Object.entries(porMkt).map(([m,n]) => `  ${m}: ${n}`).join('\n');
 
   if (!confirm(
     `Registrar MANUALMENTE ${novos.length} pedido(s) como saída de hoje?\n\n${resumo}\n\n` +
-    `Funcionário: ${funcionario}  ·  Galpão: ${galpao}\n\n` +
+    `Funcionário: ${funcionario}  ·  Galpão: ${galpao}` + (temFlex ? `  ·  Flex via ${transpLote}` : '') + `\n\n` +
     `Isso NÃO substitui a bipagem física — todos ficarão marcados como registro manual.\n` +
     `Ação em lote, não dá pra desfazer de uma vez.`
   )) return;
@@ -11039,11 +11379,14 @@ async function registrarLoteDoPainel() {
   const now = new Date();
   const hora = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   const data = now.toLocaleDateString('pt-BR');
-  const linhas = novos.map(p => ({
-    numero: p.chave_nf,
-    canal: (p.logistic_type === 'self_service' || p.logistic_type === 'flex') ? 'Flex' : 'Coleta',
-    market: p.marketplace, funcionario, hora, data, galpao, conta: '', origem: 'manual',
-  }));
+  const linhas = novos.map(p => {
+    const c = (p.logistic_type === 'self_service' || p.logistic_type === 'flex') ? 'Flex' : 'Coleta';
+    return {
+      numero: p.chave_nf, canal: c,
+      market: p.marketplace, funcionario, hora, data, galpao, conta: '', origem: 'manual',
+      transportadora: c === 'Flex' ? transpLote : ''
+    };
+  });
 
   let gravados = 0, falhas = 0;
   // Insere em blocos — um insert unico com centenas de linhas pode estourar limite
@@ -11055,7 +11398,7 @@ async function registrarLoteDoPainel() {
       (ret||[]).forEach(r => {
         SAIDAS_HOJE.push({ _id: r.id, num: r.numero, canal: r.canal, market: r.market,
           funcionario: r.funcionario, hora: r.hora, galpao: r.galpao, conta: '',
-          data: r.data, origem: 'manual' });
+          data: r.data, origem: 'manual', transportadora: r.transportadora||'' });
       });
       gravados += (ret||[]).length;
     } catch (e) {
@@ -11090,18 +11433,23 @@ async function registrarManualDoPainel(orderId) {
   if (funcionario === '—') { showToast('⚠️ Selecione o funcionário na aba Hoje antes de registrar'); return; }
 
   const canal = (p.logistic_type === 'self_service' || p.logistic_type === 'flex') ? 'Flex' : 'Coleta';
+  const transpManual = canal === 'Flex' ? (document.getElementById('saidaTransp')?.value || '') : '';
+  if (canal === 'Flex' && !transpManual) {
+    showToast('⚠️ Pedido Flex — selecione a transportadora na aba Hoje antes de registrar');
+    return;
+  }
   const market = p.marketplace === 'ML' ? 'ML' : p.marketplace;
   const ok = confirm(
     `Registrar MANUALMENTE como saída de hoje?\n\n` +
     `Pedido: ${p.order_id}\nSKU: ${p.sku||'—'}\nCliente: ${p.cliente||'—'}\n` +
-    `${market} · ${canal} · ${funcionario}\n\n` +
+    `${market} · ${canal}${transpManual ? ' via '+transpManual : ''} · ${funcionario}\n\n` +
     `Isso não substitui a bipagem física — ficará marcado como registro manual.`
   );
   if (!ok) return;
 
   const now = new Date();
   const hora = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  const saida = { num: p.chave_nf, canal, market, galpao, hora, funcionario, conta: '', origem: 'manual' };
+  const saida = { num: p.chave_nf, canal, market, galpao, hora, funcionario, conta: '', origem: 'manual', transportadora: transpManual };
   const newId = await db.insertSaida(saida);
   if (!newId) { showToast('❌ Erro ao registrar'); return; }
   saida._id = newId;
