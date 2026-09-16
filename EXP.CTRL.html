@@ -1613,7 +1613,7 @@ select:focus{border-color:var(--accent)}
               <div id="expCardImprimir" onclick="abrirListaPendentes('imprimir')" style="cursor:pointer;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.35);border-radius:8px;padding:12px 14px;text-align:center" title="Pedidos faturados aguardando o passo 0 (impressão) no Magis5 — clique para ver a lista">
                 <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--orange)">🖨 FALTA IMPRIMIR</div>
                 <div id="expNumImprimir" style="font-size:30px;font-weight:900;line-height:1.2;color:var(--orange)">—</div>
-                <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)">passo 0 no Magis5</div>
+                <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)">ML: status real do envio · demais: Magis5</div>
               </div>
               <div id="expCardBipar" onclick="abrirListaPendentes('bipar')" style="cursor:pointer;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.35);border-radius:8px;padding:12px 14px;text-align:center" title="Etiqueta já impressa — o pacote está no galpão e falta bipar a saída — clique para ver a lista">
                 <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--red)">📦 IMPRESSO · FALTA BIPAR</div>
@@ -5401,16 +5401,35 @@ function copiarRelatorioTransp(){
 //                  + etapa 'despachar' (awaiting_send)
 //   ✅ feito     = pedido da fila já bipado (aqui ou detectado pelo sync)
 let _expListaModo = 'todos'; // 'todos' | 'imprimir' | 'bipar'
+// Estado de expedição de um pedido da fila.
+//  • Mercado Livre: fonte = status do envio no próprio ML (ml-impressao-sync, a cada 10 min)
+//      ready_to_print / pending / handling → imprimir · printed, ready_for_pickup, in_hub... → bipar
+//      delivered / shipped / cancelled / not_delivered → 'fora' (já resolvido no ML; Magis5 atrasado)
+//  • Demais marketplaces (ou ML ainda não consultado): etapa do Magis5
+const _ML_FORA = new Set(['delivered','shipped','cancelled','not_delivered']);
+function _estadoExp(p){
+  const st = p.ml_status || '', sub = p.ml_substatus || '';
+  if (p.marketplace === 'ML' && st) {
+    if (_ML_FORA.has(st)) return 'fora';
+    if (st === 'pending' || st === 'handling' || sub === 'ready_to_print' || sub === 'invoice_pending') return 'imprimir';
+    return 'bipar';
+  }
+  if (p.etapa === 'imprimir') return 'imprimir';
+  if (p.etapa === 'pronto' || p.etapa === 'despachar') return 'bipar';
+  return null;
+}
 function _expPendentes(){
   const fila = window._ledgerFila || [];
-  const trab = fila.filter(p => p.etapa === 'imprimir' || p.etapa === 'pronto' || p.etapa === 'despachar');
   const bip  = new Set((SAIDAS_HOJE||[]).map(s => s.num));
   const bipado = p => !!p.ja_bipado || (p.chave_nf && bip.has(p.chave_nf));
-  const pendImprimir = trab.filter(p => p.etapa === 'imprimir' && !bipado(p));
-  const pendBipar    = trab.filter(p => (p.etapa === 'pronto' || p.etapa === 'despachar') && !bipado(p));
+  const comEstado = fila.map(p => ({ p, e: _estadoExp(p) })).filter(x => x.e);
+  const foraML = comEstado.filter(x => x.e === 'fora' && !bipado(x.p)).map(x => x.p);
+  const trab   = comEstado.filter(x => x.e !== 'fora' || bipado(x.p)).map(x => x.p);
+  const pendImprimir = comEstado.filter(x => x.e === 'imprimir' && !bipado(x.p)).map(x => x.p);
+  const pendBipar    = comEstado.filter(x => x.e === 'bipar'    && !bipado(x.p)).map(x => x.p);
   const feitos       = trab.length - pendImprimir.length - pendBipar.length;
   const semNf        = trab.filter(p => !p.chave_nf && !bipado(p)).length;
-  return { trab, pendImprimir, pendBipar, pend: [...pendBipar, ...pendImprimir], feitos, semNf };
+  return { trab, pendImprimir, pendBipar, pend: [...pendBipar, ...pendImprimir], feitos, semNf, foraML };
 }
 function renderStatusExpedicao(){
   const nums = document.getElementById('expStatusNums');
@@ -5418,7 +5437,7 @@ function renderStatusExpedicao(){
   const badge = document.getElementById('expStatusBadge');
   const syncEl = document.getElementById('expStatusSync');
   if (!window._ledgerCarregado) { nums.textContent = '⏳ Carregando fila do Magis5...'; return; }
-  const { trab, pendImprimir, pendBipar, pend, feitos, semNf } = _expPendentes();
+  const { trab, pendImprimir, pendBipar, pend, feitos, semNf, foraML } = _expPendentes();
   const nImp = pendImprimir.length, nBip = pendBipar.length;
   document.getElementById('expNumImprimir').textContent = nImp;
   document.getElementById('expNumBipar').textContent = nBip;
@@ -5446,6 +5465,7 @@ function renderStatusExpedicao(){
     `<span>Fila de hoje: <b style="color:var(--text)">${trab.length}</b></span>`+
     `<span>Pendentes: <b style="color:${pend.length?'var(--red)':'var(--green)'}">${pend.length}</b> (🏍 ${pFlex} · 🚚 ${pend.length-pFlex})</span>`+
     (semNf ? `<span title="Pedidos na fila ainda sem NF emitida">s/ NF: ${semNf}</span>` : '')+
+    (foraML.length ? `<span title="O Mercado Livre já mostra estes como entregues/enviados/cancelados, mas o Magis5 ainda não atualizou. Não contam como pendência." style="color:var(--muted2)">ML já resolvidos (Magis5 atrasado): ${foraML.length}</span>` : '')+
     `<span style="color:var(--muted)">clique nos cards para ver e abrir no Magis5</span>`;
   if (syncEl) {
     try {
@@ -5504,7 +5524,7 @@ function renderListaPendentes(){
     const flex = lt==='self_service'||lt==='flex';
     const prazoTag = pr ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:${pr.cor};font-weight:700;min-width:74px">${pr.passou?'⏰ estourado':'até '+pr.texto}</span>` : '';
     const estadoTag = _expListaModo==='todos'
-      ? (p.etapa==='imprimir' ? '<span class="badge" style="font-size:8px;background:rgba(210,153,34,.15);color:var(--orange)">🖨 imprimir</span>' : '<span class="badge" style="font-size:8px;background:rgba(248,81,73,.12);color:var(--red)">📦 bipar</span>')
+      ? (_estadoExp(p)==='imprimir' ? '<span class="badge" style="font-size:8px;background:rgba(210,153,34,.15);color:var(--orange)">🖨 imprimir</span>' : '<span class="badge" style="font-size:8px;background:rgba(248,81,73,.12);color:var(--red)">📦 bipar</span>')
       : '';
     const clique = p.buyer_id ? `abrirPedidoMagis5('${p.buyer_id}')` : `consultarChaveNoMagis5('${p.chave_nf||''}')`;
     return `<div onclick="${clique}" style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;cursor:pointer" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" title="Abrir a venda no Magis5">
@@ -5516,7 +5536,7 @@ function renderListaPendentes(){
       <span style="font-weight:600">${p.sku||'—'}</span>
       <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.cliente||''}</span>
       <span style="margin-left:auto;color:var(--muted);font-size:9px">↗</span>
-      ${p.etapa!=='imprimir' ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
+      ${_estadoExp(p)!=='imprimir' ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
     </div>`;
   }).join('');
 }
