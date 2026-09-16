@@ -5401,6 +5401,15 @@ function copiarRelatorioTransp(){
 //                  + etapa 'despachar' (awaiting_send)
 //   ✅ feito     = pedido da fila já bipado (aqui ou detectado pelo sync)
 let _expListaModo = 'todos'; // 'todos' | 'imprimir' | 'bipar'
+let _expListaOrdem = 'urgencia'; // 'urgencia' | 'recentes' | 'antigos'
+function _fmtDataHora(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const p2 = n => String(n).padStart(2,'0');
+  return `${p2(d.getDate())}/${p2(d.getMonth()+1)} ${p2(d.getHours())}:${p2(d.getMinutes())}`;
+}
+function setOrdemPendentes(v){ _expListaOrdem = v; renderListaPendentes(); }
 // Estado de expedição de um pedido da fila.
 //  • Mercado Livre: fonte = status do envio no próprio ML (ml-impressao-sync, a cada 10 min)
 //      ready_to_print / pending / handling → imprimir · printed, ready_for_pickup, in_hub... → bipar
@@ -5510,11 +5519,19 @@ function renderListaPendentes(){
     <span style="font-size:11px;font-weight:800">${titulo}</span>
     <span class="badge b-pending" style="font-size:9px">${pend.length}</span>
     ${_expListaModo!=='todos' ? '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" onclick="abrirListaPendentes(\'todos\')">ver todos</button>' : ''}
-    <span style="font-size:9px;color:var(--muted);margin-left:auto">clique na linha para abrir a venda no Magis5 ↗</span>
+    <select onchange="setOrdemPendentes(this.value)" title="Ordenar lista" style="margin-left:auto;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--muted2);font-size:10px;padding:2px 6px">
+      <option value="urgencia" ${_expListaOrdem==='urgencia'?'selected':''}>⏰ Mais urgentes</option>
+      <option value="recentes" ${_expListaOrdem==='recentes'?'selected':''}>🆕 Mais recentes</option>
+      <option value="antigos"  ${_expListaOrdem==='antigos' ?'selected':''}>📜 Mais antigos</option>
+    </select>
+    <span style="font-size:9px;color:var(--muted)">clique na linha para abrir no Magis5 ↗</span>
   </div>`;
   if (!pend.length) { el.innerHTML = cab + '<div style="text-align:center;padding:14px;color:var(--green);font-size:12px">✓ Nada aqui — este estado está limpo.</div>'; return; }
   const comPrazo = pend.map(p => { let pr=null; try { pr=calcPrazo(p); } catch(e){}; return {p, pr}; });
-  comPrazo.sort((a,b) => {
+  const _t = p => { const t = new Date(p.data_pedido).getTime(); return isNaN(t) ? 0 : t; };
+  if (_expListaOrdem === 'recentes')      comPrazo.sort((a,b) => _t(b.p) - _t(a.p));
+  else if (_expListaOrdem === 'antigos')  comPrazo.sort((a,b) => _t(a.p) - _t(b.p));
+  else comPrazo.sort((a,b) => {
     const ap=a.pr?.passou?0:1, bp=b.pr?.passou?0:1;
     if (ap!==bp) return ap-bp;
     return (a.pr?.minutosRestantes??9e9) - (b.pr?.minutosRestantes??9e9);
@@ -5529,6 +5546,7 @@ function renderListaPendentes(){
     const clique = p.buyer_id ? `abrirPedidoMagis5('${p.buyer_id}')` : `consultarChaveNoMagis5('${p.chave_nf||''}')`;
     return `<div onclick="${clique}" style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;cursor:pointer" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" title="Abrir a venda no Magis5">
       ${prazoTag}
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2);min-width:78px" title="Data/hora da venda${p.data_expedicao ? ' · impresso em '+_fmtDataHora(p.data_expedicao) : ''}">🕒 ${_fmtDataHora(p.data_pedido)||'—'}</span>
       <span>${flex?'🏍':'🚚'}</span>
       ${estadoTag}
       <span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[p.marketplace]||'b-pending'}" style="font-size:9px">${p.marketplace||'—'}</span>
