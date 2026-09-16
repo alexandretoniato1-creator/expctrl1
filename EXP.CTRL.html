@@ -5396,17 +5396,18 @@ function copiarRelatorioTransp(){
 
 // ══ EXPEDIÇÃO EM TEMPO REAL — fila Magis5 × bipagem ══
 // Estados que o time enxerga:
-//   🖨 imprimir  = etapa 'pronto'    (billed: NF emitida, aguarda passo 0 no Magis5)
-//   📦 bipar     = etapa 'despachar' (awaiting_send: etiqueta impressa, falta bipar)
+//   🖨 imprimir  = etapa 'imprimir'  (ready_to_print: NF emitida, etiqueta NÃO impressa no Magis5)
+//   📦 bipar     = etapa 'pronto' (billed: impresso — dateExpedition = hora da impressão)
+//                  + etapa 'despachar' (awaiting_send)
 //   ✅ feito     = pedido da fila já bipado (aqui ou detectado pelo sync)
 let _expListaModo = 'todos'; // 'todos' | 'imprimir' | 'bipar'
 function _expPendentes(){
   const fila = window._ledgerFila || [];
-  const trab = fila.filter(p => p.etapa === 'pronto' || p.etapa === 'despachar');
+  const trab = fila.filter(p => p.etapa === 'imprimir' || p.etapa === 'pronto' || p.etapa === 'despachar');
   const bip  = new Set((SAIDAS_HOJE||[]).map(s => s.num));
   const bipado = p => !!p.ja_bipado || (p.chave_nf && bip.has(p.chave_nf));
-  const pendImprimir = trab.filter(p => p.etapa === 'pronto'    && !bipado(p));
-  const pendBipar    = trab.filter(p => p.etapa === 'despachar' && !bipado(p));
+  const pendImprimir = trab.filter(p => p.etapa === 'imprimir' && !bipado(p));
+  const pendBipar    = trab.filter(p => (p.etapa === 'pronto' || p.etapa === 'despachar') && !bipado(p));
   const feitos       = trab.length - pendImprimir.length - pendBipar.length;
   const semNf        = trab.filter(p => !p.chave_nf && !bipado(p)).length;
   return { trab, pendImprimir, pendBipar, pend: [...pendBipar, ...pendImprimir], feitos, semNf };
@@ -5426,7 +5427,7 @@ function renderStatusExpedicao(){
   if (subFeito) subFeito.textContent = trab.length ? `de ${trab.length} da fila de hoje` : 'bipados da fila';
   // Flex sem bipe depois do cutoff é o incêndio do dia — mostra no sub do card
   let atrasados = 0;
-  pend.forEach(p => { try { if (calcPrazo(p).passou) atrasados++; } catch(e){} });
+  pendBipar.forEach(p => { try { if (calcPrazo(p).passou) atrasados++; } catch(e){} });
   const subBip = document.getElementById('expSubBipar');
   if (subBip) subBip.innerHTML = atrasados
     ? `<b style="color:var(--red)">⏰ ${atrasados} com prazo estourado</b>`
@@ -5448,8 +5449,9 @@ function renderStatusExpedicao(){
     `<span style="color:var(--muted)">clique nos cards para ver e abrir no Magis5</span>`;
   if (syncEl) {
     try {
-      const d = window._ledgerUltimoSync ? new Date(window._ledgerUltimoSync) : null;
-      syncEl.textContent = d ? 'Magis5 · sync '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') : '';
+      const us = window._ledgerUltimoSync;
+      const d = us ? new Date(us.executado_em || us) : null;
+      syncEl.textContent = (d && !isNaN(d)) ? 'Magis5 · sync '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0') + (us.erro ? ' ⚠ erro' : '') : '';
     } catch(e){ syncEl.textContent=''; }
   }
   const listEl = document.getElementById('expPendList');
@@ -5502,7 +5504,7 @@ function renderListaPendentes(){
     const flex = lt==='self_service'||lt==='flex';
     const prazoTag = pr ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:${pr.cor};font-weight:700;min-width:74px">${pr.passou?'⏰ estourado':'até '+pr.texto}</span>` : '';
     const estadoTag = _expListaModo==='todos'
-      ? (p.etapa==='pronto' ? '<span class="badge" style="font-size:8px;background:rgba(210,153,34,.15);color:var(--orange)">🖨 imprimir</span>' : '<span class="badge" style="font-size:8px;background:rgba(248,81,73,.12);color:var(--red)">📦 bipar</span>')
+      ? (p.etapa==='imprimir' ? '<span class="badge" style="font-size:8px;background:rgba(210,153,34,.15);color:var(--orange)">🖨 imprimir</span>' : '<span class="badge" style="font-size:8px;background:rgba(248,81,73,.12);color:var(--red)">📦 bipar</span>')
       : '';
     const clique = p.buyer_id ? `abrirPedidoMagis5('${p.buyer_id}')` : `consultarChaveNoMagis5('${p.chave_nf||''}')`;
     return `<div onclick="${clique}" style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;cursor:pointer" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" title="Abrir a venda no Magis5">
@@ -5514,7 +5516,7 @@ function renderListaPendentes(){
       <span style="font-weight:600">${p.sku||'—'}</span>
       <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.cliente||''}</span>
       <span style="margin-left:auto;color:var(--muted);font-size:9px">↗</span>
-      ${p.etapa==='despachar' ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
+      ${p.etapa!=='imprimir' ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -11447,7 +11449,7 @@ async function resolverAuditoriaLote() {
 // por bipagem fisica. Usado quando alguem despachou sem bipar e sao centenas.
 async function registrarLoteDoPainel() {
   const lista = (window._painelListaFiltrada || []).filter(p =>
-    !p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado');
+    !p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado' && p.etapa !== 'imprimir');
   if (!lista.length) { showToast('Nada elegivel no filtro atual'); return; }
 
   const galpao = document.getElementById('saidaGalpao')?.value || 'LogBox';
@@ -11891,7 +11893,7 @@ function renderPainelExpedicao() {
 
   const btnLote = document.getElementById('painelBtnLote');
   if (btnLote) {
-    const elegiveis = lista.filter(p => !p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado');
+    const elegiveis = lista.filter(p => !p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado' && p.etapa !== 'imprimir');
     btnLote.style.display = elegiveis.length ? '' : 'none';
     btnLote.textContent = `✓ Registrar ${elegiveis.length} filtrado(s)`;
   }
@@ -11901,7 +11903,7 @@ function renderPainelExpedicao() {
     bodyFila.innerHTML = lista.slice(0, LIMITE).map(p => {
       const d  = diasParado(p);
       const pz = calcPrazo(p);
-      const etLabel = { aguardando:'⏸ aguardando', pronto:'📦 pronto', despachar:'🚚 despachar', bloqueado:'🔒 travado' }[p.etapa] || p.etapa || '—';
+      const etLabel = { aguardando:'⏸ aguardando', imprimir:'🖨 imprimir', pronto:'📦 impresso', despachar:'🚚 despachar', bloqueado:'🔒 travado' }[p.etapa] || p.etapa || '—';
       // Destaca linha se prazo urgente e ainda não bipado
       const linhaBg = (!p.ja_bipado && pz.tipo && pz.passou)
         ? 'background:rgba(248,81,73,.06);'
@@ -11926,7 +11928,7 @@ function renderPainelExpedicao() {
         <td style="font-size:11px;color:var(--muted)">${labelEnvio(p.logistic_type)}</td>
         <td style="padding:4px 10px">${pzLabel}</td>
         <td style="font-size:10px;color:var(--muted)">${p.data_expedicao ? new Date(p.data_expedicao).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—'}</td>
-        <td style="padding:4px 8px">${(!p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado')
+        <td style="padding:4px 8px">${(!p.ja_bipado && p.chave_nf && p.etapa !== 'aguardando' && p.etapa !== 'bloqueado' && p.etapa !== 'imprimir')
           ? `<button class="btn btn-ghost btn-sm" style="font-size:10px;white-space:nowrap" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✓ Registrar</button>`
           : ''}</td>
       </tr>`;
@@ -11940,6 +11942,7 @@ function renderPainelExpedicao() {
   const ETAPA_PASSIVA = {
     bloqueado:  { rotulo: 'Travados',                cor: 'var(--red)',    sub: 'Sem estoque ou pagamento — resolver antes de trabalhar' },
     aguardando: { rotulo: 'Aguardando marketplace',  cor: 'var(--muted)', sub: 'Marketplace ainda não liberou a etiqueta — aguardar' },
+    imprimir:   { rotulo: 'Falta imprimir',          cor: 'var(--orange)', sub: 'NF emitida, etiqueta ainda não impressa no Magis5' },
   };
   const elEtapas = document.getElementById('painelEtapas');
   if (elEtapas) {
