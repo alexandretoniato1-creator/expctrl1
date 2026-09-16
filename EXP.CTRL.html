@@ -1609,9 +1609,27 @@ select:focus{border-color:var(--accent)}
                 <button class="btn btn-ghost btn-sm" id="expPendToggle" onclick="toggleListaPendentes()">📋 Ver faltantes</button>
               </div>
             </div>
-            <div style="display:flex;gap:3px;height:10px;border-radius:100px;overflow:hidden;background:var(--bg);margin-bottom:8px">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:8px">
+              <div id="expCardImprimir" onclick="abrirListaPendentes('imprimir')" style="cursor:pointer;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.35);border-radius:8px;padding:12px 14px;text-align:center" title="Pedidos faturados aguardando o passo 0 (impressão) no Magis5 — clique para ver a lista">
+                <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--orange)">🖨 FALTA IMPRIMIR</div>
+                <div id="expNumImprimir" style="font-size:30px;font-weight:900;line-height:1.2;color:var(--orange)">—</div>
+                <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)">passo 0 no Magis5</div>
+              </div>
+              <div id="expCardBipar" onclick="abrirListaPendentes('bipar')" style="cursor:pointer;background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.35);border-radius:8px;padding:12px 14px;text-align:center" title="Etiqueta já impressa — o pacote está no galpão e falta bipar a saída — clique para ver a lista">
+                <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--red)">📦 IMPRESSO · FALTA BIPAR</div>
+                <div id="expNumBipar" style="font-size:30px;font-weight:900;line-height:1.2;color:var(--red)">—</div>
+                <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)" id="expSubBipar">etiqueta impressa, sem bipe</div>
+              </div>
+              <div id="expCardFeito" style="background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.35);border-radius:8px;padding:12px 14px;text-align:center" title="Pedidos da fila de hoje já bipados">
+                <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--green)">✅ CONCLUÍDO</div>
+                <div id="expNumFeito" style="font-size:30px;font-weight:900;line-height:1.2;color:var(--green)">—</div>
+                <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)" id="expSubFeito">bipados da fila</div>
+              </div>
+            </div>
+            <div style="display:flex;gap:3px;height:8px;border-radius:100px;overflow:hidden;background:var(--bg);margin-bottom:6px">
               <div id="expBarFeito" style="background:var(--green);width:0%;height:100%;transition:width .4s"></div>
-              <div id="expBarFalta" style="background:var(--red);width:0%;height:100%;transition:width .4s"></div>
+              <div id="expBarBipar" style="background:var(--red);width:0%;height:100%;transition:width .4s"></div>
+              <div id="expBarImprimir" style="background:var(--orange);width:0%;height:100%;transition:width .4s"></div>
             </div>
             <div id="expStatusNums" style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Abra a aba para carregar a fila do Magis5...</div>
             <div id="expPendList" style="display:none;margin-top:10px;max-height:340px;overflow-y:auto;border-top:1px solid var(--border);padding-top:10px"></div>
@@ -5337,13 +5355,21 @@ function copiarRelatorioTransp(){
 }
 
 // ══ EXPEDIÇÃO EM TEMPO REAL — fila Magis5 × bipagem ══
+// Estados que o time enxerga:
+//   🖨 imprimir  = etapa 'pronto'    (billed: NF emitida, aguarda passo 0 no Magis5)
+//   📦 bipar     = etapa 'despachar' (awaiting_send: etiqueta impressa, falta bipar)
+//   ✅ feito     = pedido da fila já bipado (aqui ou detectado pelo sync)
+let _expListaModo = 'todos'; // 'todos' | 'imprimir' | 'bipar'
 function _expPendentes(){
   const fila = window._ledgerFila || [];
   const trab = fila.filter(p => p.etapa === 'pronto' || p.etapa === 'despachar');
   const bip  = new Set((SAIDAS_HOJE||[]).map(s => s.num));
-  const comNf = trab.filter(p => p.chave_nf);
-  const pend  = comNf.filter(p => !p.ja_bipado && !bip.has(p.chave_nf));
-  return { trab, comNf, semNf: trab.length - comNf.length, pend };
+  const bipado = p => !!p.ja_bipado || (p.chave_nf && bip.has(p.chave_nf));
+  const pendImprimir = trab.filter(p => p.etapa === 'pronto'    && !bipado(p));
+  const pendBipar    = trab.filter(p => p.etapa === 'despachar' && !bipado(p));
+  const feitos       = trab.length - pendImprimir.length - pendBipar.length;
+  const semNf        = trab.filter(p => !p.chave_nf && !bipado(p)).length;
+  return { trab, pendImprimir, pendBipar, pend: [...pendBipar, ...pendImprimir], feitos, semNf };
 }
 function renderStatusExpedicao(){
   const nums = document.getElementById('expStatusNums');
@@ -5351,26 +5377,35 @@ function renderStatusExpedicao(){
   const badge = document.getElementById('expStatusBadge');
   const syncEl = document.getElementById('expStatusSync');
   if (!window._ledgerCarregado) { nums.textContent = '⏳ Carregando fila do Magis5...'; return; }
-  const { comNf, semNf, pend } = _expPendentes();
-  const feitos = comNf.length - pend.length;
-  const pFlex  = pend.filter(p => { const lt=(p.logistic_type||'').toLowerCase(); return lt==='self_service'||lt==='flex'; }).length;
-  const pCol   = pend.length - pFlex;
+  const { trab, pendImprimir, pendBipar, pend, feitos, semNf } = _expPendentes();
+  const nImp = pendImprimir.length, nBip = pendBipar.length;
+  document.getElementById('expNumImprimir').textContent = nImp;
+  document.getElementById('expNumBipar').textContent = nBip;
+  document.getElementById('expNumFeito').textContent = feitos;
+  const subFeito = document.getElementById('expSubFeito');
+  if (subFeito) subFeito.textContent = trab.length ? `de ${trab.length} da fila de hoje` : 'bipados da fila';
+  // Flex sem bipe depois do cutoff é o incêndio do dia — mostra no sub do card
   let atrasados = 0;
   pend.forEach(p => { try { if (calcPrazo(p).passou) atrasados++; } catch(e){} });
-  const pct = comNf.length ? Math.round((feitos/comNf.length)*100) : 0;
-  document.getElementById('expBarFeito').style.width = pct+'%';
-  document.getElementById('expBarFalta').style.width = (comNf.length?100-pct:0)+'%';
+  const subBip = document.getElementById('expSubBipar');
+  if (subBip) subBip.innerHTML = atrasados
+    ? `<b style="color:var(--red)">⏰ ${atrasados} com prazo estourado</b>`
+    : 'etiqueta impressa, sem bipe';
+  const pct = v => trab.length ? Math.round((v/trab.length)*100) : 0;
+  document.getElementById('expBarFeito').style.width = pct(feitos)+'%';
+  document.getElementById('expBarBipar').style.width = pct(nBip)+'%';
+  document.getElementById('expBarImprimir').style.width = pct(nImp)+'%';
   if (badge) {
-    if (!comNf.length) { badge.textContent='SEM FILA'; badge.className='badge b-pending'; }
-    else if (!pend.length) { badge.textContent='✓ TUDO BIPADO'; badge.className='badge b-done'; }
+    if (!trab.length) { badge.textContent='SEM FILA'; badge.className='badge b-pending'; badge.style.background=''; badge.style.color=''; }
+    else if (!pend.length) { badge.textContent='✓ DIA CONCLUÍDO'; badge.className='badge b-done'; badge.style.background=''; badge.style.color=''; }
     else { badge.textContent='FALTAM '+pend.length; badge.className='badge'; badge.style.background='rgba(248,81,73,.15)'; badge.style.color='var(--red)'; }
   }
+  const pFlex = pend.filter(p => { const lt=(p.logistic_type||'').toLowerCase(); return lt==='self_service'||lt==='flex'; }).length;
   nums.innerHTML =
-    `<span>Esperado hoje: <b style="color:var(--text)">${comNf.length}</b></span>`+
-    `<span>Bipado: <b style="color:var(--green)">${feitos}</b></span>`+
-    `<span>Faltam: <b style="color:${pend.length?'var(--red)':'var(--green)'}">${pend.length}</b> (🏍 ${pFlex} · 🚚 ${pCol})</span>`+
-    (atrasados ? `<span style="color:var(--red);font-weight:700">⏰ ${atrasados} com prazo estourado</span>` : '')+
-    (semNf ? `<span title="Pedidos na fila ainda sem NF emitida — não dá pra bipar">s/ NF: ${semNf}</span>` : '');
+    `<span>Fila de hoje: <b style="color:var(--text)">${trab.length}</b></span>`+
+    `<span>Pendentes: <b style="color:${pend.length?'var(--red)':'var(--green)'}">${pend.length}</b> (🏍 ${pFlex} · 🚚 ${pend.length-pFlex})</span>`+
+    (semNf ? `<span title="Pedidos na fila ainda sem NF emitida">s/ NF: ${semNf}</span>` : '')+
+    `<span style="color:var(--muted)">clique nos cards para ver e abrir no Magis5</span>`;
   if (syncEl) {
     try {
       const d = window._ledgerUltimoSync ? new Date(window._ledgerUltimoSync) : null;
@@ -5380,11 +5415,21 @@ function renderStatusExpedicao(){
   const listEl = document.getElementById('expPendList');
   if (listEl && listEl.style.display !== 'none') renderListaPendentes();
 }
+function abrirListaPendentes(modo){
+  _expListaModo = modo || 'todos';
+  const el = document.getElementById('expPendList');
+  const btn = document.getElementById('expPendToggle');
+  if (!el) return;
+  el.style.display = 'block';
+  if (btn) btn.textContent = '▲ Ocultar';
+  renderListaPendentes();
+}
 function toggleListaPendentes(){
   const el = document.getElementById('expPendList');
   const btn = document.getElementById('expPendToggle');
   if (!el) return;
   const abrir = el.style.display === 'none';
+  if (abrir) _expListaModo = 'todos';
   el.style.display = abrir ? 'block' : 'none';
   if (btn) btn.textContent = abrir ? '▲ Ocultar' : '📋 Ver faltantes';
   if (abrir) renderListaPendentes();
@@ -5392,26 +5437,44 @@ function toggleListaPendentes(){
 function renderListaPendentes(){
   const el = document.getElementById('expPendList');
   if (!el) return;
-  const { pend } = _expPendentes();
-  if (!pend.length) { el.innerHTML = '<div style="text-align:center;padding:14px;color:var(--green);font-size:12px">✓ Nenhum pedido pendente — tudo que o Magis5 liberou foi bipado.</div>'; return; }
+  const st = _expPendentes();
+  const pend = _expListaModo === 'imprimir' ? st.pendImprimir
+             : _expListaModo === 'bipar'    ? st.pendBipar
+             : st.pend;
+  const titulo = _expListaModo === 'imprimir' ? '🖨 Falta imprimir (passo 0 no Magis5)'
+               : _expListaModo === 'bipar'    ? '📦 Impresso — falta bipar'
+               : '📋 Todos os pendentes';
+  const cab = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+    <span style="font-size:11px;font-weight:800">${titulo}</span>
+    <span class="badge b-pending" style="font-size:9px">${pend.length}</span>
+    ${_expListaModo!=='todos' ? '<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" onclick="abrirListaPendentes(\'todos\')">ver todos</button>' : ''}
+    <span style="font-size:9px;color:var(--muted);margin-left:auto">clique na linha para abrir a venda no Magis5 ↗</span>
+  </div>`;
+  if (!pend.length) { el.innerHTML = cab + '<div style="text-align:center;padding:14px;color:var(--green);font-size:12px">✓ Nada aqui — este estado está limpo.</div>'; return; }
   const comPrazo = pend.map(p => { let pr=null; try { pr=calcPrazo(p); } catch(e){}; return {p, pr}; });
   comPrazo.sort((a,b) => {
     const ap=a.pr?.passou?0:1, bp=b.pr?.passou?0:1;
     if (ap!==bp) return ap-bp;
     return (a.pr?.minutosRestantes??9e9) - (b.pr?.minutosRestantes??9e9);
   });
-  el.innerHTML = comPrazo.map(({p,pr}) => {
+  el.innerHTML = cab + comPrazo.map(({p,pr}) => {
     const lt=(p.logistic_type||'').toLowerCase();
     const flex = lt==='self_service'||lt==='flex';
-    const prazoTag = pr ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:${pr.cor};font-weight:700">${pr.passou?'⏰ estourado':'até '+pr.texto}</span>` : '';
-    return `<div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px">
+    const prazoTag = pr ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:${pr.cor};font-weight:700;min-width:74px">${pr.passou?'⏰ estourado':'até '+pr.texto}</span>` : '';
+    const estadoTag = _expListaModo==='todos'
+      ? (p.etapa==='pronto' ? '<span class="badge" style="font-size:8px;background:rgba(210,153,34,.15);color:var(--orange)">🖨 imprimir</span>' : '<span class="badge" style="font-size:8px;background:rgba(248,81,73,.12);color:var(--red)">📦 bipar</span>')
+      : '';
+    const clique = p.buyer_id ? `abrirPedidoMagis5('${p.buyer_id}')` : `consultarChaveNoMagis5('${p.chave_nf||''}')`;
+    return `<div onclick="${clique}" style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--border);font-size:11px;cursor:pointer" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''" title="Abrir a venda no Magis5">
       ${prazoTag}
       <span>${flex?'🏍':'🚚'}</span>
+      ${estadoTag}
       <span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[p.marketplace]||'b-pending'}" style="font-size:9px">${p.marketplace||'—'}</span>
       <span style="font-family:'DM Mono',monospace;color:var(--muted2)">${p.order_id||''}</span>
       <span style="font-weight:600">${p.sku||'—'}</span>
       <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.cliente||''}</span>
-      <button class="btn btn-ghost btn-sm" style="margin-left:auto;font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="registrarManualDoPainel('${p.order_id}')">✋ manual</button>
+      <span style="margin-left:auto;color:var(--muted);font-size:9px">↗</span>
+      ${p.etapa==='despachar' ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
     </div>`;
   }).join('');
 }
