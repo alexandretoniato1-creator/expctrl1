@@ -4937,6 +4937,43 @@ function _extraiChavePorUF(digitos) {
   return null;
 }
 
+// Casamento por conteúdo: alguns leitores/etiquetas (ex: TikTok) entregam a chave com os
+// campos fora de ordem. Se a leitura contém o nNF (pos 25-33) E o cNF (pos 35-42) de
+// exatamente UMA chave conhecida do Magis5, essa é a chave real. 17 dígitos = sem falso positivo.
+function _casarChavePorConteudo(digitos) {
+  const idx = window._magis5SaidasIndex || {};
+  if (!digitos || idx[digitos]) return null;
+  let achada = null;
+  for (const ch of Object.keys(idx)) {
+    if (ch.length !== 44) continue;
+    if (digitos.includes(ch.slice(25, 34)) && digitos.includes(ch.slice(35, 43))) {
+      if (achada && achada !== ch) return null; // ambíguo → não arrisca
+      achada = ch;
+    }
+  }
+  return achada;
+}
+
+// Corrige registros de hoje gravados com chave embaralhada (roda após carregar o ledger)
+async function _repararChavesEmbaralhadas() {
+  const idx = window._magis5SaidasIndex || {};
+  let n = 0;
+  for (const s of (SAIDAS_HOJE || [])) {
+    if (!s.num || idx[s.num]) continue;
+    const real = _casarChavePorConteudo(s.num);
+    if (!real) continue;
+    if (SAIDAS_HOJE.some(o => o !== s && o.num === real && o.galpao === s.galpao)) continue; // já existe correta
+    try {
+      if (s._id) {
+        const { error } = await _sb.from('saidas_hoje').update({ numero: real }).eq('id', s._id);
+        if (error) throw error;
+      }
+      s.num = real; n++;
+    } catch (e) { console.warn('[reparo chave]', e?.message || e); }
+  }
+  if (n) { showToast(`🔧 ${n} chave(s) embaralhada(s) corrigida(s) e vinculadas ao Magis5`); renderSaidas(); }
+}
+
 // Retorna true quando uma string de 44 dígitos parece ser barcode de etiqueta de envio
 // (não é chave NF-e): DV inválido E cUF fora da tabela SEFAZ.
 // Nesses casos o sistema orienta o funcionário a escanear o DANFE em vez da etiqueta.
@@ -4983,7 +5020,10 @@ async function registrarSaida(){
   }
 
   let num;
-  if (soDigitos.length === 44) {
+  const casada = _casarChavePorConteudo(soDigitos);
+  if (casada) {
+    num = casada; // leitura embaralhada reconhecida pelo conteúdo — segue o fluxo normal
+  } else if (soDigitos.length === 44) {
     // Leitura limpa: aceita sempre. O DV so avisa, nunca bloqueia — uma chave
     // legitima que falhe no digito nao pode travar a expedicao.
     // Exceção: se DV inválido E cUF fora da tabela SEFAZ → barcode de etiqueta, não NF-e.
@@ -11240,6 +11280,8 @@ async function carregarLedger(forcar) {
     for (const p of [...window._ledgerFila, ...window._ledgerSemBipagem]) {
       if (p.chave_nf) window._magis5SaidasIndex[p.chave_nf] = p;
     }
+    // índice pronto → corrige bipes de hoje gravados com chave embaralhada
+    setTimeout(() => { _repararChavesEmbaralhadas(); }, 0);
     window._magis5SaidasSincronizado = true;
   } catch(e) { console.error('[Ledger] erro ao carregar:', e); }
 }
