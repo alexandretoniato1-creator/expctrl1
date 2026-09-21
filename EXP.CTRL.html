@@ -1609,6 +1609,11 @@ select:focus{border-color:var(--accent)}
                 <button class="btn btn-ghost btn-sm" id="expPendToggle" onclick="toggleListaPendentes()">📋 Ver faltantes</button>
               </div>
             </div>
+            <div id="expCancelados" onclick="abrirListaPendentes('cancelado')" style="display:none;cursor:pointer;align-items:center;gap:10px;background:rgba(248,81,73,.15);border:2px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:10px" title="Clique para ver quais são">
+              <span style="font-size:20px">🚫</span>
+              <span style="font-size:13px;font-weight:900;color:var(--red)"><span id="expNumCancelados">0</span> PEDIDO(S) CANCELADO(S) NO MERCADO LIVRE — NÃO DESPACHAR</span>
+              <span style="margin-left:auto;font-size:10px;color:var(--muted2)">ver quais ▸</span>
+            </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:8px">
               <div id="expCardImprimir" onclick="abrirListaPendentes('imprimir')" style="cursor:pointer;background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.35);border-radius:8px;padding:12px 14px;text-align:center" title="Pedidos faturados aguardando o passo 0 (impressão) no Magis5 — clique para ver a lista">
                 <div style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--orange)">🖨 FALTA IMPRIMIR</div>
@@ -5087,6 +5092,16 @@ async function registrarSaida(){
   //    e o ledger diz o canal (logistic_type) e o marketplace. O select vira
   //    fallback só pra pedido que o Magis5 não conhece.
   const pedidoML = (window._magis5SaidasIndex||{})[num] || null;
+  if (pedidoML && pedidoML.marketplace === 'ML' && pedidoML.ml_status === 'cancelled') {
+    input.value = '';
+    input.style.borderColor = 'var(--red)';
+    setTimeout(()=>{ input.style.borderColor=''; }, 3000);
+    if (typeof _somDuplicata === 'function') { _somDuplicata(); setTimeout(_somDuplicata, 250); }
+    alert('🚫 PEDIDO CANCELADO NO MERCADO LIVRE\n\nPedido ' + (pedidoML.order_id||'') + (pedidoML.sku ? ' · ' + pedidoML.sku : '') +
+          '\n\nNÃO DESPACHE este pacote. Separe o produto e devolva ao estoque.');
+    input.focus();
+    return;
+  }
   let canal, market, classifAuto = false;
   if (pedidoML) {
     const lt = (pedidoML.logistic_type||'').toLowerCase();
@@ -5415,10 +5430,11 @@ function setOrdemPendentes(v){ _expListaOrdem = v; renderListaPendentes(); }
 //      ready_to_print / pending / handling → imprimir · printed, ready_for_pickup, in_hub... → bipar
 //      delivered / shipped / cancelled / not_delivered → 'fora' (já resolvido no ML; Magis5 atrasado)
 //  • Demais marketplaces (ou ML ainda não consultado): etapa do Magis5
-const _ML_FORA = new Set(['delivered','shipped','cancelled','not_delivered']);
+const _ML_FORA = new Set(['delivered','shipped','not_delivered']);
 function _estadoExp(p){
   const st = p.ml_status || '', sub = p.ml_substatus || '';
   if (p.marketplace === 'ML' && st) {
+    if (st === 'cancelled') return 'cancelado';
     if (_ML_FORA.has(st)) return 'fora';
     if (st === 'pending' || st === 'handling' || sub === 'ready_to_print' || sub === 'invoice_pending') return 'imprimir';
     return 'bipar';
@@ -5433,12 +5449,13 @@ function _expPendentes(){
   const bipado = p => !!p.ja_bipado || (p.chave_nf && bip.has(p.chave_nf));
   const comEstado = fila.map(p => ({ p, e: _estadoExp(p) })).filter(x => x.e);
   const foraML = comEstado.filter(x => x.e === 'fora' && !bipado(x.p)).map(x => x.p);
-  const trab   = comEstado.filter(x => x.e !== 'fora' || bipado(x.p)).map(x => x.p);
+  const cancelados = comEstado.filter(x => x.e === 'cancelado' && !bipado(x.p)).map(x => x.p);
+  const trab   = comEstado.filter(x => (x.e !== 'fora' && x.e !== 'cancelado') || bipado(x.p)).map(x => x.p);
   const pendImprimir = comEstado.filter(x => x.e === 'imprimir' && !bipado(x.p)).map(x => x.p);
   const pendBipar    = comEstado.filter(x => x.e === 'bipar'    && !bipado(x.p)).map(x => x.p);
   const feitos       = trab.length - pendImprimir.length - pendBipar.length;
   const semNf        = trab.filter(p => !p.chave_nf && !bipado(p)).length;
-  return { trab, pendImprimir, pendBipar, pend: [...pendBipar, ...pendImprimir], feitos, semNf, foraML };
+  return { trab, pendImprimir, pendBipar, pend: [...pendBipar, ...pendImprimir], feitos, semNf, foraML, cancelados };
 }
 function renderStatusExpedicao(){
   const nums = document.getElementById('expStatusNums');
@@ -5446,7 +5463,12 @@ function renderStatusExpedicao(){
   const badge = document.getElementById('expStatusBadge');
   const syncEl = document.getElementById('expStatusSync');
   if (!window._ledgerCarregado) { nums.textContent = '⏳ Carregando fila do Magis5...'; return; }
-  const { trab, pendImprimir, pendBipar, pend, feitos, semNf, foraML } = _expPendentes();
+  const { trab, pendImprimir, pendBipar, pend, feitos, semNf, foraML, cancelados } = _expPendentes();
+  const canEl = document.getElementById('expCancelados');
+  if (canEl) {
+    canEl.style.display = cancelados.length ? 'flex' : 'none';
+    const n = document.getElementById('expNumCancelados'); if (n) n.textContent = cancelados.length;
+  }
   const nImp = pendImprimir.length, nBip = pendBipar.length;
   document.getElementById('expNumImprimir').textContent = nImp;
   document.getElementById('expNumBipar').textContent = nBip;
@@ -5509,11 +5531,13 @@ function renderListaPendentes(){
   const el = document.getElementById('expPendList');
   if (!el) return;
   const st = _expPendentes();
-  const pend = _expListaModo === 'imprimir' ? st.pendImprimir
-             : _expListaModo === 'bipar'    ? st.pendBipar
+  const pend = _expListaModo === 'imprimir'  ? st.pendImprimir
+             : _expListaModo === 'bipar'     ? st.pendBipar
+             : _expListaModo === 'cancelado' ? st.cancelados
              : st.pend;
-  const titulo = _expListaModo === 'imprimir' ? '🖨 Falta imprimir (passo 0 no Magis5)'
-               : _expListaModo === 'bipar'    ? '📦 Impresso — falta bipar'
+  const titulo = _expListaModo === 'imprimir'  ? '🖨 Falta imprimir'
+               : _expListaModo === 'bipar'     ? '📦 Impresso — falta bipar'
+               : _expListaModo === 'cancelado' ? '🚫 Cancelados no ML — NÃO despachar (separe o produto e devolva ao estoque)'
                : '📋 Todos os pendentes';
   const cab = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
     <span style="font-size:11px;font-weight:800">${titulo}</span>
@@ -5540,7 +5564,10 @@ function renderListaPendentes(){
     const lt=(p.logistic_type||'').toLowerCase();
     const flex = lt==='self_service'||lt==='flex';
     const prazoTag = pr ? `<span style="font-family:'DM Mono',monospace;font-size:10px;color:${pr.cor};font-weight:700;min-width:74px">${pr.passou?'⏰ estourado':'até '+pr.texto}</span>` : '';
-    const estadoTag = _expListaModo==='todos'
+    const _est = _estadoExp(p);
+    const estadoTag = _est==='cancelado'
+      ? '<span class="badge" style="font-size:8px;background:var(--red);color:#fff">🚫 CANCELADO</span>'
+      : _expListaModo==='todos'
       ? (_estadoExp(p)==='imprimir' ? '<span class="badge" style="font-size:8px;background:rgba(210,153,34,.15);color:var(--orange)">🖨 imprimir</span>' : '<span class="badge" style="font-size:8px;background:rgba(248,81,73,.12);color:var(--red)">📦 bipar</span>')
       : '';
     const clique = p.buyer_id ? `abrirPedidoMagis5('${p.buyer_id}')` : `consultarChaveNoMagis5('${p.chave_nf||''}')`;
@@ -5554,7 +5581,7 @@ function renderListaPendentes(){
       <span style="font-weight:600">${p.sku||'—'}</span>
       <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.cliente||''}</span>
       <span style="margin-left:auto;color:var(--muted);font-size:9px">↗</span>
-      ${_estadoExp(p)!=='imprimir' ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
+      ${(_est!=='imprimir' && _est!=='cancelado') ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
     </div>`;
   }).join('');
 }
@@ -11662,20 +11689,36 @@ function calcPrazo(p) {
   const agora = new Date();
   const lt = (p.logistic_type || '').toLowerCase();
 
-  // ── Flex (self_service): cutoff às 12:00 do dia atual ──────────────────
+  const _p2 = n => String(n).padStart(2,'0');
+  const _hojeStr = `${agora.getFullYear()}-${_p2(agora.getMonth()+1)}-${_p2(agora.getDate())}`;
+  const _rotuloDia = (ymd, hhmm) => ymd === _hojeStr ? hhmm : `${ymd.slice(8,10)}/${ymd.slice(5,7)} ${hhmm}`;
+
+  // ── Flex (self_service): REGRA INTERNA — impresso e bipado até 11:00 do dia de despacho.
+  //    O dia vem do ML (ml_dia_despacho); sem ele, assume hoje.
   if (lt === 'self_service' || lt === 'flex') {
-    const cutoff = new Date(agora);
-    cutoff.setHours(12, 0, 0, 0);
+    const dia = p.ml_dia_despacho ? String(p.ml_dia_despacho).slice(0,10) : _hojeStr;
+    const cutoff = new Date(`${dia}T11:00:00`);
     const minutos = Math.round((cutoff - agora) / 60000);
     const passou  = agora >= cutoff;
     return {
-      texto: '12:00',
+      texto: _rotuloDia(dia, '11:00'),
       cor: passou ? 'var(--red)' : (minutos < 60 ? 'var(--orange)' : 'var(--green)'),
       passou,
       minutosRestantes: Math.abs(minutos),
       tipo: 'flex',
-      fonte: 'regra'
+      fonte: p.ml_dia_despacho ? 'ml_dia+regra' : 'regra'
     };
+  }
+
+  // ── Coleta com horário exato do ML (qualquer tipo de coleta) ──
+  if (p.data_limite_envio && lt !== 'cross_docking') {
+    const cutoff  = new Date(p.data_limite_envio);
+    const minutos = Math.round((cutoff - agora) / 60000);
+    const passou  = agora >= cutoff;
+    const ymd = `${cutoff.getFullYear()}-${_p2(cutoff.getMonth()+1)}-${_p2(cutoff.getDate())}`;
+    return { texto: _rotuloDia(ymd, `${_p2(cutoff.getHours())}:${_p2(cutoff.getMinutes())}`),
+      cor: passou ? 'var(--red)' : (minutos < 30 ? 'var(--orange)' : 'var(--green)'),
+      passou, minutosRestantes: Math.abs(minutos), tipo: 'coleta', fonte: 'ml_api' };
   }
 
   // ── Coleta ML (cross_docking) ───────────────────────────────────────────
@@ -11716,6 +11759,17 @@ function calcPrazo(p) {
         };
       }
     }
+  }
+
+  // ── Coleta sem horário: dia de coleta informado pelo ML (vale até o fim do dia) ──
+  if (p.ml_dia_despacho) {
+    const dia = String(p.ml_dia_despacho).slice(0,10);
+    const cutoff = new Date(`${dia}T23:59:00`);
+    const minutos = Math.round((cutoff - agora) / 60000);
+    const passou  = agora >= cutoff;
+    return { texto: dia === _hojeStr ? 'hoje' : `${dia.slice(8,10)}/${dia.slice(5,7)}`,
+      cor: passou ? 'var(--red)' : (dia === _hojeStr ? 'var(--orange)' : 'var(--green)'),
+      passou, minutosRestantes: Math.abs(minutos), tipo: 'coleta', fonte: 'ml_dia' };
   }
 
   return { texto: '—', cor: 'var(--muted)', passou: false, minutosRestantes: null, tipo: null, fonte: null };
