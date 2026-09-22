@@ -9327,7 +9327,12 @@ function etqRenderQzStatus() {
     el.innerHTML=`<div class="${d}"></div><span style="color:var(--muted)">${l}</span>`;
   });
   const bs=document.getElementById('bibStatusImpressora');
-  if (bs) bs.textContent = window._qzStatus==='connected'?'🟢 Conectada':window._qzStatus==='connecting'?'🟡 Conectando':'🔴 Offline';
+  if (bs) {
+    const nome = localStorage.getItem('expctrl_impressora');
+    bs.innerHTML = (window._qzStatus==='connected'?'🟢 Conectada':window._qzStatus==='connecting'?'🟡 Conectando':'🔴 Offline')
+      + (nome ? `<div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:2px">${nome}</div>` : '')
+      + `<div><button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 6px;margin-top:4px" onclick="trocarImpressora()">trocar impressora</button></div>`;
+  }
 }
 
 /* ── Envio raw — ponto único de impressão, usado por todo o módulo ──
@@ -9335,17 +9340,61 @@ function etqRenderQzStatus() {
    adiantado) passe pelo mesmo caminho, sem repetir lógica.
    Retorna o nome da impressora em sucesso, ou false em falha.
    ─────────────────────────────────────────────────────────────── */
+// Escolha da impressora, em ordem: a salva neste PC → nome com cara de Zebra/ZPL → padrão do Windows.
+// Cada PC guarda a sua escolha (localStorage), então galpão e escritório podem ter impressoras diferentes.
+const _ZPL_PISTAS = ['zdesigner','zebra','zpl','gk420','zd220','zd230','zd420','tt230','argox','elgin','l42'];
+async function zplListarImpressoras() {
+  try { return await qz.printers.find(); } catch(e) { return []; }
+}
+async function zplEscolherImpressora(forcarNova) {
+  const lista = await zplListarImpressoras();
+  const salva = localStorage.getItem('expctrl_impressora');
+  if (!forcarNova && salva && lista.includes(salva)) return salva;
+  const porNome = lista.find(n => _ZPL_PISTAS.some(p => String(n).toLowerCase().includes(p)));
+  if (!forcarNova && porNome) return porNome;
+  let padrao = null;
+  try { padrao = await qz.printers.getDefault(); } catch(e) {}
+  if (!forcarNova && padrao && lista.includes(padrao)) return padrao;
+  if (!lista.length) { showToast('❌ O QZ Tray não encontrou nenhuma impressora instalada neste PC'); return null; }
+  // Nada reconhecido (ou troca pedida): o operador escolhe uma vez e fica salvo
+  const opcoes = lista.map((n,i) => `${i+1}) ${n}`).join('\n');
+  const r = prompt(`Qual impressora de etiquetas usar neste computador?\n\n${opcoes}\n\nDigite o número:`, '1');
+  const idx = parseInt(r, 10) - 1;
+  if (isNaN(idx) || !lista[idx]) return null;
+  localStorage.setItem('expctrl_impressora', lista[idx]);
+  showToast('🖨 Impressora definida: ' + lista[idx]);
+  return lista[idx];
+}
+async function trocarImpressora() {
+  if (!await qzConectar()) { showToast('⚠️ QZ Tray offline — abra o programa e tente de novo'); return; }
+  const nova = await zplEscolherImpressora(true);
+  if (nova) etqRenderQzStatus();
+}
 async function zplEnviarParaImpressora(zplText) {
   const ok = await qzConectar();
   if (!ok) { showToast('⚠️ QZ Tray offline'); return false; }
   try {
-    let impressora = (await qz.printers.find('ZDesigner'))[0] || await qz.printers.getDefault();
-    if (!impressora) { showToast('❌ Nenhuma impressora Zebra encontrada'); return false; }
+    const impressora = await zplEscolherImpressora(false);
+    if (!impressora) { showToast('❌ Nenhuma impressora selecionada'); return false; }
     const config = qz.configs.create(impressora);
     await qz.print(config, [{ type: 'raw', format: 'plain', data: zplText }]);
     return impressora;
   } catch(e) {
-    showToast('❌ Erro: ' + (e.message||e));
+    const msg = String(e?.message || e);
+    if (/printer could not be found|not found/i.test(msg)) {
+      // A impressora salva sumiu (trocou de PC, driver removido, nome mudou)
+      localStorage.removeItem('expctrl_impressora');
+      showToast('⚠️ Impressora não encontrada — escolha a correta na lista');
+      const nova = await zplEscolherImpressora(true);
+      if (nova) {
+        try {
+          await qz.print(qz.configs.create(nova), [{ type: 'raw', format: 'plain', data: zplText }]);
+          return nova;
+        } catch(e2) { showToast('❌ Erro ao imprimir: ' + (e2.message||e2)); return false; }
+      }
+      return false;
+    }
+    showToast('❌ Erro: ' + msg);
     return false;
   }
 }
