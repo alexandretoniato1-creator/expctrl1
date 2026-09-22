@@ -8432,7 +8432,28 @@ async function _confTickScan(video, fullId, totalEsperado) {
 }
 
 // ── Processa QR lido na conferência ───────────────────
+// Leitores USB/Bluetooth configurados em teclado americano num PC ABNT2 (ou com Caps Lock)
+// trocam caracteres: "/"→";", aspas→"^", ":"→"ç", letras em maiúscula. Os números chegam
+// certos, então reconstruímos o que importa: volume (envio/volume) e id da autorização.
+function _normalizaLeituraQR(raw){
+  let r = String(raw||'').trim();
+  // Volume: 77039285;45 → 77039285/45
+  r = r.replace(/(\d{6,})\s*;\s*(\d{1,4})(?!\d)/g, '$1/$2');
+  const temVolume = /(\d{6,})\s*\/\s*(\d+)/.test(r);
+  if (!temVolume) {
+    let jsonOk = false;
+    try { JSON.parse(r); jsonOk = true; } catch(e) {}
+    if (!jsonOk) {
+      // JSON do ML embaralhado: {"id":"66005642",...} → ...ID^ç^66005642^...
+      const m = r.match(/(?:^|[^a-z_])id[^0-9a-z]{1,5}(\d{6,})/i);
+      if (m) return JSON.stringify({ id: m[1] });
+    }
+  }
+  return r;
+}
+
 async function confOnCodigoLido(raw, fullId, totalEsperado) {
+  raw = _normalizaLeituraQR(raw);
   if (!_scannerActive) return;
   _scannerActive = false;
 
@@ -8838,6 +8859,7 @@ function _carrTickScan(video, fullId, totalEsperado) {
 }
 
 async function carrOnCodigoLido(raw, fullId, totalEsperado) {
+  raw = _normalizaLeituraQR(raw);
   if (!_scannerActive) return;
   _scannerActive = false;
 
