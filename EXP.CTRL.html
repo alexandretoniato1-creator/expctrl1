@@ -1672,7 +1672,7 @@ select:focus{border-color:var(--accent)}
             <div class="table-head">
                 <div class="table-head-title">Registros do dia</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <input type="text" id="saidaHojeBusca" placeholder="🔍 Buscar pedido..." oninput="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:180px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                  <input type="text" id="saidaHojeBusca" placeholder="🔍 Pedido, chave ou SKU..." oninput="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:180px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
                   <select id="saidaHojeFiltroCanal" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
                     <option value="">Flex + Coleta</option>
                     <option value="Flex">Flex</option>
@@ -2930,6 +2930,35 @@ let FULLS_ENVIADOS      = [];
 let DEVS                = [];
 let SKU_DB              = [];
 let SAIDAS_HOJE         = [];
+// Pedidos já bipados saem da fila do Magis5 → busca os dados deles no ledger pela chave
+window._ledgerPorChave = window._ledgerPorChave || {};
+let _ledgerPorChaveCarregando = false;
+function _pedidoDaChave(num){ return (window._magis5SaidasIndex||{})[num] || window._ledgerPorChave[num] || null; }
+async function _carregarLedgerDasSaidas(){
+  if (_ledgerPorChaveCarregando) return;
+  const idx = window._magis5SaidasIndex || {};
+  const faltam = [...new Set((SAIDAS_HOJE||[]).map(x=>x.num))]
+    .filter(n => n && n.length===44 && !idx[n] && !(n in window._ledgerPorChave));
+  if (!faltam.length) return;
+  _ledgerPorChaveCarregando = true;
+  try {
+    for (let i=0; i<faltam.length; i+=100) {
+      const lote = faltam.slice(i, i+100);
+      const { data, error } = await _sb.from('expedicao_ledger')
+        .select('order_id,chave_nf,sku,produto,valor,marketplace,buyer_id,cliente')
+        .in('chave_nf', lote);
+      if (error) throw error;
+      lote.forEach(n => { window._ledgerPorChave[n] = null; });   // marca como consultado
+      (data||[]).forEach(r => { window._ledgerPorChave[r.chave_nf] = r; });
+    }
+    renderSaidas();
+  } catch(e) { console.warn('[ledger por chave]', e?.message||e); }
+  finally { _ledgerPorChaveCarregando = false; }
+}
+function abrirVendaML(orderId){
+  if (!orderId) return;
+  window.open('https://www.mercadolivre.com.br/vendas/' + String(orderId).replace(/\D/g,'') + '/detalhe', '_blank');
+}
 // ── Transportadoras Flex: tabela `transportadoras` no Supabase; fallback fixo se a leitura falhar
 const TRANSP_FALLBACK = ['Flash','RND','Speed'];
 let TRANSPORTADORAS = [...TRANSP_FALLBACK];
@@ -4627,10 +4656,80 @@ function renderEditItens(itens){
         <option value="done" ${item.status==='done'?'selected':''}>Concluído</option>
       </select></div>
       <button class="remove-btn" onclick="removeItem(${i})">✕</button>
-    </div>`).join('')||'<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Nenhum item. Clique em "+ Adicionar item".</div>';
+    </div>
+    <div id="item-preetq-${i}" style="margin:-4px 0 10px;padding:0 4px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)"></div>`).join('')||'<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Nenhum item. Clique em "+ Adicionar item".</div>';
   updateTempoEstimado(itens);
+  itemRenderPreEtiquetado(itens);
 }
-function updateItem(i,field,val){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];if(f.itens[i])f.itens[i][field]=val;}
+
+// ── Estoque pré-etiquetado direto na aba Itens do Full ──
+// Mostra o saldo pré-impresso do SKU e permite usá-lo: baixa na biblioteca e marca as
+// etiquetas deste Full como prontas (mesma lógica do "Usar do estoque" da seção Etiquetas).
+// Grava na hora — não depende do "Salvar alterações".
+function _bibRegPorSku(sku){
+  const idx = window._zplBibIndex; if (!idx || !sku) return null;
+  if (idx.get(sku)) return { chave: sku, reg: idx.get(sku) };
+  const alvo = String(sku).trim().toUpperCase();
+  for (const [k, r] of idx) if (String(k).trim().toUpperCase() === alvo) return { chave: k, reg: r };
+  return null;
+}
+async function itemRenderPreEtiquetado(itens){
+  const fullId = editingFullId; if (!fullId) return;
+  try { await zplCarregarIndice(); } catch(e) { return; }
+  if (!window._etqData[fullId]) { try { await etqCarregar(fullId); } catch(e) {} }
+  const etqs = etqGetData(fullId);
+  (itens||[]).forEach((item, i) => {
+    const el = document.getElementById(`item-preetq-${i}`);
+    if (!el) return;
+    const achado = _bibRegPorSku(item.codigo);
+    if (!item.codigo || !achado) { el.innerHTML = ''; return; }
+    const saldo = achado.reg.estoque || 0;
+    const etq = etqs.find(e => String(e.sku).toUpperCase() === String(achado.chave).toUpperCase());
+    const prontas = etq ? (etq.impressas||0) : 0;
+    const total = etq ? (etq.total||0) : (parseInt(item.qtde)||0);
+    const faltam = Math.max(0, total - prontas);
+    const podeUsar = Math.min(saldo, faltam);
+    el.innerHTML =
+      `🏷 Pré-etiquetado: <b style="color:${saldo?'var(--green)':'var(--muted)'}">${saldo.toLocaleString('pt-BR')}</b>`
+      + (total ? ` · etiquetas deste Full: <b style="color:var(--text)">${prontas.toLocaleString('pt-BR')}/${total.toLocaleString('pt-BR')}</b> prontas` : '')
+      + (podeUsar > 0
+          ? ` <button class="btn btn-sm" style="background:var(--green);color:#0a0a0a;font-size:10px;padding:2px 8px;margin-left:6px" onclick="itemUsarPreEtiquetado(${i})">Usar do estoque (até ${podeUsar.toLocaleString('pt-BR')})</button>`
+          : (total && faltam === 0 ? ' <span style="color:var(--green)">✓ completo</span>' : ''));
+  });
+}
+async function itemUsarPreEtiquetado(i){
+  const fullId = editingFullId; if (!fullId) return;
+  const item = FULLS_DATA[fullId]?.itens?.[i]; if (!item) return;
+  const achado = _bibRegPorSku(item.codigo);
+  if (!achado) { showToast('SKU não está na biblioteca de etiquetas'); return; }
+  const saldo = achado.reg.estoque || 0;
+  const arr = etqGetData(fullId);
+  let etq = arr.find(e => String(e.sku).toUpperCase() === String(achado.chave).toUpperCase());
+  const total = etq ? (etq.total||0) : (parseInt(item.qtde)||0);
+  if (!total) { showToast('⚠️ Informe a quantidade do item primeiro'); return; }
+  const faltam = Math.max(0, total - (etq ? (etq.impressas||0) : 0));
+  const max = Math.min(saldo, faltam);
+  if (max <= 0) { showToast('Nada a usar: sem saldo ou etiquetas já completas'); return; }
+  const r = prompt(`Usar quantas etiquetas pré-impressas de ${achado.chave}?\n\nSaldo pré-etiquetado: ${saldo}\nFaltam neste Full: ${faltam}`, String(max));
+  const usar = Math.min(parseInt(r,10)||0, max);
+  if (usar <= 0) return;
+  const novoSaldo = saldo - usar;
+  const { error } = await _sb.from('zpl_biblioteca').update({ estoque: novoSaldo }).eq('sku', achado.chave);
+  if (error) { showToast('⚠️ Erro ao baixar o estoque pré-etiquetado'); return; }
+  achado.reg.estoque = novoSaldo;
+  if (!etq) {
+    etq = { id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5), sku: achado.chave,
+            descricao: achado.reg.descricao || item.nome || achado.chave, total, impressas: 0, criadoEm: new Date().toISOString() };
+    arr.push(etq);
+  }
+  etq.impressas = Math.min((etq.impressas||0) + usar, etq.total);
+  etqSetData(fullId, arr);
+  await etqSalvar(fullId);
+  itemRenderPreEtiquetado(FULLS_DATA[fullId].itens);
+  showToast(`📦 ${usar} etiqueta(s) de ${achado.chave} usadas do pré-etiquetado · saldo agora ${novoSaldo}`);
+}
+function updateItem(i,field,val){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];if(f.itens[i])f.itens[i][field]=val;
+  if(field==='codigo'||field==='qtde'){clearTimeout(window._preEtqT);window._preEtqT=setTimeout(()=>itemRenderPreEtiquetado(f.itens),400);}}
 
 async function updateItemStatus(i, novoStatus) {
   if (!editingFullId) return;
@@ -5169,8 +5268,14 @@ function renderSaidas(){
   if (fTranspEl) fTranspEl.style.display = fCanal==='Coleta' ? 'none' : '';
 
   const listaFull = SAIDAS_HOJE.filter(s => s.galpao === galpao);
+  if (window._magis5SaidasSincronizado) setTimeout(_carregarLedgerDasSaidas, 0);
   const lista = listaFull.filter(s => {
-    if (busca   && !s.num.toLowerCase().includes(busca)) return false;
+    if (busca) {
+      const pd = _pedidoDaChave(s.num);
+      const achou = s.num.toLowerCase().includes(busca)
+        || (pd && ((String(pd.order_id||'').toLowerCase().includes(busca)) || (String(pd.sku||'').toLowerCase().includes(busca))));
+      if (!achou) return false;
+    }
     if (fCanal  && s.canal   !== fCanal)  return false;
     if (fMkt    && s.market  !== fMkt)    return false;
     if (fContaH && s.conta   !== fContaH) return false;
@@ -5257,12 +5362,17 @@ function renderSaidas(){
       const func = s.funcionario||'—';
       const av   = func!=='—' ? func.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase() : '?';
       const cor  = funcCorCss(FUNC_INFO[func]?.empresa||'');
-      const pedido = (window._magis5SaidasIndex||{})[s.num];
+      const pedidoFila = (window._magis5SaidasIndex||{})[s.num];
+      const pedido = pedidoFila || window._ledgerPorChave[s.num];
       const badgeManual = s.origem === 'manual'
         ? ' <span class="badge" style="background:rgba(210,153,34,.15);color:var(--orange);font-size:9px" title="Registrado manualmente pelo Painel, sem bipagem física">✋ manual</span>'
         : '';
+      const linkML = (pedido && pedido.marketplace === 'ML' && pedido.order_id)
+        ? ` <span title="Abrir a venda no Mercado Livre" style="cursor:pointer;font-size:9px;font-weight:800;color:#2d6cdf;border:1px solid rgba(45,108,223,.4);border-radius:4px;padding:0 4px" onclick="event.stopPropagation();abrirVendaML('${pedido.order_id}')">ML↗</span>` : '';
+      const linkM5 = (pedido && pedido.buyer_id)
+        ? ` <span title="Abrir no Magis5" style="cursor:pointer;font-size:9px;font-weight:800;color:var(--muted2);border:1px solid var(--border2);border-radius:4px;padding:0 4px" onclick="event.stopPropagation();abrirPedidoMagis5('${pedido.buyer_id}')">M5↗</span>` : '';
       const produtoCell = pedido
-        ? `<span style="font-size:11px;cursor:pointer;color:var(--text)" title="${pedido.produto||''} · R$ ${(parseFloat(pedido.valor)||0).toFixed(2)}" onclick="abrirDetalheVendaBipada('${s.num}')">${pedido.sku||'—'}</span>`
+        ? `<span style="font-size:11px;cursor:pointer;color:var(--text)" title="Pedido ${pedido.order_id||''} · ${pedido.produto||''} · R$ ${(parseFloat(pedido.valor)||0).toFixed(2)}" onclick="${pedidoFila ? `abrirDetalheVendaBipada('${s.num}')` : (pedido.buyer_id ? `abrirPedidoMagis5('${pedido.buyer_id}')` : '')}">${pedido.sku||'—'}</span>${linkML}${linkM5}`
         : (window._magis5SaidasSincronizado
             ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px;cursor:pointer" title="Não achado nas pendências atuais — clique pra copiar a chave e consultar no Magis5" onclick="consultarChaveNoMagis5('${s.num}')">🔍 consultar</span>`
             : `<span style="font-size:10px;color:var(--muted)">—</span>`);
@@ -5580,7 +5690,8 @@ function renderListaPendentes(){
       <span style="font-family:'DM Mono',monospace;color:var(--muted2)">${p.order_id||''}</span>
       <span style="font-weight:600">${p.sku||'—'}</span>
       <span style="color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${p.cliente||''}</span>
-      <span style="margin-left:auto;color:var(--muted);font-size:9px">↗</span>
+      <span style="margin-left:auto;color:var(--muted);font-size:9px" title="Magis5">M5↗</span>
+      ${p.marketplace==='ML' ? `<span title="Abrir a venda no Mercado Livre" style="cursor:pointer;font-size:9px;font-weight:800;color:#2d6cdf;border:1px solid rgba(45,108,223,.4);border-radius:4px;padding:0 4px" onclick="event.stopPropagation();abrirVendaML('${p.order_id}')">ML↗</span>` : ''}
       ${(_est!=='imprimir' && _est!=='cancelado') ? `<button class="btn btn-ghost btn-sm" style="font-size:9px;padding:2px 7px" title="Registrar manualmente (sem bipagem física)" onclick="event.stopPropagation();registrarManualDoPainel('${p.order_id}')">✋ manual</button>` : ''}
     </div>`;
   }).join('');
@@ -9205,10 +9316,7 @@ async function bibConfirmarImprimir(sku) {
   if(!reg?.zpl){showToast('❌ ZPL não encontrado');return;}
   const blocos=[...reg.zpl.matchAll(/\^XA[\s\S]*?\^XZ/gi)].map(m=>m[0]);
   if(!blocos.length){showToast('❌ ZPL inválido');return;}
-  const necessarios=Math.ceil(qtd/2);
-  const selecionados=[];
-  for(let p=0;p<necessarios;p++) selecionados.push(blocos[p%blocos.length]);
-  const zplFinal=zplCorrigirAlinhamento(selecionados.join('\n'));
+  const zplFinal=zplCorrigirAlinhamento(zplMontarLote(blocos, qtd));
   const impressora=await zplEnviarParaImpressora(zplFinal);
   if(!impressora) return;
   const novoEstoque=(reg.estoque||0)+qtd;
@@ -9872,6 +9980,22 @@ function zplCorrigirAlinhamento(zpl) {
   });
 }
 
+// Remove a coluna direita de um bloco (fileira de 2) → sai só 1 etiqueta, a da esquerda.
+function zplSoColunaEsquerda(bloco) {
+  const offset = zplDetectarOffsetColunasDots(bloco);
+  if (offset == null || offset <= 0) return bloco; // layout desconhecido: não arrisca
+  const limiar = offset * 0.6;
+  return bloco.replace(/\^FO(\d+),\d+[\s\S]*?\^FS/g, (seg, x) => parseInt(x,10) >= limiar ? '' : seg);
+}
+// Monta o lote com a quantidade EXATA: fileiras completas + 1 etiqueta sozinha se for ímpar.
+function zplMontarLote(blocos, qtd) {
+  const sel = [];
+  const cheios = Math.floor(qtd / 2);
+  for (let p = 0; p < cheios; p++) sel.push(blocos[p % blocos.length]);
+  if (qtd % 2 === 1) sel.push(zplSoColunaEsquerda(blocos[cheios % blocos.length]));
+  return sel.join('\n');
+}
+
 function etqCfgDots(mm) {
   return Math.round((mm / 25.4) * window._etqCfg.dpi);
 }
@@ -9905,14 +10029,8 @@ function zplFatiar(zpl, qtdEtiquetas) {
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) return zpl;
 
-  // 1 bloco = 2 etiquetas físicas lado a lado
-  // Para N etiquetas → ceil(N/2) blocos
-  var blocosNecessarios = Math.ceil(qtdEtiquetas / 2);
-  var selecionados = [];
-  for (var p = 0; p < blocosNecessarios; p++) {
-    selecionados.push(blocos[p % blocos.length]);
-  }
-  return selecionados.join('\n');
+  // 1 bloco = 2 etiquetas; quantidade ímpar → última fileira só com a esquerda
+  return zplMontarLote(blocos, qtdEtiquetas);
 }
 
 /* ── ZPL Renderer OFFLINE — canvas HTML5 ─────────────
@@ -10052,13 +10170,8 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
   if (!blocos.length) { showToast('❌ ZPL inválido'); return; }
 
-  // 1 bloco = 2 etiquetas físicas lado a lado (fileira)
-  const blocosNecessarios = Math.ceil(qtd / 2);
-  const selecionados = [];
-  for (let p = 0; p < blocosNecessarios; p++) {
-    selecionados.push(blocos[p % blocos.length]);
-  }
-  const zplFinal = zplCorrigirAlinhamento(selecionados.join('\n'));
+  // Fileiras de 2 + 1 etiqueta sozinha se a quantidade for ímpar
+  const zplFinal = zplCorrigirAlinhamento(zplMontarLote(blocos, qtd));
 
   const impressora = await zplEnviarParaImpressora(zplFinal);
   if (!impressora) return;
