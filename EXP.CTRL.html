@@ -9999,20 +9999,10 @@ function bibRenderLista() {
       <td style="white-space:nowrap;text-align:right">
         <button class="action-btn" onclick="bibPreview('${r.sku}')" title="Preview">👁</button>
         <button class="action-btn" onclick="bibAbrirImprimir('${r.sku}')" title="Imprimir adiantado (soma ao estoque)">🖨</button>
-        <button class="action-btn" onclick="bibAbrirPdf('${r.sku}')" title="PDF da etiqueta (igual ao do Mercado Livre)" style="font-size:10px;font-weight:700;letter-spacing:.3px">PDF</button>
+        <button class="action-btn" onclick="bibGerarPdf('${r.sku}')" title="Baixar o PDF da etiqueta, igual ao do Mercado Livre, para mandar de exemplo" style="font-size:10px;font-weight:700;letter-spacing:.3px">PDF</button>
         <button class="btn-danger-sm" onclick="bibExcluirItem('${r.sku}')" title="Excluir">✕</button>
       </td>
     </tr>
-    <tr id="bibPdfRow_${r.sku}" style="display:none"><td colspan="5">
-      <div style="display:flex;gap:8px;align-items:center;padding:9px;background:var(--surface2);border-radius:7px;flex-wrap:wrap">
-        <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">PDF A4 · quantas etiquetas:</span>
-        <input type="number" id="bibPdfQtd_${r.sku}" value="1" min="1" max="2000" style="width:80px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:5px 8px;text-align:center" onkeydown="if(event.key==='Enter')bibGerarPdf('${r.sku}')">
-        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;margin:0;width:auto"><input type="checkbox" id="bibPdfEstoque_${r.sku}" style="width:auto;height:auto;margin:0"> somar ao estoque pré-impresso</label>
-        <button onclick="bibGerarPdf('${r.sku}')" style="padding:6px 14px;border-radius:7px;border:none;background:var(--accent);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">📄 Gerar e imprimir</button>
-        <button onclick="document.getElementById('bibPdfRow_${r.sku}').style.display='none'" class="etq-btn-reset">✕</button>
-        <span id="bibPdfMsg_${r.sku}" style="flex-basis:100%;font-size:11px;color:var(--muted)"></span>
-      </div>
-    </td></tr>
     <tr id="bibLoteRow_${r.sku}" style="display:none"><td colspan="5">
       <div style="display:flex;gap:8px;align-items:center;padding:9px;background:var(--surface2);border-radius:7px;flex-wrap:wrap">
         <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Imprimir quantas agora (vai pro estoque pré-impresso):</span>
@@ -10038,39 +10028,21 @@ function bibDescricaoHtml(r) {
     + (inf.codigo ? `<div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:var(--muted);margin-top:2px">código ${esc(inf.codigo)}${avisos.length?' · <span style="color:var(--orange)">'+avisos.join(' · ')+'</span>':''}</div>` : '');
 }
 
-function bibAbrirPdf(sku) {
-  document.querySelectorAll('[id^="bibLoteRow_"],[id^="bibPdfRow_"]').forEach(r=>r.style.display='none');
-  const row=document.getElementById(`bibPdfRow_${sku}`);
-  if(row){ row.style.display=''; document.getElementById(`bibPdfQtd_${sku}`)?.focus(); }
-}
-
-async function bibGerarPdf(sku) {
+// PDF de exemplo (para mandar a fornecedor, gráfica etc.): uma etiqueta, no
+// mesmo formato do PDF "Etiquetas de produto" do ML. Só baixa o arquivo —
+// não é impressão para uso interno, então não mexe no estoque pré-impresso.
+function bibGerarPdf(sku) {
   const reg=window._zplBibIndex?.get(sku);
-  const msg=document.getElementById(`bibPdfMsg_${sku}`);
-  const qtd=parseInt(document.getElementById(`bibPdfQtd_${sku}`)?.value)||0;
-  if(qtd<=0||qtd>2000){ if(msg){msg.style.color='var(--red)';msg.textContent='Quantidade entre 1 e 2.000.';} return; }
   if(!reg?.zpl){ showToast('❌ ZPL não encontrado'); return; }
   const info=zplInfoDoRegistro(reg);
-  let doc;
-  try { doc=etqPdfMontar(info, qtd); }
-  catch(e){ if(msg){msg.style.color='var(--red)';msg.textContent=e.message;} return; }
-  const nome=`Etiquetas-de-produto-${info.codigo}.pdf`;
-  doc.autoPrint();
-  const url=doc.output('bloburl');
-  const w=window.open(url,'_blank');
-  if(!w) doc.save(nome);                           // pop-up bloqueado: baixa o arquivo
-  if(document.getElementById(`bibPdfEstoque_${sku}`)?.checked){
-    const novo=(reg.estoque||0)+qtd;
-    const { error } = await _sb.from('zpl_biblioteca').update({estoque:novo}).eq('sku',reg.sku);
-    if(error){ showToast('⚠️ PDF gerado, mas não consegui somar ao estoque'); }
-    else { reg.estoque=novo; bibRenderLista(); showToast(`📄 PDF com ${qtd} etiqueta(s) · somadas ao estoque de ${zplSkuTexto(reg.sku)}`); return; }
-  }
-  const folhas=Math.ceil(qtd/(ETQ_PDF.cols*ETQ_PDF.lins));
-  if(msg){msg.style.color='var(--muted)';msg.textContent=`PDF gerado: ${qtd} etiqueta(s) em ${folhas} folha(s) A4${w?'':' — o navegador bloqueou a janela, então o arquivo foi baixado'}.`;}
+  try {
+    etqPdfMontar(info, 1).save(`Etiquetas-de-produto-${info.codigo}.pdf`);
+    showToast(`📄 PDF de exemplo de ${zplSkuTexto(reg.sku)} baixado`);
+  } catch(e){ showToast('❌ '+e.message); }
 }
 
 function bibAbrirImprimir(sku) {
-  document.querySelectorAll('[id^="bibLoteRow_"],[id^="bibPdfRow_"]').forEach(r=>r.style.display='none');
+  document.querySelectorAll('[id^="bibLoteRow_"]').forEach(r=>r.style.display='none');
   const row=document.getElementById(`bibLoteRow_${sku}`);
   if(row) row.style.display='';
 }
