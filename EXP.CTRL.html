@@ -977,7 +977,8 @@ select:focus{border-color:var(--accent)}
       <div class="logo-tag">Controle de Expedição</div>
     </div>
     <div class="nav-section">Operação</div>
-    <div class="nav-item active" onclick="navTo(this,'dashboard')"><span class="nav-icon">▣</span>Dashboard</div>
+    <div class="nav-item active" onclick="navTo(this,'hoje')"><span class="nav-icon">☀</span>Hoje</div>
+    <div class="nav-item" onclick="navTo(this,'dashboard')"><span class="nav-icon">▣</span>Dashboard</div>
     <div class="nav-item" onclick="navTo(this,'fulls')"><span class="nav-icon">◈</span>Fulls</div>
     <div class="nav-item" onclick="navTo(this,'volumetria')"><span class="nav-icon">◻</span>Carga</div>
     
@@ -1022,7 +1023,34 @@ select:focus{border-color:var(--accent)}
       <div class="content">
 
         <!-- ══ DASHBOARD ══ -->
-        <div class="view active" id="view-dashboard">
+        <!-- ══ HOJE — tela inicial ══ -->
+        <div class="view active" id="view-hoje">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+            <div>
+              <div id="hojeData" style="font-size:20px;font-weight:900;letter-spacing:-.5px">Hoje</div>
+              <div id="hojeSync" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)"></div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-ghost btn-sm" onclick="renderHoje(true)">🔄 Atualizar</button>
+              <button class="btn btn-primary btn-sm" onclick="abrirModoTV()">📺 Modo TV</button>
+            </div>
+          </div>
+          <div id="hojeCancelados"></div>
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:4px 0 8px">📤 Expedição</div>
+          <div id="hojeExpedicao" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:18px"></div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">◈ Fulls de hoje</div>
+              <div id="hojeFulls"></div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px">
+              <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px">🚚 Coletas de hoje</div>
+              <div id="hojeColetas"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="view" id="view-dashboard">
 
           <!-- ALERTAS -->
           <div id="dashAlertas"></div>
@@ -1429,6 +1457,7 @@ select:focus{border-color:var(--accent)}
 
 <div id="fullsPane-envios" style="display:none">
 
+          <div id="enviadosGargalo"></div>
           <!-- toolbar -->
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
@@ -1560,7 +1589,7 @@ select:focus{border-color:var(--accent)}
           </div>
           <div class="prod-section">
             <div class="prod-header">
-              <div style="font-size:13px;font-weight:700">Ranking de produtividade</div>
+              <div><div style="font-size:13px;font-weight:700">Ranking de produtividade</div><div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px">ordenado por trabalho-padrão (caixas × tempo do SKU) · ⚙ eficiência = padrão ÷ tempo real</div></div>
               <div style="display:flex;gap:8px;align-items:center">
                 <button class="btn btn-ghost btn-sm" onclick="abrirGerenciarFuncionarios()">👥 Funcionários</button>
               </div>
@@ -1639,12 +1668,15 @@ select:focus{border-color:var(--accent)}
             <div id="expStatusNums" style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">Abra a aba para carregar a fila do Magis5...</div>
             <div id="expPendList" style="display:none;margin-top:10px;max-height:340px;overflow-y:auto;border-top:1px solid var(--border);padding-top:10px"></div>
           </div>
-          <div class="cards">
+          <details id="saidaResumoDia" style="margin-bottom:14px">
+            <summary style="cursor:pointer;font-size:11px;font-weight:700;color:var(--muted2);padding:4px 2px;user-select:none">📊 Resumo do dia — bipados por canal, transportadora e marketplace</summary>
+          <div class="cards" style="margin-top:10px">
             <div class="card c-accent"><div class="card-label">Total do dia</div><div class="card-value" id="sTotal">8</div><div class="card-sub" id="sTotalSub">LogBox</div></div>
             <div class="card c-green"><div class="card-label">Flex</div><div class="card-value" id="sFlex">5</div><div class="card-sub" id="sFlexTransp">pacotes</div></div>
             <div class="card c-blue"><div class="card-label">Coleta</div><div class="card-value" id="sColeta">3</div><div class="card-sub">pacotes</div></div>
             <div class="card"><div class="card-label">Marketplaces</div><div class="card-value" id="sMkt" style="font-size:13px;margin-top:4px">ML:5 AMZ:2 SHP:1</div><div class="card-sub">distribuição</div></div>
           </div>
+          </details>
           <!-- Painel por conta -->
           
           <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:18px">
@@ -1662,9 +1694,9 @@ select:focus{border-color:var(--accent)}
             </div>
           </div>
           <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:14px">
-            <button class="saida-tab active" onclick="switchSaidaTab('hoje',this)">Hoje</button>
-            <button class="saida-tab" onclick="switchSaidaTab('historico',this)">Histórico semanal</button>
-            <button class="saida-tab" onclick="switchSaidaTab('painel',this)">📊 Painel</button>
+            <button class="saida-tab active" onclick="switchSaidaTab('hoje',this)">📋 Registros do dia</button>
+            <button class="saida-tab" onclick="switchSaidaTab('historico',this)">📅 Histórico</button>
+            <button class="saida-tab" onclick="switchSaidaTab('painel',this)">🔎 Pendências e auditoria</button>
           </div>
           <div id="saidaTab-hoje">
             <div class="full-table-wrap">
@@ -1694,7 +1726,7 @@ select:focus{border-color:var(--accent)}
 
                   <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="sHojeCount">8 pacotes</span>
                   <button class="btn btn-ghost btn-sm" id="btnImprimirHoje" style="color:var(--accent);border-color:rgba(255,255,255,.12)">🖨 Imprimir</button>
-                  <button class="btn-danger-sm" onclick="limparSaidaHoje()">🗑 Limpar</button>
+                  <!-- botão "Limpar" removido: limpava só a tela, os registros voltavam do banco -->
                 </div>
               </div>
               <table><thead><tr><th>#</th><th>Nº da Venda</th><th>Produto</th><th>Canal</th><th>Marketplace</th><th>Funcionário</th><th>Galpão</th><th>Hora</th><th></th></tr></thead>
@@ -1821,11 +1853,15 @@ select:focus{border-color:var(--accent)}
                   <div style="font-size:10px;color:var(--muted);margin-top:3px">Pedidos que o Magis5 tirou da fila mas que nunca passaram pela conferência do OUTBOX</div>
                   <div id="painelAuditExtra" style="font-size:10px;color:var(--muted2);margin-top:3px"></div>
                 </div>
-                <button class="btn btn-ghost btn-sm" id="painelAuditBtnLote" onclick="resolverAuditoriaLote()" style="font-size:10px;white-space:nowrap">✓ Dar baixa em todos</button>
+                <select id="audPeriodo" onchange="window._audPeriodo=this.value;renderPainelExpedicao()" class="form-sel" style="width:auto;font-size:11px;padding:4px 8px" title="Quando o pedido saiu da fila do Magis5">
+                  <option value="7">Últimos 7 dias</option><option value="30">Últimos 30 dias</option><option value="todos">Todo o histórico</option>
+                </select>
+                <button class="btn btn-ghost btn-sm" id="painelAuditBtnLote" onclick="resolverAuditoriaLote()" style="font-size:10px;white-space:nowrap">✓ Dar baixa na lista</button>
               </div>
+              <div id="audChips" style="display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px 0"></div>
               <div style="overflow-x:auto"><table>
-                <thead><tr><th>Pedido</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Valor</th><th>Data</th><th></th></tr></thead>
-                <tbody id="painelAuditBody"><tr><td colspan="7" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
+                <thead><tr><th>Pedido</th><th>Motivo provável</th><th>SKU</th><th>Cliente</th><th>Marketplace</th><th>Valor</th><th>Saiu da fila</th><th></th></tr></thead>
+                <tbody id="painelAuditBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
               </table></div>
             </div>
           </div>
@@ -2178,6 +2214,7 @@ select:focus{border-color:var(--accent)}
         <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="ef-criadoEm"></div>
         <div class="form-group full"><label>Observações</label><input class="form-sel" type="text" id="ef-obs" placeholder="Observações"></div>
       </div>
+      <div id="efLinhaTempo" style="margin-top:12px"></div>
     </div>
     <div id="editTab-itens" class="edit-tab-panel">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
@@ -2612,7 +2649,7 @@ const db = {
         agendado: f.agendado, criadoEm: f.criado_em,
         responsavel: f.responsavel, status: f.status,
         obs: f.obs, vol: f.vol||[], itens: f.itens||[],
-        dateKey: f.date_key||''
+        dateKey: f.date_key||'', statusHist: f.status_hist||[]
       }]));
 
       CAL_FULLS = (calFulls||[]).map(c => ({
@@ -2633,7 +2670,7 @@ const db = {
         agendado: f.agendado, criadoEm: f.criado_em,
         responsavel: f.responsavel, enviadoEm: f.enviado_em,
         totalItens: f.total_itens, totalCaixas: f.total_caixas,
-        itens: f.itens||[], vol: f.vol||[]
+        itens: f.itens||[], vol: f.vol||[], statusHist: f.status_hist||[]
       }));
 
       DEVS = (devs||[]).map(d => ({
@@ -2690,6 +2727,7 @@ const db = {
       PROD_DATA = (prodData||[]).map(p => ({
         _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
         produtos: p.produtos||0, tempo_min: parseFloat(p.tempo_min)||0,
+        tempo_real_min: p.tempo_real_min != null ? parseFloat(p.tempo_real_min) : null,
         full_id: p.full_id||'', sku: p.sku||'',
         empresa: p.empresa||'', data: p.data||'',
         status: p.status||'Concluído'
@@ -2702,6 +2740,13 @@ const db = {
       INS_MESES = _insMeses || [];
 
       showToast('✅ Dados carregados');
+      try { filaBipesRestaurar(); setTimeout(filaBipesProcessar, 2000); } catch(e) {}
+      if (document.getElementById('view-hoje')?.classList.contains('active')) {
+        document.getElementById('pageTitle').textContent = 'Hoje';
+        renderHoje();
+        clearInterval(window._hojeTimer);
+        window._hojeTimer = setInterval(()=>{ if (document.getElementById('view-hoje')?.classList.contains('active')) renderHoje(true); }, 60000);
+      }
     } catch(err) {
       console.error('[OUTBOX] Erro inesperado:', err);
       showToast('⚠️ Erro ao carregar dados');
@@ -2781,16 +2826,29 @@ const db = {
 
   // Registra saída bipeada
   async insertSaida(s) {
+    if (!s.data) s.data = new Date().toLocaleDateString('pt-BR'); // data do bipe, não do reenvio
     const row = {
       numero: s.num, canal: s.canal, market: s.market,
       funcionario: s.funcionario||'—', hora: s.hora,
-      data: new Date().toLocaleDateString('pt-BR'), galpao: s.galpao,
+      data: s.data, galpao: s.galpao,
       conta: s.conta||'', origem: s.origem||'bipagem',
       transportadora: s.canal==='Flex' ? (s.transportadora||'') : ''
     };
-    const { data, error } = await _sb.from('saidas_hoje').insert(row).select().single();
-    if (error) { console.error('[Supabase] insertSaida:', error); return null; }
-    return data?.id;
+    s._erro = null;
+    try {
+      const { data, error } = await _sb.from('saidas_hoje').insert(row).select().single();
+      if (error) {
+        console.error('[Supabase] insertSaida:', error);
+        // 23505 = já existe (bipado neste ou em outro computador); o resto trata como falha de envio
+        s._erro = (error.code === '23505' || /duplicate key|saidas_hoje_unico/i.test(error.message||'')) ? 'duplicado' : 'rede';
+        return null;
+      }
+      return data?.id;
+    } catch (e) {
+      console.error('[Supabase] insertSaida (exceção):', e);
+      s._erro = 'rede';
+      return null;
+    }
   },
 
   async deleteSaida(id) {
@@ -2881,6 +2939,7 @@ const db = {
       semana: '',
       funcionario: p.funcionario||'', caixas: p.caixas||0,
       produtos: p.produtos||0, tempo_min: p.tempo_min||0,
+      tempo_real_min: p.tempo_real_min ?? null,
       full_id: p.full_id||'', sku: p.sku||'',
       empresa: p.empresa||'', data: p.data||'',
       status: p.status||'Concluído'
@@ -3122,12 +3181,17 @@ let calOffset = 0;
 const BASE_MON = (()=>{ const d=new Date(); const day=d.getDay(); const diff=day===0?-6:1-day; d.setDate(d.getDate()+diff); d.setHours(0,0,0,0); return d; })();
 const DIAS = ['Segunda','Terça','Quarta','Quinta','Sexta'];
 const DIAS_SHORT = ['Seg','Ter','Qua','Qui','Sex'];
-const PAGE_TITLES = {dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs',insumos:'Insumos',etiquetas:'Biblioteca de Etiquetas','painel-kpi':'Painéis KPI'};
+const PAGE_TITLES = {hoje:'Hoje',dashboard:'Dashboard',fulls:'Fulls',volumetria:'Carga',produtividade:'Produtividade',saidas:'Saídas',devolucoes:'Devoluções',enviados:'Arquivo',catalogo:'Catálogo de SKUs',insumos:'Insumos',etiquetas:'Biblioteca de Etiquetas','painel-kpi':'Painéis KPI'};
 
 // ══════════════════════════════════════════════════════
 // NAVEGAÇÃO
 // ══════════════════════════════════════════════════════
 function showPage(name) {
+  clearInterval(window._hojeTimer);
+  if (name==='hoje') {
+    setTimeout(()=>renderHoje(), 0);
+    window._hojeTimer = setInterval(()=>{ if (document.getElementById('view-hoje')?.classList.contains('active')) renderHoje(true); }, 60000);
+  }
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   const el = document.getElementById('view-'+name);
   if (el) el.classList.add('active');
@@ -4471,7 +4535,62 @@ function getWeekNum(d){
   const jan1=new Date(d.getFullYear(),0,1);
   return Math.ceil(((d-jan1)/86400000+jan1.getDay()+1)/7);
 }
+// Dados auxiliares do semáforo (conferência e etiquetas), carregados em lote e com cache curto
+window._semaforo = window._semaforo || { conf: {}, carregadoEm: 0, carregando: false };
+async function _semaforoCarregar(){
+  const S = window._semaforo;
+  if (S.carregando || Date.now() - S.carregadoEm < 60000) return;
+  S.carregando = true;
+  try {
+    const [{ data: conf }, { data: etqs }] = await Promise.all([
+      _sb.from('full_conferencia').select('full_id,nf_bipada,aut_bipada,status'),
+      _sb.from('full_etiquetas').select('full_id,dados'),
+    ]);
+    S.conf = {};
+    (conf||[]).forEach(c => { S.conf[c.full_id] = c; });
+    (etqs||[]).forEach(e => { if (!window._etqData[e.full_id]) { try { window._etqData[e.full_id] = JSON.parse(e.dados||'[]'); } catch(_) {} } });
+    S.carregadoEm = Date.now();
+    renderCal();
+  } catch(e) { console.warn('[semaforo]', e?.message||e); }
+  finally { S.carregando = false; }
+}
+function fullSemaforo(id){
+  const f = FULLS_DATA[id] || {};
+  const itens = f.itens || [];
+  const done = itens.filter(i => i.status === 'done').length;
+  const etq = (window._etqData||{})[id] || [];
+  const etqTot = etq.reduce((a,e) => a + (e.total||0), 0);
+  const etqOk  = etq.reduce((a,e) => a + Math.min(e.impressas||0, e.total||0), 0);
+  const c = window._semaforo.conf[id];
+  const confOk = !!(c && c.nf_bipada && c.aut_bipada);
+  const confParcial = !!(c && (c.nf_bipada || c.aut_bipada));
+  const pv = fullPesoVolume(itens);
+  const itensOk = itens.length > 0 && done === itens.length;
+  const etqStatus = !etqTot ? null : (etqOk >= etqTot);
+  const pronto = itensOk && (etqStatus !== false) && confOk;
+  return { done, total: itens.length, itensOk, etqTot, etqOk, etqStatus, confOk, confParcial, kg: pv.kg, pronto };
+}
+function _semaforoHtml(id, dateKey){
+  const s = fullSemaforo(id);
+  const hoje = dateToStr(new Date());
+  const [d,m,a] = (dateKey||'').split('/');
+  const vencido = dateKey && new Date(+a, +m-1, +d) <= new Date(new Date().setHours(0,0,0,0));
+  const cor = ok => ok === true ? 'var(--green)' : ok === false ? 'var(--orange)' : 'var(--muted)';
+  const itensTxt = s.total ? `${s.done}/${s.total}` : '—';
+  const etqTxt = s.etqTot ? `${Math.round(s.etqOk*100/s.etqTot)}%` : '—';
+  const confTxt = s.confOk ? '✓' : s.confParcial ? '½' : '—';
+  const alerta = vencido && !s.pronto;
+  return `<div style="display:flex;gap:5px;flex-wrap:wrap;font-size:9px;font-family:'DM Mono',monospace;margin-top:3px;${alerta?'padding:2px 3px;border-radius:3px;background:rgba(248,81,73,.12)':''}"
+      title="Itens concluídos · etiquetas prontas · conferência (NF + autorização) · peso${alerta?' — ATENÇÃO: data chegou e o Full não está pronto':''}">
+    <span style="color:${cor(s.total ? s.itensOk : null)}">📦${itensTxt}</span>
+    <span style="color:${cor(s.etqStatus)}">🏷${etqTxt}</span>
+    <span style="color:${cor(s.confOk ? true : s.confParcial ? false : null)}">✔${confTxt}</span>
+    ${s.kg ? `<span style="color:var(--muted2)">⚖${_fmtKg(s.kg)}</span>` : ''}
+  </div>`;
+}
+
 function renderCal(){
+  _semaforoCarregar();
   console.log('[OUTBOX] renderCal() chamado. CAL_FULLS:', CAL_FULLS?.length, 'FULLS_DATA:', Object.keys(FULLS_DATA||{}).length);
   const filtroMkt  = document.getElementById('calFiltroMkt')?.value||'';
   const filtroTipo = document.getElementById('calFiltroTipo')?.value||'';
@@ -4520,6 +4639,7 @@ function renderCal(){
           </div>
           <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:2px">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
           <div class="cal-full-dest">${f.destino}</div>
+          ${_semaforoHtml(f.id, f.dateKey || dateKey)}
         </div>`;
       }).join('') || '<div class="cal-empty">—</div>';
 
@@ -4619,6 +4739,7 @@ function openEditFull(id){
   else { document.getElementById('ef-criadoEm').value=''; }
   switchEditTab('full',document.querySelector('.edit-tab'));
   renderEditItens(f.itens||[]);
+  renderLinhaTempoFull(f);
   openModal('modalEditFull');
 }
 function switchEditTab(tab,btn){
@@ -4641,6 +4762,67 @@ function checkConferenciaStatus(){
     dica.style.display='none';
   }
 }
+// ── Linha do tempo do Full: quanto tempo ficou em cada status ──
+function _fmtDur(min){
+  if (min == null || isNaN(min)) return '—';
+  if (min < 60) return Math.max(1, Math.round(min)) + 'min';
+  if (min < 1440) { const h = Math.floor(min/60), m = Math.round(min%60); return h + 'h' + (m ? ' ' + m + 'min' : ''); }
+  const d = Math.floor(min/1440), h = Math.round((min%1440)/60); return d + 'd' + (h ? ' ' + h + 'h' : '');
+}
+function _etapasDoHist(hist, fimAberto){
+  const h = (hist||[]).filter(x => x && x.em).sort((a,b) => new Date(a.em) - new Date(b.em));
+  return h.map((x, i) => {
+    const ini = new Date(x.em);
+    const fim = h[i+1] ? new Date(h[i+1].em) : (fimAberto ? new Date() : null);
+    return { status: x.status, inicio: ini, min: fim ? (fim - ini)/60000 : null, atual: !h[i+1], inicial: !!x.inicial };
+  });
+}
+function renderLinhaTempoFull(f){
+  const el = document.getElementById('efLinhaTempo'); if (!el) return;
+  const etapas = _etapasDoHist(f?.statusHist, true);
+  if (!etapas.length) { el.innerHTML = ''; return; }
+  const cores = { 'Pendente':'var(--muted)', 'Produzindo':'var(--orange)', 'Em conferência':'var(--purple)', 'Pronto':'var(--green)', 'Atrasado':'var(--red)', 'Enviado':'var(--accent)' };
+  const p2 = n => String(n).padStart(2,'0');
+  el.innerHTML = `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 12px">
+    <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">⏱ Linha do tempo</div>
+    ${etapas.map(e => `<div style="display:flex;align-items:center;gap:8px;font-size:11px;padding:3px 0">
+      <span style="width:8px;height:8px;border-radius:50%;background:${cores[e.status]||'var(--muted)'};flex-shrink:0"></span>
+      <span style="min-width:110px;font-weight:700">${e.status}</span>
+      <span style="font-family:'DM Mono',monospace;color:var(--muted);min-width:95px">${e.inicial ? 'desde antes de' : ''} ${p2(e.inicio.getDate())}/${p2(e.inicio.getMonth()+1)} ${p2(e.inicio.getHours())}:${p2(e.inicio.getMinutes())}</span>
+      <span style="font-family:'DM Mono',monospace;color:${e.atual?'var(--accent)':'var(--text)'}">${e.atual ? 'há ' : ''}${_fmtDur(e.min)}${e.inicial ? '+' : ''}</span>
+    </div>`).join('')}
+  </div>`;
+}
+// Relatório de gargalo: tempo médio em cada etapa nos Fulls já enviados
+function renderGargaloEtapas(){
+  const el = document.getElementById('enviadosGargalo'); if (!el) return;
+  const soma = {}, qtd = {};
+  let fullsComDados = 0;
+  (FULLS_ENVIADOS||[]).forEach(f => {
+    const etapas = _etapasDoHist(f.statusHist, false).filter(e => !e.inicial && e.min != null && e.status !== 'Enviado');
+    if (!etapas.length) return;
+    fullsComDados++;
+    etapas.forEach(e => { soma[e.status] = (soma[e.status]||0) + e.min; qtd[e.status] = (qtd[e.status]||0) + 1; });
+  });
+  if (!fullsComDados) {
+    el.innerHTML = `<div style="font-size:11px;color:var(--muted);padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:12px">⏱ <b>Tempo por etapa:</b> começa a ser medido a partir de agora. Os primeiros números aparecem quando os Fulls criados/atualizados daqui pra frente forem enviados.</div>`;
+    return;
+  }
+  const ordem = ['Pendente','Produzindo','Em conferência','Pronto','Atrasado'];
+  const medias = ordem.filter(k => qtd[k]).map(k => ({ k, min: soma[k]/qtd[k] }));
+  const maior = medias.reduce((a,b) => b.min > (a?.min||0) ? b : a, null);
+  el.innerHTML = `<div style="padding:10px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:12px">
+    <div style="font-size:11px;font-weight:700;margin-bottom:8px">⏱ Tempo médio por etapa <span style="font-weight:400;color:var(--muted)">(${fullsComDados} Full(s) com linha do tempo completa)</span></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${medias.map(m => `<div style="padding:6px 12px;border-radius:7px;background:var(--bg);border:1px solid ${m===maior?'var(--red)':'var(--border)'};text-align:center">
+        <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);text-transform:uppercase">${m.k}</div>
+        <div style="font-size:16px;font-weight:900;color:${m===maior?'var(--red)':'var(--text)'}">${_fmtDur(m.min)}</div>
+        ${m===maior ? '<div style="font-size:9px;color:var(--red)">gargalo</div>' : ''}
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
 function renderEditItens(itens){
   const lista=document.getElementById('editItensLista');
   lista.innerHTML=itens.map((item,i)=>`
@@ -4666,6 +4848,7 @@ function renderEditItens(itens){
 // Mostra o saldo pré-impresso do SKU e permite usá-lo: baixa na biblioteca e marca as
 // etiquetas deste Full como prontas (mesma lógica do "Usar do estoque" da seção Etiquetas).
 // Grava na hora — não depende do "Salvar alterações".
+function _unidadesItem(item){ return (parseInt(item.qtde)||0) * (parseInt(_skuDb(item.codigo)?.qtdecx)||1); }
 function _bibRegPorSku(sku){
   const idx = window._zplBibIndex; if (!idx || !sku) return null;
   if (idx.get(sku)) return { chave: sku, reg: idx.get(sku) };
@@ -4686,7 +4869,7 @@ async function itemRenderPreEtiquetado(itens){
     const saldo = achado.reg.estoque || 0;
     const etq = etqs.find(e => String(e.sku).toUpperCase() === String(achado.chave).toUpperCase());
     const prontas = etq ? (etq.impressas||0) : 0;
-    const total = etq ? (etq.total||0) : (parseInt(item.qtde)||0);
+    const total = etq ? (etq.total||0) : _unidadesItem(item);
     const faltam = Math.max(0, total - prontas);
     const podeUsar = Math.min(saldo, faltam);
     el.innerHTML =
@@ -4705,7 +4888,7 @@ async function itemUsarPreEtiquetado(i){
   const saldo = achado.reg.estoque || 0;
   const arr = etqGetData(fullId);
   let etq = arr.find(e => String(e.sku).toUpperCase() === String(achado.chave).toUpperCase());
-  const total = etq ? (etq.total||0) : (parseInt(item.qtde)||0);
+  const total = etq ? (etq.total||0) : _unidadesItem(item);
   if (!total) { showToast('⚠️ Informe a quantidade do item primeiro'); return; }
   const faltam = Math.max(0, total - (etq ? (etq.impressas||0) : 0));
   const max = Math.min(saldo, faltam);
@@ -4737,7 +4920,20 @@ async function updateItemStatus(i, novoStatus) {
   if (!f || !f.itens[i]) return;
   const item = f.itens[i];
   const statusAnterior = item.status;
+
+  // Concluir exige funcionário — sem dono, a produtividade se perde
+  if (novoStatus === 'done' && (!item.funcionario || item.funcionario === '—')) {
+    showToast('⚠️ Selecione o funcionário antes de marcar o item como Concluído');
+    renderEditItens(f.itens); // volta o select para o status anterior
+    const sel = document.querySelector(`#item-linha-${i} select`);
+    if (sel) { sel.style.borderColor = 'var(--red)'; sel.focus(); setTimeout(()=>{ sel.style.borderColor=''; }, 2500); }
+    return;
+  }
   item.status = novoStatus;
+  // Tempos reais do item (base da eficiência na Produtividade)
+  if (novoStatus === 'doing' && !item.iniciado_em) item.iniciado_em = new Date().toISOString();
+  if (novoStatus === 'done') item.concluido_em = new Date().toISOString();
+  if (novoStatus === 'pending') { delete item.iniciado_em; delete item.concluido_em; }
 
   // Registra produtividade automaticamente ao concluir
   if (novoStatus === 'done' && statusAnterior !== 'done') {
@@ -4746,12 +4942,18 @@ async function updateItemStatus(i, novoStatus) {
     if (func && func !== '—' && caixas > 0) {
       const fi = FUNC_INFO[func];
       const empresa = fi?.empresa || '';
-      const skuData = SKU_DB.find(s => s.sku === item.codigo);
-      const tempo_min = skuData ? parseFloat((skuData.tempo * caixas).toFixed(1)) : 0;
+      const skuData = _skuDb(item.codigo);
+      const tempo_min = skuData ? parseFloat(((parseFloat(skuData.tempo)||0) * caixas).toFixed(1)) : 0;
       const produtos = caixas * (skuData?.qtdecx || 1);
       const hoje = new Date().toLocaleDateString('pt-BR');
+      // Tempo real = de "Produzindo" até "Concluído". Acima de 12h não é tempo de trabalho → descarta.
+      let tempo_real_min = null;
+      if (item.iniciado_em) {
+        const d = (new Date(item.concluido_em) - new Date(item.iniciado_em)) / 60000;
+        if (d > 0 && d <= 720) tempo_real_min = Math.round(d);
+      }
       const reg = {
-        funcionario: func, caixas, produtos, tempo_min,
+        funcionario: func, caixas, produtos, tempo_min, tempo_real_min,
         full_id: editingFullId, sku: item.codigo || '',
         empresa, status: 'Concluído', data: hoje
       };
@@ -4774,12 +4976,40 @@ function skuAutoItem(inputEl,idx){
     showToast('📦 '+found.descricao+' · '+found.comp+'×'+found.larg+'×'+found.altu+'cm · '+found.vol+'L/cx');
   }
 }
+// Busca no catálogo sem diferenciar maiúsculas ("6cr100m" = "6CR100M")
+function _skuDb(codigo){
+  if (!codigo) return null;
+  const alvo = String(codigo).trim().toUpperCase();
+  return SKU_DB.find(s => String(s.sku||'').trim().toUpperCase() === alvo) || null;
+}
+// Peso (kg) e volume (m³) do envio a partir do catálogo: qtde = caixas; peso e medidas por caixa
+function fullPesoVolume(itens){
+  let kg = 0, m3 = 0, semCadastro = 0;
+  (itens||[]).forEach(it => {
+    const cx = parseInt(it.qtde)||0; if (!cx) return;
+    const sk = _skuDb(it.codigo);
+    if (!sk) { semCadastro++; return; }
+    kg += cx * (parseFloat(sk.peso)||0);
+    const c = parseFloat(sk.comp)||0, l = parseFloat(sk.larg)||0, a = parseFloat(sk.altu)||0;
+    if (c && l && a) m3 += cx * (c*l*a) / 1e6;
+    else if (parseFloat(sk.vol)) m3 += cx * parseFloat(sk.vol);
+  });
+  return { kg, m3, semCadastro };
+}
+function _fmtKg(kg){ return kg >= 1000 ? (kg/1000).toFixed(2).replace('.',',')+' t' : Math.round(kg).toLocaleString('pt-BR')+' kg'; }
+function _fmtM3(m3){ return m3.toFixed(2).replace('.',',')+' m³'; }
 function updateTempoEstimado(itens){
   let min=0;
-  itens.forEach(item=>{const s=SKU_DB.find(s=>s.sku===item.codigo);if(s&&item.qtde)min+=s.tempo*(parseInt(item.qtde)||0);});
-  const old=document.getElementById('editTempoEstimado');
-  if(old)old.innerHTML='';
-  if(min>0){const h=Math.floor(min/60),m=min%60;const el=document.getElementById('editTempoEstimado');if(el)el.innerHTML=`<div style="background:var(--surface2);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--muted);margin-top:8px">⏱ Tempo estimado: <strong style="color:var(--accent)">${h>0?h+'h ':''}${m>0?m+'min':''}</strong></div>`;}
+  itens.forEach(item=>{const s=_skuDb(item.codigo);if(s&&item.qtde)min+=(parseFloat(s.tempo)||0)*(parseInt(item.qtde)||0);});
+  const el=document.getElementById('editTempoEstimado');
+  if(!el) return;
+  const pv = fullPesoVolume(itens);
+  const partes = [];
+  if(min>0){const h=Math.floor(min/60),m=Math.round(min%60);partes.push(`⏱ Tempo estimado: <strong style="color:var(--accent)">${h>0?h+'h ':''}${m>0?m+'min':''}</strong>`);}
+  if(pv.kg>0) partes.push(`⚖️ Peso: <strong style="color:var(--text)">${_fmtKg(pv.kg)}</strong>`);
+  if(pv.m3>0) partes.push(`📐 Volume: <strong style="color:var(--text)">${_fmtM3(pv.m3)}</strong>`);
+  if(pv.semCadastro) partes.push(`<span style="color:var(--orange)">${pv.semCadastro} item(ns) sem cadastro no catálogo</span>`);
+  el.innerHTML = partes.length ? `<div style="background:var(--surface2);border-radius:7px;padding:9px 12px;font-size:12px;color:var(--muted);margin-top:8px;display:flex;gap:16px;flex-wrap:wrap">${partes.join('')}</div>` : '';
 }
 async function salvarEditFull(){
   if(!editingFullId)return;
@@ -4886,6 +5116,7 @@ function toggleRelatorio(i){
 // ══════════════════════════════════════════════════════
 
 function renderEnviados() {
+  try { renderGargaloEtapas(); } catch(e) {}
   const busca = (document.getElementById('enviadosBusca')?.value||'').toLowerCase();
   const empresa = document.getElementById('enviadosFiltroEmpresa')?.value||'';
   const destino = document.getElementById('enviadosFiltroDestino')?.value||'';
@@ -5248,7 +5479,15 @@ async function registrarSaida(){
   const saida={num,canal,market,galpao,hora,funcionario,conta,origem:'bipagem',transportadora};
   input.value='';input.focus();
   const newId = await db.insertSaida(saida);
-  if(newId) saida._id=newId;
+  if (newId) saida._id = newId;
+  else if (saida._erro === 'duplicado') {
+    if (typeof _somDuplicata === 'function') _somDuplicata();
+    showToast('⚠️ Já bipado hoje (possivelmente em outro computador) — não foi contado de novo');
+    carregarSaidasDoBanco();
+    return;
+  } else {
+    filaBipesAdicionar(saida); // sem conexão: guarda e reenvia sozinho
+  }
   SAIDAS_HOJE.push(saida);
   if (pedidoML) pedidoML.ja_bipado = true; // fila em tempo real responde na hora
   renderSaidas();
@@ -5376,7 +5615,8 @@ function renderSaidas(){
         : (window._magis5SaidasSincronizado
             ? `<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px;cursor:pointer" title="Não achado nas pendências atuais — clique pra copiar a chave e consultar no Magis5" onclick="consultarChaveNoMagis5('${s.num}')">🔍 consultar</span>`
             : `<span style="font-size:10px;color:var(--muted)">—</span>`);
-      const produtoCellFinal = produtoCell + badgeManual;
+      const badgePend = s._pendente ? ' <span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-size:9px" title="Ainda não chegou ao banco — será reenviado sozinho quando a conexão voltar">⏳ não enviado</span>' : '';
+      const produtoCellFinal = produtoCell + badgeManual + badgePend;
       return `
       <tr>
         <td style="font-family:'DM Mono',monospace;color:var(--muted);font-size:11px">${lista.length-i}</td>
@@ -5448,6 +5688,7 @@ async function removerSaida(idx){
   const s=SAIDAS_HOJE[idx];
   SAIDAS_HOJE.splice(idx,1);
   if(s?._id) await db.deleteSaida(s._id);
+  if(s?._uid) { _filaGravar(_filaLer().filter(x => x._uid !== s._uid)); filaBipesRenderAviso(); }
   renderSaidas();
 }
 function limparSaidaHoje(){if(!confirm('Limpar registros?'))return;const g=document.getElementById('saidaGalpao').value;SAIDAS_HOJE=SAIDAS_HOJE.filter(s=>s.galpao!==g);renderSaidas();showToast('🗑 Limpo');}
@@ -5518,6 +5759,130 @@ function copiarRelatorioTransp(){
   navigator.clipboard.writeText(csv).then(()=>showToast('📋 CSV copiado — cole no Excel/Sheets'))
     .catch(()=>showToast('❌ Não consegui copiar'));
 }
+
+// ══ FORMULÁRIO DO BIPE ENXUTO ══
+// Canal e marketplace vêm do Magis5/ML no bipe; só pedidos não reconhecidos precisam de ajuste.
+function _saidasReorganizarForm(){
+  const func  = document.getElementById('saidaFuncionario')?.closest('.form-group');
+  const transp = document.getElementById('saidaTranspWrap');
+  if (!func || !transp || document.getElementById('saidaAjusteManual')) return;
+  const grid = func.parentNode;
+  const galpaoSel = document.getElementById('saidaGalpao');
+  const galpao = galpaoSel?.closest('.form-group');
+  const canal = document.getElementById('saidaCanal')?.closest('.form-group');
+  const mkt   = document.getElementById('saidaMarket')?.closest('.form-group');
+  const conta = document.getElementById('saidaContaWrap');
+  // essenciais primeiro
+  grid.insertBefore(transp, grid.firstChild);
+  grid.insertBefore(func, grid.firstChild);
+  const lf = func.querySelector('label'); if (lf) lf.textContent = '👤 Funcionário (obrigatório)';
+  const lt = transp.querySelector('label'); if (lt) lt.textContent = '🏍 Transportadora (para Flex)';
+  if (galpao && galpaoSel && galpaoSel.options.length <= 1) galpao.style.display = 'none';
+  // ajuste manual recolhido
+  const det = document.createElement('details');
+  det.id = 'saidaAjusteManual';
+  det.style.cssText = 'margin:-6px 0 14px';
+  det.innerHTML = `<summary style="cursor:pointer;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;user-select:none">⚙ Ajuste manual de canal / marketplace — só se o pedido não for reconhecido (o sistema detecta sozinho)</summary>
+    <div id="saidaAjusteGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:8px;align-items:end"></div>`;
+  grid.parentNode.insertBefore(det, grid.nextSibling);
+  const g2 = det.querySelector('#saidaAjusteGrid');
+  [canal, mkt, conta].forEach(el => { if (el) g2.appendChild(el); });
+}
+document.addEventListener('DOMContentLoaded', () => setTimeout(_saidasReorganizarForm, 0));
+setTimeout(_saidasReorganizarForm, 1500);
+
+// ══ FILA DE BIPES OFFLINE ══
+// Bipe que não chegou ao banco (rede caiu) fica guardado neste computador e é reenviado
+// sozinho a cada 20s e quando a conexão volta. Nada se perde num F5.
+const _FILA_KEY = 'expctrl_fila_bipes';
+function _filaLer(){ try { return JSON.parse(localStorage.getItem(_FILA_KEY) || '[]'); } catch(e) { return []; } }
+function _filaGravar(arr){ try { localStorage.setItem(_FILA_KEY, JSON.stringify(arr)); } catch(e) {} }
+function filaBipesAdicionar(s){
+  s._pendente = true;
+  s._uid = s._uid || ('b' + Date.now() + Math.random().toString(36).slice(2,6));
+  const fila = _filaLer();
+  fila.push({ _uid: s._uid, num: s.num, canal: s.canal, market: s.market, galpao: s.galpao, hora: s.hora,
+              funcionario: s.funcionario, conta: s.conta, origem: s.origem, transportadora: s.transportadora, data: s.data });
+  _filaGravar(fila);
+  if (typeof _somDuplicata === 'function') _somDuplicata();
+  showToast('📶 Sem conexão com o banco — bipe guardado neste computador e será enviado sozinho');
+  filaBipesRenderAviso();
+}
+let _filaProcessando = false;
+async function filaBipesProcessar(){
+  if (_filaProcessando) return;
+  let fila = _filaLer();
+  if (!fila.length) { filaBipesRenderAviso(); return; }
+  _filaProcessando = true;
+  try {
+    for (const item of [...fila]) {
+      const s = { ...item };
+      const id = await db.insertSaida(s);
+      if (!id && s._erro === 'rede') break;               // ainda sem conexão: tenta depois
+      fila = fila.filter(x => x._uid !== item._uid);       // enviado ou duplicado: sai da fila
+      _filaGravar(fila);
+      const local = SAIDAS_HOJE.find(x => x._uid === item._uid);
+      if (local) { local._pendente = false; if (id) local._id = id; }
+    }
+  } finally { _filaProcessando = false; }
+  filaBipesRenderAviso();
+  renderSaidas();
+}
+function filaBipesRenderAviso(){
+  const n = _filaLer().length;
+  let el = document.getElementById('filaOfflineAviso');
+  if (!el) {
+    const ref = document.getElementById('expStatus');
+    if (!ref) return;
+    el = document.createElement('div'); el.id = 'filaOfflineAviso';
+    ref.parentNode.insertBefore(el, ref);
+  }
+  el.innerHTML = n ? `<div style="display:flex;align-items:center;gap:10px;background:rgba(248,81,73,.15);border:2px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:12px">
+      <span style="font-size:18px">📶</span>
+      <span style="font-size:13px;font-weight:800;color:var(--red)">${n} bipe(s) aguardando conexão — NÃO feche esta aba nem limpe o navegador</span>
+      <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="filaBipesProcessar()">Reenviar agora</button></div>` : '';
+}
+// Ao abrir: bipes ainda na fila voltam para a lista do dia (marcados como pendentes)
+function filaBipesRestaurar(){
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  _filaLer().forEach(item => {
+    if (item.data === hoje && !SAIDAS_HOJE.some(x => x._uid === item._uid || (x.num === item.num && x.galpao === item.galpao)))
+      SAIDAS_HOJE.push({ ...item, _pendente: true });
+  });
+}
+setInterval(filaBipesProcessar, 20000);
+window.addEventListener('online', () => setTimeout(filaBipesProcessar, 1500));
+
+// Recarrega os registros do dia direto do banco (depois de uma duplicata entre computadores)
+async function carregarSaidasDoBanco(){
+  try {
+    const hoje = new Date().toLocaleDateString('pt-BR');
+    const { data, error } = await _sb.from('saidas_hoje').select('*').order('hora');
+    if (error) throw error;
+    const pend = SAIDAS_HOJE.filter(x => x._pendente);
+    SAIDAS_HOJE = (data||[]).map(r => ({ _id: r.id, num: r.numero, canal: r.canal, market: r.market, funcionario: r.funcionario,
+      hora: r.hora, galpao: r.galpao, conta: r.conta||'', data: r.data, origem: r.origem||'bipagem', transportadora: r.transportadora||'' }));
+    pend.forEach(p => { if (!SAIDAS_HOJE.some(x => x.num === p.num && x.galpao === p.galpao)) SAIDAS_HOJE.push(p); });
+    renderSaidas();
+  } catch(e) { console.warn('[recarga saidas]', e?.message||e); }
+}
+
+// ══ AVISO DE VERSÃO DESATUALIZADA ══
+const APP_VERSAO = 36;
+async function checarVersaoApp(){
+  try {
+    const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
+    if (error || !data) return;
+    let el = document.getElementById('avisoVersao');
+    if (data.versao > APP_VERSAO) {
+      if (!el) { el = document.createElement('div'); el.id = 'avisoVersao'; document.body.prepend(el); }
+      el.innerHTML = `<div style="position:fixed;top:0;left:0;right:0;z-index:9998;background:#d29922;color:#111;font-weight:800;font-size:13px;padding:8px 16px;text-align:center">
+        ⚠️ Este computador está com uma versão antiga do Outbox (v${APP_VERSAO}). A versão atual é a v${data.versao} — atualize o arquivo para não perder recursos e registros.</div>`;
+    } else if (el) el.remove();
+  } catch(e) {}
+}
+setTimeout(checarVersaoApp, 4000);
+setInterval(checarVersaoApp, 10 * 60 * 1000);
 
 // ══ EXPEDIÇÃO EM TEMPO REAL — fila Magis5 × bipagem ══
 // Estados que o time enxerga:
@@ -5702,6 +6067,179 @@ async function atualizarStatusExpedicao(){
   await carregarLedger(true);
   renderSaidas();
   if (btn) { btn.disabled = false; btn.textContent = '🔄 Atualizar'; }
+}
+
+// ══ TELA HOJE ══
+function irParaSaidas(){
+  const item = [...document.querySelectorAll('.nav-item')].find(n => (n.getAttribute('onclick')||'').includes("'saidas'"));
+  if (item) navTo(item, 'saidas'); else showPage('saidas');
+}
+function _hojeFulls(){
+  const hoje = dateToStr(new Date());
+  const zero = new Date(new Date().setHours(0,0,0,0));
+  const doDia = [], atrasados = [];
+  (CAL_FULLS||[]).forEach(c => {
+    const f = FULLS_DATA[c.id]; if (!f) return;
+    const dk = c.dateKey || f.dateKey || '';
+    if (dk === hoje) { doDia.push(c); return; }
+    const [d,m,a] = dk.split('/');
+    if (dk && new Date(+a, +m-1, +d) < zero && f.status !== 'Pronto') atrasados.push(c);
+  });
+  return { doDia, atrasados };
+}
+function _hojeColetas(){
+  const st = _expPendentes();
+  const hoje = new Date(); const p2 = n => String(n).padStart(2,'0');
+  const hojeYmd = `${hoje.getFullYear()}-${p2(hoje.getMonth()+1)}-${p2(hoje.getDate())}`;
+  const ehFlex = p => { const lt=(p.logistic_type||'').toLowerCase(); return lt==='self_service'||lt==='flex'; };
+  const saiHoje = p => !p.ml_dia_despacho || String(p.ml_dia_despacho).slice(0,10) <= hojeYmd;
+  const pend = [...st.pendBipar, ...st.pendImprimir].filter(saiHoje);
+  const flexPend = pend.filter(ehFlex).length, colPend = pend.length - flexPend;
+  const saidas = (SAIDAS_HOJE||[]);
+  const porTransp = {};
+  saidas.filter(x => x.canal === 'Flex').forEach(x => { const t = x.transportadora || 's/ transp.'; porTransp[t] = (porTransp[t]||0) + 1; });
+  const coletaBip = saidas.filter(x => x.canal === 'Coleta').length;
+  return { flexPend, colPend, porTransp, coletaBip };
+}
+function _cardExp(titulo, num, sub, cor, onclick){
+  return `<div onclick="${onclick||''}" style="cursor:${onclick?'pointer':'default'};background:var(--surface);border:1px solid ${cor};border-radius:10px;padding:12px 14px;text-align:center">
+    <div style="font-size:10px;font-weight:800;letter-spacing:.5px;color:${cor}">${titulo}</div>
+    <div style="font-size:30px;font-weight:900;color:${cor};line-height:1.2">${num}</div>
+    <div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--muted)">${sub}</div></div>`;
+}
+async function renderHoje(forcar){
+  const el = document.getElementById('view-hoje'); if (!el) return;
+  const agora = new Date(); const p2 = n => String(n).padStart(2,'0');
+  const dias = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+  document.getElementById('hojeData').textContent = `${dias[agora.getDay()]}, ${p2(agora.getDate())}/${p2(agora.getMonth()+1)}`;
+  if (!window._ledgerCarregado || forcar) {
+    if (!window._hojeCarregando) {
+      window._hojeCarregando = true;
+      carregarLedger(!!forcar).then(()=>{ window._hojeCarregando = false; renderHoje(); }).catch(()=>{ window._hojeCarregando = false; });
+    }
+  }
+  try { _semaforoCarregar(); } catch(e) {}
+  const us = window._ledgerUltimoSync; const ds = us ? new Date(us.executado_em || us) : null;
+  document.getElementById('hojeSync').textContent = (ds && !isNaN(ds)) ? `Magis5 · sync ${p2(ds.getHours())}:${p2(ds.getMinutes())} · atualiza sozinho a cada 1 min` : 'carregando fila do Magis5...';
+
+  // Expedição
+  const ex = document.getElementById('hojeExpedicao');
+  const can = document.getElementById('hojeCancelados');
+  if (window._ledgerCarregado) {
+    const st = _expPendentes();
+    let est = 0; st.pendBipar.forEach(p => { try { if (calcPrazo(p).passou) est++; } catch(e){} });
+    const irSaidas = "irParaSaidas()";
+    ex.innerHTML =
+      _cardExp('🖨 FALTA IMPRIMIR', st.pendImprimir.length, 'ML: status real · demais: Magis5', 'var(--orange)', irSaidas) +
+      _cardExp('📦 FALTA BIPAR', st.pendBipar.length, est ? `⏰ ${est} com prazo estourado` : 'impressos, sem bipe', 'var(--red)', irSaidas) +
+      _cardExp('✅ CONCLUÍDO', st.feitos, `de ${st.trab.length} da fila de hoje`, 'var(--green)', irSaidas);
+    can.innerHTML = st.cancelados.length
+      ? `<div onclick="${irSaidas}" style="cursor:pointer;display:flex;align-items:center;gap:10px;background:rgba(248,81,73,.15);border:2px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:14px">
+          <span style="font-size:20px">🚫</span><span style="font-size:13px;font-weight:900;color:var(--red)">${st.cancelados.length} PEDIDO(S) CANCELADO(S) NO MERCADO LIVRE — NÃO DESPACHAR</span></div>` : '';
+  } else {
+    ex.innerHTML = '<div style="color:var(--muted);font-size:12px">⏳ Carregando fila do Magis5...</div>';
+  }
+
+  // Fulls
+  const { doDia, atrasados } = _hojeFulls();
+  const linhaFull = (c, atras) => {
+    const f = FULLS_DATA[c.id]; const s = fullSemaforo(c.id);
+    return `<div onclick="openEditFull('${c.id}')" style="cursor:pointer;display:flex;align-items:center;gap:8px;padding:7px 4px;border-bottom:1px solid var(--border);font-size:12px" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background=''">
+      <span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:${s.pronto?'var(--green)':atras?'var(--red)':'var(--orange)'}"></span>
+      <span style="font-weight:800">${c.id}</span>
+      <span class="badge ${statusClass(f.status)}" style="font-size:9px">${f.status}</span>
+      <span style="color:var(--muted);font-size:11px">${f.destino||''}</span>
+      <span style="margin-left:auto">${_semaforoHtml(c.id, c.dateKey)}</span>
+    </div>`;
+  };
+  document.getElementById('hojeFulls').innerHTML =
+    (doDia.length ? doDia.map(c => linhaFull(c,false)).join('') : '<div style="color:var(--muted);font-size:12px;padding:6px 0">Nenhum Full agendado para hoje.</div>')
+    + (atrasados.length ? `<div style="font-size:10px;font-weight:800;color:var(--red);margin:12px 0 4px;text-transform:uppercase">⚠ Atrasados (data passou e não está Pronto)</div>` + atrasados.map(c => linhaFull(c,true)).join('') : '');
+
+  // Coletas
+  const co = document.getElementById('hojeColetas');
+  if (window._ledgerCarregado) {
+    const c = _hojeColetas();
+    const tr = Object.entries(c.porTransp).sort((a,b)=>b[1]-a[1]);
+    co.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">🏍 FLEX · até 11:00</div>
+          <div style="font-size:22px;font-weight:900;color:${c.flexPend?'var(--red)':'var(--green)'}">${c.flexPend}</div>
+          <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">pendentes para sair hoje</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
+          <div style="font-size:10px;color:var(--muted);font-weight:700">🚚 COLETA</div>
+          <div style="font-size:22px;font-weight:900;color:${c.colPend?'var(--orange)':'var(--green)'}">${c.colPend}</div>
+          <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">pendentes · ${c.coletaBip} já bipados</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);font-weight:700;margin-bottom:4px">FLEX JÁ ENTREGUE ÀS TRANSPORTADORAS HOJE</div>
+      ${tr.length ? tr.map(([t,n]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:1px solid var(--border)"><span>🏍 ${t}</span><b>${n}</b></div>`).join('') : '<div style="color:var(--muted);font-size:12px">Nenhum Flex bipado ainda.</div>'}`;
+  } else co.innerHTML = '<div style="color:var(--muted);font-size:12px">⏳ Carregando...</div>';
+
+  if (document.getElementById('modoTV')) renderModoTV();
+}
+
+// ══ MODO TV — painel de parede do galpão ══
+function abrirModoTV(){
+  if (document.getElementById('modoTV')) return;
+  const o = document.createElement('div');
+  o.id = 'modoTV';
+  o.style.cssText = 'position:fixed;inset:0;z-index:10000;background:#0b0f17;color:#e6edf3;padding:28px 36px;overflow:auto;font-family:Syne,sans-serif';
+  document.body.appendChild(o);
+  try { document.documentElement.requestFullscreen?.(); } catch(e) {}
+  const sair = e => { if (e.key === 'Escape') fecharModoTV(); };
+  window._tvEsc = sair; document.addEventListener('keydown', sair);
+  renderModoTV();
+  clearInterval(window._tvTimer);
+  window._tvTimer = setInterval(()=>{ carregarLedger(true).then(renderModoTV).catch(()=>{}); _semaforoCarregar(); }, 60000);
+  clearInterval(window._tvRelogio);
+  window._tvRelogio = setInterval(()=>{ const r = document.getElementById('tvRelogio'); if (r) { const d=new Date(); r.textContent = String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); } }, 5000);
+  if (!window._ledgerCarregado) carregarLedger(false).then(renderModoTV).catch(()=>{});
+}
+function fecharModoTV(){
+  clearInterval(window._tvTimer); clearInterval(window._tvRelogio);
+  document.getElementById('modoTV')?.remove();
+  if (window._tvEsc) document.removeEventListener('keydown', window._tvEsc);
+  try { if (document.fullscreenElement) document.exitFullscreen(); } catch(e) {}
+}
+function renderModoTV(){
+  const o = document.getElementById('modoTV'); if (!o) return;
+  const d = new Date(); const p2 = n => String(n).padStart(2,'0');
+  const st = window._ledgerCarregado ? _expPendentes() : null;
+  let est = 0; if (st) st.pendBipar.forEach(p => { try { if (calcPrazo(p).passou) est++; } catch(e){} });
+  const meta = st && st.trab.length ? Math.round(st.feitos * 100 / st.trab.length) : 0;
+  const card = (t, n, sub, cor) => `<div style="flex:1;min-width:260px;background:#111826;border:3px solid ${cor};border-radius:18px;padding:22px;text-align:center">
+    <div style="font-size:26px;font-weight:900;color:${cor};letter-spacing:1px">${t}</div>
+    <div style="font-size:120px;font-weight:900;color:${cor};line-height:1">${n}</div>
+    <div style="font-size:20px;color:#8b949e;margin-top:6px">${sub}</div></div>`;
+  const { doDia } = _hojeFulls();
+  o.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+      <div style="font-size:34px;font-weight:900">OUT<span style="color:#2563eb">.</span>BOX <span style="font-size:22px;color:#8b949e;font-weight:600">· Expedição</span></div>
+      <div style="display:flex;align-items:center;gap:20px">
+        <div id="tvRelogio" style="font-size:48px;font-weight:900;font-family:'DM Mono',monospace">${p2(d.getHours())}:${p2(d.getMinutes())}</div>
+        <button onclick="fecharModoTV()" style="background:transparent;border:1px solid #30363d;color:#8b949e;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer">✕ Sair (Esc)</button>
+      </div>
+    </div>
+    ${st && st.cancelados.length ? `<div style="background:rgba(248,81,73,.2);border:3px solid #f85149;border-radius:14px;padding:18px 24px;margin-bottom:20px;font-size:32px;font-weight:900;color:#f85149">🚫 ${st.cancelados.length} CANCELADO(S) NO ML — NÃO DESPACHAR</div>` : ''}
+    ${st ? `<div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:24px">
+      ${card('🖨 FALTA IMPRIMIR', st.pendImprimir.length, 'pedidos com NF, sem etiqueta', '#d29922')}
+      ${card('📦 FALTA BIPAR', st.pendBipar.length, est ? `⏰ ${est} com prazo estourado` : 'impressos, aguardando bipe', '#f85149')}
+      ${card('✅ CONCLUÍDO', st.feitos, `de ${st.trab.length} da fila de hoje`, '#3fb950')}
+    </div>
+    <div style="margin-bottom:26px">
+      <div style="display:flex;justify-content:space-between;font-size:24px;font-weight:800;margin-bottom:8px"><span>🎯 Meta do dia: tudo bipado</span><span style="color:${meta>=100?'#3fb950':'#e6edf3'}">${meta}%</span></div>
+      <div style="height:30px;background:#111826;border-radius:100px;overflow:hidden;border:1px solid #30363d"><div style="height:100%;width:${meta}%;background:${meta>=100?'#3fb950':'#2563eb'};transition:width .6s"></div></div>
+    </div>` : '<div style="font-size:26px;color:#8b949e;margin-bottom:24px">⏳ Carregando fila do Magis5...</div>'}
+    <div style="font-size:24px;font-weight:800;margin-bottom:10px">◈ Fulls de hoje</div>
+    ${doDia.length ? doDia.map(c => { const f = FULLS_DATA[c.id]||{}; const s = fullSemaforo(c.id);
+      return `<div style="display:flex;align-items:center;gap:18px;font-size:24px;padding:10px 0;border-bottom:1px solid #21262d">
+        <span style="width:18px;height:18px;border-radius:50%;background:${s.pronto?'#3fb950':'#d29922'}"></span>
+        <b>${c.id}</b><span style="color:#8b949e">${f.destino||''}</span>
+        <span style="margin-left:auto;font-family:'DM Mono',monospace">📦 ${s.done}/${s.total} · 🏷 ${s.etqTot?Math.round(s.etqOk*100/s.etqTot)+'%':'—'} · ✔ ${s.confOk?'ok':'—'}</span>
+      </div>`; }).join('') : '<div style="font-size:22px;color:#8b949e">Nenhum Full agendado para hoje.</div>'}`;
 }
 
 function checarDiasEmAberto(){
@@ -6869,7 +7407,7 @@ function executarImpressaoSaida(market, canal, transp) {
   const pedidosHTML = filtrados.map((p, i) =>
     `<tr style="border-top:1px solid #f3f4f6${i % 2 === 1 ? ';background:#f9fafb' : ''}">
       <td style="padding:5px 10px;font-size:11px;color:#9ca3af;text-align:center">${i+1}</td>
-      <td style="padding:5px 10px;font-size:12px;font-family:monospace;letter-spacing:.5px">${p.num}</td>
+      <td style="padding:5px 10px;font-size:12px;font-family:monospace;letter-spacing:.5px">${(()=>{ const pd = (typeof _pedidoDaChave==='function') ? _pedidoDaChave(p.num) : null; return pd?.order_id ? `<b>${pd.order_id}</b>${pd.sku ? ' · '+pd.sku : ''}<div style="font-size:8px;color:#9ca3af;letter-spacing:0">${p.num}</div>` : p.num; })()}</td>
       <td style="padding:5px 10px;font-size:11px;color:#6b7280">${p.funcionario || '—'}</td>
       <td style="padding:5px 10px;font-size:11px;color:#6b7280;text-align:right">${p.hora}</td>
     </tr>`).join('');
@@ -6936,25 +7474,41 @@ function executarImpressaoSaida(market, canal, transp) {
             <th style="padding:6px 10px;text-align:left;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase">Nº do Pedido</th>
             <th style="padding:6px 10px;text-align:left;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase">Funcionário</th>
             <th style="padding:6px 10px;text-align:right;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase">Hora</th>
+            <th style="padding:6px 6px;text-align:center;font-size:10px;color:#6b7280;font-family:monospace;text-transform:uppercase;width:34px" title="O motorista marca cada pacote ao carregar">Conf.</th>
           </tr></thead>
-          <tbody>${pedidosHTML}</tbody>
+          <tbody>${pedidosHTML.replace(/<\/tr>/g, '<td style="padding:4px 6px;text-align:center"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #9ca3af;border-radius:2px"></span></td></tr>')}</tbody>
         </table>
       </div>
 
-      <!-- ASSINATURAS -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:36px;margin-top:8px">
-        <div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:5px;font-family:monospace">Assinatura Interna</div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:10px">Galpão: <strong>${galpao}</strong></div>
-          <div style="border-bottom:2px solid #111;height:46px;margin-bottom:6px"></div>
-          <div style="font-size:10px;color:#9ca3af;font-family:monospace">Nome / Cargo / Data / Assinatura</div>
+      <!-- TERMO DE COLETA -->
+      <div style="page-break-inside:avoid;border:2px solid #111;border-radius:8px;padding:14px 16px;margin-top:8px">
+        <div style="font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px">Termo de coleta</div>
+        <div style="font-size:11px;line-height:1.5;color:#111;margin-bottom:12px">
+          Declaro que conferi e recebi <b>${filtrados.length} pacote(s)</b>
+          (${canal} · ${market}${transpTxt ? ' · ' + transpTxt : ''}), listados acima, fechados e sem avarias aparentes,
+          salvo o que estiver anotado em "Ocorrências". Quantidade conferida pelo motorista: <b>________</b>
         </div>
-        <div>
-          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#374151;margin-bottom:5px;font-family:monospace">Assinatura Transportadora</div>
-          <div style="font-size:11px;color:${canalColor};font-weight:700;margin-bottom:10px">${canalIcon} ${canal} · ${market}${transpTxt ? ' · '+transpTxt : ''}</div>
-          <div style="border-bottom:2px solid #111;height:46px;margin-bottom:6px"></div>
-          <div style="font-size:10px;color:#9ca3af;font-family:monospace">Nome / Empresa / Data / Assinatura</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+          <div>
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;font-family:monospace">Quem despachou (${galpao})</div>
+            <div style="font-size:11px;margin-bottom:12px">Nome: ____________________________________</div>
+            <div style="font-size:11px;margin-bottom:22px">Data: ____/____/______ &nbsp; Hora: ____:____</div>
+            <div style="border-bottom:2px solid #111;height:30px;margin-bottom:4px"></div>
+            <div style="font-size:9px;color:#6b7280;font-family:monospace">Assinatura</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;font-family:monospace;color:${canalColor}">Quem levou${transpTxt ? ' · ' + transpTxt : ' · ' + market}</div>
+            <div style="font-size:11px;margin-bottom:12px">Nome: ____________________________________</div>
+            <div style="font-size:11px;margin-bottom:12px">RG/CPF: ________________ &nbsp; Placa: __________</div>
+            <div style="font-size:11px;margin-bottom:10px">Hora da retirada: ____:____</div>
+            <div style="border-bottom:2px solid #111;height:30px;margin-bottom:4px"></div>
+            <div style="font-size:9px;color:#6b7280;font-family:monospace">Assinatura</div>
+          </div>
         </div>
+        <div style="margin-top:14px;font-size:11px">Ocorrências (faltas, avarias, recusas):</div>
+        <div style="border-bottom:1px solid #9ca3af;height:22px"></div>
+        <div style="border-bottom:1px solid #9ca3af;height:22px"></div>
+        <div style="font-size:9px;color:#6b7280;font-family:monospace;margin-top:8px">Arquivar esta via assinada. Em caso de extravio, ela é a prova de entrega à transportadora.</div>
       </div>
 
       <!-- RODAPÉ -->
@@ -7195,16 +7749,23 @@ function renderProdutividade() {
   });
 
   // agrupa por funcionário
+  // Produtividade real: o que conta é o TEMPO-PADRÃO produzido (caixas × tempo estimado do SKU),
+  // que já embute a complexidade do produto. Eficiência = tempo-padrão ÷ tempo real gasto.
   const porFunc = {};
   dados.forEach(p => {
     const k = p.funcionario;
-    if (!porFunc[k]) porFunc[k] = { caixas:0, produtos:0, tempo_min:0, empresa: p.empresa||FUNC_INFO[k]?.empresa||'' };
-    porFunc[k].caixas    += parseInt(p.caixas)||0;
+    if (!porFunc[k]) porFunc[k] = { caixas:0, produtos:0, tempo_min:0, estComReal:0, real:0, empresa: p.empresa||FUNC_INFO[k]?.empresa||'' };
+    const cx = parseInt(p.caixas)||0;
+    // registros antigos gravaram 0 por causa da busca de SKU sensível a maiúsculas → recalcula
+    const est = (parseFloat(p.tempo_min)||0) || ((parseFloat(_skuDb(p.sku)?.tempo)||0) * cx);
+    porFunc[k].caixas    += cx;
     porFunc[k].produtos  += parseInt(p.produtos)||0;
-    porFunc[k].tempo_min += parseFloat(p.tempo_min)||0;
+    porFunc[k].tempo_min += est;
+    if (p.tempo_real_min > 0) { porFunc[k].real += p.tempo_real_min; porFunc[k].estComReal += est; }
   });
-  const ranking = Object.entries(porFunc).sort((a,b)=>b[1].caixas-a[1].caixas);
+  const ranking = Object.entries(porFunc).sort((a,b)=>(b[1].tempo_min-a[1].tempo_min) || (b[1].caixas-a[1].caixas));
   const melhor = ranking[0];
+  const maxPadrao = melhor ? (melhor[1].tempo_min || 1) : 1;
   const maxCx = melhor ? melhor[1].caixas : 1;
   const totalCaixas = dados.reduce((a,p)=>a+(parseInt(p.caixas)||0),0);
   const nFunc = ranking.length;
@@ -7217,7 +7778,7 @@ function renderProdutividade() {
   document.getElementById('prodTotalCaixas').textContent = totalCaixas;
   document.getElementById('prodMedia').textContent = media;
   document.getElementById('prodMelhor').textContent = melhor ? melhor[0].split(' ')[0] : '—';
-  document.getElementById('prodMelhorSub').textContent = melhor ? melhor[1].caixas+' caixas' : '—';
+  document.getElementById('prodMelhorSub').textContent = melhor ? (melhor[1].tempo_min ? _fmtDur(melhor[1].tempo_min)+' de trabalho-padrão' : melhor[1].caixas+' caixas') : '—';
 
   // barra de filtros
   const header = document.getElementById('prodFilterBar');
@@ -7269,9 +7830,11 @@ function renderProdutividade() {
     const av = funcAv(nome);
     const cor = funcCor(d.empresa||fi?.empresa||'');
     const corCss = funcCorCss(d.empresa||fi?.empresa||'');
-    const pct = Math.round((d.caixas/maxCx)*100);
+    const pct = maxPadrao > 1 ? Math.round((d.tempo_min/maxPadrao)*100) : Math.round((d.caixas/maxCx)*100);
     const h = Math.floor(d.tempo_min/60), m = Math.round(d.tempo_min%60);
     const tempoStr = d.tempo_min>0 ? (h>0?h+'h ':'')+(m>0?m+'min':'<1min') : '—';
+    const efic = d.real > 0 ? Math.round((d.estComReal / d.real) * 100) : null;
+    const eficCor = efic == null ? 'var(--muted)' : efic >= 100 ? 'var(--green)' : efic >= 75 ? 'var(--orange)' : 'var(--red)';
     const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
     return `<div class="prod-item" style="padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:6px">
       <div class="prod-rank" style="color:${i<3?'var(--logbox)':'var(--muted)'}">${medal||i+1}</div>
@@ -7282,7 +7845,8 @@ function renderProdutividade() {
           <div style="display:flex;gap:10px;font-family:'DM Mono',monospace;font-size:11px">
             <span style="color:var(--text)">${d.caixas} <span style="color:var(--muted)">cx</span></span>
             ${d.produtos?`<span style="color:var(--muted2)">${d.produtos} <span style="color:var(--muted)">prod</span></span>`:''}
-            <span style="color:var(--green)">${tempoStr}</span>
+            <span style="color:var(--green)" title="Trabalho-padrão: caixas × tempo estimado do SKU (já considera a complexidade do produto)">⏱ ${tempoStr}</span>
+            <span style="color:${eficCor}" title="Eficiência = tempo-padrão ÷ tempo real (de Produzindo até Concluído). Aparece quando o item passa por Produzindo antes de Concluído.">⚙ ${efic == null ? '—' : efic + '%'}</span>
           </div>
         </div>
         <div class="prod-bar-wrap"><div class="prod-bar-fill" style="width:${pct}%;background:${corCss}"></div></div>
@@ -7292,9 +7856,8 @@ function renderProdutividade() {
 }
 
 function toggleTranspField(){
-  const canal=document.getElementById('saidaCanal')?.value;
   const wrap=document.getElementById('saidaTranspWrap');
-  if(wrap) wrap.style.display = canal==='Flex' ? '' : 'none';
+  if(wrap) wrap.style.display = '';
   const inp=document.getElementById('saidaBipe'); if(inp) inp.focus();
 }
 
@@ -8548,6 +9111,12 @@ async function _confTickScan(video, fullId, totalEsperado) {
 // certos, então reconstruímos o que importa: volume (envio/volume) e id da autorização.
 function _normalizaLeituraQR(raw){
   let r = String(raw||'').trim();
+  // Link do ML embaralhado: "HTTPSç;;ENVIOS-YMS.MERCADOLIVRE.COM.BR;..." → "https://envios-yms.mercadolivre.com.br/..."
+  if (/(envios-yms|mercadolivre|mercadopago|mercadolibre)/i.test(r) && /^https?(ç|Ç|:);;/i.test(r)) {
+    r = r.replace(/^https?(ç|Ç|:);;/i, 'https://').replace(/;/g, '/').replace(/[çÇ]/g, ':').replace(/\^/g, '"');
+    r = r.toLowerCase();
+    return r;
+  }
   // Volume: 77039285;45 → 77039285/45
   r = r.replace(/(\d{6,})\s*;\s*(\d{1,4})(?!\d)/g, '$1/$2');
   const temVolume = /(\d{6,})\s*\/\s*(\d+)/.test(r);
@@ -11679,8 +12248,34 @@ async function resolverAuditoria(orderIds, motivoPre) {
   }
 }
 
+async function resolverAuditoriaGrupo(grupo) {
+  const todos = window._ledgerSemBipagem || [];
+  let lista, motivo;
+  if (grupo === 'cancelado') {
+    lista = todos.filter(p => _audMotivo(p) === 'cancelado');
+    motivo = 'Cancelado no ML — baixa em lote';
+  } else {
+    const salvo = window._audMotivoFiltro; window._audMotivoFiltro = '';
+    const doPeriodo = new Set(_audFiltrar(todos).map(p => p.order_id)); window._audMotivoFiltro = salvo;
+    lista = todos.filter(p => !doPeriodo.has(p.order_id));
+    motivo = 'Histórico antigo — baixa em lote na triagem';
+  }
+  if (!lista.length) { showToast('Nada nesse grupo'); return; }
+  if (!confirm(`Dar baixa em ${lista.length} pedido(s)?\n\nMotivo registrado: "${motivo}"\n\nEles saem da auditoria, mas continuam no histórico.`)) return;
+  const func = document.getElementById('saidaFuncionario')?.value || '—';
+  try {
+    const r = await fetch(LEDGER_API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ acao: 'resolver', order_ids: lista.map(p => p.order_id), motivo, por: func }) });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    await carregarLedger(true);
+    renderPainelExpedicao();
+    showToast(`✅ Baixa em ${d.resolvidos} pedido(s)`);
+  } catch (e) { showToast('❌ Erro: ' + e.message); }
+}
+
 async function resolverAuditoriaLote() {
-  const lista = window._ledgerSemBipagem || [];
+  const lista = window._audListaAtual || [];
   if (!lista.length) { showToast('Nada para dar baixa'); return; }
   const porMkt = {};
   lista.forEach(p => { const m = p.marketplace||'Outros'; porMkt[m] = (porMkt[m]||0)+1; });
@@ -11807,8 +12402,10 @@ async function registrarManualDoPainel(orderId) {
   const hora = String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   const saida = { num: p.chave_nf, canal, market, galpao, hora, funcionario, conta: '', origem: 'manual', transportadora: transpManual };
   const newId = await db.insertSaida(saida);
-  if (!newId) { showToast('❌ Erro ao registrar'); return; }
-  saida._id = newId;
+  if (!newId) {
+    if (saida._erro === 'duplicado') { showToast('⚠️ Este pedido já foi registrado hoje'); carregarSaidasDoBanco(); return; }
+    filaBipesAdicionar(saida);
+  } else saida._id = newId;
   SAIDAS_HOJE.push(saida);
 
   // Atualiza o ledger em memória pra tela responder na hora (o sync confirma depois)
@@ -11959,9 +12556,41 @@ function calcPrazo(p) {
   return { texto: '—', cor: 'var(--muted)', passou: false, minutosRestantes: null, tipo: null, fonte: null };
 }
 
+// ── Triagem da auditoria: motivo provável de ter saído da fila sem bipe ──
+const _AUD_MOTIVOS = {
+  cancelado: { rot: '🚫 Cancelado',               cor: 'var(--muted2)', dica: 'Cancelado no ML — não era para sair; baixa segura' },
+  pre_nf:    { rot: '⏸ Saiu antes de liberar',    cor: 'var(--muted2)', dica: 'Saiu da fila ainda travado/aguardando (sem NF ou sem logística) — normalmente cancelamento' },
+  entregue:  { rot: '📦 Enviado sem bipe',         cor: 'var(--red)',    dica: 'O ML confirma que foi enviado/entregue, mas não passou pelo bipe — falha de processo' },
+  sem_info:  { rot: '❔ Sem confirmação',          cor: 'var(--orange)', dica: 'Saiu da fila e não temos confirmação do marketplace — conferir no Magis5' },
+};
+function _audMotivo(p){
+  const st = p.ml_status || '';
+  if (st === 'cancelled') return 'cancelado';
+  if (st === 'delivered' || st === 'shipped' || st === 'not_delivered') return 'entregue';
+  if (p.etapa === 'bloqueado' || p.etapa === 'aguardando') return 'pre_nf';
+  return 'sem_info';
+}
+window._audPeriodo = window._audPeriodo || '7';
+window._audMotivoFiltro = window._audMotivoFiltro || '';
+function _audFiltrar(lista){
+  const dias = window._audPeriodo === 'todos' ? null : parseInt(window._audPeriodo, 10);
+  const corte = dias ? Date.now() - dias * 86400000 : null;
+  return (lista||[]).filter(p => {
+    if (corte) {
+      const t = new Date(p.ultima_vez_visto || p.data_expedicao || p.data_pedido).getTime();
+      if (!isNaN(t) && t < corte) return false;
+    }
+    if (window._audMotivoFiltro && _audMotivo(p) !== window._audMotivoFiltro) return false;
+    return true;
+  });
+}
+function audFiltrarMotivo(m){ window._audMotivoFiltro = (window._audMotivoFiltro === m ? '' : m); renderPainelExpedicao(); }
+
 function renderPainelExpedicao() {
   const fila = window._ledgerFila || [];
-  const semBip = window._ledgerSemBipagem || [];
+  const semBipTodos = window._ledgerSemBipagem || [];
+  const semBip = _audFiltrar(semBipTodos);
+  window._audListaAtual = semBip;
 
   // Classifica pedidos por etapa
   const trabalhaveis = fila.filter(p => p.etapa === 'pronto' || p.etapa === 'despachar');
@@ -12236,7 +12865,22 @@ function renderPainelExpedicao() {
 
   // ── Auditoria: saiu da fila sem bipagem ──
   const elAudCount = document.getElementById('painelAuditCount');
-  if (elAudCount) elAudCount.textContent = semBip.length ? `(${semBip.length})` : '';
+  if (elAudCount) elAudCount.textContent = `(${semBip.length}${semBipTodos.length !== semBip.length ? ' de ' + semBipTodos.length + ' no histórico' : ''})`;
+  const elPer = document.getElementById('audPeriodo'); if (elPer) elPer.value = window._audPeriodo;
+  const elAudChips = document.getElementById('audChips');
+  if (elAudChips) {
+    // contagem por motivo dentro do período (ignora o filtro de motivo)
+    const salvo = window._audMotivoFiltro; window._audMotivoFiltro = '';
+    const doPeriodo = _audFiltrar(semBipTodos); window._audMotivoFiltro = salvo;
+    const cont = {}; doPeriodo.forEach(p => { const m = _audMotivo(p); cont[m] = (cont[m]||0) + 1; });
+    const antigos = semBipTodos.length - doPeriodo.length;
+    elAudChips.innerHTML = Object.keys(_AUD_MOTIVOS).filter(k => cont[k]).map(k => {
+      const ativo = salvo === k;
+      return `<button onclick="audFiltrarMotivo('${k}')" title="${_AUD_MOTIVOS[k].dica}" style="cursor:pointer;font-size:10px;padding:3px 9px;border-radius:12px;border:1px solid ${ativo?_AUD_MOTIVOS[k].cor:'var(--border2)'};background:${ativo?'var(--surface2)':'transparent'};color:${_AUD_MOTIVOS[k].cor};font-weight:700">${_AUD_MOTIVOS[k].rot} · ${cont[k]}</button>`;
+    }).join('')
+    + (cont.cancelado ? `<button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="resolverAuditoriaGrupo('cancelado')">✓ baixa nos ${cont.cancelado} cancelados</button>` : '')
+    + (antigos > 0 ? `<button class="btn btn-ghost btn-sm" style="font-size:10px" onclick="resolverAuditoriaGrupo('antigos')" title="Pendências mais antigas que o período selecionado">✓ baixa nos ${antigos} antigos</button>` : '');
+  }
   const elAudExtra = document.getElementById('painelAuditExtra');
   if (elAudExtra) {
     const partes = [];
@@ -12247,21 +12891,22 @@ function renderPainelExpedicao() {
   const btnAudLote = document.getElementById('painelAuditBtnLote');
   if (btnAudLote) {
     btnAudLote.style.display = semBip.length ? '' : 'none';
-    btnAudLote.textContent = `✓ Dar baixa em ${semBip.length}`;
+    btnAudLote.textContent = `✓ Dar baixa nos ${semBip.length} da lista`;
   }
   const bodyAud = document.getElementById('painelAuditBody');
   if (bodyAud) {
     bodyAud.innerHTML = semBip.slice(0, LIMITE).map(p => `
       <tr onclick="abrirPedidoMagis5('${p.buyer_id||''}')" style="cursor:${p.buyer_id?'pointer':'default'}">
         <td style="font-size:11px">${p.order_id||'—'}</td>
+        <td style="font-size:10px;font-weight:700;color:${_AUD_MOTIVOS[_audMotivo(p)].cor}" title="${_AUD_MOTIVOS[_audMotivo(p)].dica}">${_AUD_MOTIVOS[_audMotivo(p)].rot}</td>
         <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${p.sku||'—'}</td>
         <td style="font-size:11px">${p.cliente||'—'}</td>
         <td style="font-size:11px">${p.marketplace||'—'}</td>
         <td style="font-size:11px">R$ ${(parseFloat(p.valor)||0).toLocaleString('pt-BR',{minimumFractionDigits:2})}</td>
-        <td style="font-size:10px;color:var(--muted)">${p.data_pedido ? new Date(p.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
+        <td style="font-size:10px;color:var(--muted)">${(p.ultima_vez_visto||p.data_pedido) ? new Date(p.ultima_vez_visto||p.data_pedido).toLocaleDateString('pt-BR') : '—'}</td>
         <td style="padding:4px 8px"><button class="btn btn-ghost btn-sm" style="font-size:10px;white-space:nowrap"
           onclick="event.stopPropagation();resolverAuditoria(['${p.order_id}'])">✓ baixa</button></td>
-      </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhum pedido saiu da fila sem bipagem</td></tr>';
+      </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhum pedido saiu da fila sem bipagem neste período</td></tr>';
   }
 
   // ── Status do sync + alerta de cron parado ──
