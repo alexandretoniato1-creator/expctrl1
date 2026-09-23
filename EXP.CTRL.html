@@ -354,7 +354,7 @@ input:focus,select.form-sel:focus{border-color:var(--accent)}
 .edit-tab{padding:7px 14px;border-radius:7px 7px 0 0;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:-1px}
 .edit-tab:hover{color:var(--text)}.edit-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .edit-tab-panel{display:none}.edit-tab-panel.active{display:block}
-.item-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.8fr 1.2fr 1fr 0.6fr 1fr auto;gap:8px;align-items:end}
+.item-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.8fr 1.2fr 1fr 0.55fr 0.65fr 1fr auto;gap:8px;align-items:end}
 .vol-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.7fr 1fr 0.6fr 0.6fr 0.6fr 0.5fr auto;gap:8px;align-items:end}
 .item-linha .form-group,.vol-linha .form-group{margin:0}
 .remove-btn{width:28px;height:28px;border-radius:6px;border:1px solid rgba(245,95,95,.3);background:rgba(245,95,95,.07);color:var(--red);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
@@ -1212,7 +1212,7 @@ select:focus{border-color:var(--accent)}
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(245,95,95,.12)"></div>Atrasado</div>
               </div>
               <select id="calFiltroMkt" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Todos MKT</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok</option><option value="Magalu">Magalu</option></select>
-              <select id="calFiltroTipo" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Coleta + Envio</option><option value="Coleta">Coleta ML</option><option value="Envio próprio">Envio próprio</option></select>
+              <select id="calFiltroTipo" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Coleta + Envio</option><option value="Coleta">Coleta (do marketplace)</option><option value="Envio próprio">Envio próprio</option></select>
               <button class="btn btn-primary btn-sm" onclick="openModal('modalFull')">+ Novo Full</button>
             </div>
           </div>
@@ -1472,7 +1472,12 @@ select:focus{border-color:var(--accent)}
                 <option value="ML Guarulhos/SP">ML Guarulhos/SP</option>
                 <option value="ML Embu das Artes/SP">ML Embu das Artes/SP</option>
                 <option value="Amazon SP">Amazon SP</option>
+                <option value="Amazon RJ">Amazon RJ</option>
+                <option value="Amazon MG">Amazon MG</option>
                 <option value="Shopee SP">Shopee SP</option>
+                <option value="Shopee RJ">Shopee RJ</option>
+                <option value="TikTok SP">TikTok SP</option>
+                <option value="Magalu SP">Magalu SP</option>
               </select>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -2178,7 +2183,7 @@ select:focus{border-color:var(--accent)}
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
       <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date" id="nf-agendado"></div>
       <div class="form-group"><label>Responsável</label><select class="form-sel" id="nf-responsavel"><option>Edipo</option><option>Max</option></select></div>
-      <div class="form-group"><label>Destino</label><select class="form-sel" id="nf-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
+      <div class="form-group"><label>Destino</label><select class="form-sel" id="nf-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option></select></div>
       <div class="form-group"><label>Status</label><select class="form-sel" id="nf-status"><option>Pendente</option><option>Produzindo</option><option>Em conferência</option><option>Pronto</option></select></div>
       <div class="form-group full"><label>Observações</label><input class="form-sel" type="text" id="nf-obs" placeholder="Opcional"></div>
     </div>
@@ -2186,7 +2191,7 @@ select:focus{border-color:var(--accent)}
       <span>SKUs do Full <span style="color:var(--muted);font-size:10px;font-weight:400">(opcional — adicione agora ou depois)</span></span>
       <button class="btn btn-ghost btn-sm" onclick="nfAddSku()">+ SKU</button>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">SKU + Enter preenche automático do Catálogo</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">SKU + Enter preenche automático do Catálogo · colunas: caixas fechadas e unidades avulsas (caixa aberta)</div>
     <div id="nf-skus-lista" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto"></div>
     <div id="nf-skus-total" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:8px;text-align:right"></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalFull')">Cancelar</button><button class="btn btn-primary" onclick="salvarNovoFull()">Salvar</button></div>
@@ -2209,7 +2214,9 @@ select:focus{border-color:var(--accent)}
         <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="ef-id" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
         <div class="form-group"><label>Status</label><select class="form-sel" id="ef-status" onchange="checkConferenciaStatus()"><option value="Pendente">Pendente</option><option value="Produzindo">Produzindo</option><option value="Em conferência">Em conferência</option><option value="Pronto">Pronto</option></select><div id="efStatusDica" style="display:none;font-size:10px;font-family:'DM Mono',monospace;margin-top:5px;padding:5px 8px;border-radius:5px;background:rgba(0,0,0,.15)"></div></div>
         <div class="form-group"><label>Responsável</label><select class="form-sel" id="ef-responsavel"><option>Edipo</option><option>Max</option></select></div>
-        <div class="form-group"><label>Destino</label><select class="form-sel" id="ef-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
+        <div class="form-group"><label>Marketplace</label><select class="form-sel" id="ef-marketplace" onchange="efAtualizarDestinos('')"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
+        <div class="form-group"><label>Destino</label><select class="form-sel" id="ef-destino"><option>ML Cajamar/SP</option></select></div>
+        <div class="form-group"><label>Tipo de envio</label><select class="form-sel" id="ef-tipo"><option value="">— não informado</option><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
         <div class="form-group"><label>Data agendada</label><input class="form-sel" type="date" id="ef-agendado"></div>
         <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="ef-criadoEm"></div>
         <div class="form-group full"><label>Observações</label><input class="form-sel" type="text" id="ef-obs" placeholder="Observações"></div>
@@ -3157,10 +3164,18 @@ function mktBadgeHtml(mkt) {
   if (!mkt || !s) return '';
   return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${s};font-weight:700;font-family:'DM Mono',monospace">${mkt}</span>`;
 }
-function tipoBadgeHtml(tipo) {
+const MKT_NOME = { ML:'ML', Amazon:'Amazon', Shopee:'Shopee', TikTok:'TikTok', Magalu:'Magalu' };
+// "Coleta" é quem busca no galpão: o próprio marketplace. O rótulo segue o
+// marketplace do Full (Coleta ML, Coleta Shopee, Coleta Magalu…).
+function tipoTexto(tipo, mkt) {
+  if (!tipo || tipo === 'LogBox') return '';
+  return tipo === 'Coleta' ? ('🚚 Coleta' + (MKT_NOME[mkt] ? ' ' + MKT_NOME[mkt] : '')) : '📦 Envio próprio';
+}
+function tipoBadgeHtml(tipo, mkt) {
   if (!tipo || tipo === 'LogBox') return '';
   const isColeta = tipo === 'Coleta';
-  return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${isColeta?'rgba(88,166,255,.15);color:#58a6ff':'rgba(63,185,80,.15);color:#3fb950'};font-family:'DM Mono',monospace;font-weight:700">${isColeta?'🚚 Coleta':'📦 Env. próprio'}</span>`;
+  const txt = isColeta ? ('🚚 Coleta' + (MKT_NOME[mkt] ? ' ' + MKT_NOME[mkt] : '')) : '📦 Env. próprio';
+  return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${isColeta?'rgba(88,166,255,.15);color:#58a6ff':'rgba(63,185,80,.15);color:#3fb950'};font-family:'DM Mono',monospace;font-weight:700">${txt}</span>`;
 }
 
 // ── BarcodeDetector (leitura de códigos lineares na câmera) ──
@@ -4309,8 +4324,8 @@ function _openDetailPanel(id) {
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${total}</div><div class="detail-stat-label">SKUs</div></div>
     </div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL CAIXAS</span>
-      <span style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px">${totalCaixas}</span>
+      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL CAIXAS${fullCaixasAbertas(itens)?` <span style="color:var(--orange)">+ ${fullCaixasAbertas(itens)} aberta(s)</span>`:''}</span>
+      <span style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px">${totalCaixas}${fullCaixasAbertas(itens)?`<span style="font-size:11px;font-weight:600;color:var(--muted);margin-left:6px">${fullUnidades(itens).toLocaleString('pt-BR')} un</span>`:''}</span>
     </div>
     ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
     <div class="progress-wrap">
@@ -4332,7 +4347,7 @@ function _openDetailPanel(id) {
             <div class="prod-avatar ${item.cor}" style="width:20px;height:20px;font-size:9px">${item.avatar}</div>
             <span class="item-func-name">${item.funcionario}</span>
           </div>
-          <div class="item-qty">${item.qtde} cx</div>
+          <div class="item-qty">${itemQtdeTexto(item)}</div>
         </div>
       </div>`).join('')}</div>
     <div style="padding-top:12px;border-top:1px solid var(--border)">
@@ -4363,7 +4378,7 @@ function openFullDetalheInline(id) {
   const pct = total ? Math.round((done/total)*100) : 0;
 
   document.getElementById('fdTitle').textContent = f.id;
-  document.getElementById('fdSub').innerHTML = `${mktBadgeHtml(f.marketplace||derivarMarketplace(f.destino))} ${tipoBadgeHtml(f.tipo_envio)} · ${f.destino} · ${f.agendado} <span class="badge ${statusClass(f.status)}" style="margin-left:6px">${statusIcon(f.status)} ${f.status}</span>`;
+  document.getElementById('fdSub').innerHTML = `${mktBadgeHtml(f.marketplace||derivarMarketplace(f.destino))} ${tipoBadgeHtml(f.tipo_envio, f.marketplace||derivarMarketplace(f.destino))} · ${f.destino} · ${f.agendado} <span class="badge ${statusClass(f.status)}" style="margin-left:6px">${statusIcon(f.status)} ${f.status}</span>`;
 
   document.getElementById('fdBtnEditar').onclick = () => openEditFull(id);
   const btnConf = document.getElementById('fdBtnConferencia');
@@ -4394,8 +4409,9 @@ function openFullDetalheInline(id) {
   const skuMap = {};
   itens.forEach(item => {
     const k = item.codigo || item.nome || '—';
-    if (!skuMap[k]) skuMap[k] = { nome: item.nome||'', codigo: item.codigo||k, qtde: 0, status: item.status, funcionarios: [] };
+    if (!skuMap[k]) skuMap[k] = { nome: item.nome||'', codigo: item.codigo||k, qtde: 0, avulsas: 0, status: item.status, funcionarios: [] };
     skuMap[k].qtde += parseInt(item.qtde)||0;
+    skuMap[k].avulsas += itemAvulsas(item);
     if (item.funcionario && item.funcionario !== '—') skuMap[k].funcionarios.push(item.funcionario);
   });
   document.getElementById('fdSkuList').innerHTML = Object.values(skuMap).map(s => {
@@ -4407,7 +4423,7 @@ function openFullDetalheInline(id) {
           <div class="sdot ${dotCls}"></div>
           <span style="font-size:12px;font-weight:700">${s.nome||s.codigo}</span>
         </div>
-        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--text)">${s.qtde} <span style="font-size:10px;font-weight:400;color:var(--muted)">cx</span></span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--text)">${s.qtde} <span style="font-size:10px;font-weight:400;color:var(--muted)">cx</span>${s.avulsas?` <span style="font-size:11px;color:var(--orange)">+ ${s.avulsas} un</span>`:''}</span>
       </div>
       <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${s.codigo} · ${funcs}</div>
     </div>`;
@@ -4637,7 +4653,7 @@ function renderCal(){
               style="width:14px;height:14px;border-radius:3px;border:none;background:rgba(245,95,95,.15);color:var(--red);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;flex-shrink:0;transition:opacity .15s"
               onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">✕</button>
           </div>
-          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:2px">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:2px">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa), derivarMarketplace(f.destino))}</div>
           <div class="cal-full-dest">${f.destino}</div>
           ${_semaforoHtml(f.id, f.dateKey || dateKey)}
         </div>`;
@@ -4732,7 +4748,9 @@ function openEditFull(id){
   document.getElementById('editFullTitleEmpresa').textContent=f.empresa+' · '+f.responsavel;
   document.getElementById('ef-status').value=f.status;
   document.getElementById('ef-responsavel').value=f.responsavel;
-  document.getElementById('ef-destino').value=f.destino;
+  document.getElementById('ef-marketplace').value = derivarMarketplace(f.destino) || f.marketplace || 'ML';
+  efAtualizarDestinos(f.destino||'');
+  document.getElementById('ef-tipo').value = derivarTipoLabel(f.empresa) || '';
   document.getElementById('ef-obs').value=f.obs||'';
   if(f.agendado){const p=f.agendado.split('/');if(p.length===3)document.getElementById('ef-agendado').value=p[2]+'-'+p[1]+'-'+p[0];}
   if(f.criadoEm){const p=f.criadoEm.split('/');if(p.length===3)document.getElementById('ef-criadoEm').value=p[2]+'-'+p[1]+'-'+p[0];}
@@ -4832,6 +4850,7 @@ function renderEditItens(itens){
       <div class="form-group"><label>Descrição</label><input class="form-sel" value="${item.nome||''}" style="font-size:11px" oninput="updateItem(${i},'nome',this.value)" placeholder="Auto pelo SKU"></div>
       <div class="form-group"><label>Funcionário</label><select class="form-sel" style="font-size:11px" onchange="updateItem(${i},'funcionario',this.value)"><option value="—">—</option>${FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}" ${item.funcionario===f.nome?'selected':''}>${f.nome} (${f.empresa})</option>`).join('')}</select></div>
       <div class="form-group"><label>Qtde cx</label><input class="form-sel" type="number" style="font-size:11px" value="${item.qtde||''}" oninput="updateItem(${i},'qtde',this.value)" min="0"></div>
+      <div class="form-group"><label title="Caixa aberta: unidades soltas, fora das caixas fechadas">Un. avulsas</label><input class="form-sel" type="number" style="font-size:11px" value="${itemAvulsas(item)||''}" placeholder="0" oninput="updateItem(${i},'avulsas',Math.max(0,parseInt(this.value)||0))" min="0" title="Caixa aberta: unidades soltas, fora das caixas fechadas"></div>
       <div class="form-group"><label>Status</label><select class="form-sel" style="font-size:11px" onchange="updateItemStatus(${i},this.value)">
         <option value="pending" ${item.status==='pending'?'selected':''}>Pendente</option>
         <option value="doing" ${item.status==='doing'?'selected':''}>Produzindo</option>
@@ -4848,7 +4867,7 @@ function renderEditItens(itens){
 // Mostra o saldo pré-impresso do SKU e permite usá-lo: baixa na biblioteca e marca as
 // etiquetas deste Full como prontas (mesma lógica do "Usar do estoque" da seção Etiquetas).
 // Grava na hora — não depende do "Salvar alterações".
-function _unidadesItem(item){ return (parseInt(item.qtde)||0) * (parseInt(_skuDb(item.codigo)?.qtdecx)||1); }
+function _unidadesItem(item){ return itemUnidades(item); }
 function _bibRegPorSku(sku){
   const r = zplBibGet(sku);
   return r ? { chave: r.sku, reg: r } : null;
@@ -4909,7 +4928,7 @@ async function itemUsarPreEtiquetado(i){
   showToast(`📦 ${usar} etiqueta(s) de ${achado.chave} usadas do pré-etiquetado · saldo agora ${novoSaldo}`);
 }
 function updateItem(i,field,val){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];if(f.itens[i])f.itens[i][field]=val;
-  if(field==='codigo'||field==='qtde'){clearTimeout(window._preEtqT);window._preEtqT=setTimeout(()=>itemRenderPreEtiquetado(f.itens),400);}}
+  if(field==='codigo'||field==='qtde'||field==='avulsas'){clearTimeout(window._preEtqT);window._preEtqT=setTimeout(()=>itemRenderPreEtiquetado(f.itens),400);}}
 
 async function updateItemStatus(i, novoStatus) {
   if (!editingFullId) return;
@@ -4936,12 +4955,12 @@ async function updateItemStatus(i, novoStatus) {
   if (novoStatus === 'done' && statusAnterior !== 'done') {
     const func = item.funcionario;
     const caixas = parseInt(item.qtde) || 0;
-    if (func && func !== '—' && caixas > 0) {
+    if (func && func !== '—' && (caixas > 0 || itemAvulsas(item) > 0)) {
       const fi = FUNC_INFO[func];
       const empresa = fi?.empresa || '';
       const skuData = _skuDb(item.codigo);
       const tempo_min = skuData ? parseFloat(((parseFloat(skuData.tempo)||0) * caixas).toFixed(1)) : 0;
-      const produtos = caixas * (skuData?.qtdecx || 1);
+      const produtos = itemUnidades(item);
       const hoje = new Date().toLocaleDateString('pt-BR');
       // Tempo real = de "Produzindo" até "Concluído". Acima de 12h não é tempo de trabalho → descarta.
       let tempo_real_min = null;
@@ -4957,7 +4976,7 @@ async function updateItemStatus(i, novoStatus) {
       const newId = await db.saveProd(reg);
       if (newId) reg._id = newId;
       PROD_DATA.push(reg);
-      showToast('✅ Produtividade de ' + func.split(' ')[0] + ' registrada — ' + caixas + ' cx');
+      showToast('✅ Produtividade de ' + func.split(' ')[0] + ' registrada — ' + itemQtdeTexto(item));
     }
   }
 }
@@ -4973,6 +4992,20 @@ function skuAutoItem(inputEl,idx){
     showToast('📦 '+found.descricao+' · '+found.comp+'×'+found.larg+'×'+found.altu+'cm · '+found.vol+'L/cx');
   }
 }
+// Caixa aberta: além das caixas fechadas (item.qtde), o item pode levar
+// unidades avulsas (item.avulsas). Unidades = caixas × un/cx do Catálogo + avulsas.
+function itemAvulsas(item){ return Math.max(0, parseInt(item && item.avulsas) || 0); }
+function itemUnidades(item){
+  const q = parseInt(_skuDb(item && item.codigo)?.qtdecx) || 1;
+  return (parseInt(item && item.qtde) || 0) * q + itemAvulsas(item);
+}
+function itemQtdeTexto(item){
+  const cx = parseInt(item && item.qtde) || 0, av = itemAvulsas(item);
+  if (!av) return cx + ' cx';
+  return (cx ? cx + ' cx + ' : '') + av + ' un';
+}
+function fullUnidades(itens){ return (itens||[]).reduce((a,i)=>a+itemUnidades(i),0); }
+function fullCaixasAbertas(itens){ return (itens||[]).filter(i=>itemAvulsas(i)>0).length; }
 // Busca no catálogo sem diferenciar maiúsculas ("6cr100m" = "6CR100M")
 function _skuDb(codigo){
   if (!codigo) return null;
@@ -5029,7 +5062,10 @@ async function salvarEditFull(){
   const novoStatus=document.getElementById('ef-status').value;
   f.status=novoStatus;
   f.responsavel=document.getElementById('ef-responsavel').value;
-  f.destino=document.getElementById('ef-destino').value;
+  f.destino=document.getElementById('ef-destino').value||f.destino;
+  f.marketplace=derivarMarketplace(f.destino)||document.getElementById('ef-marketplace').value;
+  const tipoEd=document.getElementById('ef-tipo').value;
+  if(tipoEd){ f.tipo_envio=tipoEd; f.empresa=tipoEd; }      // vazio = mantém o que estava (LogBox/Fokus nos Fulls antigos)
   f.obs=document.getElementById('ef-obs').value;
   const ag=document.getElementById('ef-agendado').value;
   if(ag){const p=ag.split('-');f.agendado=p[2]+'/'+p[1]+'/'+p[0]; f.dateKey=f.agendado;}
@@ -5040,6 +5076,7 @@ async function salvarEditFull(){
   const cal=CAL_FULLS.find(c=>c.id===editingFullId);
   if(cal){
     cal.status=f.status; cal.destino=f.destino; cal.responsavel=f.responsavel;
+    cal.empresa=f.empresa; cal.tipo_envio=f.tipo_envio; cal.marketplace=f.marketplace;
     const done=f.itens.filter(i=>i.status==='done').length; cal.itens=done+'/'+f.itens.length;
     // sincroniza dateKey e dia no cal entry
     if(f.dateKey){ cal.dateKey=f.dateKey; cal.dia=diaDaSemana(f.agendado); }
@@ -5170,7 +5207,7 @@ function openEnviadoDetail(id) {
       const av=item.funcionario&&item.funcionario!=='—'?item.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2):'?';
       return `<div class="item-card done">
         <div class="item-top"><div><div class="item-name">${item.nome}</div><div class="item-code">${item.codigo||'—'}</div></div><div class="sdot dot-done"></div></div>
-        <div class="item-bottom"><div class="item-func"><div class="prod-avatar ${funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}" style="width:20px;height:20px;font-size:9px">${av}</div><span class="item-func-name">${item.funcionario||'—'}</span></div><div class="item-qty">${item.qtde} cx</div></div>
+        <div class="item-bottom"><div class="item-func"><div class="prod-avatar ${funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}" style="width:20px;height:20px;font-size:9px">${av}</div><span class="item-func-name">${item.funcionario||'—'}</span></div><div class="item-qty">${itemQtdeTexto(item)}</div></div>
       </div>`;}).join('')}
     </div>
     <button class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;padding:8px;margin-top:8px;color:var(--accent);border-color:rgba(255,255,255,.12)" onclick="closeDetail();abrirImpressao('${f.id}')">🖨 Imprimir Comprovante</button>
@@ -6980,7 +7017,7 @@ async function salvarNovoFull() {
   // constrói itens a partir dos SKUs adicionados no modal
   const itens = (window._nfSkus||[]).map(s => ({
     codigo: s.sku, nome: s.descricao, funcionario:'—',
-    qtde: s.qtde, status:'pending', avatar:'?', cor:'av-amber'
+    qtde: s.qtde, ...(parseInt(s.avulsas)>0?{avulsas:parseInt(s.avulsas)}:{}), status:'pending', avatar:'?', cor:'av-amber'
   }));
   const novoFull = { id, empresa: tipo_envio, tipo_envio, marketplace, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens, dateKey };
   const calEntry = { id, empresa: tipo_envio, tipo_envio, marketplace, dia, destino, status, itens:'0/'+itens.length, responsavel, dateKey };
@@ -7034,19 +7071,21 @@ function nfSkuAuto(idx, inputEl) {
 }
 
 function nfUpdateQtde(idx, val) {
-  window._nfSkus[idx].qtde = parseInt(val)||1;
+  const n = parseInt(val);
+  window._nfSkus[idx].qtde = isNaN(n) ? 1 : Math.max(0, n);   // 0 cx vale quando o item vai só em caixa aberta
   nfUpdateTotal();
 }
 
 function nfUpdateTotal() {
   const total = window._nfSkus.reduce((a,s)=>a+s.qtde,0);
+  const avulsas = window._nfSkus.reduce((a,s)=>a+(parseInt(s.avulsas)||0),0);
   const volTotal = window._nfSkus.reduce((a,s)=>{
     const sk = SKU_DB.find(x=>x.sku===s.sku);
     return a + (sk ? sk.vol * s.qtde : 0);
   }, 0);
   const el = document.getElementById('nf-skus-total');
   if (el) el.textContent = window._nfSkus.length
-    ? window._nfSkus.length+' SKU'+(window._nfSkus.length!==1?'s':'')+' · '+total+' caixas'+(volTotal?' · '+volTotal.toFixed(1)+'L':'')
+    ? window._nfSkus.length+' SKU'+(window._nfSkus.length!==1?'s':'')+' · '+total+' caixas'+(avulsas?' + '+avulsas+' un avulsas':'')+(volTotal?' · '+volTotal.toFixed(1)+'L':'')
     : '';
 }
 
@@ -7061,7 +7100,7 @@ function nfRenderSkus() {
   lista.innerHTML = window._nfSkus.map((s, i) => {
     const sk = SKU_DB.find(x=>x.sku===s.sku);
     const volInfo = sk ? `<span style="color:var(--green);font-size:10px">${(sk.vol*s.qtde).toFixed(1)}L</span>` : '';
-    return `<div style="display:grid;grid-template-columns:130px 1fr 80px auto;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+    return `<div style="display:grid;grid-template-columns:130px 1fr 70px 70px auto;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
       <div>
         <input class="form-sel nf-sku-input" value="${s.sku||''}" placeholder="SKU-001"
           style="font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase"
@@ -7073,10 +7112,15 @@ function nfRenderSkus() {
         ${s.descricao||'—'} ${volInfo}
       </div>
       <div>
-        <input class="form-sel nf-qtde-input" type="number" value="${s.qtde||1}" min="1"
+        <input class="form-sel nf-qtde-input" type="number" value="${s.qtde??1}" min="0" title="Caixas fechadas"
           style="font-size:12px;text-align:center"
           oninput="nfUpdateQtde(${i},this.value)"
           onkeydown="if(event.key==='Enter'){event.preventDefault();nfAddSku()}">
+      </div>
+      <div>
+        <input class="form-sel" type="number" value="${s.avulsas||''}" min="0" placeholder="un" title="Caixa aberta: unidades avulsas"
+          style="font-size:12px;text-align:center"
+          oninput="window._nfSkus[${i}].avulsas=Math.max(0,parseInt(this.value)||0);nfUpdateTotal()">
       </div>
       <button class="remove-btn" onclick="nfRemoveSku(${i})">✕</button>
     </div>`;
@@ -7098,6 +7142,24 @@ function nfAtualizarDestinos() {
   if (!sel) return;
   const opts = _NF_DESTINOS[mkt] || [];
   sel.innerHTML = opts.map(d=>`<option>${d}</option>`).join('');
+  _tipoRotularColeta('nf-tipo', mkt);
+}
+function _tipoRotularColeta(selId, mkt) {
+  const o = document.querySelector(`#${selId} option[value="Coleta"]`);
+  if (o) o.textContent = tipoTexto('Coleta', mkt);
+}
+// Destinos da tela de editar: os do marketplace do Full. Se o destino gravado
+// não estiver na lista (ex. um CD digitado antes), ele entra como opção — antes
+// o select ficava sem valor e salvar apagava o destino (09.03.04-MAGALU).
+function efAtualizarDestinos(manter) {
+  const mkt = document.getElementById('ef-marketplace')?.value || 'ML';
+  const sel = document.getElementById('ef-destino'); if (!sel) return;
+  const atual = manter !== undefined ? manter : sel.value;
+  const opts = [...(_NF_DESTINOS[mkt] || [])];
+  if (atual && !opts.includes(atual) && derivarMarketplace(atual) === mkt) opts.unshift(atual);
+  sel.innerHTML = opts.map(d=>`<option>${d}</option>`).join('');
+  if (atual && opts.includes(atual)) sel.value = atual;
+  _tipoRotularColeta('ef-tipo', mkt);
 }
 
 function closeModal(id){document.getElementById(id).classList.remove('open');if(id==='modalSku')editingSkuIdx=null;if(id==='modalFull'){window._nfSkus=[];}}
@@ -7198,7 +7260,7 @@ async function moverParaEnviados(id) {
     id: f.id, empresa: f.empresa, destino: f.destino,
     responsavel: f.responsavel, agendado: f.agendado, criadoEm: f.criadoEm||'',
     enviadoEm, totalItens: (f.itens||[]).length, totalCaixas,
-    itens: (f.itens||[]).map(i=>({nome:i.nome,codigo:i.codigo,qtde:i.qtde,funcionario:i.funcionario||'—',status:'done'})),
+    itens: (f.itens||[]).map(i=>({nome:i.nome,codigo:i.codigo,qtde:i.qtde,...(itemAvulsas(i)?{avulsas:itemAvulsas(i)}:{}),funcionario:i.funcionario||'—',status:'done'})),
   };
   FULLS_ENVIADOS.unshift(enviado);
   delete FULLS_DATA[id];
@@ -7561,7 +7623,7 @@ function executarImpressao() {
       <td style="padding:7px 10px;font-size:12px;text-align:center;color:#6b7280">${i+1}</td>
       <td style="padding:7px 10px;font-size:12px;font-family:monospace;color:#374151">${item.codigo || '—'}</td>
       <td style="padding:7px 10px;font-size:12px;color:#111827;font-weight:500">${item.nome}</td>
-      <td style="padding:7px 10px;font-size:12px;text-align:center;font-weight:700;color:#111827">${item.qtde}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:center;font-weight:700;color:#111827">${itemQtdeTexto(item)}</td>
       <td style="padding:7px 10px;font-size:12px;color:#6b7280">${item.funcionario || '—'}</td>
     </tr>`).join('');
 
@@ -13640,13 +13702,17 @@ function imprimirRequisicaoFull(id) {
   const agora = new Date();
   const dataImpressao = agora.toLocaleDateString('pt-BR') + ' ' + agora.getHours().toString().padStart(2,'0') + ':' + agora.getMinutes().toString().padStart(2,'0');
   const totalCaixas = (f.itens || []).reduce((a, i) => a + (parseInt(i.qtde) || 0), 0);
+  const abertas = fullCaixasAbertas(f.itens), totalUn = fullUnidades(f.itens);
+  const unCx = (item) => parseInt(_skuDb(item.codigo)?.qtdecx) || 0;
 
   const itensHTML = (f.itens || []).map((item, i) => `
     <tr style="border-bottom:1px solid #e5e7eb${i % 2 === 1 ? ';background:#f9fafb' : ''}">
       <td style="padding:8px 10px;font-size:12px;text-align:center;color:#6b7280;width:30px">${i+1}</td>
       <td style="padding:8px 10px;font-size:12px;font-family:monospace;color:#374151;white-space:nowrap">${item.codigo || '—'}</td>
       <td style="padding:8px 10px;font-size:12px;color:#111827;font-weight:500">${item.nome || '—'}</td>
-      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;color:#111827;width:70px">${item.qtde}</td>
+      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;color:#111827;width:60px">${parseInt(item.qtde)||0}${unCx(item)>1?`<div style="font-size:9px;font-weight:400;color:#6b7280">${unCx(item)} un/cx</div>`:''}</td>
+      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;width:70px;${itemAvulsas(item)?'color:#b45309;background:#fef3c7':'color:#d1d5db'}">${itemAvulsas(item)?itemAvulsas(item)+'<div style="font-size:9px;font-weight:600">cx aberta</div>':'—'}</td>
+      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;color:#111827;width:70px">${itemUnidades(item).toLocaleString('pt-BR')}</td>
       <td style="padding:8px 10px;font-size:20px;text-align:center;width:50px">☐</td>
     </tr>`).join('');
 
@@ -13693,7 +13759,8 @@ function imprimirRequisicaoFull(id) {
         </div>
         <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total caixas</div>
-          <div style="font-size:22px;font-weight:900;color:#d97706">${totalCaixas}</div>
+          <div style="font-size:22px;font-weight:900;color:#d97706">${totalCaixas}${abertas?`<span style="font-size:12px;color:#fbbf24"> + ${abertas} aberta${abertas>1?'s':''}</span>`:''}</div>
+          <div style="font-size:10px;color:#9ca3af;font-family:monospace;margin-top:2px">${totalUn.toLocaleString('pt-BR')} unidades</div>
         </div>
       </div>
 
@@ -13707,6 +13774,8 @@ function imprimirRequisicaoFull(id) {
               <th style="padding:9px 10px;font-size:10px;text-align:left;font-family:monospace;letter-spacing:.5px">SKU</th>
               <th style="padding:9px 10px;font-size:10px;text-align:left;font-family:monospace;letter-spacing:.5px">Produto</th>
               <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">Qtde Cx</th>
+              <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">Un. avulsas</th>
+              <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">Total un.</th>
               <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">✓ Separado</th>
             </tr>
           </thead>
@@ -13715,6 +13784,8 @@ function imprimirRequisicaoFull(id) {
             <tr style="background:#f9fafb;border-top:2px solid #111">
               <td colspan="3" style="padding:9px 10px;font-size:12px;font-weight:700;text-align:right;font-family:monospace">TOTAL</td>
               <td style="padding:9px 10px;font-size:16px;font-weight:900;text-align:center;color:#d97706">${totalCaixas}</td>
+              <td style="padding:9px 10px;font-size:16px;font-weight:900;text-align:center;color:#b45309">${abertas?(f.itens||[]).reduce((a,i)=>a+itemAvulsas(i),0):'—'}</td>
+              <td style="padding:9px 10px;font-size:16px;font-weight:900;text-align:center;color:#d97706">${totalUn.toLocaleString('pt-BR')}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -13780,7 +13851,7 @@ function imprimirDelegacaoMax(id) {
       <td style="padding:9px 10px;font-size:11px;text-align:center;color:#6b7280;width:28px">${i+1}</td>
       <td style="padding:9px 10px;font-size:11px;font-family:monospace;color:#374151;white-space:nowrap">${item.codigo || '—'}</td>
       <td style="padding:9px 10px;font-size:11px;color:#111827;font-weight:600">${item.nome || '—'}</td>
-      <td style="padding:9px 10px;font-size:13px;text-align:center;font-weight:900;color:#111827;width:55px">${item.qtde}</td>
+      <td style="padding:9px 10px;font-size:13px;text-align:center;font-weight:900;color:#111827;width:55px">${parseInt(item.qtde)||0}${itemAvulsas(item)?`<div style="font-size:10px;font-weight:700;color:#b45309">+ ${itemAvulsas(item)} un (cx aberta)</div>`:''}</td>
       <td style="padding:9px 10px;font-size:10px;text-align:center;color:#6b7280;width:55px">${unCx}</td>
       <td style="padding:9px 10px;font-size:10px;text-align:center;color:#6b7280;width:55px">${pesoCx}</td>
       <td style="padding:9px 10px;width:130px"><div style="border-bottom:1.5px solid #9ca3af;height:26px"></div></td>
