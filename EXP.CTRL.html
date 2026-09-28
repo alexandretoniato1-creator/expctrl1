@@ -354,7 +354,7 @@ input:focus,select.form-sel:focus{border-color:var(--accent)}
 .edit-tab{padding:7px 14px;border-radius:7px 7px 0 0;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;margin-bottom:-1px}
 .edit-tab:hover{color:var(--text)}.edit-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
 .edit-tab-panel{display:none}.edit-tab-panel.active{display:block}
-.item-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.8fr 1.2fr 1fr 0.55fr 0.65fr 1fr auto;gap:8px;align-items:end}
+.item-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.8fr 1.2fr 1fr 0.6fr 1fr auto;gap:8px;align-items:end}
 .vol-linha{background:var(--surface2);border:1px solid var(--border);border-radius:9px;padding:11px;display:grid;grid-template-columns:0.7fr 1fr 0.6fr 0.6fr 0.6fr 0.5fr auto;gap:8px;align-items:end}
 .item-linha .form-group,.vol-linha .form-group{margin:0}
 .remove-btn{width:28px;height:28px;border-radius:6px;border:1px solid rgba(245,95,95,.3);background:rgba(245,95,95,.07);color:var(--red);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
@@ -1212,7 +1212,7 @@ select:focus{border-color:var(--accent)}
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(245,95,95,.12)"></div>Atrasado</div>
               </div>
               <select id="calFiltroMkt" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Todos MKT</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok</option><option value="Magalu">Magalu</option></select>
-              <select id="calFiltroTipo" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Coleta + Envio</option><option value="Coleta">Coleta (do marketplace)</option><option value="Envio próprio">Envio próprio</option></select>
+              <select id="calFiltroTipo" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Coleta + Envio</option><option value="Coleta">Coleta ML</option><option value="Envio próprio">Envio próprio</option></select>
               <button class="btn btn-primary btn-sm" onclick="openModal('modalFull')">+ Novo Full</button>
             </div>
           </div>
@@ -1472,12 +1472,7 @@ select:focus{border-color:var(--accent)}
                 <option value="ML Guarulhos/SP">ML Guarulhos/SP</option>
                 <option value="ML Embu das Artes/SP">ML Embu das Artes/SP</option>
                 <option value="Amazon SP">Amazon SP</option>
-                <option value="Amazon RJ">Amazon RJ</option>
-                <option value="Amazon MG">Amazon MG</option>
                 <option value="Shopee SP">Shopee SP</option>
-                <option value="Shopee RJ">Shopee RJ</option>
-                <option value="TikTok SP">TikTok SP</option>
-                <option value="Magalu SP">Magalu SP</option>
               </select>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
@@ -1643,6 +1638,14 @@ select:focus{border-color:var(--accent)}
                 <button class="btn btn-ghost btn-sm" id="expPendToggle" onclick="toggleListaPendentes()">📋 Ver faltantes</button>
               </div>
             </div>
+            <div id="confBarra" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:10px;padding:8px 10px;background:var(--surface2);border-radius:8px">
+              <span style="font-size:11px;font-weight:800">🎯 Conferindo:</span>
+              <span id="confChipsMkt" style="display:flex;gap:4px;flex-wrap:wrap"></span>
+              <span style="color:var(--border2)">|</span>
+              <span id="confChipsCanal" style="display:flex;gap:4px;flex-wrap:wrap"></span>
+              <span id="confResumo" style="margin-left:auto;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted2)"></span>
+            </div>
+            <div id="confFlash" style="display:none;margin-bottom:10px"></div>
             <div id="expCancelados" onclick="abrirListaPendentes('cancelado')" style="display:none;cursor:pointer;align-items:center;gap:10px;background:rgba(248,81,73,.15);border:2px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:10px" title="Clique para ver quais são">
               <span style="font-size:20px">🚫</span>
               <span style="font-size:13px;font-weight:900;color:var(--red)"><span id="expNumCancelados">0</span> PEDIDO(S) CANCELADO(S) NO MERCADO LIVRE — NÃO DESPACHAR</span>
@@ -2183,7 +2186,7 @@ select:focus{border-color:var(--accent)}
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
       <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date" id="nf-agendado"></div>
       <div class="form-group"><label>Responsável</label><select class="form-sel" id="nf-responsavel"><option>Edipo</option><option>Max</option></select></div>
-      <div class="form-group"><label>Destino</label><select class="form-sel" id="nf-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option></select></div>
+      <div class="form-group"><label>Destino</label><select class="form-sel" id="nf-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
       <div class="form-group"><label>Status</label><select class="form-sel" id="nf-status"><option>Pendente</option><option>Produzindo</option><option>Em conferência</option><option>Pronto</option></select></div>
       <div class="form-group full"><label>Observações</label><input class="form-sel" type="text" id="nf-obs" placeholder="Opcional"></div>
     </div>
@@ -2191,7 +2194,7 @@ select:focus{border-color:var(--accent)}
       <span>SKUs do Full <span style="color:var(--muted);font-size:10px;font-weight:400">(opcional — adicione agora ou depois)</span></span>
       <button class="btn btn-ghost btn-sm" onclick="nfAddSku()">+ SKU</button>
     </div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">SKU + Enter preenche automático do Catálogo · colunas: caixas fechadas e unidades avulsas (caixa aberta)</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace">SKU + Enter preenche automático do Catálogo</div>
     <div id="nf-skus-lista" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto"></div>
     <div id="nf-skus-total" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:8px;text-align:right"></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalFull')">Cancelar</button><button class="btn btn-primary" onclick="salvarNovoFull()">Salvar</button></div>
@@ -2214,9 +2217,7 @@ select:focus{border-color:var(--accent)}
         <div class="form-group"><label>ID Full <span style="color:var(--muted);font-size:9px">editável</span></label><input class="form-sel" type="text" id="ef-id" style="color:var(--accent);font-family:'DM Mono',monospace;text-transform:uppercase" oninput="this.value=this.value.toUpperCase()"></div>
         <div class="form-group"><label>Status</label><select class="form-sel" id="ef-status" onchange="checkConferenciaStatus()"><option value="Pendente">Pendente</option><option value="Produzindo">Produzindo</option><option value="Em conferência">Em conferência</option><option value="Pronto">Pronto</option></select><div id="efStatusDica" style="display:none;font-size:10px;font-family:'DM Mono',monospace;margin-top:5px;padding:5px 8px;border-radius:5px;background:rgba(0,0,0,.15)"></div></div>
         <div class="form-group"><label>Responsável</label><select class="form-sel" id="ef-responsavel"><option>Edipo</option><option>Max</option></select></div>
-        <div class="form-group"><label>Marketplace</label><select class="form-sel" id="ef-marketplace" onchange="efAtualizarDestinos('')"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
-        <div class="form-group"><label>Destino</label><select class="form-sel" id="ef-destino"><option>ML Cajamar/SP</option></select></div>
-        <div class="form-group"><label>Tipo de envio</label><select class="form-sel" id="ef-tipo"><option value="">— não informado</option><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
+        <div class="form-group"><label>Destino</label><select class="form-sel" id="ef-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
         <div class="form-group"><label>Data agendada</label><input class="form-sel" type="date" id="ef-agendado"></div>
         <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="ef-criadoEm"></div>
         <div class="form-group full"><label>Observações</label><input class="form-sel" type="text" id="ef-obs" placeholder="Observações"></div>
@@ -2375,12 +2376,12 @@ select:focus{border-color:var(--accent)}
   <div class="modal modal-lg" style="max-width:560px">
     <div class="modal-title"><span id="bibModalTitle">Nova etiqueta na biblioteca</span><button class="modal-close" onclick="closeModal('modalBibEtq')">✕</button></div>
     <div class="form-grid">
-      <div class="form-group"><label>SKU *</label><input class="form-sel" id="bib-sku" type="text" placeholder="Ex: VA-BA02" onblur="checarSkuGenerico('bib-sku')"></div>
+      <div class="form-group"><label>SKU *</label><input class="form-sel" id="bib-sku" type="text" placeholder="Ex: VA_2DBA02" onblur="checarSkuGenerico('bib-sku')"></div>
       <div class="form-group"><label>Descrição</label><input class="form-sel" id="bib-desc" type="text" placeholder="Nome do produto"></div>
     </div>
     <div class="form-group" style="margin-top:8px;margin-bottom:8px">
       <label>Cole o ZPL aqui</label>
-      <textarea class="etq-zpl-textarea" id="bib-zpl" placeholder="^XA&#10;^FO...&#10;^XZ" style="min-height:160px" oninput="bibZplColado()"></textarea>
+      <textarea class="etq-zpl-textarea" id="bib-zpl" placeholder="^XA&#10;^FO...&#10;^XZ" style="min-height:160px"></textarea>
     </div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:4px">💡 Esse ZPL fica disponível pra qualquer Full que use esse SKU — não precisa colar de novo depois.</div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalBibEtq')">Cancelar</button><button class="btn btn-primary" onclick="bibSalvarItem()">Salvar na biblioteca</button></div>
@@ -3164,18 +3165,10 @@ function mktBadgeHtml(mkt) {
   if (!mkt || !s) return '';
   return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${s};font-weight:700;font-family:'DM Mono',monospace">${mkt}</span>`;
 }
-const MKT_NOME = { ML:'ML', Amazon:'Amazon', Shopee:'Shopee', TikTok:'TikTok', Magalu:'Magalu' };
-// "Coleta" é quem busca no galpão: o próprio marketplace. O rótulo segue o
-// marketplace do Full (Coleta ML, Coleta Shopee, Coleta Magalu…).
-function tipoTexto(tipo, mkt) {
-  if (!tipo || tipo === 'LogBox') return '';
-  return tipo === 'Coleta' ? ('🚚 Coleta' + (MKT_NOME[mkt] ? ' ' + MKT_NOME[mkt] : '')) : '📦 Envio próprio';
-}
-function tipoBadgeHtml(tipo, mkt) {
+function tipoBadgeHtml(tipo) {
   if (!tipo || tipo === 'LogBox') return '';
   const isColeta = tipo === 'Coleta';
-  const txt = isColeta ? ('🚚 Coleta' + (MKT_NOME[mkt] ? ' ' + MKT_NOME[mkt] : '')) : '📦 Env. próprio';
-  return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${isColeta?'rgba(88,166,255,.15);color:#58a6ff':'rgba(63,185,80,.15);color:#3fb950'};font-family:'DM Mono',monospace;font-weight:700">${txt}</span>`;
+  return `<span style="font-size:8px;padding:1px 5px;border-radius:100px;background:${isColeta?'rgba(88,166,255,.15);color:#58a6ff':'rgba(63,185,80,.15);color:#3fb950'};font-family:'DM Mono',monospace;font-weight:700">${isColeta?'🚚 Coleta':'📦 Env. próprio'}</span>`;
 }
 
 // ── BarcodeDetector (leitura de códigos lineares na câmera) ──
@@ -3252,7 +3245,7 @@ function showPage(name) {
     renderSaidas();
     carregarLedger(false).then(()=>{ renderSaidas(); });
     clearInterval(window._saidasLedgerTimer);
-    window._saidasLedgerTimer = setInterval(()=>{ carregarLedger(true).then(()=>{ if(document.getElementById('view-saidas')?.classList.contains('active')) renderSaidas(); }); }, 60000);
+    window._saidasLedgerTimer = setInterval(()=>{ carregarLedger(true).then(()=>{ if(document.getElementById('view-saidas')?.classList.contains('active')) renderSaidas(); }); }, 30000);
     setTimeout(()=>{const el=document.getElementById('saidaBipe');if(el)el.focus();},100);
   } else { clearInterval(window._saidasLedgerTimer); }
   if (name==='dashboard') renderDashboard();
@@ -4324,8 +4317,8 @@ function _openDetailPanel(id) {
       <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${total}</div><div class="detail-stat-label">SKUs</div></div>
     </div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
-      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL CAIXAS${fullCaixasAbertas(itens)?` <span style="color:var(--orange)">+ ${fullCaixasAbertas(itens)} aberta(s)</span>`:''}</span>
-      <span style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px">${totalCaixas}${fullCaixasAbertas(itens)?`<span style="font-size:11px;font-weight:600;color:var(--muted);margin-left:6px">${fullUnidades(itens).toLocaleString('pt-BR')} un</span>`:''}</span>
+      <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">TOTAL CAIXAS</span>
+      <span style="font-size:20px;font-weight:800;color:var(--text);letter-spacing:-.5px">${totalCaixas}</span>
     </div>
     ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
     <div class="progress-wrap">
@@ -4347,7 +4340,7 @@ function _openDetailPanel(id) {
             <div class="prod-avatar ${item.cor}" style="width:20px;height:20px;font-size:9px">${item.avatar}</div>
             <span class="item-func-name">${item.funcionario}</span>
           </div>
-          <div class="item-qty">${itemQtdeTexto(item)}</div>
+          <div class="item-qty">${item.qtde} cx</div>
         </div>
       </div>`).join('')}</div>
     <div style="padding-top:12px;border-top:1px solid var(--border)">
@@ -4378,7 +4371,7 @@ function openFullDetalheInline(id) {
   const pct = total ? Math.round((done/total)*100) : 0;
 
   document.getElementById('fdTitle').textContent = f.id;
-  document.getElementById('fdSub').innerHTML = `${mktBadgeHtml(f.marketplace||derivarMarketplace(f.destino))} ${tipoBadgeHtml(f.tipo_envio, f.marketplace||derivarMarketplace(f.destino))} · ${f.destino} · ${f.agendado} <span class="badge ${statusClass(f.status)}" style="margin-left:6px">${statusIcon(f.status)} ${f.status}</span>`;
+  document.getElementById('fdSub').innerHTML = `${mktBadgeHtml(f.marketplace||derivarMarketplace(f.destino))} ${tipoBadgeHtml(f.tipo_envio)} · ${f.destino} · ${f.agendado} <span class="badge ${statusClass(f.status)}" style="margin-left:6px">${statusIcon(f.status)} ${f.status}</span>`;
 
   document.getElementById('fdBtnEditar').onclick = () => openEditFull(id);
   const btnConf = document.getElementById('fdBtnConferencia');
@@ -4409,9 +4402,8 @@ function openFullDetalheInline(id) {
   const skuMap = {};
   itens.forEach(item => {
     const k = item.codigo || item.nome || '—';
-    if (!skuMap[k]) skuMap[k] = { nome: item.nome||'', codigo: item.codigo||k, qtde: 0, avulsas: 0, status: item.status, funcionarios: [] };
+    if (!skuMap[k]) skuMap[k] = { nome: item.nome||'', codigo: item.codigo||k, qtde: 0, status: item.status, funcionarios: [] };
     skuMap[k].qtde += parseInt(item.qtde)||0;
-    skuMap[k].avulsas += itemAvulsas(item);
     if (item.funcionario && item.funcionario !== '—') skuMap[k].funcionarios.push(item.funcionario);
   });
   document.getElementById('fdSkuList').innerHTML = Object.values(skuMap).map(s => {
@@ -4423,7 +4415,7 @@ function openFullDetalheInline(id) {
           <div class="sdot ${dotCls}"></div>
           <span style="font-size:12px;font-weight:700">${s.nome||s.codigo}</span>
         </div>
-        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--text)">${s.qtde} <span style="font-size:10px;font-weight:400;color:var(--muted)">cx</span>${s.avulsas?` <span style="font-size:11px;color:var(--orange)">+ ${s.avulsas} un</span>`:''}</span>
+        <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:800;color:var(--text)">${s.qtde} <span style="font-size:10px;font-weight:400;color:var(--muted)">cx</span></span>
       </div>
       <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">${s.codigo} · ${funcs}</div>
     </div>`;
@@ -4653,7 +4645,7 @@ function renderCal(){
               style="width:14px;height:14px;border-radius:3px;border:none;background:rgba(245,95,95,.15);color:var(--red);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;flex-shrink:0;transition:opacity .15s"
               onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">✕</button>
           </div>
-          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:2px">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa), derivarMarketplace(f.destino))}</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:2px">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
           <div class="cal-full-dest">${f.destino}</div>
           ${_semaforoHtml(f.id, f.dateKey || dateKey)}
         </div>`;
@@ -4748,9 +4740,7 @@ function openEditFull(id){
   document.getElementById('editFullTitleEmpresa').textContent=f.empresa+' · '+f.responsavel;
   document.getElementById('ef-status').value=f.status;
   document.getElementById('ef-responsavel').value=f.responsavel;
-  document.getElementById('ef-marketplace').value = derivarMarketplace(f.destino) || f.marketplace || 'ML';
-  efAtualizarDestinos(f.destino||'');
-  document.getElementById('ef-tipo').value = derivarTipoLabel(f.empresa) || '';
+  document.getElementById('ef-destino').value=f.destino;
   document.getElementById('ef-obs').value=f.obs||'';
   if(f.agendado){const p=f.agendado.split('/');if(p.length===3)document.getElementById('ef-agendado').value=p[2]+'-'+p[1]+'-'+p[0];}
   if(f.criadoEm){const p=f.criadoEm.split('/');if(p.length===3)document.getElementById('ef-criadoEm').value=p[2]+'-'+p[1]+'-'+p[0];}
@@ -4850,7 +4840,6 @@ function renderEditItens(itens){
       <div class="form-group"><label>Descrição</label><input class="form-sel" value="${item.nome||''}" style="font-size:11px" oninput="updateItem(${i},'nome',this.value)" placeholder="Auto pelo SKU"></div>
       <div class="form-group"><label>Funcionário</label><select class="form-sel" style="font-size:11px" onchange="updateItem(${i},'funcionario',this.value)"><option value="—">—</option>${FUNCIONARIOS_DATA.map(f=>`<option value="${f.nome}" ${item.funcionario===f.nome?'selected':''}>${f.nome} (${f.empresa})</option>`).join('')}</select></div>
       <div class="form-group"><label>Qtde cx</label><input class="form-sel" type="number" style="font-size:11px" value="${item.qtde||''}" oninput="updateItem(${i},'qtde',this.value)" min="0"></div>
-      <div class="form-group"><label title="Caixa aberta: unidades soltas, fora das caixas fechadas">Un. avulsas</label><input class="form-sel" type="number" style="font-size:11px" value="${itemAvulsas(item)||''}" placeholder="0" oninput="updateItem(${i},'avulsas',Math.max(0,parseInt(this.value)||0))" min="0" title="Caixa aberta: unidades soltas, fora das caixas fechadas"></div>
       <div class="form-group"><label>Status</label><select class="form-sel" style="font-size:11px" onchange="updateItemStatus(${i},this.value)">
         <option value="pending" ${item.status==='pending'?'selected':''}>Pendente</option>
         <option value="doing" ${item.status==='doing'?'selected':''}>Produzindo</option>
@@ -4867,10 +4856,13 @@ function renderEditItens(itens){
 // Mostra o saldo pré-impresso do SKU e permite usá-lo: baixa na biblioteca e marca as
 // etiquetas deste Full como prontas (mesma lógica do "Usar do estoque" da seção Etiquetas).
 // Grava na hora — não depende do "Salvar alterações".
-function _unidadesItem(item){ return itemUnidades(item); }
+function _unidadesItem(item){ return (parseInt(item.qtde)||0) * (parseInt(_skuDb(item.codigo)?.qtdecx)||1); }
 function _bibRegPorSku(sku){
-  const r = zplBibGet(sku);
-  return r ? { chave: r.sku, reg: r } : null;
+  const idx = window._zplBibIndex; if (!idx || !sku) return null;
+  if (idx.get(sku)) return { chave: sku, reg: idx.get(sku) };
+  const alvo = String(sku).trim().toUpperCase();
+  for (const [k, r] of idx) if (String(k).trim().toUpperCase() === alvo) return { chave: k, reg: r };
+  return null;
 }
 async function itemRenderPreEtiquetado(itens){
   const fullId = editingFullId; if (!fullId) return;
@@ -4883,7 +4875,7 @@ async function itemRenderPreEtiquetado(itens){
     const achado = _bibRegPorSku(item.codigo);
     if (!item.codigo || !achado) { el.innerHTML = ''; return; }
     const saldo = achado.reg.estoque || 0;
-    const etq = etqs.find(e => zplSkuChave(e.sku) === zplSkuChave(achado.chave));
+    const etq = etqs.find(e => String(e.sku).toUpperCase() === String(achado.chave).toUpperCase());
     const prontas = etq ? (etq.impressas||0) : 0;
     const total = etq ? (etq.total||0) : _unidadesItem(item);
     const faltam = Math.max(0, total - prontas);
@@ -4903,13 +4895,13 @@ async function itemUsarPreEtiquetado(i){
   if (!achado) { showToast('SKU não está na biblioteca de etiquetas'); return; }
   const saldo = achado.reg.estoque || 0;
   const arr = etqGetData(fullId);
-  let etq = arr.find(e => zplSkuChave(e.sku) === zplSkuChave(achado.chave));
+  let etq = arr.find(e => String(e.sku).toUpperCase() === String(achado.chave).toUpperCase());
   const total = etq ? (etq.total||0) : _unidadesItem(item);
   if (!total) { showToast('⚠️ Informe a quantidade do item primeiro'); return; }
   const faltam = Math.max(0, total - (etq ? (etq.impressas||0) : 0));
   const max = Math.min(saldo, faltam);
   if (max <= 0) { showToast('Nada a usar: sem saldo ou etiquetas já completas'); return; }
-  const r = prompt(`Usar quantas etiquetas pré-impressas de ${zplSkuTexto(achado.chave)}?\n\nSaldo pré-etiquetado: ${saldo}\nFaltam neste Full: ${faltam}`, String(max));
+  const r = prompt(`Usar quantas etiquetas pré-impressas de ${achado.chave}?\n\nSaldo pré-etiquetado: ${saldo}\nFaltam neste Full: ${faltam}`, String(max));
   const usar = Math.min(parseInt(r,10)||0, max);
   if (usar <= 0) return;
   const novoSaldo = saldo - usar;
@@ -4928,7 +4920,7 @@ async function itemUsarPreEtiquetado(i){
   showToast(`📦 ${usar} etiqueta(s) de ${achado.chave} usadas do pré-etiquetado · saldo agora ${novoSaldo}`);
 }
 function updateItem(i,field,val){if(!editingFullId)return;const f=FULLS_DATA[editingFullId];if(f.itens[i])f.itens[i][field]=val;
-  if(field==='codigo'||field==='qtde'||field==='avulsas'){clearTimeout(window._preEtqT);window._preEtqT=setTimeout(()=>itemRenderPreEtiquetado(f.itens),400);}}
+  if(field==='codigo'||field==='qtde'){clearTimeout(window._preEtqT);window._preEtqT=setTimeout(()=>itemRenderPreEtiquetado(f.itens),400);}}
 
 async function updateItemStatus(i, novoStatus) {
   if (!editingFullId) return;
@@ -4955,12 +4947,12 @@ async function updateItemStatus(i, novoStatus) {
   if (novoStatus === 'done' && statusAnterior !== 'done') {
     const func = item.funcionario;
     const caixas = parseInt(item.qtde) || 0;
-    if (func && func !== '—' && (caixas > 0 || itemAvulsas(item) > 0)) {
+    if (func && func !== '—' && caixas > 0) {
       const fi = FUNC_INFO[func];
       const empresa = fi?.empresa || '';
       const skuData = _skuDb(item.codigo);
       const tempo_min = skuData ? parseFloat(((parseFloat(skuData.tempo)||0) * caixas).toFixed(1)) : 0;
-      const produtos = itemUnidades(item);
+      const produtos = caixas * (skuData?.qtdecx || 1);
       const hoje = new Date().toLocaleDateString('pt-BR');
       // Tempo real = de "Produzindo" até "Concluído". Acima de 12h não é tempo de trabalho → descarta.
       let tempo_real_min = null;
@@ -4976,7 +4968,7 @@ async function updateItemStatus(i, novoStatus) {
       const newId = await db.saveProd(reg);
       if (newId) reg._id = newId;
       PROD_DATA.push(reg);
-      showToast('✅ Produtividade de ' + func.split(' ')[0] + ' registrada — ' + itemQtdeTexto(item));
+      showToast('✅ Produtividade de ' + func.split(' ')[0] + ' registrada — ' + caixas + ' cx');
     }
   }
 }
@@ -4992,20 +4984,6 @@ function skuAutoItem(inputEl,idx){
     showToast('📦 '+found.descricao+' · '+found.comp+'×'+found.larg+'×'+found.altu+'cm · '+found.vol+'L/cx');
   }
 }
-// Caixa aberta: além das caixas fechadas (item.qtde), o item pode levar
-// unidades avulsas (item.avulsas). Unidades = caixas × un/cx do Catálogo + avulsas.
-function itemAvulsas(item){ return Math.max(0, parseInt(item && item.avulsas) || 0); }
-function itemUnidades(item){
-  const q = parseInt(_skuDb(item && item.codigo)?.qtdecx) || 1;
-  return (parseInt(item && item.qtde) || 0) * q + itemAvulsas(item);
-}
-function itemQtdeTexto(item){
-  const cx = parseInt(item && item.qtde) || 0, av = itemAvulsas(item);
-  if (!av) return cx + ' cx';
-  return (cx ? cx + ' cx + ' : '') + av + ' un';
-}
-function fullUnidades(itens){ return (itens||[]).reduce((a,i)=>a+itemUnidades(i),0); }
-function fullCaixasAbertas(itens){ return (itens||[]).filter(i=>itemAvulsas(i)>0).length; }
 // Busca no catálogo sem diferenciar maiúsculas ("6cr100m" = "6CR100M")
 function _skuDb(codigo){
   if (!codigo) return null;
@@ -5062,10 +5040,7 @@ async function salvarEditFull(){
   const novoStatus=document.getElementById('ef-status').value;
   f.status=novoStatus;
   f.responsavel=document.getElementById('ef-responsavel').value;
-  f.destino=document.getElementById('ef-destino').value||f.destino;
-  f.marketplace=derivarMarketplace(f.destino)||document.getElementById('ef-marketplace').value;
-  const tipoEd=document.getElementById('ef-tipo').value;
-  if(tipoEd){ f.tipo_envio=tipoEd; f.empresa=tipoEd; }      // vazio = mantém o que estava (LogBox/Fokus nos Fulls antigos)
+  f.destino=document.getElementById('ef-destino').value;
   f.obs=document.getElementById('ef-obs').value;
   const ag=document.getElementById('ef-agendado').value;
   if(ag){const p=ag.split('-');f.agendado=p[2]+'/'+p[1]+'/'+p[0]; f.dateKey=f.agendado;}
@@ -5076,7 +5051,6 @@ async function salvarEditFull(){
   const cal=CAL_FULLS.find(c=>c.id===editingFullId);
   if(cal){
     cal.status=f.status; cal.destino=f.destino; cal.responsavel=f.responsavel;
-    cal.empresa=f.empresa; cal.tipo_envio=f.tipo_envio; cal.marketplace=f.marketplace;
     const done=f.itens.filter(i=>i.status==='done').length; cal.itens=done+'/'+f.itens.length;
     // sincroniza dateKey e dia no cal entry
     if(f.dateKey){ cal.dateKey=f.dateKey; cal.dia=diaDaSemana(f.agendado); }
@@ -5207,7 +5181,7 @@ function openEnviadoDetail(id) {
       const av=item.funcionario&&item.funcionario!=='—'?item.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2):'?';
       return `<div class="item-card done">
         <div class="item-top"><div><div class="item-name">${item.nome}</div><div class="item-code">${item.codigo||'—'}</div></div><div class="sdot dot-done"></div></div>
-        <div class="item-bottom"><div class="item-func"><div class="prod-avatar ${funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}" style="width:20px;height:20px;font-size:9px">${av}</div><span class="item-func-name">${item.funcionario||'—'}</span></div><div class="item-qty">${itemQtdeTexto(item)}</div></div>
+        <div class="item-bottom"><div class="item-func"><div class="prod-avatar ${funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}" style="width:20px;height:20px;font-size:9px">${av}</div><span class="item-func-name">${item.funcionario||'—'}</span></div><div class="item-qty">${item.qtde} cx</div></div>
       </div>`;}).join('')}
     </div>
     <button class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;padding:8px;margin-top:8px;color:var(--accent);border-color:rgba(255,255,255,.12)" onclick="closeDetail();abrirImpressao('${f.id}')">🖨 Imprimir Comprovante</button>
@@ -5483,6 +5457,19 @@ async function registrarSaida(){
     market = document.getElementById('saidaMarket').value;
   }
 
+  // Modo conferência: pacote de outro marketplace/canal está na pilha errada
+  if (pedidoML && !_confCombina(pedidoML)) {
+    input.value = '';
+    input.style.borderColor = 'var(--red)'; setTimeout(()=>{ input.style.borderColor=''; }, 3000);
+    if (typeof _somDuplicata === 'function') { _somDuplicata(); setTimeout(_somDuplicata, 250); }
+    const ehFlexP = ['self_service','flex'].includes((pedidoML.logistic_type||'').toLowerCase());
+    _confFlash('erro', `🚫 PACOTE DE OUTRA PILHA — é <b>${pedidoML.marketplace||'?'} · ${ehFlexP?'Flex':'Coleta'}</b> e você está conferindo <b>${_confRotulo()}</b>. Separe e NÃO despache junto. (${pedidoML.order_id||''}${pedidoML.sku?' · '+pedidoML.sku:''})`);
+    input.focus();
+    return;
+  }
+  if (!pedidoML && (window._confMkt || window._confCanal) && window._ledgerCarregado) {
+    _confFlash('aviso', `⚠️ Pedido não encontrado na fila do Magis5 — registrado pela classificação manual. Confira se é mesmo <b>${_confRotulo()}</b>.`);
+  }
   const transportadora = canal==='Flex' ? (document.getElementById('saidaTransp')?.value||'') : '';
   if (canal==='Flex' && !transportadora) {
     const tSel = document.getElementById('saidaTransp');
@@ -5524,6 +5511,10 @@ async function registrarSaida(){
   }
   SAIDAS_HOJE.push(saida);
   if (pedidoML) pedidoML.ja_bipado = true; // fila em tempo real responde na hora
+  if (pedidoML) {
+    const restam = _expPendentes().pendBipar.length;
+    _confFlash('ok', `✔ BAIXADO · <b>${pedidoML.order_id||''}</b>${pedidoML.sku ? ' · '+pedidoML.sku : ''}${pedidoML.cliente ? ' · '+pedidoML.cliente : ''} — ${restam ? `faltam <b>${restam}</b>` : '<b>nenhum pendente</b> 🎉'}${(window._confMkt||window._confCanal) ? ' em '+_confRotulo() : ''}`);
+  }
   renderSaidas();
   const contaLabel = conta ? ' · '+conta : '';
   const skuLabel = pedidoML?.sku ? ' · '+pedidoML.sku : (classifAuto ? '' : ' · classif. manual');
@@ -5825,6 +5816,64 @@ function _saidasReorganizarForm(){
 document.addEventListener('DOMContentLoaded', () => setTimeout(_saidasReorganizarForm, 0));
 setTimeout(_saidasReorganizarForm, 1500);
 
+// ══ MODO CONFERÊNCIA POR MARKETPLACE ══
+// Escolhe o marketplace (e o canal) da pilha que está sendo bipada: os números, a lista de
+// faltantes e o bloqueio de pacote errado passam a valer só para ela. Salvo por computador.
+window._confMkt   = localStorage.getItem('expctrl_conf_mkt')   || '';
+window._confCanal = localStorage.getItem('expctrl_conf_canal') || '';
+const _CONF_MKTS = [['','Todos'],['ML','Mercado Livre'],['Shopee','Shopee'],['TikTok','TikTok'],['Magalu','Magalu'],['Amazon','Amazon']];
+function _confCombina(p){
+  // vale só na aba Saídas; tela Hoje e Modo TV mostram o total geral
+  if (!document.getElementById('view-saidas')?.classList.contains('active') || document.getElementById('modoTV')) return true;
+  if (window._confMkt && (p.marketplace||'') !== window._confMkt) return false;
+  if (window._confCanal) {
+    const flex = ['self_service','flex'].includes((p.logistic_type||'').toLowerCase());
+    if ((window._confCanal === 'Flex') !== flex) return false;
+  }
+  return true;
+}
+function _confRotulo(){
+  const m = (_CONF_MKTS.find(x => x[0] === window._confMkt)||['','Todos'])[1];
+  return window._confCanal ? `${m} · ${window._confCanal}` : m;
+}
+function confSelecionar(tipo, v){
+  if (tipo === 'mkt') { window._confMkt = v; localStorage.setItem('expctrl_conf_mkt', v); }
+  else { window._confCanal = (window._confCanal === v ? '' : v); localStorage.setItem('expctrl_conf_canal', window._confCanal); }
+  _confFlash(null);
+  renderSaidas();
+  // em conferência, a lista do que falta fica sempre aberta
+  if (window._confMkt || window._confCanal) abrirListaPendentes('bipar');
+  document.getElementById('saidaBipe')?.focus();
+}
+function confRenderBarra(){
+  const cm = document.getElementById('confChipsMkt'); if (!cm) return;
+  const chip = (ativo, txt, onclick) => `<button onclick="${onclick}" style="cursor:pointer;font-size:11px;font-weight:700;padding:3px 10px;border-radius:14px;border:1px solid ${ativo?'var(--accent)':'var(--border2)'};background:${ativo?'var(--accent)':'transparent'};color:${ativo?'#fff':'var(--muted2)'}">${txt}</button>`;
+  // só mostra marketplaces que existem na fila de hoje (+ o selecionado)
+  const presentes = new Set((window._ledgerFila||[]).map(p => p.marketplace));
+  cm.innerHTML = _CONF_MKTS.filter(([v]) => !v || presentes.has(v) || v === window._confMkt)
+    .map(([v,t]) => chip(window._confMkt === v, t, `confSelecionar('mkt','${v}')`)).join('');
+  document.getElementById('confChipsCanal').innerHTML =
+    chip(window._confCanal === 'Flex', '🏍 Flex', "confSelecionar('canal','Flex')") +
+    chip(window._confCanal === 'Coleta', '🚚 Coleta', "confSelecionar('canal','Coleta')");
+  const r = document.getElementById('confResumo');
+  if (r && window._ledgerCarregado) {
+    const st = _expPendentes();
+    const total = st.pendBipar.length + st.feitos;
+    r.innerHTML = (window._confMkt || window._confCanal)
+      ? `${_confRotulo()}: <b style="color:var(--green)">${st.feitos}</b> baixados · <b style="color:${st.pendBipar.length?'var(--red)':'var(--green)'}">${st.pendBipar.length}</b> faltam bipar${st.pendImprimir.length ? ` · ${st.pendImprimir.length} sem etiqueta` : ''}`
+      : 'escolha o marketplace da pilha para conferir só ele';
+  }
+}
+function _confFlash(tipo, html){
+  const el = document.getElementById('confFlash'); if (!el) return;
+  clearTimeout(window._confFlashT);
+  if (!tipo) { el.style.display = 'none'; return; }
+  const cores = { ok: ['rgba(63,185,80,.15)','var(--green)'], erro: ['rgba(248,81,73,.18)','var(--red)'], aviso: ['rgba(210,153,34,.15)','var(--orange)'] }[tipo];
+  el.innerHTML = `<div style="background:${cores[0]};border:2px solid ${cores[1]};border-radius:8px;padding:10px 14px;font-size:${tipo==='erro'?14:13}px;color:var(--text)">${html}</div>`;
+  el.style.display = 'block';
+  window._confFlashT = setTimeout(() => { el.style.display = 'none'; }, tipo === 'erro' ? 12000 : 6000);
+}
+
 // ══ FILA DE BIPES OFFLINE ══
 // Bipe que não chegou ao banco (rede caiu) fica guardado neste computador e é reenviado
 // sozinho a cada 20s e quando a conexão volta. Nada se perde num F5.
@@ -5956,7 +6005,7 @@ function _expPendentes(){
   const fila = window._ledgerFila || [];
   const bip  = new Set((SAIDAS_HOJE||[]).map(s => s.num));
   const bipado = p => !!p.ja_bipado || (p.chave_nf && bip.has(p.chave_nf));
-  const comEstado = fila.map(p => ({ p, e: _estadoExp(p) })).filter(x => x.e);
+  const comEstado = fila.map(p => ({ p, e: _estadoExp(p) })).filter(x => x.e && _confCombina(x.p));
   const foraML = comEstado.filter(x => x.e === 'fora' && !bipado(x.p)).map(x => x.p);
   const cancelados = comEstado.filter(x => x.e === 'cancelado' && !bipado(x.p)).map(x => x.p);
   const trab   = comEstado.filter(x => (x.e !== 'fora' && x.e !== 'cancelado') || bipado(x.p)).map(x => x.p);
@@ -5969,6 +6018,7 @@ function _expPendentes(){
 function renderStatusExpedicao(){
   const nums = document.getElementById('expStatusNums');
   if (!nums) return;
+  try { confRenderBarra(); } catch(e) {}
   const badge = document.getElementById('expStatusBadge');
   const syncEl = document.getElementById('expStatusSync');
   if (!window._ledgerCarregado) { nums.textContent = '⏳ Carregando fila do Magis5...'; return; }
@@ -7017,7 +7067,7 @@ async function salvarNovoFull() {
   // constrói itens a partir dos SKUs adicionados no modal
   const itens = (window._nfSkus||[]).map(s => ({
     codigo: s.sku, nome: s.descricao, funcionario:'—',
-    qtde: s.qtde, ...(parseInt(s.avulsas)>0?{avulsas:parseInt(s.avulsas)}:{}), status:'pending', avatar:'?', cor:'av-amber'
+    qtde: s.qtde, status:'pending', avatar:'?', cor:'av-amber'
   }));
   const novoFull = { id, empresa: tipo_envio, tipo_envio, marketplace, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens, dateKey };
   const calEntry = { id, empresa: tipo_envio, tipo_envio, marketplace, dia, destino, status, itens:'0/'+itens.length, responsavel, dateKey };
@@ -7071,21 +7121,19 @@ function nfSkuAuto(idx, inputEl) {
 }
 
 function nfUpdateQtde(idx, val) {
-  const n = parseInt(val);
-  window._nfSkus[idx].qtde = isNaN(n) ? 1 : Math.max(0, n);   // 0 cx vale quando o item vai só em caixa aberta
+  window._nfSkus[idx].qtde = parseInt(val)||1;
   nfUpdateTotal();
 }
 
 function nfUpdateTotal() {
   const total = window._nfSkus.reduce((a,s)=>a+s.qtde,0);
-  const avulsas = window._nfSkus.reduce((a,s)=>a+(parseInt(s.avulsas)||0),0);
   const volTotal = window._nfSkus.reduce((a,s)=>{
     const sk = SKU_DB.find(x=>x.sku===s.sku);
     return a + (sk ? sk.vol * s.qtde : 0);
   }, 0);
   const el = document.getElementById('nf-skus-total');
   if (el) el.textContent = window._nfSkus.length
-    ? window._nfSkus.length+' SKU'+(window._nfSkus.length!==1?'s':'')+' · '+total+' caixas'+(avulsas?' + '+avulsas+' un avulsas':'')+(volTotal?' · '+volTotal.toFixed(1)+'L':'')
+    ? window._nfSkus.length+' SKU'+(window._nfSkus.length!==1?'s':'')+' · '+total+' caixas'+(volTotal?' · '+volTotal.toFixed(1)+'L':'')
     : '';
 }
 
@@ -7100,7 +7148,7 @@ function nfRenderSkus() {
   lista.innerHTML = window._nfSkus.map((s, i) => {
     const sk = SKU_DB.find(x=>x.sku===s.sku);
     const volInfo = sk ? `<span style="color:var(--green);font-size:10px">${(sk.vol*s.qtde).toFixed(1)}L</span>` : '';
-    return `<div style="display:grid;grid-template-columns:130px 1fr 70px 70px auto;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
+    return `<div style="display:grid;grid-template-columns:130px 1fr 80px auto;gap:8px;align-items:center;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 10px">
       <div>
         <input class="form-sel nf-sku-input" value="${s.sku||''}" placeholder="SKU-001"
           style="font-family:'DM Mono',monospace;font-size:11px;text-transform:uppercase"
@@ -7112,15 +7160,10 @@ function nfRenderSkus() {
         ${s.descricao||'—'} ${volInfo}
       </div>
       <div>
-        <input class="form-sel nf-qtde-input" type="number" value="${s.qtde??1}" min="0" title="Caixas fechadas"
+        <input class="form-sel nf-qtde-input" type="number" value="${s.qtde||1}" min="1"
           style="font-size:12px;text-align:center"
           oninput="nfUpdateQtde(${i},this.value)"
           onkeydown="if(event.key==='Enter'){event.preventDefault();nfAddSku()}">
-      </div>
-      <div>
-        <input class="form-sel" type="number" value="${s.avulsas||''}" min="0" placeholder="un" title="Caixa aberta: unidades avulsas"
-          style="font-size:12px;text-align:center"
-          oninput="window._nfSkus[${i}].avulsas=Math.max(0,parseInt(this.value)||0);nfUpdateTotal()">
       </div>
       <button class="remove-btn" onclick="nfRemoveSku(${i})">✕</button>
     </div>`;
@@ -7142,24 +7185,6 @@ function nfAtualizarDestinos() {
   if (!sel) return;
   const opts = _NF_DESTINOS[mkt] || [];
   sel.innerHTML = opts.map(d=>`<option>${d}</option>`).join('');
-  _tipoRotularColeta('nf-tipo', mkt);
-}
-function _tipoRotularColeta(selId, mkt) {
-  const o = document.querySelector(`#${selId} option[value="Coleta"]`);
-  if (o) o.textContent = tipoTexto('Coleta', mkt);
-}
-// Destinos da tela de editar: os do marketplace do Full. Se o destino gravado
-// não estiver na lista (ex. um CD digitado antes), ele entra como opção — antes
-// o select ficava sem valor e salvar apagava o destino (09.03.04-MAGALU).
-function efAtualizarDestinos(manter) {
-  const mkt = document.getElementById('ef-marketplace')?.value || 'ML';
-  const sel = document.getElementById('ef-destino'); if (!sel) return;
-  const atual = manter !== undefined ? manter : sel.value;
-  const opts = [...(_NF_DESTINOS[mkt] || [])];
-  if (atual && !opts.includes(atual) && derivarMarketplace(atual) === mkt) opts.unshift(atual);
-  sel.innerHTML = opts.map(d=>`<option>${d}</option>`).join('');
-  if (atual && opts.includes(atual)) sel.value = atual;
-  _tipoRotularColeta('ef-tipo', mkt);
 }
 
 function closeModal(id){document.getElementById(id).classList.remove('open');if(id==='modalSku')editingSkuIdx=null;if(id==='modalFull'){window._nfSkus=[];}}
@@ -7260,7 +7285,7 @@ async function moverParaEnviados(id) {
     id: f.id, empresa: f.empresa, destino: f.destino,
     responsavel: f.responsavel, agendado: f.agendado, criadoEm: f.criadoEm||'',
     enviadoEm, totalItens: (f.itens||[]).length, totalCaixas,
-    itens: (f.itens||[]).map(i=>({nome:i.nome,codigo:i.codigo,qtde:i.qtde,...(itemAvulsas(i)?{avulsas:itemAvulsas(i)}:{}),funcionario:i.funcionario||'—',status:'done'})),
+    itens: (f.itens||[]).map(i=>({nome:i.nome,codigo:i.codigo,qtde:i.qtde,funcionario:i.funcionario||'—',status:'done'})),
   };
   FULLS_ENVIADOS.unshift(enviado);
   delete FULLS_DATA[id];
@@ -7623,7 +7648,7 @@ function executarImpressao() {
       <td style="padding:7px 10px;font-size:12px;text-align:center;color:#6b7280">${i+1}</td>
       <td style="padding:7px 10px;font-size:12px;font-family:monospace;color:#374151">${item.codigo || '—'}</td>
       <td style="padding:7px 10px;font-size:12px;color:#111827;font-weight:500">${item.nome}</td>
-      <td style="padding:7px 10px;font-size:12px;text-align:center;font-weight:700;color:#111827">${itemQtdeTexto(item)}</td>
+      <td style="padding:7px 10px;font-size:12px;text-align:center;font-weight:700;color:#111827">${item.qtde}</td>
       <td style="padding:7px 10px;font-size:12px;color:#6b7280">${item.funcionario || '—'}</td>
     </tr>`).join('');
 
@@ -9806,151 +9831,19 @@ window._etqData      = {};  // { fullId: [{id,sku,descricao,total,impressas,cria
 window._zplCache     = {};  // { sku: zpl } — cache local da biblioteca
 window._qzStatus     = 'disconnected';
 
-/* ── Leitura do ZPL do Mercado Livre ─────────────────────────────────────
-   O ML manda o texto com ^FH: todo caractere especial vem em hexadecimal
-   precedido de "_". "-" vira _2D, "." vira _2E, "ç" vira _C3_A7 (UTF-8).
-   A impressora decodifica sozinha, por isso a etiqueta física sai certa;
-   o app é que mostrava "VA_2DBA02" em vez de "VA-BA02". */
-function zplDecodificarFH(s, esc) {
-  const e = (esc || '_').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const rx = new RegExp('(?:' + e + '[0-9A-Fa-f]{2})+', 'g');
-  return String(s == null ? '' : s).replace(rx, (m) => {
-    try { return decodeURIComponent(m.split(esc || '_').join('%')); } catch (_) { return m; }
-  });
-}
-// Chave de comparação de SKU: decodificado, sem espaço nas pontas, maiúsculo.
-// "VA_2DBA02", "va-ba02" e "VA-BA02 " são o mesmo SKU.
-function zplSkuChave(s) { return zplDecodificarFH(s).trim().toUpperCase(); }
-function zplSkuTexto(s) { return zplDecodificarFH(s).trim(); }
-
-/* Lê a PRIMEIRA etiqueta de um bloco ^XA…^XZ (o ML manda 2 por bloco, lado a
-   lado, iguais). Devolve o que está impresso nela:
-     codigo  — o código de barras (inventory_id do Full, ex. YSXL42225)
-     titulo  — o nome do produto (campo com ^FB de 2 linhas)
-     sku     — o texto depois de "SKU:" ('' quando o anúncio não tem SKU) */
-function zplLerEtiqueta(bloco) {
-  const zpl = String(bloco || '').replace(/\r/g, '');
-  const toks = zpl.split(/(?=\^[A-Z0-9]{2})/i);
-  let cur = null, hex = null, lhVisto = 0;
-  const campos = [];
-  for (const tok of toks) {
-    if (tok[0] !== '^') continue;
-    const cmd = tok.substring(1, 3).toUpperCase(), resto = tok.substring(3);
-    if (cmd === 'LH') { lhVisto++; if (lhVisto > 1 && campos.length) break; }   // 2ª etiqueta do bloco
-    else if (cmd === 'FO') { const p = resto.split(','); cur = { x: parseInt(p[0]) || 0, y: parseInt(p[1]) || 0, bc: false, fb: 0 }; hex = null; }
-    else if (cmd === 'BC') { if (cur) cur.bc = true; }
-    else if (cmd === 'FB') { if (cur) cur.fb = parseInt(resto.split(',')[1]) || 1; }
-    else if (cmd === 'FH') { hex = (resto && resto[0] && resto[0] !== '^' && !/\s/.test(resto[0])) ? resto[0] : '_'; }
-    else if (cmd === 'FD') {
-      if (!cur) continue;
-      let t = resto.replace(/\n/g, ' ');
-      if (hex) t = zplDecodificarFH(t, hex);
-      cur.texto = t.trim();
-      campos.push(cur); cur = null; hex = null;
-    }
-  }
-  const bc = campos.find((c) => c.bc && c.texto);
-  const skuC = campos.find((c) => !c.bc && /^SKU\s*:/i.test(c.texto || ''));
-  const tit = campos.find((c) => !c.bc && c.fb >= 2 && c.texto) || campos.find((c) => !c.bc && c.y >= 100 && c.y < 150 && c.texto && c.texto !== (bc && bc.texto));
-  return {
-    codigo: bc ? bc.texto : '',
-    titulo: tit ? tit.texto : '',
-    sku: skuC ? skuC.texto.replace(/^SKU\s*:\s*/i, '').trim() : '',
-  };
-}
-function zplBlocos(zpl) { return [...String(zpl || '').matchAll(/\^XA[\s\S]*?\^XZ/gi)].map((m) => m[0]); }
-
-// Registro da biblioteca pelo SKU, aceitando o SKU escrito de qualquer jeito
-// ("VA-BA02" acha o registro antigo gravado como "VA_2DBA02").
-function zplBibGet(sku) {
-  const idx = window._zplBibIndex; if (!idx || !sku) return null;
-  if (idx.has(sku)) return idx.get(sku);
-  const k = zplSkuChave(sku);
-  for (const [chave, r] of idx) if (zplSkuChave(chave) === k) return r;
-  return null;
-}
-// O que a etiqueta imprime, lido do ZPL salvo (guardado no registro).
-function zplInfoDoRegistro(reg) {
-  if (!reg) return { codigo: '', titulo: '', sku: '' };
-  if (reg._info && reg._info.zpl === reg.zpl) return reg._info;
-  const b = (String(reg.zpl || '').match(/\^XA[\s\S]*?\^XZ/i) || [reg.zpl || ''])[0];
-  const info = zplLerEtiqueta(b); info.zpl = reg.zpl;
-  reg._info = info;
-  return info;
-}
-
-/* ── PDF da etiqueta, no formato do PDF "Etiquetas de produto" do ML ──────
-   Folha A4, etiqueta de 40,3 × 25,2 mm com borda fina, código de barras
-   Code 128 (módulo 0,2 mm, 9,1 mm de altura), código em negrito, título em
-   até 2 linhas e a linha "SKU: …". A primeira etiqueta cai exatamente onde o
-   ML põe; as seguintes seguem em grade de 4 colunas × 10 linhas. */
-const ETQ_PDF = { x0: 12.36, y0: 3.73, w: 40.3, h: 25.2, dx: 48.33, dy: 29.0, cols: 4, lins: 10, modulo: 0.2, barH: 9.14 };
-const _C128 = ['212222','222122','222221','121223','121322','131222','122213','122312','132212','221213',
-  '221312','231212','112232','122132','122231','113222','123122','123221','223211','221132',
-  '221231','213212','223112','312131','311222','321122','321221','312212','322112','322211',
-  '212123','212321','232121','111323','131123','131321','112313','132113','132311','211313',
-  '231113','231311','112133','112331','132131','113123','113321','133121','313121','211331',
-  '231131','213113','213311','213131','311123','311321','331121','312113','312311','332111',
-  '314111','221411','431111','111224','111422','121124','121421','141122','141221','112214',
-  '112412','122114','122411','142112','142211','241211','221114','413111','241112','134111',
-  '111242','121142','121241','114212','124112','124211','411212','421112','421211','212141',
-  '214121','412121','111143','111341','131141','114113','114311','411113','411311','113141',
-  '114131','311141','411131','211412','211214','211232','2331112'];
-// Code 128 subconjunto B (o mesmo que a Zebra usa no ^BC sem modo): lista de
-// larguras em módulos, alternando barra/espaço, começando por barra.
-function etqCode128B(texto) {
-  const t = String(texto || '');
-  const codigos = [104]; let soma = 104;
-  for (let i = 0; i < t.length; i++) {
-    const v = t.charCodeAt(i) - 32;
-    if (v < 0 || v > 95) throw new Error('Caractere fora do Code 128: ' + t[i]);
-    codigos.push(v); soma += v * (i + 1);
-  }
-  codigos.push(soma % 103); codigos.push(106);
-  return codigos.map((c) => _C128[c]).join('').split('').map(Number);
-}
-function etqPdfDesenhar(doc, x, y, info) {
-  const P = ETQ_PDF;
-  doc.setLineWidth(0.1); doc.setDrawColor(0); doc.rect(x, y, P.w, P.h);
-  const larg = etqCode128B(info.codigo);
-  const total = larg.reduce((a, b) => a + b, 0) * P.modulo;
-  let bx = x + (P.w - total) / 2;
-  doc.setFillColor(0);
-  larg.forEach((m, i) => { const w = m * P.modulo; if (i % 2 === 0) doc.rect(bx, y + 1.69, w, P.barH, 'F'); bx += w; });
-  doc.setFont('helvetica', 'bold'); doc.setFontSize(7.6);
-  doc.text(info.codigo, x + P.w / 2, y + 13.35, { align: 'center' });
-  doc.setFont('helvetica', 'normal'); doc.setFontSize(5.6);
-  const linhas = doc.splitTextToSize(info.titulo || '', P.w - 3.6).slice(0, 2);
-  linhas.forEach((l, i) => doc.text(l, x + 2, y + 15.75 + i * 2.0));
-  doc.text('SKU: ' + (info.sku || ''), x + 2, y + 15.75 + 2 * 2.0);
-}
-// Monta o PDF com `qtd` etiquetas. Não imprime nem abre: devolve o jsPDF.
-function etqPdfMontar(info, qtd) {
-  if (!window.jspdf || !window.jspdf.jsPDF) throw new Error('Biblioteca de PDF não carregou — recarregue a página.');
-  if (!info || !info.codigo) throw new Error('Esse ZPL não tem código de barras de produto.');
-  const P = ETQ_PDF, porFolha = P.cols * P.lins;
-  const doc = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
-  for (let i = 0; i < qtd; i++) {
-    if (i && i % porFolha === 0) doc.addPage();
-    const k = i % porFolha, col = k % P.cols, lin = Math.floor(k / P.cols);
-    etqPdfDesenhar(doc, P.x0 + col * P.dx, P.y0 + lin * P.dy, info);
-  }
-  return doc;
-}
-
 /* ── Parsing ZPL ──────────────────────────────── */
 function etqAnalisarZpl(zpl) {
   const totalLH = (zpl.match(/\^LH/gi)||[]).length;
   const totalXA = (zpl.match(/\^XA/gi)||[]).length;
   const total   = totalLH > 0 ? totalLH : totalXA;
-  const blocos = zplBlocos(zpl); if (!blocos.length) blocos.push(zpl);
+  const bm = [...zpl.matchAll(/\^BCN[^\^]*\^FD([^\^]+)\^FS/gi)].map(m=>m[1].trim());
+  const sm = [...zpl.matchAll(/SKU:\s*([A-Z0-9_\-]+)/gi)].map(m=>m[1].trim());
+  const nm = [...zpl.matchAll(/\^FO(?:16|30),115[^\^]*\^FH\^FD([^\^]{3,})\^FS/gi)]
+               .map(m=>m[1].replace(/_C3_A1/g,'á').replace(/_C3_A7/g,'ç').replace(/_C3_A3/g,'ã').trim());
   const skuMap = {};
-  blocos.forEach((b) => {
-    const info = zplLerEtiqueta(b);
-    if (!info.codigo) return;                       // etiqueta de envio, régua etc.: não é de produto
-    const n = (b.match(/\^BC/gi) || []).length || 1;
-    if (!skuMap[info.codigo]) skuMap[info.codigo] = { barcode: info.codigo, sku: info.sku, nome: info.titulo || info.codigo, count: 0 };
-    skuMap[info.codigo].count += n;
+  bm.forEach((bc,i)=>{
+    if(!skuMap[bc]) skuMap[bc]={barcode:bc,sku:sm[i]||sm[Math.floor(i/2)]||'',nome:nm[Math.floor(i/2)]||nm[0]||bc,count:0};
+    skuMap[bc].count++;
   });
   const skusDetectados = Object.values(skuMap);
   if(!skusDetectados.length) skusDetectados.push({barcode:'',sku:'',nome:'Etiqueta ML',count:total});
@@ -9971,39 +9864,33 @@ async function zplCarregarIndice(forcar) {
 
 function zplEstaNaBiblioteca(sku) {
   if (!window._zplBibIndex) return true; // ainda não carregou — não acusa falso alarme
-  return !!zplBibGet(sku);
+  return window._zplBibIndex.has(sku);
 }
 
 function zplEstoqueDe(sku) {
-  return zplBibGet(sku)?.estoque || 0;
+  return window._zplBibIndex?.get(sku)?.estoque || 0;
 }
 
 // Agrupa um ZPL colado (que pode ter vários SKUs misturados) por SKU,
 // guardando só 1 bloco representante de cada (os repetidos são idênticos).
 function zplAgruparPorSku(zpl) {
+  const blocos = [...zpl.matchAll(/\^XA[\s\S]*?\^XZ/gi)].map(m=>m[0]);
   const grupos = {};
-  let ignorados = 0;
-  for (const bloco of zplBlocos(zpl)) {
-    const info = zplLerEtiqueta(bloco);
-    // Sem código de barras de produto (etiqueta de envio colada por engano, régua,
-    // teste): antes virava um SKU inventado "SKU-<número>" na biblioteca.
-    if (!info.codigo) { ignorados++; continue; }
-    const sku = info.sku || info.codigo;            // anúncio sem SKU no ML: fica o código do Full
-    const k = zplSkuChave(sku);
-    if (!grupos[k]) grupos[k] = { sku, codigo: info.codigo, descricao: info.titulo || info.codigo, blocos: [], count: 0 };
-    grupos[k].blocos.push(bloco);
-    grupos[k].count += (bloco.match(/\^BC/gi) || []).length || 1;
+  for (const bloco of blocos) {
+    const bcs = [...bloco.matchAll(/\^BCN[^\^]*\^FD([^\^]+)\^FS/gi)].map(m=>m[1].trim());
+    const sms = [...bloco.matchAll(/SKU:\s*([A-Z0-9_\-]+)/gi)].map(m=>m[1].trim());
+    const nms = [...bloco.matchAll(/\^FO(?:16|30),115[^\^]*\^FH\^FD([^\^]{3,})\^FS/gi)]
+                  .map(m=>m[1].replace(/_C3_A1/g,'á').replace(/_C3_A7/g,'ç').replace(/_C3_A3/g,'ã').trim());
+    const sku = sms[0] || bcs[0] || ('SKU-'+Date.now());
+    const nome = nms[0] || bcs[0] || sku;
+    if (!grupos[sku]) grupos[sku] = { sku, descricao: nome, blocos: [], count: 0 };
+    grupos[sku].blocos.push(bloco);
+    grupos[sku].count += bcs.length || 1;
   }
-  const lista = Object.values(grupos);
-  lista.ignorados = ignorados;
-  return lista;
+  return Object.values(grupos);
 }
 
 async function zplSalvar(sku, descricao, zpl) {
-  // Se o SKU já existe gravado de outro jeito (ex. "VA_2DBA02"), atualiza aquele
-  // registro em vez de criar um segundo com o estoque pré-impresso zerado.
-  const existente = zplBibGet(sku);
-  if (existente) sku = existente.sku;
   const { data } = await _sb.from('zpl_biblioteca')
     .upsert({sku,descricao,zpl,updated_at:new Date().toISOString()},{onConflict:'sku'})
     .select().maybeSingle();
@@ -10016,8 +9903,6 @@ async function zplSalvar(sku, descricao, zpl) {
 
 async function zplCarregar(sku) {
   if(window._zplCache[sku]) return window._zplCache[sku];
-  const reg = zplBibGet(sku);
-  if(reg?.zpl){ window._zplCache[sku]=reg.zpl; return reg.zpl; }
   try {
     const {data} = await _sb.from('zpl_biblioteca').select('zpl').eq('sku',sku).single();
     if(data?.zpl){window._zplCache[sku]=data.zpl;return data.zpl;}
@@ -10040,12 +9925,8 @@ async function bibRenderView() {
 function bibRenderLista() {
   const busca=(document.getElementById('bibBusca')?.value||'').toLowerCase();
   const idx=window._zplBibIndex||new Map();
-  let linhas=[...idx.values()].filter(r=>{
-    if(!busca) return true;
-    const inf=zplInfoDoRegistro(r);
-    return [zplSkuTexto(r.sku), r.descricao, inf.titulo, inf.codigo].some(v=>String(v||'').toLowerCase().includes(busca));
-  });
-  linhas.sort((a,b)=>zplSkuTexto(a.sku).localeCompare(zplSkuTexto(b.sku)));
+  let linhas=[...idx.values()].filter(r=>!busca||r.sku.toLowerCase().includes(busca)||(r.descricao||'').toLowerCase().includes(busca));
+  linhas.sort((a,b)=>a.sku.localeCompare(b.sku));
   const countEl=document.getElementById('bibCount'); if(countEl) countEl.textContent=linhas.length+' SKUs';
   const totalEl=document.getElementById('bibTotalSkus'); if(totalEl) totalEl.textContent=idx.size;
   const estEl=document.getElementById('bibTotalEstoque'); if(estEl) estEl.textContent=[...idx.values()].reduce((a,r)=>a+(r.estoque||0),0).toLocaleString('pt-BR');
@@ -10053,15 +9934,14 @@ function bibRenderLista() {
   if(!tbody) return;
   tbody.innerHTML=linhas.map(r=>`
     <tr class="full-row">
-      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px;cursor:pointer" onclick="bibEditar('${r.sku}')">${zplSkuTexto(r.sku)}</td>
-      <td style="font-size:12px;font-weight:600;cursor:pointer" onclick="bibEditar('${r.sku}')">${bibDescricaoHtml(r)}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px;cursor:pointer" onclick="bibEditar('${r.sku}')">${r.sku}</td>
+      <td style="font-size:12px;font-weight:600;cursor:pointer" onclick="bibEditar('${r.sku}')">${r.descricao||'—'}</td>
       <td><input type="number" min="0" value="${r.estoque||0}" onchange="bibDefinirEstoque('${r.sku}',parseInt(this.value)||0)"
         style="width:70px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:5px 8px;text-align:center"></td>
       <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${r.updated_at?new Date(r.updated_at).toLocaleDateString('pt-BR'):'—'}</td>
       <td style="white-space:nowrap;text-align:right">
         <button class="action-btn" onclick="bibPreview('${r.sku}')" title="Preview">👁</button>
         <button class="action-btn" onclick="bibAbrirImprimir('${r.sku}')" title="Imprimir adiantado (soma ao estoque)">🖨</button>
-        <button class="action-btn" onclick="bibGerarPdf('${r.sku}')" title="Baixar o PDF da etiqueta, igual ao do Mercado Livre, para mandar de exemplo" style="font-size:10px;font-weight:700;letter-spacing:.3px">PDF</button>
         <button class="btn-danger-sm" onclick="bibExcluirItem('${r.sku}')" title="Excluir">✕</button>
       </td>
     </tr>
@@ -10074,33 +9954,6 @@ function bibRenderLista() {
       </div>
     </td></tr>
   `).join('') || `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">Nenhuma etiqueta cadastrada ainda</td></tr>`;
-}
-
-// Descrição da biblioteca: o nome do produto que está NA etiqueta. Muitos
-// registros antigos gravaram o código do Full no lugar do nome (o leitor não
-// achava o título); aqui o nome vem do próprio ZPL e o código vai embaixo.
-function bibDescricaoHtml(r) {
-  const inf = zplInfoDoRegistro(r);
-  const esc = (s) => String(s||'').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-  const nome = (r.descricao && r.descricao !== inf.codigo) ? r.descricao : (inf.titulo || r.descricao || '—');
-  const avisos = [];
-  if (inf.sku && zplSkuChave(inf.sku) !== zplSkuChave(r.sku)) avisos.push('etiqueta imprime SKU ' + esc(inf.sku));
-  if (!inf.sku && inf.codigo) avisos.push('anúncio sem SKU no ML');
-  return esc(nome)
-    + (inf.codigo ? `<div style="font-family:'DM Mono',monospace;font-size:10px;font-weight:400;color:var(--muted);margin-top:2px">código ${esc(inf.codigo)}${avisos.length?' · <span style="color:var(--orange)">'+avisos.join(' · ')+'</span>':''}</div>` : '');
-}
-
-// PDF de exemplo (para mandar a fornecedor, gráfica etc.): uma etiqueta, no
-// mesmo formato do PDF "Etiquetas de produto" do ML. Só baixa o arquivo —
-// não é impressão para uso interno, então não mexe no estoque pré-impresso.
-function bibGerarPdf(sku) {
-  const reg=window._zplBibIndex?.get(sku);
-  if(!reg?.zpl){ showToast('❌ ZPL não encontrado'); return; }
-  const info=zplInfoDoRegistro(reg);
-  try {
-    etqPdfMontar(info, 1).save(`Etiquetas-de-produto-${info.codigo}.pdf`);
-    showToast(`📄 PDF de exemplo de ${zplSkuTexto(reg.sku)} baixado`);
-  } catch(e){ showToast('❌ '+e.message); }
 }
 
 function bibAbrirImprimir(sku) {
@@ -10124,7 +9977,7 @@ async function bibConfirmarImprimir(sku) {
   reg.estoque=novoEstoque;
   const row=document.getElementById(`bibLoteRow_${sku}`); if(row) row.style.display='none';
   bibRenderLista();
-  showToast(`✅ ${qtd} etiquetas impressas e somadas ao estoque de ${zplSkuTexto(sku)}`);
+  showToast(`✅ ${qtd} etiquetas impressas e somadas ao estoque de ${sku}`);
 }
 
 function bibPreview(sku) {
@@ -10138,7 +9991,7 @@ function bibPreview(sku) {
   canvas.style.cssText='max-width:90vw;max-height:70vh;border:2px solid #fff;background:#fff;image-rendering:pixelated';
   const info=document.createElement('div');
   info.style.cssText='color:#fff;font-family:DM Mono,monospace;font-size:12px;text-align:center';
-  info.textContent=`${zplSkuTexto(sku)} — ${zplInfoDoRegistro(reg).titulo||reg.descricao||''}`;
+  info.textContent=`${sku} — ${reg.descricao||''}`;
   const closeBtn=document.createElement('button');
   closeBtn.textContent='✕ Fechar';
   closeBtn.style.cssText='padding:8px 24px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-family:Syne,sans-serif;font-size:13px;font-weight:700;cursor:pointer';
@@ -10161,7 +10014,7 @@ async function bibDefinirEstoque(sku, valor) {
 function bibAbrirNovo(skuPreenchido, descPreenchida) {
   document.getElementById('bibModalTitle').textContent='Nova etiqueta na biblioteca';
   const skuEl=document.getElementById('bib-sku');
-  skuEl.value=zplSkuTexto(skuPreenchido||''); skuEl.dataset.chave=''; skuEl.disabled=false;
+  skuEl.value=skuPreenchido||''; skuEl.disabled=false;
   document.getElementById('bib-desc').value=descPreenchida||'';
   document.getElementById('bib-zpl').value='';
   openModal('modalBibEtq');
@@ -10170,38 +10023,23 @@ function bibAbrirNovo(skuPreenchido, descPreenchida) {
 function bibEditar(sku) {
   const reg=window._zplBibIndex?.get(sku);
   if(!reg) return;
-  document.getElementById('bibModalTitle').textContent='Editar etiqueta — '+zplSkuTexto(sku);
+  document.getElementById('bibModalTitle').textContent='Editar etiqueta — '+sku;
   const skuEl=document.getElementById('bib-sku');
-  skuEl.value=zplSkuTexto(sku); skuEl.dataset.chave=sku; skuEl.disabled=true;
+  skuEl.value=sku; skuEl.disabled=true;
   document.getElementById('bib-desc').value=reg.descricao||'';
   document.getElementById('bib-zpl').value=reg.zpl||'';
   openModal('modalBibEtq');
 }
 
-// Colou o ZPL numa etiqueta nova: preenche SKU e descrição com o que está nela.
-function bibZplColado() {
-  const z=document.getElementById('bib-zpl')?.value||'';
-  const skuEl=document.getElementById('bib-sku'), descEl=document.getElementById('bib-desc');
-  const b=zplBlocos(z)[0]; if(!b) return;
-  const inf=zplLerEtiqueta(b);
-  if(skuEl && !skuEl.disabled && !skuEl.value.trim()) skuEl.value=inf.sku||inf.codigo||'';
-  if(descEl && !descEl.value.trim()) descEl.value=inf.titulo||'';
-}
-
 async function bibSalvarItem() {
-  const skuEl=document.getElementById('bib-sku');
-  const sku=(skuEl?.disabled && skuEl.dataset.chave) ? skuEl.dataset.chave : skuEl?.value?.trim();
+  const sku=document.getElementById('bib-sku')?.value?.trim();
   const desc=document.getElementById('bib-desc')?.value?.trim();
-  let zpl=document.getElementById('bib-zpl')?.value?.trim();
+  const zpl=document.getElementById('bib-zpl')?.value?.trim();
   if(!sku||!zpl){showToast('⚠️ SKU e ZPL são obrigatórios');return;}
-  // Guarda cada etiqueta uma vez só: colar o arquivo inteiro de um Full grande
-  // repetia o mesmo bloco centenas de vezes (o FN02 chegou a 940 mil caracteres).
-  const blocos=zplBlocos(zpl);
-  if(blocos.length) zpl=[...new Set(blocos.map(b=>b.trim()))].join('\n');
   await zplSalvar(sku,desc||sku,zpl);
   closeModal('modalBibEtq');
   bibRenderLista();
-  showToast(`✅ ${zplSkuTexto(sku)} salvo na biblioteca`);
+  showToast(`✅ ${sku} salvo na biblioteca`);
 }
 
 async function bibExcluirItem(sku) {
@@ -10354,9 +10192,8 @@ async function etqRenderSecao(fullId) {
         const pct=etq.total?Math.round(((etq.impressas||0)/etq.total)*100):0;
         const cls=pct>=100?'done':pct>0?'partial':'none';
         const faltam=Math.max(0,etq.total-(etq.impressas||0));
-        const skuLbl=zplSkuTexto(etq.sku)||etq.descricao||'—';
-        const regBib=zplBibGet(etq.sku), infBib=zplInfoDoRegistro(regBib);
-        const descLbl=(etq.descricao&&etq.descricao!==infBib.codigo&&zplSkuChave(etq.descricao)!==zplSkuChave(etq.sku))?etq.descricao:(infBib.titulo||'');
+        const skuLbl=etq.sku||etq.descricao||'—';
+        const descLbl=(etq.sku&&etq.descricao&&etq.descricao!==etq.sku)?etq.descricao:'';
         const temZpl=zplEstaNaBiblioteca(etq.sku);
         const estoqueDisp=zplEstoqueDe(etq.sku);
         return `
@@ -10524,16 +10361,16 @@ function etqMostrarAbaAdicionar(fullId, aba) {
 async function etqAtualizarDatalistBib(fullId) {
   await zplCarregarIndice();
   const dl=document.getElementById(`etqBibSkuList_${fullId}`);
-  if(dl) dl.innerHTML=[...window._zplBibIndex.values()].map(r=>`<option value="${zplSkuTexto(r.sku)}">${zplInfoDoRegistro(r).titulo||r.descricao||''}</option>`).join('');
+  if(dl) dl.innerHTML=[...window._zplBibIndex.values()].map(r=>`<option value="${r.sku}">${r.descricao||''}</option>`).join('');
 }
 
 function etqChecarSkuBib(fullId) {
   const sku=document.getElementById(`etqBibSkuInput_${fullId}`)?.value?.trim();
   const info=document.getElementById(`etqBibSkuInfo_${fullId}`);
   if(!info) return;
-  const reg=sku?zplBibGet(sku):null;
+  const reg=sku?window._zplBibIndex?.get(sku):null;
   info.innerHTML = reg
-    ? `✅ Encontrado: <b>${zplInfoDoRegistro(reg).titulo||reg.descricao||sku}</b> · 📦 ${(reg.estoque||0).toLocaleString('pt-BR')} em estoque pré-impresso`
+    ? `✅ Encontrado: <b>${reg.descricao||sku}</b> · 📦 ${(reg.estoque||0).toLocaleString('pt-BR')} em estoque pré-impresso`
     : sku ? `❌ SKU não encontrado na biblioteca — cole o ZPL na aba "Novo ZPL" pra cadastrar`
           : '';
 }
@@ -10542,33 +10379,30 @@ async function etqAdicionarDaBiblioteca(fullId) {
   const sku=document.getElementById(`etqBibSkuInput_${fullId}`)?.value?.trim();
   const qtd=parseInt(document.getElementById(`etqBibQtdInput_${fullId}`)?.value)||0;
   if(!sku){showToast('⚠️ Informe o SKU');return;}
-  const reg=zplBibGet(sku);
+  const reg=window._zplBibIndex?.get(sku);
   if(!reg){showToast('❌ SKU não encontrado na biblioteca');return;}
   if(qtd<=0){showToast('⚠️ Informe a quantidade');return;}
   const arr=etqGetData(fullId);
   const agora=new Date().toISOString();
-  arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku:reg.sku,descricao:zplInfoDoRegistro(reg).titulo||reg.descricao||sku,total:qtd,impressas:0,criadoEm:agora});
+  arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku,descricao:reg.descricao||sku,total:qtd,impressas:0,criadoEm:agora});
   etqSetData(fullId,arr);
   await etqSalvar(fullId);
   etqFecharAdicionar(fullId);
   etqRenderSecao(fullId);
-  showToast(`🏷 ${zplSkuTexto(reg.sku)} adicionado a partir da biblioteca — ${qtd.toLocaleString('pt-BR')} etiquetas`);
+  showToast(`🏷 ${sku} adicionado a partir da biblioteca — ${qtd.toLocaleString('pt-BR')} etiquetas`);
 }
 
 async function etqConfirmarAdicionar(fullId) {
   const zpl=document.getElementById(`etqZplInput_${fullId}`)?.value?.trim();
   if(!zpl){showToast('⚠️ Cole o ZPL antes de adicionar');return;}
-  await zplCarregarIndice();
   const grupos=zplAgruparPorSku(zpl);
-  if(!grupos.length){showToast(grupos.ignorados?'❌ Nenhuma etiqueta de produto nesse ZPL (parece etiqueta de envio)':'❌ ZPL inválido');return;}
+  if(!grupos.length){showToast('❌ ZPL inválido');return;}
   const arr=etqGetData(fullId);
   const agora=new Date().toISOString();
   for(const g of grupos){
     await zplSalvar(g.sku,g.descricao,g.blocos[0]); // salva só o(s) bloco(s) desse SKU, deduplicado
-    const chave=zplBibGet(g.sku)?.sku||g.sku;       // mesmo registro da biblioteca, mesmo se gravado à moda antiga
-    arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku:chave,descricao:g.descricao,total:g.count,impressas:0,criadoEm:agora});
+    arr.push({id:'etq_'+Date.now()+'_'+Math.random().toString(36).slice(2,5),sku:g.sku,descricao:g.descricao,total:g.count,impressas:0,criadoEm:agora});
   }
-  if(grupos.ignorados) showToast(`ℹ️ ${grupos.ignorados} bloco(s) sem código de produto foram ignorados`);
   etqSetData(fullId,arr);
   await etqSalvar(fullId);
   etqFecharAdicionar(fullId);
@@ -10625,15 +10459,15 @@ async function etqUsarEstoque(fullId, etqId) {
   const arr = etqGetData(fullId);
   const etq = arr.find(e=>e.id===etqId);
   if (!etq) return;
-  await zplCarregarIndice();
-  const reg = zplBibGet(etq.sku);
+  const idx = await zplCarregarIndice();
+  const reg = idx.get(etq.sku);
   const estoqueAtual = reg?.estoque||0;
   if (estoqueAtual<=0) { showToast('Sem estoque pré-impresso pra esse SKU'); return; }
   const faltam = Math.max(0, etq.total-(etq.impressas||0));
   const usar = Math.min(estoqueAtual, faltam);
   if (usar<=0) return;
   const novoEstoque = estoqueAtual-usar;
-  const { error } = await _sb.from('zpl_biblioteca').update({estoque:novoEstoque}).eq('sku', reg.sku);
+  const { error } = await _sb.from('zpl_biblioteca').update({estoque:novoEstoque}).eq('sku', etq.sku);
   if (error) { showToast('⚠️ Erro ao atualizar estoque'); return; }
   reg.estoque = novoEstoque;
   etq.impressas = Math.min((etq.impressas||0)+usar, etq.total);
@@ -10981,7 +10815,7 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   if (!etq) return;
 
   const zpl = await zplCarregar(etq.sku);
-  if (!zpl) { showToast('❌ ZPL não encontrado para o SKU: ' + zplSkuTexto(etq.sku)); return; }
+  if (!zpl) { showToast('❌ ZPL não encontrado para o SKU: ' + etq.sku); return; }
 
   const blocos = [];
   const regex = /(\^XA[\s\S]*?\^XZ)/gi;
@@ -13702,17 +13536,13 @@ function imprimirRequisicaoFull(id) {
   const agora = new Date();
   const dataImpressao = agora.toLocaleDateString('pt-BR') + ' ' + agora.getHours().toString().padStart(2,'0') + ':' + agora.getMinutes().toString().padStart(2,'0');
   const totalCaixas = (f.itens || []).reduce((a, i) => a + (parseInt(i.qtde) || 0), 0);
-  const abertas = fullCaixasAbertas(f.itens), totalUn = fullUnidades(f.itens);
-  const unCx = (item) => parseInt(_skuDb(item.codigo)?.qtdecx) || 0;
 
   const itensHTML = (f.itens || []).map((item, i) => `
     <tr style="border-bottom:1px solid #e5e7eb${i % 2 === 1 ? ';background:#f9fafb' : ''}">
       <td style="padding:8px 10px;font-size:12px;text-align:center;color:#6b7280;width:30px">${i+1}</td>
       <td style="padding:8px 10px;font-size:12px;font-family:monospace;color:#374151;white-space:nowrap">${item.codigo || '—'}</td>
       <td style="padding:8px 10px;font-size:12px;color:#111827;font-weight:500">${item.nome || '—'}</td>
-      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;color:#111827;width:60px">${parseInt(item.qtde)||0}${unCx(item)>1?`<div style="font-size:9px;font-weight:400;color:#6b7280">${unCx(item)} un/cx</div>`:''}</td>
-      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;width:70px;${itemAvulsas(item)?'color:#b45309;background:#fef3c7':'color:#d1d5db'}">${itemAvulsas(item)?itemAvulsas(item)+'<div style="font-size:9px;font-weight:600">cx aberta</div>':'—'}</td>
-      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;color:#111827;width:70px">${itemUnidades(item).toLocaleString('pt-BR')}</td>
+      <td style="padding:8px 10px;font-size:14px;text-align:center;font-weight:900;color:#111827;width:70px">${item.qtde}</td>
       <td style="padding:8px 10px;font-size:20px;text-align:center;width:50px">☐</td>
     </tr>`).join('');
 
@@ -13759,8 +13589,7 @@ function imprimirRequisicaoFull(id) {
         </div>
         <div style="background:#111;border-radius:8px;padding:12px;text-align:center">
           <div style="font-size:10px;color:#9ca3af;font-family:monospace;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Total caixas</div>
-          <div style="font-size:22px;font-weight:900;color:#d97706">${totalCaixas}${abertas?`<span style="font-size:12px;color:#fbbf24"> + ${abertas} aberta${abertas>1?'s':''}</span>`:''}</div>
-          <div style="font-size:10px;color:#9ca3af;font-family:monospace;margin-top:2px">${totalUn.toLocaleString('pt-BR')} unidades</div>
+          <div style="font-size:22px;font-weight:900;color:#d97706">${totalCaixas}</div>
         </div>
       </div>
 
@@ -13774,8 +13603,6 @@ function imprimirRequisicaoFull(id) {
               <th style="padding:9px 10px;font-size:10px;text-align:left;font-family:monospace;letter-spacing:.5px">SKU</th>
               <th style="padding:9px 10px;font-size:10px;text-align:left;font-family:monospace;letter-spacing:.5px">Produto</th>
               <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">Qtde Cx</th>
-              <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">Un. avulsas</th>
-              <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">Total un.</th>
               <th style="padding:9px 10px;font-size:10px;text-align:center;font-family:monospace;letter-spacing:.5px">✓ Separado</th>
             </tr>
           </thead>
@@ -13784,8 +13611,6 @@ function imprimirRequisicaoFull(id) {
             <tr style="background:#f9fafb;border-top:2px solid #111">
               <td colspan="3" style="padding:9px 10px;font-size:12px;font-weight:700;text-align:right;font-family:monospace">TOTAL</td>
               <td style="padding:9px 10px;font-size:16px;font-weight:900;text-align:center;color:#d97706">${totalCaixas}</td>
-              <td style="padding:9px 10px;font-size:16px;font-weight:900;text-align:center;color:#b45309">${abertas?(f.itens||[]).reduce((a,i)=>a+itemAvulsas(i),0):'—'}</td>
-              <td style="padding:9px 10px;font-size:16px;font-weight:900;text-align:center;color:#d97706">${totalUn.toLocaleString('pt-BR')}</td>
               <td></td>
             </tr>
           </tfoot>
@@ -13851,7 +13676,7 @@ function imprimirDelegacaoMax(id) {
       <td style="padding:9px 10px;font-size:11px;text-align:center;color:#6b7280;width:28px">${i+1}</td>
       <td style="padding:9px 10px;font-size:11px;font-family:monospace;color:#374151;white-space:nowrap">${item.codigo || '—'}</td>
       <td style="padding:9px 10px;font-size:11px;color:#111827;font-weight:600">${item.nome || '—'}</td>
-      <td style="padding:9px 10px;font-size:13px;text-align:center;font-weight:900;color:#111827;width:55px">${parseInt(item.qtde)||0}${itemAvulsas(item)?`<div style="font-size:10px;font-weight:700;color:#b45309">+ ${itemAvulsas(item)} un (cx aberta)</div>`:''}</td>
+      <td style="padding:9px 10px;font-size:13px;text-align:center;font-weight:900;color:#111827;width:55px">${item.qtde}</td>
       <td style="padding:9px 10px;font-size:10px;text-align:center;color:#6b7280;width:55px">${unCx}</td>
       <td style="padding:9px 10px;font-size:10px;text-align:center;color:#6b7280;width:55px">${pesoCx}</td>
       <td style="padding:9px 10px;width:130px"><div style="border-bottom:1.5px solid #9ca3af;height:26px"></div></td>
