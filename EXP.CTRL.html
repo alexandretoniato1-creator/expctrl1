@@ -5951,7 +5951,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 37;
+const APP_VERSAO = 38;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -9941,6 +9941,7 @@ function bibRenderLista() {
       <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${r.updated_at?new Date(r.updated_at).toLocaleDateString('pt-BR'):'—'}</td>
       <td style="white-space:nowrap;text-align:right">
         <button class="action-btn" onclick="bibPreview('${r.sku}')" title="Preview">👁</button>
+        <button class="action-btn" onclick="bibBaixarPDF('${r.sku}')" title="Baixar PDF da etiqueta">📄</button>
         <button class="action-btn" onclick="bibAbrirImprimir('${r.sku}')" title="Imprimir adiantado (soma ao estoque)">🖨</button>
         <button class="btn-danger-sm" onclick="bibExcluirItem('${r.sku}')" title="Excluir">✕</button>
       </td>
@@ -9978,6 +9979,70 @@ async function bibConfirmarImprimir(sku) {
   const row=document.getElementById(`bibLoteRow_${sku}`); if(row) row.style.display='none';
   bibRenderLista();
   showToast(`✅ ${qtd} etiquetas impressas e somadas ao estoque de ${sku}`);
+}
+
+// ── PDF da etiqueta (rolo: 1 por página no tamanho real · A4: grade) ──
+// Desenha 1 etiqueta (coluna esquerda da fileira) com o mesmo renderizador do preview e
+// recorta no tamanho real: largura = distância entre colunas, altura = até o último campo.
+function _etqImagemUnica(zplBloco){
+  const DPMM = 8;           // 203 dpi
+  const ESC = 3;            // resolução extra para o código de barras sair nítido no PDF
+  const bloco = zplCorrigirAlinhamento(zplBloco);
+  const offset = zplDetectarOffsetColunasDots(bloco);           // largura de 1 etiqueta, em dots
+  const unico = offset ? zplSoColunaEsquerda(bloco) : bloco;
+  const full = _zplRender(unico, ESC);
+  const ys = (unico.match(/\^FO\d+,(\d+)/g)||[]).map(t => parseInt(t.split(',')[1],10));
+  const larguraDots = offset || Math.round(full.width / ESC);
+  const alturaDots  = ys.length ? Math.min(Math.round(full.height/ESC), Math.max(...ys) + 40) : Math.round(full.height/ESC);
+  const c = document.createElement('canvas');
+  c.width = larguraDots * ESC; c.height = alturaDots * ESC;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#fff'; ctx.fillRect(0,0,c.width,c.height);
+  ctx.drawImage(full, 0, 0);
+  return { dataUrl: c.toDataURL('image/png'), wMm: larguraDots / DPMM, hMm: alturaDots / DPMM };
+}
+async function bibBaixarPDF(sku){
+  const reg = window._zplBibIndex?.get(sku);
+  if (!reg?.zpl) { showToast('❌ ZPL não encontrado'); return; }
+  if (!window.jspdf?.jsPDF) { showToast('❌ Biblioteca de PDF não carregou — verifique a internet e recarregue'); return; }
+  const qtd = parseInt(prompt(`PDF de etiquetas — ${sku}\n\nQuantas etiquetas?`, '1'), 10);
+  if (!qtd || qtd < 1) return;
+  if (qtd > 2000) { showToast('⚠️ Máximo de 2000 etiquetas por PDF'); return; }
+  const fmt = prompt('Formato do PDF:\n\n1 = Rolo — 1 etiqueta por página, tamanho real (impressora térmica)\n2 = Folha A4 — várias etiquetas por folha', '1');
+  if (fmt !== '1' && fmt !== '2') return;
+  showToast('📄 Gerando PDF...');
+  try {
+    const bloco = reg.zpl.match(/\^XA[\s\S]*?\^XZ/i)?.[0] || reg.zpl;
+    const img = _etqImagemUnica(bloco);
+    const { jsPDF } = window.jspdf;
+    let doc;
+    if (fmt === '1') {
+      const orient = img.wMm >= img.hMm ? 'landscape' : 'portrait';
+      doc = new jsPDF({ orientation: orient, unit: 'mm', format: [img.wMm, img.hMm] });
+      for (let i = 0; i < qtd; i++) {
+        if (i) doc.addPage([img.wMm, img.hMm], orient);
+        doc.addImage(img.dataUrl, 'PNG', 0, 0, img.wMm, img.hMm, 'etq', 'FAST');
+      }
+    } else {
+      doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const M = 8, G = 2;                                  // margem e espaço entre etiquetas
+      const cols = Math.max(1, Math.floor((210 - 2*M + G) / (img.wMm + G)));
+      const rows = Math.max(1, Math.floor((297 - 2*M + G) / (img.hMm + G)));
+      const porPag = cols * rows;
+      for (let i = 0; i < qtd; i++) {
+        if (i && i % porPag === 0) doc.addPage();
+        const k = i % porPag, c = k % cols, r = Math.floor(k / cols);
+        const x = M + c * (img.wMm + G), y = M + r * (img.hMm + G);
+        doc.addImage(img.dataUrl, 'PNG', x, y, img.wMm, img.hMm, 'etq', 'FAST');
+        doc.setDrawColor(210); doc.setLineWidth(0.1); doc.rect(x, y, img.wMm, img.hMm);   // guia de corte
+      }
+    }
+    doc.save(`etiquetas_${sku}_${qtd}un.pdf`);
+    showToast(`✅ PDF com ${qtd} etiqueta(s) de ${sku} (${img.wMm.toFixed(0)}×${img.hMm.toFixed(0)} mm)`);
+  } catch (e) {
+    console.error('[PDF etiqueta]', e);
+    showToast('❌ Erro ao gerar o PDF: ' + (e.message || e));
+  }
 }
 
 function bibPreview(sku) {
