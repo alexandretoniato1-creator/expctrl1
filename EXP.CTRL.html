@@ -1981,6 +1981,26 @@ select:focus{border-color:var(--accent)}
               <button class="btn btn-ghost btn-sm" id="devBtnSync" onclick="devSincronizarAgora()">🔄 Atualizar do ML</button>
             </div>
           </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;border-bottom:1px solid var(--border);padding-bottom:8px">
+            <button class="saida-tab active" data-devtab="casos" onclick="devAba('casos')">📋 Casos</button>
+            <button class="saida-tab" data-devtab="receb" onclick="devAba('receb')">📥 Recebimento</button>
+            <button class="saida-tab" data-devtab="fiscal" onclick="devAba('fiscal')">🧾 Fiscal <span id="devBadgeFiscal"></span></button>
+            <button class="saida-tab" data-devtab="med" onclick="devAba('med')">⚠ Mediação <span id="devBadgeMed"></span></button>
+          </div>
+          <div id="devPaneReceb" style="display:none">
+            <div style="background:var(--surface);border:2px solid var(--accent);border-radius:10px;padding:14px 16px;margin-bottom:14px">
+              <div style="font-size:12px;font-weight:800;margin-bottom:6px">📥 Bipe o pacote devolvido</div>
+              <div style="font-size:10px;color:var(--muted);margin-bottom:8px">Código de barras da etiqueta de devolução (Mercado Envios), QR da etiqueta amarela do Full ou o ID do pedido (2000…) digitado.</div>
+              <div style="display:flex;gap:8px"><input id="devRecBipe" class="form-sel" style="font-size:16px;padding:10px 12px;font-family:'DM Mono',monospace" placeholder="Bipe aqui e Enter" onkeydown="if(event.key==='Enter')devRecBuscar()">
+              <button class="btn btn-primary" onclick="devRecBuscar()">Buscar</button></div>
+            </div>
+            <div id="devRecResultado"></div>
+            <div style="font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);margin:16px 0 6px">Recebidos hoje</div>
+            <div id="devRecHoje"></div>
+          </div>
+          <div id="devPaneFiscal" style="display:none"></div>
+          <div id="devPaneMed" style="display:none"></div>
+          <div id="devPaneCasos">
           <div id="devCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px"></div>
           <div id="devChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
           <div class="full-table-wrap"><div style="overflow-x:auto"><table>
@@ -1988,6 +2008,7 @@ select:focus{border-color:var(--accent)}
             <tbody id="devBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
           </table></div></div>
           <div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace">Dados do Mercado Livre, atualizados a cada 15 min. As respostas continuam sendo feitas no ML — use "Responder no ML ↗".</div>
+          </div>
         </div>
 
         <div class="view" id="view-catalogo">
@@ -5762,7 +5783,7 @@ function _confFlash(tipo, html){
 // ══════════════════════════════════════════════════════════════════
 // DEVOLUÇÕES — fase 1: casos do Mercado Livre (dev_casos, sync a cada 15 min)
 // ══════════════════════════════════════════════════════════════════
-let DEV_CASOS = [], DEV_MOTIVOS = {}, _devFiltro = 'abertos';
+let DEV_CASOS = [], DEV_MOTIVOS = {}, _devFiltro = 'abertos', DEV_RECEB = [], DEV_FISCAL = [], _devAbaAtual = 'casos';
 const DEV_SYNC_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/ml-devolucoes-sync';
 const DEV_TXT = {
   etapa: { claim: 'Reclamação', dispute: 'Em disputa' },
@@ -5775,17 +5796,20 @@ const DEV_TXT = {
 };
 async function devCarregar(){
   try {
-    const [{ data: casos, error }, { data: mot }] = await Promise.all([
+    const [{ data: casos, error }, { data: mot }, { data: recs }, { data: tars }] = await Promise.all([
       _sb.from('dev_casos').select('*').order('aberto_em', { ascending: false }).limit(2000),
       _sb.from('dev_motivos').select('*'),
+      _sb.from('dev_recebimentos').select('*').order('recebido_em', { ascending: false }).limit(1000),
+      _sb.from('dev_tarefas_fiscais').select('*').order('criada_em', { ascending: false }).limit(1000),
     ]);
     if (error) throw error;
+    DEV_RECEB = recs || []; DEV_FISCAL = tars || [];
     DEV_CASOS = casos || [];
     DEV_MOTIVOS = {}; (mot||[]).forEach(m => DEV_MOTIVOS[m.motivo_id] = m.detalhe || m.nome);
     const ult = DEV_CASOS.reduce((a, c) => c.sincronizado_em > a ? c.sincronizado_em : a, '');
     const el = document.getElementById('devSync');
     if (el) el.textContent = ult ? 'Mercado Livre · última sincronização ' + new Date(ult).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : 'Aguardando a primeira sincronização';
-    devRender();
+    devRender(); devRenderFiscal(); devRenderMed(); devRenderRecHoje();
   } catch(e) {
     document.getElementById('devBody').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--red)">❌ ${e.message||e}</td></tr>`;
   }
@@ -5810,6 +5834,8 @@ function devRender(){
   const galpao = devs.filter(c => c.envio_destino && c.envio_destino !== 'warehouse');
   const setePassados = Date.now() - 7*86400000;
   const encerrados7 = DEV_CASOS.filter(c => c.status === 'closed' && c.fechado_em && new Date(c.fechado_em).getTime() >= setePassados);
+  const recebidos = new Set(DEV_RECEB.map(r => r.claim_id));
+  const aReceber = DEV_CASOS.filter(c => _devEhDevolucao(c) && c.dev_status === 'delivered' && !recebidos.has(c.claim_id));
   const card = (t, n, sub, cor, f) => `<div onclick="devSetFiltro('${f}')" style="cursor:pointer;background:var(--surface);border:1px solid ${_devFiltro===f?cor:'var(--border)'};border-radius:10px;padding:10px 12px">
       <div style="font-size:10px;font-weight:800;color:${cor}">${t}</div><div style="font-size:26px;font-weight:900;color:${cor}">${n}</div>
       <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">${sub}</div></div>`;
@@ -5819,10 +5845,11 @@ function devRender(){
     card('📦 DEVOLUÇÕES', devs.length, `${caminho.length} a caminho`, 'var(--orange)', 'devolucoes') +
     card('🏭 VOLTAM AO CD ML', cd.length, 'retirar no Mercado Livre', 'var(--purple)', 'cd') +
     card('🏠 VOLTAM AO GALPÃO', galpao.length, 'chegam direto', 'var(--accent)', 'galpao') +
-    card('✅ ENCERRADOS', encerrados7.length, 'nos últimos 7 dias', 'var(--green)', 'encerrados');
+    card('✅ ENCERRADOS', encerrados7.length, 'nos últimos 7 dias', 'var(--green)', 'encerrados') +
+    card('📥 ENTREGUES, NÃO RECEBIDOS', aReceber.length, 'chegaram e ninguém bipou', 'var(--red)', 'areceber');
   // lista
   const q = (document.getElementById('devBusca')?.value||'').trim().toLowerCase();
-  let lista = { abertos, disputa, devolucoes: devs, cd, galpao, encerrados: encerrados7 }[_devFiltro] || abertos;
+  let lista = { abertos, disputa, devolucoes: devs, cd, galpao, encerrados: encerrados7, areceber: aReceber }[_devFiltro] || abertos;
   if (q) lista = DEV_CASOS.filter(c => [c.pedido_id, c.sku, c.titulo, c.rastreio, c.claim_id].some(v => String(v||'').toLowerCase().includes(q)));
   // disputa primeiro, depois prazo, depois mais antigos
   lista = [...lista].sort((a,b) => (b.etapa==='dispute') - (a.etapa==='dispute')
@@ -5841,8 +5868,9 @@ function devRender(){
       <div style="font-size:10px;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.titulo||'').replace(/"/g,'')}">${c.titulo||''}</div>`;
     const envio = `<span class="badge ${c.logistic_type==='fulfillment'?'b-blue':'b-pending'}" style="font-size:9px">${DEV_TXT.log[c.logistic_type] || c.logistic_type || '—'}</span>`;
     const destino = c.envio_destino === 'warehouse' ? '🏭 CD do ML (retirar)' : c.envio_destino ? '🏠 Galpão' : '';
+    const rec = DEV_RECEB.find(r => r.claim_id === c.claim_id);
     const fisica = _devEhDevolucao(c)
-      ? `<div style="font-size:11px;font-weight:700">${DEV_TXT.dev[c.dev_status] || c.dev_status || '—'}</div>
+      ? `${rec ? `<div class="badge b-done" style="font-size:9px;margin-bottom:3px">📥 recebido ${new Date(rec.recebido_em).toLocaleDateString('pt-BR')}</div>` : ''}<div style="font-size:11px;font-weight:700">${DEV_TXT.dev[c.dev_status] || c.dev_status || '—'}</div>
          ${c.envio_status ? `<div style="font-size:10px;color:var(--muted)">envio ${DEV_TXT.envio[c.envio_status] || c.envio_status}</div>` : ''}
          ${destino ? `<div style="font-size:10px">${destino}</div>` : ''}
          ${c.rastreio ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2)">${c.rastreio}</div>` : ''}`
@@ -5856,6 +5884,197 @@ function devRender(){
   }).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--green)">✓ Nada neste filtro</td></tr>';
 }
 setInterval(() => { if (document.getElementById('view-devolucoes')?.classList.contains('active')) devCarregar(); }, 5 * 60 * 1000);
+
+const DEV_TESTE = { ok: '✅ OK, sem defeito', defeito: '🔧 Com defeito', item_errado: '🔄 Item errado (não é o nosso)', incompleto: '🧩 Incompleto', nao_testado: '⏸ Não testado' };
+const DEV_DESTINO = { estoque: '📦 Voltar ao estoque', descarte: '🗑 Descarte', quarentena: '🔒 Quarentena', reenviar_full: '🚚 Reenviar ao Full' };
+function devAba(a){
+  _devAbaAtual = a;
+  document.querySelectorAll('[data-devtab]').forEach(b => b.classList.toggle('active', b.dataset.devtab === a));
+  ['casos','receb','fiscal','med'].forEach(k => {
+    const el = document.getElementById({ casos: 'devPaneCasos', receb: 'devPaneReceb', fiscal: 'devPaneFiscal', med: 'devPaneMed' }[k]);
+    if (el) el.style.display = k === a ? '' : 'none';
+  });
+  if (a === 'receb') setTimeout(() => document.getElementById('devRecBipe')?.focus(), 50);
+}
+function _devQuem(){ return window.USUARIO?.nome || document.getElementById('saidaFuncionario')?.value || '—'; }
+
+// ── RECEBIMENTO ──
+async function devRecBuscar(pedidoDigitado){
+  const inp = document.getElementById('devRecBipe');
+  const codigo = (inp?.value || '').trim();
+  const out = document.getElementById('devRecResultado');
+  if (!codigo) return;
+  out.innerHTML = '<div style="padding:14px;color:var(--muted)">⏳ Procurando o caso...</div>';
+  try {
+    const r = await fetch(DEV_SYNC_API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ buscar: codigo, pedido: pedidoDigitado || undefined }) });
+    const d = await r.json();
+    if (d.erro) throw new Error(d.erro);
+    if (d.precisa_pedido) {
+      out.innerHTML = `<div style="background:rgba(210,153,34,.12);border:1px solid var(--orange);border-radius:10px;padding:14px">
+        <div style="font-weight:800;margin-bottom:6px">🟡 Etiqueta de triagem do Full (${d.triagem})</div>
+        <div style="font-size:12px;margin-bottom:8px">Digite o <b>ID do pedido</b> impresso logo abaixo do QR (começa com 2000). Só na primeira vez — depois este QR abre o caso direto.</div>
+        <div style="display:flex;gap:8px"><input id="devRecPedido" class="form-sel" style="font-family:'DM Mono',monospace" placeholder="2000…" onkeydown="if(event.key==='Enter')devRecBuscar(this.value)">
+        <button class="btn btn-primary" onclick="devRecBuscar(document.getElementById('devRecPedido').value)">Buscar</button></div></div>`;
+      setTimeout(() => document.getElementById('devRecPedido')?.focus(), 50);
+      return;
+    }
+    const casos = d.casos || [];
+    if (!casos.length) {
+      if (typeof _somDuplicata === 'function') _somDuplicata();
+      out.innerHTML = `<div style="background:rgba(248,81,73,.1);border:1px solid var(--red);border-radius:10px;padding:14px;font-size:13px">❌ ${d.aviso || 'Nenhum caso encontrado'}</div>`;
+      return;
+    }
+    // atualiza a lista local com o que veio do ML
+    casos.forEach(c => { const i = DEV_CASOS.findIndex(x => x.claim_id === c.claim_id); if (i >= 0) DEV_CASOS[i] = c; else DEV_CASOS.unshift(c); });
+    if (casos.length === 1) return devRecFormulario(casos[0], codigo);
+    out.innerHTML = `<div style="font-size:12px;font-weight:800;margin-bottom:6px">Este pedido tem ${casos.length} reclamações — escolha:</div>` +
+      casos.map(c => `<div onclick='devRecFormulario(${JSON.stringify(c).replace(/'/g,"&#39;")}, "${codigo}")' style="cursor:pointer;padding:10px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px">
+        <b>${c.sku||'—'}</b> · ${DEV_MOTIVOS[c.motivo_id]||c.motivo_id||''} · ${DEV_TXT.tipo[c.tipo]||c.tipo||''} · aberto ${c.aberto_em ? new Date(c.aberto_em).toLocaleDateString('pt-BR') : '—'}</div>`).join('');
+  } catch (e) { out.innerHTML = `<div style="color:var(--red);padding:14px">❌ ${e.message}</div>`; }
+}
+function devRecFormulario(c, codigo){
+  const out = document.getElementById('devRecResultado');
+  const anteriores = DEV_RECEB.filter(r => r.claim_id === c.claim_id);
+  const local = c.logistic_type === 'fulfillment' ? 'cd_ml' : 'galpao';
+  const opt = (obj) => '<option value="">— selecione —</option>' + Object.entries(obj).map(([k,v]) => `<option value="${k}">${v}</option>`).join('');
+  const qtdConhecida = c.quantidade != null && c.quantidade !== '';
+  out.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px">
+    ${anteriores.length ? `<div style="background:rgba(210,153,34,.12);border:1px solid var(--orange);border-radius:8px;padding:8px 12px;margin-bottom:12px;font-size:12px">⚠️ Este caso já foi recebido ${anteriores.length}x (último em ${new Date(anteriores[0].recebido_em).toLocaleString('pt-BR')} por ${anteriores[0].recebido_por}). Só registre de novo se for outra unidade.</div>` : ''}
+    <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-start;margin-bottom:12px">
+      <div style="flex:1;min-width:220px">
+        <div style="font-size:18px;font-weight:900;color:var(--accent)">${c.sku || 'SKU não identificado'}</div>
+        <div style="font-size:12px;color:var(--muted)">${c.titulo || ''}</div>
+        <div style="font-size:12px;margin-top:6px">Motivo: <b>${DEV_MOTIVOS[c.motivo_id] || c.motivo_id || '—'}</b></div>
+        <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">pedido ${c.pedido_id || '—'} · ${DEV_TXT.tipo[c.tipo]||c.tipo||''} · ${c.etapa==='dispute'?'🔴 passou por disputa':'reclamação'} · ${c.status==='closed'?'encerrado no ML':'aberto no ML'}</div>
+      </div>
+      <div style="font-size:11px;padding:8px 12px;border-radius:8px;background:var(--surface2)">${local==='cd_ml' ? '🏭 Retirado no CD do ML (pedido Full)' : '🏠 Chegou ao galpão'}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px">
+      <div class="form-group"><label>Quantidade esperada</label><input id="devRecEsp" type="number" min="0" class="form-sel" value="${qtdConhecida ? parseInt(c.quantidade) : ''}" placeholder="${qtdConhecida ? '' : 'não informada pelo ML'}"></div>
+      <div class="form-group"><label>Quantidade que chegou</label><input id="devRecRec" type="number" min="0" class="form-sel" placeholder="conte e digite"></div>
+      <div class="form-group"><label>Embalagem/produto avariado?</label>
+        <div style="display:flex;gap:12px;padding-top:8px;font-size:13px"><label><input type="radio" name="devRecAvaria" value="nao"> Não</label><label><input type="radio" name="devRecAvaria" value="sim"> Sim</label></div></div>
+      <div class="form-group"><label>Resultado do teste</label><select id="devRecTeste" class="form-sel">${opt(DEV_TESTE)}</select></div>
+      <div class="form-group"><label>Destino</label><select id="devRecDestino" class="form-sel">${opt(DEV_DESTINO)}</select></div>
+    </div>
+    <div class="form-group" style="margin-top:8px"><label>Observação</label><input id="devRecObs" class="form-sel" placeholder="obrigatória se algo não bater (falta, avaria, item errado)"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+      <button class="btn btn-ghost" onclick="document.getElementById('devRecResultado').innerHTML='';document.getElementById('devRecBipe').value='';document.getElementById('devRecBipe').focus()">Cancelar</button>
+      <button class="btn btn-primary" id="devRecSalvarBtn" onclick='devRecSalvar(${JSON.stringify({ claim_id: c.claim_id, local, codigo }).replace(/'/g,"&#39;")})'>✅ Registrar recebimento</button>
+    </div></div>`;
+  setTimeout(() => document.getElementById(qtdConhecida ? 'devRecRec' : 'devRecEsp')?.focus(), 50);
+}
+async function devRecSalvar(ctx){
+  const esp = document.getElementById('devRecEsp').value, rec = document.getElementById('devRecRec').value;
+  const avaria = document.querySelector('input[name="devRecAvaria"]:checked')?.value;
+  const teste = document.getElementById('devRecTeste').value, destino = document.getElementById('devRecDestino').value;
+  const obs = document.getElementById('devRecObs').value.trim();
+  // Regras: nada é presumido — cada campo precisa ser declarado por quem está com o pacote na mão
+  if (esp === '' || rec === '') return showToast('⚠️ Informe a quantidade esperada e a que chegou');
+  if (!avaria) return showToast('⚠️ Marque se veio avariado (sim ou não)');
+  if (!teste) return showToast('⚠️ Escolha o resultado do teste');
+  if (!destino) return showToast('⚠️ Escolha o destino');
+  const qE = parseInt(esp), qR = parseInt(rec);
+  if (isNaN(qE) || isNaN(qR) || qE < 0 || qR < 0) return showToast('⚠️ Quantidades inválidas');
+  const divergente = qR < qE || avaria === 'sim' || teste === 'item_errado' || teste === 'incompleto';
+  if (divergente && obs.length < 5) return showToast('⚠️ Algo não bateu — descreva na observação o que aconteceu');
+  if (destino === 'estoque' && (teste === 'defeito' || teste === 'item_errado' || avaria === 'sim')
+      && !confirm('O produto tem defeito/avaria ou é item errado, e o destino é VOLTAR AO ESTOQUE. Confirma?')) return;
+  const btn = document.getElementById('devRecSalvarBtn'); btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    const { data: r, error } = await _sb.from('dev_recebimentos').insert({
+      claim_id: ctx.claim_id, codigo_bipado: ctx.codigo, local_retirada: ctx.local,
+      qtd_esperada: qE, qtd_recebida: qR, avaria: avaria === 'sim', teste, destino,
+      observacao: obs || null, alerta_mediacao: divergente, recebido_por: _devQuem(),
+    }).select().single();
+    if (error) throw error;
+    const tipoFiscal = destino === 'estoque' ? 'retorno_estoque' : destino === 'descarte' ? 'descarte' : null;
+    if (tipoFiscal) {
+      const { error: e2 } = await _sb.from('dev_tarefas_fiscais').insert({ recebimento_id: r.id, claim_id: ctx.claim_id, tipo: tipoFiscal });
+      if (e2) showToast('⚠️ Recebimento salvo, mas a tarefa fiscal não foi criada: ' + e2.message);
+    }
+    showToast(`✅ Recebimento registrado${qR < qE ? ` — faltaram ${qE - qR}` : ''}${divergente ? ' · alerta de mediação aberto' : ''}`);
+    document.getElementById('devRecResultado').innerHTML = '';
+    const inp = document.getElementById('devRecBipe'); inp.value = ''; inp.focus();
+    await devCarregar();
+  } catch (e) { showToast('❌ ' + e.message); btn.disabled = false; btn.textContent = '✅ Registrar recebimento'; }
+}
+function devRenderRecHoje(){
+  const el = document.getElementById('devRecHoje'); if (!el) return;
+  const hoje = new Date().toDateString();
+  const lista = DEV_RECEB.filter(r => new Date(r.recebido_em).toDateString() === hoje);
+  el.innerHTML = lista.length ? `<div class="full-table-wrap"><table><thead><tr><th>Hora</th><th>SKU</th><th>Chegou</th><th>Teste</th><th>Destino</th><th>Por</th></tr></thead><tbody>` +
+    lista.map(r => { const c = DEV_CASOS.find(x => x.claim_id === r.claim_id) || {};
+      return `<tr><td style="font-family:'DM Mono',monospace;font-size:11px">${new Date(r.recebido_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</td>
+        <td style="font-weight:700">${c.sku||'—'}</td>
+        <td>${r.qtd_recebida}/${r.qtd_esperada}${r.avaria?' · <span style="color:var(--red)">avariado</span>':''}${r.alerta_mediacao?' ⚠':''}</td>
+        <td style="font-size:11px">${DEV_TESTE[r.teste]||r.teste}</td><td style="font-size:11px">${DEV_DESTINO[r.destino]||r.destino}</td><td style="font-size:11px">${r.recebido_por}</td></tr>`; }).join('') +
+    '</tbody></table></div>' : '<div style="color:var(--muted);font-size:12px">Nenhum recebimento hoje.</div>';
+}
+
+// ── FISCAL ──
+function devRenderFiscal(){
+  const el = document.getElementById('devPaneFiscal'); if (!el) return;
+  const pend = DEV_FISCAL.filter(t => t.status === 'pendente');
+  const b = document.getElementById('devBadgeFiscal'); if (b) b.innerHTML = pend.length ? `<span class="badge" style="background:var(--orange);color:#111;font-size:9px">${pend.length}</span>` : '';
+  const conc = DEV_FISCAL.filter(t => t.status === 'concluida').slice(0, 30);
+  const linha = t => { const c = DEV_CASOS.find(x => x.claim_id === t.claim_id) || {}; const r = DEV_RECEB.find(x => x.id === t.recebimento_id) || {};
+    return `<tr><td><span class="badge ${t.tipo==='descarte'?'':'b-blue'}" style="${t.tipo==='descarte'?'background:rgba(248,81,73,.15);color:var(--red)':''}">${t.tipo==='descarte'?'🗑 Nota de descarte':'📦 Retorno ao estoque'}</span></td>
+      <td><b>${c.sku||'—'}</b><div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">pedido ${c.pedido_id||'—'} · ${r.qtd_recebida??'?'} un.</div></td>
+      <td style="font-size:11px">${new Date(t.criada_em).toLocaleDateString('pt-BR')}<div style="font-size:10px;color:var(--muted)">há ${_devDias(t.criada_em)} dia(s)</div></td>
+      <td>${t.status === 'pendente'
+        ? `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+            <input id="nf_${t.id}" class="form-sel" style="width:110px;font-family:'DM Mono',monospace" placeholder="nº da nota *">
+            <input id="se_${t.id}" class="form-sel" style="width:60px" placeholder="série">
+            <input id="ob_${t.id}" class="form-sel" style="width:160px" placeholder="observação">
+            <button class="btn btn-primary btn-sm" onclick="devFiscalConcluir(${t.id})">Concluir</button></div>`
+        : `<span style="font-size:11px">✅ NF ${t.nota_numero}${t.nota_serie?'/'+t.nota_serie:''} · ${t.concluida_por} · ${new Date(t.concluida_em).toLocaleDateString('pt-BR')}</span>`}</td></tr>`; };
+  el.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Tarefas geradas pelo destino do recebimento. <b>Concluir exige o número da nota.</b>${' '}O retorno ao estoque também precisa ser lançado no Magis5 (o Outbox não altera o estoque de lá).</div>
+    <div class="full-table-wrap"><table><thead><tr><th>Tarefa</th><th>Produto</th><th>Criada</th><th>Nota fiscal</th></tr></thead><tbody>
+    ${pend.map(linha).join('') || '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhuma tarefa fiscal pendente</td></tr>'}
+    </tbody></table></div>
+    ${conc.length ? `<div style="font-size:11px;font-weight:800;color:var(--muted);margin:14px 0 6px">CONCLUÍDAS (últimas 30)</div><div class="full-table-wrap"><table><tbody>${conc.map(linha).join('')}</tbody></table></div>` : ''}`;
+}
+async function devFiscalConcluir(id){
+  const nf = document.getElementById('nf_' + id)?.value.trim(), se = document.getElementById('se_' + id)?.value.trim(), ob = document.getElementById('ob_' + id)?.value.trim();
+  if (!nf) return showToast('⚠️ Informe o número da nota fiscal');
+  const { error } = await _sb.from('dev_tarefas_fiscais').update({ status: 'concluida', nota_numero: nf, nota_serie: se || null, observacao: ob || null,
+    concluida_por: _devQuem(), concluida_em: new Date().toISOString() }).eq('id', id).eq('status', 'pendente');
+  if (error) return showToast('❌ ' + error.message);
+  showToast('✅ Tarefa fiscal concluída'); devCarregar();
+}
+
+// ── MEDIAÇÃO ──
+function devRenderMed(){
+  const el = document.getElementById('devPaneMed'); if (!el) return;
+  const abertos = DEV_RECEB.filter(r => r.alerta_mediacao && !r.alerta_resolvido);
+  const b = document.getElementById('devBadgeMed'); if (b) b.innerHTML = abertos.length ? `<span class="badge" style="background:var(--red);color:#fff;font-size:9px">${abertos.length}</span>` : '';
+  el.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Recebimentos em que algo não bateu — falta, avaria, item errado ou incompleto. Conteste no Mercado Livre e marque como resolvido.</div>
+    <div class="full-table-wrap"><table><thead><tr><th>O que aconteceu</th><th>Produto</th><th>Recebido</th><th></th></tr></thead><tbody>
+    ${abertos.map(r => { const c = DEV_CASOS.find(x => x.claim_id === r.claim_id) || {};
+      const motivos = [];
+      if (r.qtd_recebida < r.qtd_esperada) motivos.push(r.qtd_recebida === 0 ? '📭 Pacote vazio' : `🧩 Faltaram ${r.qtd_esperada - r.qtd_recebida} de ${r.qtd_esperada}`);
+      if (r.avaria) motivos.push('💥 Avariado');
+      if (r.teste === 'item_errado') motivos.push('🔄 Item errado');
+      if (r.teste === 'incompleto') motivos.push('🧩 Incompleto');
+      return `<tr><td><div style="font-weight:800;color:var(--red)">${motivos.join(' · ')}</div><div style="font-size:11px;color:var(--muted)">${r.observacao||''}</div></td>
+        <td><b>${c.sku||'—'}</b><div style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">pedido ${c.pedido_id||'—'} · ${c.status==='closed'?'caso encerrado no ML':'caso aberto no ML'}</div></td>
+        <td style="font-size:11px">${new Date(r.recebido_em).toLocaleDateString('pt-BR')}<div style="font-size:10px;color:var(--muted)">${r.recebido_por}</div></td>
+        <td style="white-space:nowrap">${c.pedido_id?`<button class="btn btn-ghost btn-sm" onclick="abrirVendaML('${c.pedido_id}')">Contestar no ML ↗</button>`:''}
+          <button class="btn btn-ghost btn-sm" onclick="devMedResolver(${r.id})">✓ Resolvido</button></td></tr>`; }).join('')
+      || '<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--green)">✓ Nenhuma divergência pendente</td></tr>'}
+    </tbody></table></div>`;
+}
+async function devMedResolver(id){
+  const como = prompt('Como foi resolvido? (ex.: contestação aceita pelo ML, reembolso recebido, sem direito a contestar)');
+  if (!como || como.trim().length < 5) return;
+  const r = DEV_RECEB.find(x => x.id === id);
+  const { error } = await _sb.from('dev_recebimentos').update({ alerta_resolvido: true, alerta_resolvido_em: new Date().toISOString(),
+    alerta_resolvido_por: _devQuem(), observacao: ((r?.observacao ? r.observacao + ' | ' : '') + 'Resolução: ' + como.trim()) }).eq('id', id);
+  if (error) return showToast('❌ ' + error.message);
+  showToast('✅ Marcado como resolvido'); devCarregar();
+}
 
 // ══ FILA DE BIPES OFFLINE ══
 // Bipe que não chegou ao banco (rede caiu) fica guardado neste computador e é reenviado
@@ -5934,7 +6153,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 40;
+const APP_VERSAO = 41;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -14059,6 +14278,8 @@ const PERM_ACOES = [
   ['auditoria_baixa','Dar baixa na auditoria de saídas'],
   ['etiquetas_biblioteca','Editar biblioteca de etiquetas e estoque pré-impresso'],
   ['transportadoras','Cadastrar/desativar transportadoras'],
+  ['devolucao_receber','Registrar recebimento de devolução'],
+  ['devolucao_fiscal','Concluir tarefas fiscais e mediações de devolução'],
 ];
 const PERM_MODELOS = {
   expedicao:  { rot: 'Galpão / Expedição', abas: ['hoje','saidas'], acoes: [] },
@@ -14234,6 +14455,8 @@ function _authInstalarTravas(){
    ['bibEditar','etiquetas_biblioteca','editar etiqueta'], ['bibExcluirItem','etiquetas_biblioteca','excluir etiqueta'],
    ['bibAbrirImprimir','etiquetas_biblioteca','imprimir estoque adiantado'], ['bibDefinirEstoque','etiquetas_biblioteca','alterar estoque pré-impresso'],
    ['gerenciarTransportadoras','transportadoras','cadastrar transportadoras'],
+   ['devRecSalvar','devolucao_receber','registrar recebimento de devolução'],
+   ['devFiscalConcluir','devolucao_fiscal','concluir tarefa fiscal'], ['devMedResolver','devolucao_fiscal','resolver mediação'],
   ].forEach(([f,a,r]) => _authGuardar(f,a,r));
   // navegação: bloqueia abas sem permissão mesmo chamadas por código
   const origShow = window.showPage;
