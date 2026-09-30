@@ -1757,6 +1757,7 @@ select:focus{border-color:var(--accent)}
                 <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px">
                   <div style="font-size:12px;font-weight:700">🏍 Flex por transportadora</div>
                   <select id="transpRelMes" onchange="renderRelatorioTransp()" class="form-sel" style="width:auto;font-size:11px;padding:4px 8px"></select>
+                  <button class="btn btn-primary btn-sm" onclick="baixarRelatorioTransp()" title="Baixa a planilha dia a dia × transportadora para conferir a fatura">⬇ Baixar planilha</button>
                   <button class="btn btn-ghost btn-sm" onclick="copiarRelatorioTransp()" title="Copiar CSV dia a dia para conferir fatura">📋 Copiar CSV</button>
                   <span style="font-size:10px;color:var(--muted)">use para conferir a fatura das transportadoras</span>
                 </div>
@@ -5670,9 +5671,8 @@ function renderRelatorioTransp(){
       <div style="font-size:20px;font-weight:900">${total}</div>
     </div>`;
 }
-function copiarRelatorioTransp(){
-  const mes = document.getElementById('transpRelMes')?.value;
-  if (!mes) return;
+// CSV dia a dia × transportadora (Flex). Separador ";" = Excel em português abre em colunas.
+function _csvRelatorioTransp(mes){
   const linhas = _transpColetaPedidosDoMes(mes);
   const porDia = {};
   linhas.forEach(l => {
@@ -5686,8 +5686,28 @@ function copiarRelatorioTransp(){
     const vals = nomes.map(n=>porDia[d][n]||0);
     csv += d+';'+vals.join(';')+';'+vals.reduce((x,y)=>x+y,0)+'\n';
   });
-  navigator.clipboard.writeText(csv).then(()=>showToast('📋 CSV copiado — cole no Excel/Sheets'))
+  // linha de total do mês
+  const tot = nomes.map(n => Object.values(porDia).reduce((a,dia) => a + (dia[n]||0), 0));
+  csv += 'TOTAL;'+tot.join(';')+';'+tot.reduce((x,y)=>x+y,0)+'\n';
+  return csv;
+}
+function copiarRelatorioTransp(){
+  const mes = document.getElementById('transpRelMes')?.value;
+  if (!mes) return;
+  navigator.clipboard.writeText(_csvRelatorioTransp(mes)).then(()=>showToast('📋 CSV copiado — cole no Excel/Sheets'))
     .catch(()=>showToast('❌ Não consegui copiar'));
+}
+function baixarRelatorioTransp(){
+  const mes = document.getElementById('transpRelMes')?.value;
+  if (!mes) return;
+  // BOM (\ufeff) = o Excel reconhece os acentos
+  const blob = new Blob(['\ufeff' + _csvRelatorioTransp(mes)], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `flex_por_transportadora_${mes.replace('/','-')}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  showToast('⬇ Planilha baixada — abra no Excel');
 }
 
 // ══ FORMULÁRIO DO BIPE ENXUTO ══
@@ -6153,7 +6173,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 41;
+const APP_VERSAO = 42;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
