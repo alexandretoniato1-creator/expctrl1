@@ -1970,142 +1970,26 @@ select:focus{border-color:var(--accent)}
 
         <!-- ══ DEVOLUÇÕES ══ -->
         <div class="view" id="view-devolucoes">
-
-          <!-- Sub-abas -->
-          <div style="display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:16px">
-            <button class="saida-tab active" id="devTab-registros" onclick="switchDevTab('registros',this)">📋 Claims ML</button>
-            <button class="saida-tab" id="devTab-manual" onclick="switchDevTab('manual',this)">✏️ Registro Manual</button>
-            <button class="saida-tab" id="devTab-acoes" onclick="switchDevTab('acoes',this)">⚠️ Ações Pendentes</button>
-            <button class="saida-tab" id="devTab-analise-ml" onclick="switchDevTab('analise-ml',this)">📈 Análise ML</button>
-            <button class="saida-tab" id="devTab-transito" onclick="switchDevTab('transito',this)">📦 Em Trânsito</button>
-            <button class="saida-tab" id="devTab-impacto" onclick="switchDevTab('impacto',this)">💰 Impacto</button>
-          </div>
-
-          <!-- ── SUB-ABA: REGISTROS ── -->
-          <div id="devPane-registros">
-            <!-- Cards de resumo -->
-            <div class="cards" style="grid-template-columns:repeat(5,1fr);margin-bottom:16px" id="claimsCards">
-              <div class="card c-red"><div class="card-label">Claims abertas</div><div class="card-value" id="claimsTotalAbertas">—</div><div class="card-sub">aguardando ação</div></div>
-              <div class="card" style="border-color:rgba(210,153,34,.3)"><div class="card-label">Com devolução</div><div class="card-value" id="claimsComDevolucao" style="color:var(--orange)">—</div><div class="card-sub">produto em retorno</div></div>
-              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Dinheiro retido ML</div><div class="card-value" id="claimsDinheiroPreso" style="font-size:22px;color:var(--red)">—</div><div class="card-sub">aguardando retorno</div></div>
-              <div class="card" style="border-color:rgba(248,81,73,.3)"><div class="card-label">Valor em risco</div><div class="card-value" id="claimsValorRisco" style="font-size:16px;color:var(--red)">—</div><div class="card-sub">claims abertas</div></div>
-              <div class="card"><div class="card-label">Histórico</div><div class="card-value" id="claimsTotalFechadas" style="font-size:22px;color:var(--muted2)">—</div><div class="card-sub">claims encerradas</div></div>
+          <!-- ══ DEVOLUÇÕES — fase 1: casos do Mercado Livre (somente leitura do ML) ══ -->
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+            <div>
+              <div style="font-size:18px;font-weight:900">↩ Devoluções e reclamações</div>
+              <div id="devSync" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">carregando...</div>
             </div>
-            <!-- Filtros -->
-            <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-              <select id="claimsFiltroStatus" onchange="renderClaims()" style="font-size:11px;padding:5px 8px">
-                <option value="abertas">Abertas</option>
-                <option value="fechadas">Fechadas</option>
-                <option value="todas">Todas</option>
-              </select>
-              <select id="claimsFiltroTipo" onchange="renderClaims()" style="font-size:11px;padding:5px 8px">
-                <option value="">Todos os tipos</option>
-                <option value="Devolução">Devolução</option>
-                <option value="Mediação">Mediação</option>
-                <option value="Cancelamento">Cancelamento</option>
-              </select>
-              <input type="text" id="claimsBusca" placeholder="🔍 SKU, pedido, comprador..." oninput="renderClaims()" style="width:200px;font-size:11px;padding:5px 9px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);outline:none">
-              <button class="btn btn-ghost btn-sm" onclick="carregarClaims(true)" id="claimsReloadBtn">↻ Atualizar</button>
-              <span id="claimsLoadingMsg" style="font-size:11px;color:var(--muted);display:none">Carregando...</span>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <input id="devBusca" oninput="devRender()" placeholder="🔍 Pedido, SKU ou rastreio" class="form-sel" style="width:220px">
+              <button class="btn btn-ghost btn-sm" id="devBtnSync" onclick="devSincronizarAgora()">🔄 Atualizar do ML</button>
             </div>
-            <!-- Tabela -->
-            <div style="overflow-x:auto">
-              <table id="claimsTable" style="font-size:12px">
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Nº Venda</th>
-                    <th>Tipo</th>
-                    <th>Etapa</th>
-                    <th>Motivo</th>
-                    <th>SKU</th>
-                    <th>Produto</th>
-                    <th>Comprador</th>
-                    <th>Valor</th>
-                    <th>Logística</th>
-                    <th>NF</th>
-                    <th>Devolução</th>
-                    <th>💰 Dinheiro</th>
-                    <th>💬</th>
-                    <th>Ações</th>
-                    <th>Resolução</th>
-                  </tr>
-                </thead>
-                <tbody id="claimsBody">
-                  <tr><td colspan="16" style="text-align:center;padding:40px;color:var(--muted)">Clique em "↻ Atualizar" para carregar as claims da conta LOGBOX</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </div><!-- /devPane-registros -->
-
-          <!-- ── REGISTRO MANUAL (outros marketplaces) ── -->
-          <div id="devPane-manual" style="display:none">
-            <div style="background:rgba(88,166,255,.06);border:1px solid rgba(88,166,255,.2);border-radius:10px;padding:12px 18px;margin-bottom:16px;font-size:12px;color:var(--muted)">
-              ✏️ <strong>Registro manual</strong> — para devoluções de Shopee, TikTok, Amazon e Magalu enquanto as APIs desses marketplaces não estão conectadas. As claims do Mercado Livre são automáticas na aba "Claims ML".
-            </div>
-            <div class="dev-toolbar" style="flex-wrap:wrap;gap:8px">
-              <div class="dev-toolbar-left" style="flex-wrap:wrap;gap:6px">
-                <input type="text" id="devFiltroBusca" placeholder="🔍 SKU, venda, cliente..." oninput="renderDev()" style="width:190px">
-                <select id="devFiltroStatus" onchange="renderDev()">
-                  <option value="">Todos status</option>
-                  <option value="aberto">Aberto</option>
-                  <option value="resolvido">Resolvido</option>
-                  <option value="pendente">Pendente</option>
-                </select>
-                <select id="devFiltroTipo" onchange="renderDev()">
-                  <option value="">Todos tipos</option>
-                  <option value="devolucao">Devolução</option>
-                  <option value="reclamacao">Reclamação</option>
-                  <option value="troca">Troca</option>
-                </select>
-                <select id="devFiltroMkt" onchange="renderDev()">
-                  <option value="">Todos markets</option>
-                  <option value="Shopee">Shopee</option>
-                  <option value="TikTok">TikTok</option>
-                  <option value="Amazon">Amazon</option>
-                  <option value="Magalu">Magalu</option>
-                </select>
-              </div>
-              <div class="dev-toolbar-right">
-                <button class="btn btn-primary btn-sm" onclick="abrirNovaDev()">+ Nova devolução</button>
-              </div>
-            </div>
-            <table id="devTable">
-              <thead>
-                <tr>
-                  <th>Data</th><th>Marketplace</th><th>Nº Venda</th><th>SKU</th><th>Produto</th>
-                  <th>Motivo</th><th>Status</th><th>Valor</th><th>Observação</th><th>Ações</th>
-                </tr>
-              </thead>
-              <tbody id="devBody">
-                <tr><td colspan="10" class="empty-state">Nenhuma devolução registrada</td></tr>
-              </tbody>
-            </table>
-          </div><!-- /devPane-manual -->
-
-                    <!-- ── AÇÕES PENDENTES ── -->
-          <div id="devPane-acoes" style="display:none">
-            <div id="acoes-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver as ações pendentes.</div></div>
           </div>
-
-          <!-- ── ANÁLISE ML ── -->
-          <div id="devPane-analise-ml" style="display:none">
-            <div id="analise-ml-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver a análise.</div></div>
-          </div>
-
-          <!-- ── EM TRÂNSITO ── -->
-          <div id="devPane-transito" style="display:none">
-            <div id="transito-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver as devoluções em trânsito.</div></div>
-          </div>
-
-          <!-- ── IMPACTO FINANCEIRO ── -->
-          <div id="devPane-impacto" style="display:none">
-            <div id="impacto-root"><div style="text-align:center;padding:40px;color:var(--muted)">Carregue a aba "Claims ML" primeiro para ver o impacto financeiro.</div></div>
-          </div>
-
+          <div id="devCards" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px"></div>
+          <div id="devChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px"></div>
+          <div class="full-table-wrap"><div style="overflow-x:auto"><table>
+            <thead><tr><th>Situação</th><th>Motivo</th><th>Pedido / produto</th><th>Envio</th><th>Devolução física</th><th>Dinheiro</th><th>Aberto</th><th></th></tr></thead>
+            <tbody id="devBody"><tr><td colspan="8" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
+          </table></div></div>
+          <div style="font-size:10px;color:var(--muted);margin-top:8px;font-family:'DM Mono',monospace">Dados do Mercado Livre, atualizados a cada 15 min. As respostas continuam sendo feitas no ML — use "Responder no ML ↗".</div>
         </div>
 
-        <!-- ══ CATÁLOGO SKUs ══ -->
         <div class="view" id="view-catalogo">
           <div class="dev-toolbar">
             <div class="dev-toolbar-left">
@@ -3238,7 +3122,7 @@ function showPage(name) {
     }, 100);
   }
   if (name==='volumetria') renderVolDia();
-  if (name==='devolucoes') renderDev();
+  if (name==='devolucoes') devCarregar();
   if (name==='catalogo') renderCatalogo();
   if (name==='produtividade') renderProdutividade();
   if (name==='saidas') {
@@ -5874,6 +5758,105 @@ function _confFlash(tipo, html){
   window._confFlashT = setTimeout(() => { el.style.display = 'none'; }, tipo === 'erro' ? 12000 : 6000);
 }
 
+
+// ══════════════════════════════════════════════════════════════════
+// DEVOLUÇÕES — fase 1: casos do Mercado Livre (dev_casos, sync a cada 15 min)
+// ══════════════════════════════════════════════════════════════════
+let DEV_CASOS = [], DEV_MOTIVOS = {}, _devFiltro = 'abertos';
+const DEV_SYNC_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/ml-devolucoes-sync';
+const DEV_TXT = {
+  etapa: { claim: 'Reclamação', dispute: 'Em disputa' },
+  tipo:  { returns: 'Devolução', return: 'Devolução', mediations: 'Mediação', fulfillment: 'Full', cancel_purchase: 'Cancelamento', ml_case: 'Atraso' },
+  dev:   { label_generated: 'Etiqueta gerada', pending: 'Aguardando comprador', shipped: 'A caminho', delivered: 'Entregue', not_delivered: 'Não entregue',
+           cancelled: 'Cancelada', expired: 'Expirada', closed: 'Encerrada', failed: 'Falhou', to_be_agreed: 'A combinar' },
+  envio: { ready_to_ship: 'aguardando postagem', shipped: 'em trânsito', delivered: 'entregue', not_delivered: 'não entregue', cancelled: 'cancelado', pending: 'pendente' },
+  din:   { retained: '🔒 Retido', refunded: '↩ Estornado ao comprador', available: '✅ Liberado', not_retained: 'Não retido' },
+  log:   { fulfillment: 'Full', self_service: 'Flex', cross_docking: 'Coleta', xd_drop_off: 'Coleta', drop_off: 'Agência' },
+};
+async function devCarregar(){
+  try {
+    const [{ data: casos, error }, { data: mot }] = await Promise.all([
+      _sb.from('dev_casos').select('*').order('aberto_em', { ascending: false }).limit(2000),
+      _sb.from('dev_motivos').select('*'),
+    ]);
+    if (error) throw error;
+    DEV_CASOS = casos || [];
+    DEV_MOTIVOS = {}; (mot||[]).forEach(m => DEV_MOTIVOS[m.motivo_id] = m.detalhe || m.nome);
+    const ult = DEV_CASOS.reduce((a, c) => c.sincronizado_em > a ? c.sincronizado_em : a, '');
+    const el = document.getElementById('devSync');
+    if (el) el.textContent = ult ? 'Mercado Livre · última sincronização ' + new Date(ult).toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : 'Aguardando a primeira sincronização';
+    devRender();
+  } catch(e) {
+    document.getElementById('devBody').innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--red)">❌ ${e.message||e}</td></tr>`;
+  }
+}
+async function devSincronizarAgora(){
+  const b = document.getElementById('devBtnSync'); if (b) { b.disabled = true; b.textContent = '⏳ Buscando no ML...'; }
+  try { await fetch(DEV_SYNC_API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); }
+  catch(e) { showToast('❌ Não consegui falar com o servidor'); }
+  if (b) { b.disabled = false; b.textContent = '🔄 Atualizar do ML'; }
+  devCarregar();
+}
+function _devDias(iso){ if (!iso) return null; return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); }
+function _devEhDevolucao(c){ return c.tipo === 'returns' || c.tipo === 'return' || !!c.dev_status; }
+function devSetFiltro(f){ _devFiltro = f; devRender(); }
+function devRender(){
+  const body = document.getElementById('devBody'); if (!body) return;
+  const abertos = DEV_CASOS.filter(c => c.status === 'opened');
+  const disputa = abertos.filter(c => c.etapa === 'dispute');
+  const devs = abertos.filter(_devEhDevolucao);
+  const caminho = devs.filter(c => ['shipped'].includes(c.envio_status) || c.dev_status === 'shipped');
+  const cd = devs.filter(c => c.envio_destino === 'warehouse');
+  const galpao = devs.filter(c => c.envio_destino && c.envio_destino !== 'warehouse');
+  const setePassados = Date.now() - 7*86400000;
+  const encerrados7 = DEV_CASOS.filter(c => c.status === 'closed' && c.fechado_em && new Date(c.fechado_em).getTime() >= setePassados);
+  const card = (t, n, sub, cor, f) => `<div onclick="devSetFiltro('${f}')" style="cursor:pointer;background:var(--surface);border:1px solid ${_devFiltro===f?cor:'var(--border)'};border-radius:10px;padding:10px 12px">
+      <div style="font-size:10px;font-weight:800;color:${cor}">${t}</div><div style="font-size:26px;font-weight:900;color:${cor}">${n}</div>
+      <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">${sub}</div></div>`;
+  document.getElementById('devCards').innerHTML =
+    card('ABERTOS', abertos.length, 'reclamações em andamento', 'var(--text)', 'abertos') +
+    card('🔴 EM DISPUTA', disputa.length, 'o ML está mediando', 'var(--red)', 'disputa') +
+    card('📦 DEVOLUÇÕES', devs.length, `${caminho.length} a caminho`, 'var(--orange)', 'devolucoes') +
+    card('🏭 VOLTAM AO CD ML', cd.length, 'retirar no Mercado Livre', 'var(--purple)', 'cd') +
+    card('🏠 VOLTAM AO GALPÃO', galpao.length, 'chegam direto', 'var(--accent)', 'galpao') +
+    card('✅ ENCERRADOS', encerrados7.length, 'nos últimos 7 dias', 'var(--green)', 'encerrados');
+  // lista
+  const q = (document.getElementById('devBusca')?.value||'').trim().toLowerCase();
+  let lista = { abertos, disputa, devolucoes: devs, cd, galpao, encerrados: encerrados7 }[_devFiltro] || abertos;
+  if (q) lista = DEV_CASOS.filter(c => [c.pedido_id, c.sku, c.titulo, c.rastreio, c.claim_id].some(v => String(v||'').toLowerCase().includes(q)));
+  // disputa primeiro, depois prazo, depois mais antigos
+  lista = [...lista].sort((a,b) => (b.etapa==='dispute') - (a.etapa==='dispute')
+    || ((a.prazo_acao?new Date(a.prazo_acao).getTime():9e15) - (b.prazo_acao?new Date(b.prazo_acao).getTime():9e15))
+    || (new Date(a.aberto_em) - new Date(b.aberto_em)));
+  body.innerHTML = lista.map(c => {
+    const dias = _devDias(c.aberto_em);
+    const sit = c.status !== 'opened'
+      ? '<span class="badge b-done">Encerrado</span>'
+      : c.etapa === 'dispute' ? '<span class="badge" style="background:rgba(248,81,73,.15);color:var(--red);font-weight:800">🔴 Em disputa</span>'
+      : '<span class="badge b-pending">Reclamação</span>';
+    const tipo = `<div style="font-size:10px;color:var(--muted);margin-top:3px">${DEV_TXT.tipo[c.tipo] || c.tipo || ''}</div>`;
+    const motivo = DEV_MOTIVOS[c.motivo_id] || c.motivo_id || '—';
+    const prod = `<div style="font-family:'DM Mono',monospace;font-size:11px">${c.pedido_id||'—'}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--accent)">${c.sku||''}</div>
+      <div style="font-size:10px;color:var(--muted);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(c.titulo||'').replace(/"/g,'')}">${c.titulo||''}</div>`;
+    const envio = `<span class="badge ${c.logistic_type==='fulfillment'?'b-blue':'b-pending'}" style="font-size:9px">${DEV_TXT.log[c.logistic_type] || c.logistic_type || '—'}</span>`;
+    const destino = c.envio_destino === 'warehouse' ? '🏭 CD do ML (retirar)' : c.envio_destino ? '🏠 Galpão' : '';
+    const fisica = _devEhDevolucao(c)
+      ? `<div style="font-size:11px;font-weight:700">${DEV_TXT.dev[c.dev_status] || c.dev_status || '—'}</div>
+         ${c.envio_status ? `<div style="font-size:10px;color:var(--muted)">envio ${DEV_TXT.envio[c.envio_status] || c.envio_status}</div>` : ''}
+         ${destino ? `<div style="font-size:10px">${destino}</div>` : ''}
+         ${c.rastreio ? `<div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted2)">${c.rastreio}</div>` : ''}`
+      : '<span style="font-size:10px;color:var(--muted)">sem devolução física</span>';
+    const din = c.dinheiro_status ? `<span style="font-size:11px">${DEV_TXT.din[c.dinheiro_status] || c.dinheiro_status}</span>` : '<span style="color:var(--muted);font-size:10px">—</span>';
+    const valor = c.valor != null ? `<div style="font-size:10px;color:var(--muted)">R$ ${Number(c.valor).toLocaleString('pt-BR',{minimumFractionDigits:2})}</div>` : '';
+    const prazo = c.prazo_acao ? `<div style="font-size:10px;color:var(--red);font-weight:700">⏰ agir até ${new Date(c.prazo_acao).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>` : '';
+    const aberto = `<div style="font-size:11px;font-weight:700;color:${dias>=7?'var(--red)':dias>=3?'var(--orange)':'var(--text)'}">${dias===0?'hoje':dias===1?'há 1 dia':'há '+dias+' dias'}</div>${prazo}`;
+    const btn = c.pedido_id ? `<button class="btn btn-ghost btn-sm" style="font-size:10px;white-space:nowrap" onclick="abrirVendaML('${c.pedido_id}')" title="Abre a venda no Mercado Livre, onde fica a reclamação">Responder no ML ↗</button>` : '';
+    return `<tr><td>${sit}${tipo}</td><td style="font-size:11px;max-width:180px">${motivo}</td><td>${prod}</td><td>${envio}</td><td>${fisica}</td><td>${din}${valor}</td><td>${aberto}</td><td>${btn}</td></tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--green)">✓ Nada neste filtro</td></tr>';
+}
+setInterval(() => { if (document.getElementById('view-devolucoes')?.classList.contains('active')) devCarregar(); }, 5 * 60 * 1000);
+
 // ══ FILA DE BIPES OFFLINE ══
 // Bipe que não chegou ao banco (rede caiu) fica guardado neste computador e é reenviado
 // sozinho a cada 20s e quando a conexão volta. Nada se perde num F5.
@@ -5951,7 +5934,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 39;
+const APP_VERSAO = 40;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -6589,6 +6572,7 @@ function switchDevTab(tab, btn) {
 }
 
 function renderDev(){
+  if (!document.getElementById('devFiltroBusca')) return; // tela antiga substituída pelo módulo novo (v40)
   _devPopularFiltroMes();
   const busca   = (document.getElementById('devFiltroBusca')?.value||'').toLowerCase().trim();
   const mes     = document.getElementById('devFiltroMes')?.value||'';
