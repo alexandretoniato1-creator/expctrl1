@@ -5951,7 +5951,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 38;
+const APP_VERSAO = 39;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -14046,6 +14046,360 @@ async function salvarInventario() {
   }
 }
 
+</script>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   LOGIN E PERMISSÕES (etapa 1)
+   • Contas no Supabase Auth; perfil/permissões na tabela usuarios_app, acessada
+     SOMENTE pela função outbox-auth (a tabela tem RLS sem políticas).
+   • Login usa um cliente separado (_authCli): os dados continuam no cliente _sb.
+   • Etapa 2 (futura): RLS nas tabelas de dados.
+   ══════════════════════════════════════════════════════════════════════ */
+const AUTH_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/outbox-auth';
+const AUTH_DOMINIO = 'login.outbox.app';
+const _authCli = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storageKey: 'outbox-login', persistSession: true, autoRefreshToken: true } });
+window.USUARIO = null;
+
+const PERM_ABAS = [
+  ['hoje','☀ Hoje'], ['dashboard','▣ Dashboard'], ['fulls','◈ Fulls'], ['volumetria','◻ Carga'],
+  ['produtividade','◎ Produtividade'], ['saidas','📤 Saídas'], ['devolucoes','↩ Devoluções'],
+  ['insumos','🗂 Insumos'], ['catalogo','🗂 Catálogo SKUs'], ['painel-kpi','📊 Painéis KPI'],
+];
+const PERM_ACOES = [
+  ['full_editar','Criar e editar Fulls e itens'],
+  ['full_enviar','Marcar Full como enviado'],
+  ['full_excluir','Excluir Full'],
+  ['saida_manual','Registrar saída manual (sem bipe)'],
+  ['saida_excluir','Excluir registro de saída'],
+  ['auditoria_baixa','Dar baixa na auditoria de saídas'],
+  ['etiquetas_biblioteca','Editar biblioteca de etiquetas e estoque pré-impresso'],
+  ['transportadoras','Cadastrar/desativar transportadoras'],
+];
+const PERM_MODELOS = {
+  expedicao:  { rot: 'Galpão / Expedição', abas: ['hoje','saidas'], acoes: [] },
+  montagem:   { rot: 'Montagem de Full',   abas: ['hoje','fulls','produtividade'], acoes: ['full_editar'] },
+  escritorio: { rot: 'Escritório',         abas: PERM_ABAS.map(a=>a[0]), acoes: PERM_ACOES.map(a=>a[0]).filter(a => a!=='full_excluir' && a!=='saida_excluir') },
+};
+
+function pode(acao){ const u = window.USUARIO; return !!u && (u.admin || (u.permissoes?.acoes||[]).includes(acao)); }
+function _podeAba(aba){
+  const u = window.USUARIO; if (!u) return false;
+  if (aba === 'usuarios') return !!u.admin;
+  return u.admin || (u.permissoes?.abas||[]).includes(aba);
+}
+
+async function _authChamar(acao, dados, comToken = true){
+  const headers = { 'Content-Type': 'application/json' };
+  if (comToken) {
+    const { data } = await _authCli.auth.getSession();
+    const tok = data?.session?.access_token;
+    if (tok) headers.Authorization = 'Bearer ' + tok;
+  }
+  const r = await fetch(AUTH_API, { method: 'POST', headers, body: JSON.stringify({ acao, ...(dados||{}) }) });
+  const j = await r.json().catch(() => ({ erro: 'Resposta inválida do servidor' }));
+  if (!r.ok || j.erro) throw new Error(j.erro || ('HTTP ' + r.status));
+  return j;
+}
+
+// ── Tela de login ──
+function _loginTela(modo, msg){
+  let o = document.getElementById('loginOverlay');
+  if (!o) { o = document.createElement('div'); o.id = 'loginOverlay'; document.body.appendChild(o); }
+  o.style.cssText = 'position:fixed;inset:0;z-index:20000;background:#0b0f17;display:flex;align-items:center;justify-content:center;padding:20px;font-family:Syne,sans-serif';
+  const campo = (id, label, tipo='text', extra='') => `<label style="display:block;font-size:11px;color:#8b949e;margin:12px 0 4px">${label}</label>
+    <input id="${id}" type="${tipo}" ${extra} style="width:100%;box-sizing:border-box;padding:11px 12px;border-radius:8px;border:1px solid #30363d;background:#0d1117;color:#e6edf3;font-size:15px;outline:none">`;
+  const botao = (txt, fn) => `<button onclick="${fn}" id="loginBtn" style="width:100%;margin-top:18px;padding:12px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-size:15px;font-weight:800;cursor:pointer">${txt}</button>`;
+  const cab = `<div style="font-size:30px;font-weight:900;color:#e6edf3;letter-spacing:-1px">OUT<span style="color:#2563eb">.</span>BOX</div>`;
+  const erro = msg ? `<div style="margin-top:12px;padding:9px 12px;border-radius:7px;background:rgba(248,81,73,.15);color:#f85149;font-size:12px;font-weight:700">${msg}</div>` : '';
+  let corpo = '';
+  if (modo === 'carregando') corpo = `<div style="color:#8b949e;margin-top:14px">Verificando acesso...</div>`;
+  else if (modo === 'bootstrap') corpo = `
+    <div style="color:#d29922;font-size:12px;font-weight:700;margin-top:10px">Primeiro acesso — crie a conta do ADMINISTRADOR</div>
+    <div style="color:#8b949e;font-size:11px;margin-top:4px">Essa conta terá acesso total e cadastrará os demais usuários.</div>
+    ${campo('bsUsuario','Usuário (ex.: ale)','text','autocomplete="username" autocapitalize="none"')}
+    ${campo('bsNome','Seu nome')}
+    ${campo('bsSenha','Senha (mínimo 6 caracteres)','password','autocomplete="new-password"')}
+    ${campo('bsSenha2','Repita a senha','password','autocomplete="new-password"')}
+    ${erro}${botao('Criar administrador e entrar','_authBootstrap()')}`;
+  else corpo = `
+    <div style="color:#8b949e;font-size:12px;margin-top:6px">Entre com o seu usuário</div>
+    ${campo('lgUsuario','Usuário','text','autocomplete="username" autocapitalize="none"')}
+    ${campo('lgSenha','Senha','password','autocomplete="current-password" onkeydown="if(event.key===\'Enter\')_authEntrar()"')}
+    ${erro}${botao('Entrar','_authEntrar()')}
+    <div style="color:#6e7681;font-size:10px;margin-top:14px;text-align:center">Esqueceu a senha? Peça ao administrador para redefinir.</div>`;
+  o.innerHTML = `<div style="width:100%;max-width:360px;background:#111826;border:1px solid #21262d;border-radius:14px;padding:26px 24px">${cab}${corpo}</div>`;
+  setTimeout(() => document.getElementById(modo === 'bootstrap' ? 'bsUsuario' : 'lgUsuario')?.focus(), 50);
+}
+function _loginOcupado(txt){ const b = document.getElementById('loginBtn'); if (b) { b.disabled = true; b.textContent = txt; b.style.opacity = .6; } }
+
+async function _authEntrar(){
+  const u = (document.getElementById('lgUsuario')?.value||'').trim().toLowerCase();
+  const s = document.getElementById('lgSenha')?.value||'';
+  if (!u || !s) return _loginTela('login', 'Preencha usuário e senha');
+  _loginOcupado('Entrando...');
+  const { error } = await _authCli.auth.signInWithPassword({ email: `${u}@${AUTH_DOMINIO}`, password: s });
+  if (error) {
+    const m = /banned/i.test(error.message) ? 'Usuário desativado — fale com o administrador'
+            : /invalid/i.test(error.message) ? 'Usuário ou senha incorretos' : error.message;
+    return _loginTela('login', m);
+  }
+  await _authCarregarPerfil();
+}
+async function _authBootstrap(){
+  const usuario = (document.getElementById('bsUsuario')?.value||'').trim().toLowerCase();
+  const nome = (document.getElementById('bsNome')?.value||'').trim();
+  const senha = document.getElementById('bsSenha')?.value||'';
+  if (senha !== (document.getElementById('bsSenha2')?.value||'')) return _loginTela('bootstrap', 'As senhas não conferem');
+  _loginOcupado('Criando...');
+  try {
+    await _authChamar('bootstrap', { usuario, nome, senha }, false);
+    const { error } = await _authCli.auth.signInWithPassword({ email: `${usuario}@${AUTH_DOMINIO}`, password: senha });
+    if (error) throw error;
+    await _authCarregarPerfil();
+  } catch (e) { _loginTela('bootstrap', e.message); }
+}
+async function authSair(){
+  await _authCli.auth.signOut();
+  window.USUARIO = null;
+  _authAplicar();
+  _loginTela('login');
+}
+
+async function _authCarregarPerfil(){
+  try {
+    const { perfil } = await _authChamar('eu');
+    window.USUARIO = perfil;
+    document.getElementById('loginOverlay')?.remove();
+    _authAplicar();
+    showToast(`👋 Olá, ${perfil.nome}`);
+  } catch (e) {
+    await _authCli.auth.signOut();
+    _loginTela('login', e.message);
+  }
+}
+
+// ── Aplica permissões na interface ──
+function _authAplicar(){
+  const u = window.USUARIO;
+  // Menu: esconde abas sem permissão
+  document.querySelectorAll('.nav-item').forEach(n => {
+    const m = (n.getAttribute('onclick')||'').match(/navTo\(this,\s*'([a-z-]+)'\)/);
+    if (m) n.style.display = (u && _podeAba(m[1])) ? '' : 'none';
+  });
+  // Abas do topo/celular: mesma regra do menu
+  const _chaves = PERM_ABAS.map(a => a[0]).concat(['usuarios']);
+  document.querySelectorAll('.tab').forEach(t => {
+    const m = (t.getAttribute('onclick')||'').match(/'([a-z-]+)'/);
+    if (m && _chaves.includes(m[1])) t.style.display = (u && _podeAba(m[1])) ? '' : 'none';
+  });
+  // Aba aberta sem permissão → primeira permitida
+  const ativa = document.querySelector('.view.active')?.id?.replace('view-','');
+  if (u && ativa && !_podeAba(ativa)) {
+    const primeira = [...document.querySelectorAll('.nav-item')].find(n => n.style.display !== 'none');
+    if (primeira) primeira.click();
+  }
+  // Botão "+ Novo Full" do topo
+  document.querySelectorAll('.topbar-right button[onclick*="modalFull"]').forEach(b => b.style.display = pode('full_editar') ? '' : 'none');
+  // Chip do usuário no topo
+  let chip = document.getElementById('authChip');
+  const tb = document.querySelector('.topbar-right');
+  if (tb && !chip) { chip = document.createElement('div'); chip.id = 'authChip'; tb.prepend(chip); }
+  if (chip) chip.innerHTML = u ? `<div style="display:flex;align-items:center;gap:6px;font-size:12px">
+      <span style="font-weight:800">👤 ${u.nome}</span>${u.admin ? '<span class="badge b-blue" style="font-size:9px">ADMIN</span>' : ''}
+      <button class="btn btn-ghost btn-sm" onclick="authSair()" title="Sair e entrar com outro usuário">⇄ Trocar usuário</button></div>` : '';
+  // Funcionário do bipe = pessoa logada (travado)
+  _authTravarFuncionario();
+  // Item "Usuários" no menu (admin)
+  _authMenuUsuarios();
+}
+function _authTravarFuncionario(){
+  const u = window.USUARIO;
+  const sel = document.getElementById('saidaFuncionario');
+  if (!sel) return;
+  if (u && u.funcionario) {
+    if (![...sel.options].some(o => o.value === u.funcionario)) {
+      const op = document.createElement('option'); op.value = op.textContent = u.funcionario; sel.appendChild(op);
+    }
+    sel.value = u.funcionario;
+    sel.disabled = true;
+    sel.title = 'Definido pelo seu login';
+    sel.dispatchEvent(new Event('change'));
+  } else { sel.disabled = false; sel.title = ''; }
+}
+// o select de funcionários é reconstruído quando os dados carregam: reaplica a trava
+setInterval(() => { const u = window.USUARIO, s = document.getElementById('saidaFuncionario'); if (u && u.funcionario && s && (s.value !== u.funcionario || !s.disabled)) _authTravarFuncionario(); }, 3000);
+
+// ── Travas nas ações ──
+function _authGuardar(nomeFn, acao, rotulo){
+  const orig = window[nomeFn];
+  if (typeof orig !== 'function' || orig._guardado) return;
+  const g = function(...args){
+    if (!pode(acao)) { showToast(`🔒 Sem permissão para: ${rotulo}. Fale com o administrador.`); return; }
+    return orig.apply(this, args);
+  };
+  g._guardado = true;
+  window[nomeFn] = g;
+}
+function _authInstalarTravas(){
+  [['salvarEditFull','full_editar','editar Full'], ['salvarNovoFull','full_editar','criar Full'],
+   ['enviarFull','full_enviar','enviar Full'], ['excluirFull','full_excluir','excluir Full'],
+   ['registrarManualDoPainel','saida_manual','registrar saída manual'], ['registrarLoteDoPainel','saida_manual','registrar saídas em lote'],
+   ['removerSaida','saida_excluir','excluir saída'],
+   ['resolverAuditoria','auditoria_baixa','dar baixa na auditoria'], ['resolverAuditoriaLote','auditoria_baixa','dar baixa na auditoria'], ['resolverAuditoriaGrupo','auditoria_baixa','dar baixa na auditoria'],
+   ['bibEditar','etiquetas_biblioteca','editar etiqueta'], ['bibExcluirItem','etiquetas_biblioteca','excluir etiqueta'],
+   ['bibAbrirImprimir','etiquetas_biblioteca','imprimir estoque adiantado'], ['bibDefinirEstoque','etiquetas_biblioteca','alterar estoque pré-impresso'],
+   ['gerenciarTransportadoras','transportadoras','cadastrar transportadoras'],
+  ].forEach(([f,a,r]) => _authGuardar(f,a,r));
+  // navegação: bloqueia abas sem permissão mesmo chamadas por código
+  const origShow = window.showPage;
+  if (typeof origShow === 'function' && !origShow._guardado) {
+    const g = function(name){
+      if (window.USUARIO && name && !_podeAba(name)) { showToast('🔒 Você não tem acesso a esta aba'); return; }
+      return origShow.apply(this, arguments);
+    };
+    g._guardado = true; window.showPage = g;
+  }
+}
+
+// ══ PAINEL DE USUÁRIOS (admin) ══
+function _authMenuUsuarios(){
+  const u = window.USUARIO;
+  let item = document.getElementById('navUsuarios');
+  if (!item) {
+    const ref = [...document.querySelectorAll('.nav-item')].pop();
+    if (!ref) return;
+    item = document.createElement('div');
+    item.id = 'navUsuarios'; item.className = 'nav-item';
+    item.setAttribute('onclick', "navTo(this,'usuarios')");
+    item.innerHTML = '<span class="nav-icon">👥</span>Usuários';
+    ref.parentNode.insertBefore(item, ref.nextSibling);
+    const v = document.createElement('div');
+    v.className = 'view'; v.id = 'view-usuarios';
+    v.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:10px;flex-wrap:wrap">
+        <div><div style="font-size:18px;font-weight:900">👥 Usuários e permissões</div>
+        <div style="font-size:11px;color:var(--muted)">Cada pessoa tem o próprio login. O funcionário vinculado é usado automaticamente no bipe.</div></div>
+        <button class="btn btn-primary btn-sm" onclick="usrEditor()">+ Novo usuário</button></div>
+      <div class="full-table-wrap"><div style="overflow-x:auto"><table>
+        <thead><tr><th>Nome</th><th>Usuário</th><th>Funcionário</th><th>Acesso</th><th>Situação</th><th></th></tr></thead>
+        <tbody id="usrBody"><tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Carregando...</td></tr></tbody>
+      </table></div></div>`;
+    const qualquerView = document.querySelector('.view');
+    qualquerView?.parentNode.appendChild(v);
+    if (typeof PAGE_TITLES === 'object') PAGE_TITLES.usuarios = 'Usuários';
+  }
+  item.style.display = (u && u.admin) ? '' : 'none';
+}
+let _usrLista = [];
+async function usrCarregar(){
+  const body = document.getElementById('usrBody'); if (!body) return;
+  try {
+    const { usuarios } = await _authChamar('listar');
+    _usrLista = usuarios;
+    const acesso = x => x.admin ? '<span class="badge b-blue">Administrador</span>'
+      : `<span style="font-size:11px">${(x.permissoes?.abas||[]).length} aba(s) · ${(x.permissoes?.acoes||[]).length} ação(ões)</span>`;
+    body.innerHTML = usuarios.map(x => `<tr style="${x.ativo?'':'opacity:.5'}">
+      <td style="font-weight:700">${x.nome}</td>
+      <td style="font-family:'DM Mono',monospace;font-size:11px">${x.usuario}</td>
+      <td style="font-size:11px">${x.funcionario || '<span style="color:var(--orange)">— não vinculado</span>'}</td>
+      <td>${acesso(x)}</td>
+      <td>${x.ativo ? '<span class="badge b-done">Ativo</span>' : '<span class="badge">Desativado</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="usrEditor('${x.id}')">✏ Editar</button>
+        <button class="btn btn-ghost btn-sm" onclick="usrSenha('${x.id}')">🔑 Senha</button>
+        ${x.id === window.USUARIO?.id ? '' : `<button class="btn btn-ghost btn-sm" onclick="usrAtivo('${x.id}',${!x.ativo})">${x.ativo ? '⏸ Desativar' : '▶ Ativar'}</button>`}
+      </td></tr>`).join('') || '<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--muted)">Nenhum usuário</td></tr>';
+  } catch (e) { body.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--red)">❌ ${e.message}</td></tr>`; }
+}
+function usrEditor(id){
+  const x = id ? _usrLista.find(u => u.id === id) : null;
+  const perm = x?.permissoes || { abas: ['hoje'], acoes: [] };
+  const funcs = (FUNCIONARIOS_DATA||[]).map(f => f.nome).sort();
+  const o = document.createElement('div'); o.id = 'usrModal';
+  o.style.cssText = 'position:fixed;inset:0;z-index:10050;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+  const chk = (grupo, val, rot, marcado) => `<label style="display:flex;align-items:center;gap:7px;font-size:12px;padding:4px 0;cursor:pointer"><input type="checkbox" data-g="${grupo}" value="${val}" ${marcado?'checked':''}> ${rot}</label>`;
+  o.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;width:100%;max-width:620px;max-height:92vh;overflow:auto;padding:20px 22px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:16px;font-weight:900">${x ? 'Editar ' + x.nome : 'Novo usuário'}</div>
+      <button class="btn btn-ghost btn-sm" onclick="document.getElementById('usrModal').remove()">✕</button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>Usuário (login)</label><input class="form-sel" id="usrUsuario" value="${x?.usuario||''}" ${x?'disabled':''} placeholder="ex.: kauan" autocapitalize="none"></div>
+      <div class="form-group"><label>Nome</label><input class="form-sel" id="usrNome" value="${x?.nome||''}"></div>
+      <div class="form-group"><label>Funcionário vinculado (bipe e produtividade)</label>
+        <select class="form-sel" id="usrFunc"><option value="">— nenhum —</option>${funcs.map(f => `<option ${x?.funcionario===f?'selected':''}>${f}</option>`).join('')}</select></div>
+      ${x ? '' : '<div class="form-group"><label>Senha inicial (mín. 6)</label><input class="form-sel" id="usrSenha" type="text"></div>'}
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:13px;font-weight:800;cursor:pointer">
+      <input type="checkbox" id="usrAdmin" ${x?.admin?'checked':''} ${x?.id===window.USUARIO?.id?'disabled':''} onchange="document.getElementById('usrPermBox').style.opacity=this.checked?.35:1"> Administrador (acesso total, gerencia usuários)</label>
+    <div id="usrPermBox" style="opacity:${x?.admin?.35:1}">
+      <div style="display:flex;align-items:center;gap:8px;margin:6px 0 10px;flex-wrap:wrap"><span style="font-size:11px;color:var(--muted)">Aplicar modelo:</span>
+        ${Object.entries(PERM_MODELOS).map(([k,m]) => `<button class="btn btn-ghost btn-sm" onclick="usrModelo('${k}')">${m.rot}</button>`).join('')}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div><div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Abas que pode ver</div>
+          ${PERM_ABAS.map(([v,r]) => chk('abas', v, r, (perm.abas||[]).includes(v))).join('')}</div>
+        <div><div style="font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Ações permitidas</div>
+          ${PERM_ACOES.map(([v,r]) => chk('acoes', v, r, (perm.acoes||[]).includes(v))).join('')}</div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px">
+      <button class="btn btn-ghost" onclick="document.getElementById('usrModal').remove()">Cancelar</button>
+      <button class="btn btn-primary" id="usrSalvarBtn" onclick="usrSalvar(${x ? `'${x.id}'` : 'null'})">💾 Salvar</button></div>
+  </div>`;
+  document.body.appendChild(o);
+}
+function usrModelo(k){
+  const m = PERM_MODELOS[k];
+  document.querySelectorAll('#usrModal input[data-g]').forEach(c => { c.checked = (c.dataset.g === 'abas' ? m.abas : m.acoes).includes(c.value); });
+}
+async function usrSalvar(id){
+  const permissoes = { abas: [], acoes: [] };
+  document.querySelectorAll('#usrModal input[data-g]:checked').forEach(c => permissoes[c.dataset.g].push(c.value));
+  const dados = { nome: document.getElementById('usrNome').value.trim(), funcionario: document.getElementById('usrFunc').value,
+                  admin: document.getElementById('usrAdmin').checked, permissoes };
+  if (!dados.nome) { showToast('⚠️ Informe o nome'); return; }
+  if (!dados.admin && !permissoes.abas.length) { showToast('⚠️ Marque pelo menos uma aba'); return; }
+  const btn = document.getElementById('usrSalvarBtn'); btn.disabled = true; btn.textContent = 'Salvando...';
+  try {
+    if (id) await _authChamar('atualizar', { id, ...dados });
+    else await _authChamar('criar', { ...dados, usuario: document.getElementById('usrUsuario').value.trim().toLowerCase(), senha: document.getElementById('usrSenha').value });
+    document.getElementById('usrModal')?.remove();
+    showToast('✅ Usuário salvo');
+    usrCarregar();
+    if (id && id === window.USUARIO?.id) _authCarregarPerfil();
+  } catch (e) { showToast('❌ ' + e.message); btn.disabled = false; btn.textContent = '💾 Salvar'; }
+}
+async function usrSenha(id){
+  const x = _usrLista.find(u => u.id === id);
+  const s = prompt(`Nova senha para ${x?.nome} (mínimo 6 caracteres):`);
+  if (!s) return;
+  try { await _authChamar('senha', { id, senha: s }); showToast('🔑 Senha redefinida — informe a pessoa'); }
+  catch (e) { showToast('❌ ' + e.message); }
+}
+async function usrAtivo(id, ativo){
+  const x = _usrLista.find(u => u.id === id);
+  if (!confirm(`${ativo ? 'Ativar' : 'Desativar'} ${x?.nome}?${ativo ? '' : '\n\nA pessoa não conseguirá mais entrar no sistema.'}`)) return;
+  try { await _authChamar('atualizar', { id, ativo }); showToast('✅ Atualizado'); usrCarregar(); }
+  catch (e) { showToast('❌ ' + e.message); }
+}
+
+// ── Início: bloqueia a tela até haver login válido ──
+(async function _authIniciar(){
+  _loginTela('carregando');
+  _authInstalarTravas();
+  // carrega a lista de usuários ao abrir a aba Usuários
+  const showAtual = window.showPage;
+  window.showPage = function(name){ const r = showAtual.apply(this, arguments); if (name === 'usuarios' && _podeAba('usuarios')) usrCarregar(); return r; };
+  window.showPage._guardado = true;
+  try {
+    const { data } = await _authCli.auth.getSession();
+    if (data?.session) return _authCarregarPerfil();
+    const st = await _authChamar('status', {}, false);
+    _loginTela(st.tem_usuarios ? 'login' : 'bootstrap');
+  } catch (e) {
+    _loginTela('login', 'Não foi possível verificar o acesso: ' + e.message);
+  }
+})();
+// Sessão expirada/encerrada em outra aba → volta para o login
+_authCli.auth.onAuthStateChange((ev) => { if (ev === 'SIGNED_OUT' && window.USUARIO) { window.USUARIO = null; _authAplicar(); _loginTela('login'); } });
 </script>
 
 </body>
