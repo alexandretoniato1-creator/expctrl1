@@ -6174,7 +6174,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 43;
+const APP_VERSAO = 44;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -8193,15 +8193,29 @@ async function _buscarHistoricoGeralExec(){
   // 1. nº de venda / envio → chaves da NF + dados do pedido
   const pedidosPorChave = {};
   let chavesAlvo = null;
-  if (dig.length >= 10 && dig.length <= 16 && dig === busca.replace(/\s/g,'')) {
+  // Número de venda/envio, completo ou parcial (6+ dígitos — na etiqueta a venda aparece quebrada:
+  // "20000 18718919932", e é comum digitar só a parte em destaque)
+  if (dig.length >= 6 && dig.length <= 16 && dig === busca.replace(/\s/g,'')) {
     tabelaEl.style.display='none'; resultadoEl.style.display='';
     resultadoEl.innerHTML='<div style="padding:14px;color:var(--muted);font-size:12px">⏳ Procurando a venda...</div>';
     try {
-      const { data } = await _sb.from('expedicao_ledger')
-        .select('order_id,chave_nf,sku,produto,marketplace,buyer_id,ml_shipping_id')
-        .or(`order_id.eq.${dig},ml_shipping_id.eq.${dig}`).limit(20);
+      const exato = dig.length >= 10;
+      const filtro = exato ? `order_id.eq.${dig},ml_shipping_id.eq.${dig}` : 'order_id.eq.__nenhum__';
+      let { data } = await _sb.from('expedicao_ledger')
+        .select('order_id,chave_nf,sku,produto,marketplace,buyer_id,ml_shipping_id').or(filtro).limit(20);
+      if (!data || !data.length) {
+        // parcial: o número digitado está contido no nº da venda ou do envio
+        ({ data } = await _sb.from('expedicao_ledger')
+          .select('order_id,chave_nf,sku,produto,marketplace,buyer_id,ml_shipping_id')
+          .or(`order_id.like.*${dig}*,ml_shipping_id.like.*${dig}*`).limit(20));
+      }
       (data||[]).forEach(p => { if (p.chave_nf) pedidosPorChave[p.chave_nf] = p; });
       chavesAlvo = new Set(Object.keys(pedidosPorChave));
+      // também vale como trecho da chave da NF (comportamento antigo)
+      const porChave = [];
+      Object.values(SAIDAS_HIST_PEDIDOS).forEach(ps => ps.forEach(p => { if (String(p.num).includes(dig)) porChave.push(p.num); }));
+      (SAIDAS_HOJE||[]).forEach(x => { if (String(x.num).includes(dig)) porChave.push(x.num); });
+      porChave.slice(0, 200).forEach(c => chavesAlvo.add(c));
     } catch(e) { chavesAlvo = new Set(); }
     if (seq !== _histBuscaSeq) return;
   }
