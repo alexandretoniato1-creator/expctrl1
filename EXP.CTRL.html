@@ -1712,7 +1712,7 @@ select:focus{border-color:var(--accent)}
             <div class="table-head">
                 <div class="table-head-title">Registros do dia</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <input type="text" id="saidaHojeBusca" placeholder="🔍 Pedido, chave ou SKU..." oninput="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:180px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                  <input type="text" id="saidaHojeBusca" placeholder="🔍 Venda, envio, chave ou SKU..." oninput="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:180px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
                   <select id="saidaHojeFiltroCanal" onchange="renderSaidas()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--muted2);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:5px 10px;outline:none">
                     <option value="">Flex + Coleta</option>
                     <option value="Flex">Flex</option>
@@ -1747,7 +1747,7 @@ select:focus{border-color:var(--accent)}
               <div class="table-head">
                 <div class="table-head-title">Histórico por dia</div>
                 <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-                  <input type="text" id="histBuscaGeral" placeholder="🔍 Buscar nº do pedido..." oninput="buscarHistoricoGeral()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:200px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
+                  <input type="text" id="histBuscaGeral" placeholder="🔍 Chave, nº da venda ou do envio" oninput="buscarHistoricoGeral()" style="background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:5px 10px;outline:none;width:200px" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
                   
                   <span style="font-size:10px;color:var(--muted)">clique para ver pedidos · 🖨 imprimir</span>
                 </div>
@@ -2918,7 +2918,7 @@ async function _carregarLedgerDasSaidas(){
     for (let i=0; i<faltam.length; i+=100) {
       const lote = faltam.slice(i, i+100);
       const { data, error } = await _sb.from('expedicao_ledger')
-        .select('order_id,chave_nf,sku,produto,valor,marketplace,buyer_id,cliente')
+        .select('order_id,chave_nf,sku,produto,valor,marketplace,buyer_id,cliente,ml_shipping_id')
         .in('chave_nf', lote);
       if (error) throw error;
       lote.forEach(n => { window._ledgerPorChave[n] = null; });   // marca como consultado
@@ -5443,7 +5443,8 @@ function renderSaidas(){
     if (busca) {
       const pd = _pedidoDaChave(s.num);
       const achou = s.num.toLowerCase().includes(busca)
-        || (pd && ((String(pd.order_id||'').toLowerCase().includes(busca)) || (String(pd.sku||'').toLowerCase().includes(busca))));
+        || (pd && ((String(pd.order_id||'').toLowerCase().includes(busca)) || (String(pd.sku||'').toLowerCase().includes(busca))
+                   || (busca.length >= 6 && String(pd.ml_shipping_id||'').includes(busca))));
       if (!achou) return false;
     }
     if (fCanal  && s.canal   !== fCanal)  return false;
@@ -6173,7 +6174,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 42;
+const APP_VERSAO = 43;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -8175,25 +8176,63 @@ function toggleContaField(){
   document.getElementById('saidaBipe')?.focus();
 }
 
+// Busca no histórico por chave da NF (44), nº da venda (2000…) ou nº do envio (10–12 dígitos).
+// Venda/envio são traduzidos para a chave pelo expedicao_ledger (pedidos vistos no Magis5/ML).
+let _histBuscaT = null, _histBuscaSeq = 0;
 function buscarHistoricoGeral(){
+  clearTimeout(_histBuscaT);
+  _histBuscaT = setTimeout(_buscarHistoricoGeralExec, 300);
+}
+async function _buscarHistoricoGeralExec(){
   const busca=(document.getElementById('histBuscaGeral')?.value||'').toLowerCase().trim();
   const resultadoEl=document.getElementById('histBuscaGeralResultado');
   const tabelaEl=document.getElementById('histTabelaDias');
   if(!busca){ resultadoEl.style.display='none'; tabelaEl.style.display=''; return; }
-  // busca em todos os pedidos do histórico
+  const seq = ++_histBuscaSeq;
+  const dig = busca.replace(/\D/g,'');
+  // 1. nº de venda / envio → chaves da NF + dados do pedido
+  const pedidosPorChave = {};
+  let chavesAlvo = null;
+  if (dig.length >= 10 && dig.length <= 16 && dig === busca.replace(/\s/g,'')) {
+    tabelaEl.style.display='none'; resultadoEl.style.display='';
+    resultadoEl.innerHTML='<div style="padding:14px;color:var(--muted);font-size:12px">⏳ Procurando a venda...</div>';
+    try {
+      const { data } = await _sb.from('expedicao_ledger')
+        .select('order_id,chave_nf,sku,produto,marketplace,buyer_id,ml_shipping_id')
+        .or(`order_id.eq.${dig},ml_shipping_id.eq.${dig}`).limit(20);
+      (data||[]).forEach(p => { if (p.chave_nf) pedidosPorChave[p.chave_nf] = p; });
+      chavesAlvo = new Set(Object.keys(pedidosPorChave));
+    } catch(e) { chavesAlvo = new Set(); }
+    if (seq !== _histBuscaSeq) return;
+  }
+  const casa = num => chavesAlvo ? chavesAlvo.has(num) : String(num).toLowerCase().includes(busca);
+  // 2. procura no histórico, no dia de hoje e no arquivo (> 2 meses)
   const resultados=[];
   Object.entries(SAIDAS_HIST_PEDIDOS).forEach(([chave,pedidos])=>{
     pedidos.forEach(p=>{
-      if(p.num.toLowerCase().includes(busca)){
+      if(casa(p.num)){
         const [data,galpao]=chave.split(/_(?=[^_]+$)/);
         resultados.push({...p,data,galpao});
       }
     });
   });
+  (SAIDAS_HOJE||[]).forEach(s => { if (casa(s.num)) resultados.push({ ...s, data: s.data || 'hoje' }); });
+  if (chavesAlvo && chavesAlvo.size) {
+    try {
+      const { data: arq } = await _sb.from('saidas_hist_pedidos_arquivo').select('*').in('numero', [...chavesAlvo]);
+      (arq||[]).forEach(r => { const [data,galpao] = String(r.data_galpao||'').split(/_(?=[^_]+$)/);
+        resultados.push({ num: r.numero, canal: r.canal, market: r.market, funcionario: r.funcionario, hora: r.hora, conta: r.conta, transportadora: r.transportadora, data, galpao }); });
+    } catch(e) {}
+    if (seq !== _histBuscaSeq) return;
+  }
+  resultados.forEach(r => { r._ped = pedidosPorChave[r.num] || (typeof _pedidoDaChave === 'function' ? _pedidoDaChave(r.num) : null); });
   tabelaEl.style.display='none';
   resultadoEl.style.display='';
   if(!resultados.length){
-    resultadoEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Nenhum pedido encontrado para "'+busca+'"</div>';
+    const dica = chavesAlvo
+      ? (chavesAlvo.size ? 'A venda foi encontrada, mas não há registro de saída (bipe) para ela.' : 'Esse nº de venda/envio não foi encontrado nos pedidos do Magis5/ML.')
+      : '';
+    resultadoEl.innerHTML='<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Nenhuma saída encontrada para "'+busca+'"'+(dica?'<br><span style="font-size:11px">'+dica+'</span>':'')+'</div>';
     return;
   }
   resultadoEl.innerHTML=`
@@ -8205,6 +8244,8 @@ function buscarHistoricoGeral(){
         <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Galpão</th>
         <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Canal</th>
         <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Marketplace</th>
+        <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Venda / SKU</th>
+        <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Transportadora</th>
         <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Funcionário</th>
         <th style="padding:7px 11px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);background:var(--surface2);text-align:left">Hora</th>
       </tr></thead>
@@ -8215,6 +8256,10 @@ function buscarHistoricoGeral(){
           <td style="padding:8px 11px"><span class="badge ${'b-blue'}">${p.galpao}</span></td>
           <td style="padding:8px 11px"><span class="badge ${p.canal==='Flex'?'b-done':'b-blue'}">${p.canal}</span></td>
           <td style="padding:8px 11px"><span class="badge ${{ML:'b-blue',Amazon:'b-doing',Shopee:'b-shopee',TikTok:'b-tiktok',Magalu:'b-magalu'}[p.market]||'b-pending'}">${p.market}${p.conta?' · '+p.conta:''}</span></td>
+          <td style="padding:8px 11px;font-size:11px">${p._ped ? `<span style="font-family:'DM Mono',monospace">${p._ped.order_id||''}</span>${p._ped.sku?` · <b style="color:var(--accent)">${p._ped.sku}</b>`:''}
+              ${p._ped.marketplace==='ML' && p._ped.order_id ? ` <span style="cursor:pointer;font-size:9px;font-weight:800;color:#2d6cdf;border:1px solid rgba(45,108,223,.4);border-radius:4px;padding:0 4px" onclick="abrirVendaML('${p._ped.order_id}')">ML↗</span>` : ''}
+              ${p._ped.buyer_id ? ` <span style="cursor:pointer;font-size:9px;font-weight:800;color:var(--muted2);border:1px solid var(--border2);border-radius:4px;padding:0 4px" onclick="abrirPedidoMagis5('${p._ped.buyer_id}')">M5↗</span>` : ''}` : '<span style="color:var(--muted)">—</span>'}</td>
+          <td style="padding:8px 11px;font-size:11px">${p.canal==='Flex' ? (p.transportadora ? `<span class="badge b-pending">${p.transportadora}</span>` : '<span style="color:var(--orange);font-size:10px">não registrada</span>') : '—'}</td>
           <td style="padding:8px 11px;font-size:11px;color:var(--muted2)">${p.funcionario||'—'}</td>
           <td style="padding:8px 11px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${p.hora}</td>
         </tr>`).join('')}
