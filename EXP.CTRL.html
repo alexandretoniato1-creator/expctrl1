@@ -2528,7 +2528,7 @@ const db = {
       ] = await Promise.all([
         _sb.from('fulls').select('*'),
         _sb.from('cal_fulls').select('*'),
-        _sb.from('fulls_enviados').select('*'),
+        _sb.from('fulls_enviados').select('*').order('inserted_at', { ascending: false }),
         _sb.from('devolucoes').select('*'),
         _sb.from('sku_db').select('*').order('sku'),
         _sb.from('saidas_hoje').select('*').order('hora'),
@@ -2584,7 +2584,8 @@ const db = {
         agendado: f.agendado, criadoEm: f.criado_em,
         responsavel: f.responsavel, enviadoEm: f.enviado_em,
         totalItens: f.total_itens, totalCaixas: f.total_caixas,
-        itens: f.itens||[], vol: f.vol||[], statusHist: f.status_hist||[]
+        itens: f.itens||[], vol: f.vol||[], statusHist: f.status_hist||[],
+        gravadoEm: f.inserted_at || null
       }));
 
       DEVS = (devs||[]).map(d => ({
@@ -5035,11 +5036,17 @@ function renderEnviados() {
   const empresa = document.getElementById('enviadosFiltroEmpresa')?.value||'';
   const destino = document.getElementById('enviadosFiltroDestino')?.value||'';
 
+  // Mais recente primeiro. enviadoEm é texto "DD/MM/AAAA HH:MM" (ordenar como texto embaralha os meses)
+  const _quando = f => {
+    const m = String(f.enviadoEm||'').match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/);
+    if (m) return new Date(+m[3], +m[2]-1, +m[1], +(m[4]||0), +(m[5]||0)).getTime();
+    return f.gravadoEm ? new Date(f.gravadoEm).getTime() : 0;
+  };
   const lista = FULLS_ENVIADOS.filter(f =>
     (!empresa || f.empresa === empresa) &&
     (!destino || f.destino === destino) &&
     (!busca || f.id.toLowerCase().includes(busca) || f.destino.toLowerCase().includes(busca) || f.empresa.toLowerCase().includes(busca))
-  );
+  ).sort((a, b) => _quando(b) - _quando(a));
 
   document.getElementById('envTotal').textContent = FULLS_ENVIADOS.length;
   document.getElementById('envLogbox').textContent = FULLS_ENVIADOS.filter(f=>f.empresa==='LogBox').length;
@@ -6174,7 +6181,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 44;
+const APP_VERSAO = 45;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
