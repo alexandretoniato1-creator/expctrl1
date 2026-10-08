@@ -270,37 +270,44 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 /* CALENDÁRIO */
 .cal-nav{background:var(--surface);border:1px solid var(--border2);color:var(--text);width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .cal-nav:hover{background:var(--surface2)}
-.cal-grid{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;overflow-x:auto;min-height:160px;flex:1}
-.cal-week-sep{grid-column:span 15;display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-bottom:2px}
-.cal-col{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;min-height:120px;transition:border-color .15s}
-.cal-col.today{border-color:rgba(255,255,255,.2);background:rgba(255,255,255,.01)}
-.cal-col.drag-over{border-color:var(--accent);background:rgba(255,255,255,.03);border-style:dashed}
-.cal-col.week-start{border-left:2px solid var(--border2)}
-.cal-col-header{padding:6px 7px;border-bottom:1px solid var(--border);background:var(--surface2);text-align:center}
-.cal-col-day{font-size:9px;font-family:"DM Mono",monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
-.cal-col-date{font-size:14px;font-weight:800;letter-spacing:-0.5px;margin-top:1px}
-.cal-col-date.today-date{color:var(--accent)}
-.cal-col-body{padding:4px;display:flex;flex-direction:column;gap:3px;min-height:70px}
-.cal-week-label{font-size:9px;font-family:"DM Mono",monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;padding:2px 4px;margin-bottom:2px}
-.cal-full-card{border-radius:5px;padding:5px 6px;cursor:grab;transition:all .15s;border:1px solid transparent;user-select:none}
-.cal-full-card:hover{filter:brightness(1.1)}
+.cal-grid{display:flex;flex-direction:column;gap:18px;min-height:160px;flex:1}
+.cal-semana-tit{display:flex;align-items:baseline;gap:10px;margin:0 0 7px 2px;font-size:13px;font-weight:800;letter-spacing:-.2px}
+.cal-semana-tit span{font-size:10px;font-weight:400;color:var(--muted);font-family:"DM Mono",monospace}
+.cal-semana-grid{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:8px;overflow-x:auto}
+.cal-col{background:var(--surface2);border:1px solid var(--border);border-radius:9px;overflow:hidden;min-height:96px;transition:border-color .15s;display:flex;flex-direction:column}
+.cal-col.today{border:2px solid var(--blue)}
+.cal-col.drag-over{border-color:var(--blue);border-style:dashed;background:var(--surface)}
+.cal-col-header{display:flex;align-items:center;gap:7px;padding:7px 10px;border-bottom:1px solid var(--border);background:var(--surface)}
+.cal-col-day{font-size:10px;font-family:"DM Mono",monospace;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.cal-col-date{font-size:14px;font-weight:800;letter-spacing:-0.3px}
+.cal-col-date.today-date{color:var(--blue)}
+.cal-col-hoje{font-size:9px;font-weight:700;color:#fff;background:var(--blue);border-radius:100px;padding:1px 7px}
+.cal-col-qtd{margin-left:auto;font-size:10px;font-family:"DM Mono",monospace;color:var(--muted2);border:1px solid var(--border2);border-radius:100px;padding:0 7px}
+.cal-col-body{padding:8px;display:flex;flex-direction:column;gap:8px;flex:1}
+.cal-full-card{position:relative;border-radius:7px;padding:8px 10px 7px;cursor:grab;transition:box-shadow .15s,transform .15s;user-select:none;
+  background:var(--surface);border:1px solid var(--border2);border-left:5px solid var(--muted);box-shadow:0 1px 3px rgba(15,23,42,.10)}
+.cal-full-card:hover{box-shadow:0 3px 10px rgba(15,23,42,.18);transform:translateY(-1px)}
 .cal-full-card.dragging{opacity:.4;transform:scale(.96);cursor:grabbing}
-.cal-full-card.status-pronto{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.15)}
-.cal-full-card.status-produzindo{background:rgba(224,122,48,.1);border-color:rgba(224,122,48,.25)}
-.cal-full-card.status-conferencia{background:rgba(167,139,250,.1);border-color:rgba(167,139,250,.25)}
-.cal-full-card.status-pendente{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
-.cal-full-card.status-atrasado{background:rgba(245,95,95,.1);border-color:rgba(245,95,95,.3)}
-.cal-full-id{font-size:10px;font-family:"DM Mono",monospace;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cal-full-card.status-pronto .cal-full-id{color:var(--green)}
-.cal-full-card.status-produzindo .cal-full-id{color:var(--orange)}
-.cal-full-card.status-conferencia .cal-full-id{color:var(--purple)}
-.cal-full-card.status-pendente .cal-full-id{color:var(--accent)}
-.cal-full-card.status-atrasado .cal-full-id{color:var(--red)}
+.cal-full-card.status-pronto{border-left-color:var(--green)}
+.cal-full-card.status-produzindo{border-left-color:#e07a30}
+.cal-full-card.status-conferencia{border-left-color:var(--purple)}
+.cal-full-card.status-pendente{border-left-color:var(--muted)}
+.cal-full-card.status-atrasado{border-left-color:var(--red);background:linear-gradient(rgba(207,34,46,.07),rgba(207,34,46,.07)),var(--surface)}
+.cal-full-id{font-size:12px;font-family:"DM Mono",monospace;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:16px}
+.cal-card-status{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 6px;border-radius:100px;margin:4px 0 4px}
+.cal-full-card.status-pronto .cal-card-status{background:rgba(26,127,55,.12);color:var(--green)}
+.cal-full-card.status-produzindo .cal-card-status{background:rgba(224,122,48,.14);color:#e07a30}
+.cal-full-card.status-conferencia .cal-card-status{background:rgba(130,80,223,.12);color:var(--purple)}
+.cal-full-card.status-pendente .cal-card-status{background:var(--surface2);color:var(--muted2);border:1px solid var(--border)}
+.cal-full-card.status-atrasado .cal-card-status{background:rgba(207,34,46,.12);color:var(--red)}
+.cal-card-del{position:absolute;top:6px;right:6px;width:16px;height:16px;border-radius:4px;border:none;background:rgba(207,34,46,.12);color:var(--red);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .15s}
+.cal-full-card:hover .cal-card-del{opacity:1}
 .cal-full-empresa{font-size:9px;padding:1px 5px;border-radius:100px;display:inline-flex;margin-bottom:2px}
 .empresa-logbox{background:var(--logbox-bg);color:var(--logbox);border:1px solid var(--logbox-border)}
 .empresa-fokus{background:var(--fokus-bg);color:var(--fokus);border:1px solid var(--fokus-border)}
-.cal-full-dest{font-size:9px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cal-empty{padding:8px 4px;text-align:center;color:var(--muted);font-size:10px;opacity:.3}
+.cal-full-dest{font-size:10px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:3px}
+.cal-semaforo{border-top:1px dashed var(--border);margin-top:6px;padding-top:4px}
+.cal-empty{padding:10px 4px;text-align:center;color:var(--muted);font-size:10px;opacity:.5}
 
 /* PROD */
 .prod-section{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px}
@@ -530,7 +537,22 @@ select:focus{border-color:var(--accent)}
 .conf-bar{background:var(--bg);border-radius:100px;height:8px;overflow:hidden}
 .conf-bar-fill{height:100%;border-radius:100px;transition:width .4s ease;background:linear-gradient(90deg,var(--green),#5de6a8)}
 .conf-bar-fill.warn{background:var(--orange)}
-.conf-volumes-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;max-height:120px;overflow-y:auto}
+.conf-volumes-grid{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;max-height:240px;overflow-y:auto}
+.conf-volumes-grid.compacto .conf-vol-chip{font-size:9px;padding:2px 5px}
+.conf-vol-extra{background:rgba(210,153,34,.14);color:var(--orange);border:1px solid rgba(210,153,34,.35)}
+.conf-vol-ultimo{outline:2px solid var(--blue);outline-offset:1px}
+#confFeedback{position:fixed;inset:0;z-index:99999;display:none;align-items:center;justify-content:center;flex-direction:column;pointer-events:none;text-align:center;color:#fff;font-family:'DM Sans',system-ui,sans-serif}
+#confFeedback.on{display:flex}
+#confFeedback.ok{background:rgba(22,130,60,.88)}
+#confFeedback.erro{background:rgba(200,30,40,.92)}
+#confFeedback.aviso{background:rgba(190,120,0,.92)}
+#confFeedback.fim{background:rgba(22,130,60,.95)}
+#confFeedback .cfb-tit{font-size:min(16vw,170px);font-weight:900;line-height:1;letter-spacing:-3px}
+#confFeedback .cfb-sub{font-size:min(5vw,44px);font-weight:700;margin-top:14px;max-width:90vw}
+#confFeedback .cfb-mini{font-size:min(3vw,22px);margin-top:10px;opacity:.9;font-family:'DM Mono',monospace}
+.conf-contador{display:flex;align-items:baseline;gap:10px;margin:2px 0 8px}
+.conf-contador b{font-size:40px;font-weight:900;letter-spacing:-1.5px;line-height:1}
+.conf-contador span{font-size:13px;font-weight:700}
 .conf-vol-chip{font-size:10px;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:5px;font-weight:600}
 .conf-vol-ok{background:rgba(63,185,80,.12);color:var(--green);border:1px solid rgba(63,185,80,.2)}
 .conf-vol-miss{background:rgba(248,81,73,.10);color:var(--red);border:1px solid rgba(248,81,73,.18)}
@@ -1205,11 +1227,7 @@ select:focus{border-color:var(--accent)}
             </div>
             <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
               <div style="display:flex;gap:8px;align-items:center">
-                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.15)"></div>Pronto</div>
-                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(167,139,250,.2)"></div>Conferência</div>
-                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(224,122,48,.15)"></div>Produzindo</div>
-                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.06)"></div>Pendente</div>
-                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted)"><div style="width:8px;height:8px;border-radius:2px;background:rgba(245,95,95,.12)"></div>Atrasado</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--muted)"></div>Pendente</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:#e07a30"></div>Produzindo</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--purple)"></div>Conferência</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--green)"></div>Pronto</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--red)"></div>Atrasado</div>
               </div>
               <select id="calFiltroMkt" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Todos MKT</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok</option><option value="Magalu">Magalu</option></select>
               <select id="calFiltroTipo" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Coleta + Envio</option><option value="Coleta">Coleta ML</option><option value="Envio próprio">Envio próprio</option></select>
@@ -4495,7 +4513,7 @@ function _semaforoHtml(id, dateKey){
   const etqTxt = s.etqTot ? `${Math.round(s.etqOk*100/s.etqTot)}%` : '—';
   const confTxt = s.confOk ? '✓' : s.confParcial ? '½' : '—';
   const alerta = vencido && !s.pronto;
-  return `<div style="display:flex;gap:5px;flex-wrap:wrap;font-size:9px;font-family:'DM Mono',monospace;margin-top:3px;${alerta?'padding:2px 3px;border-radius:3px;background:rgba(248,81,73,.12)':''}"
+  return `<div style="display:flex;gap:6px;flex-wrap:wrap;font-size:10px;font-family:'DM Mono',monospace;${alerta?'padding:2px 3px;border-radius:3px;background:rgba(248,81,73,.12)':''}"
       title="Itens concluídos · etiquetas prontas · conferência (NF + autorização) · peso${alerta?' — ATENÇÃO: data chegou e o Full não está pronto':''}">
     <span style="color:${cor(s.total ? s.itensOk : null)}">📦${itensTxt}</span>
     <span style="color:${cor(s.etqStatus)}">🏷${etqTxt}</span>
@@ -4522,60 +4540,55 @@ function renderCal(){
   const grid = document.getElementById('calGrid');
 
   let html = '';
+  const _ordemStatus = {'Atrasado':0,'Produzindo':1,'Em conferência':2,'Pendente':3,'Pronto':4};
   weeks.forEach((weekDates, wi)=>{
     const wNum = getWeekNum(weekDates[0]);
-    const wLabel = wi===0?'Esta semana (Sem. '+wNum+')':wi===1?'Próxima semana (Sem. '+(wNum)+')':'Em 2 semanas (Sem. '+wNum+')';
-    const weekNum = wLabel;
+    const titulo = wi===0?'Esta semana':wi===1?'Próxima semana':'Em 2 semanas';
+    let qtdSemana = 0, cols = '';
     weekDates.forEach((d,di)=>{
       const dia = DIAS[di];
       const dateKey = dateToStr(d);
-      // Match fulls by dia name (semana 0 apenas, sem dateKey) OU por dateKey exato
-      const fulls = lista.filter(f=>{
-        // Se tem dateKey definida, só aparece na coluna com aquela data exata
-        if(f.dateKey) return f.dateKey===dateKey;
-        // Sem dateKey: só aparece na semana 0 (semana atual), pelo nome do dia
-        return wi===0 && f.dia===dia;
-      });
-      const todayCls = isToday(d)?' today':'';
-      const weekStartCls = di===0?' week-start':'';
+      // Com dateKey: só na coluna daquela data. Sem dateKey: só na semana atual, pelo nome do dia
+      const fulls = lista.filter(f=> f.dateKey ? f.dateKey===dateKey : (wi===0 && f.dia===dia))
+        .sort((a,b)=>(_ordemStatus[a.status]??9)-(_ordemStatus[b.status]??9));
+      qtdSemana += fulls.length;
+      const hoje = isToday(d);
       const cards = fulls.map(f=>{
         const sc=statusCalClass(f.status);
-        const ec='empresa-logbox';
         return `<div class="cal-full-card ${sc}"
           draggable="true"
           ondragstart="onDragStart(event,'${f.id}')"
           ondragend="onDragEnd(event)"
-          onclick="openDetail('${f.id}')">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div class="cal-full-id">${statusIcon(f.status)} ${f.id}</div>
-            <button onclick="event.stopPropagation();excluirFull('${f.id}')"
-              style="width:14px;height:14px;border-radius:3px;border:none;background:rgba(245,95,95,.15);color:var(--red);cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;opacity:0;flex-shrink:0;transition:opacity .15s"
-              onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0'">✕</button>
-          </div>
-          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:2px">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
-          <div class="cal-full-dest">${f.destino}</div>
-          ${_semaforoHtml(f.id, f.dateKey || dateKey)}
+          onclick="openDetail('${f.id}')" title="${(f.destino||'').replace(/"/g,'&quot;')}">
+          <button class="cal-card-del" title="Excluir Full" onclick="event.stopPropagation();excluirFull('${f.id}')">✕</button>
+          <div class="cal-full-id">${f.id}</div>
+          <div class="cal-card-status">${statusIcon(f.status)} ${f.status}</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
+          <div class="cal-full-dest">📍 ${f.destino||'—'}</div>
+          <div class="cal-semaforo">${_semaforoHtml(f.id, f.dateKey || dateKey)}</div>
         </div>`;
       }).join('') || '<div class="cal-empty">—</div>';
 
-      const weekLabel = di===0?`<div style="font-size:9px;font-family:'DM Mono',monospace;color:var(--accent);opacity:.7;text-align:center;padding:1px 0">${weekNum}</div>`:'';
-
-      html += `<div class="cal-col${todayCls}${weekStartCls}"
+      cols += `<div class="cal-col${hoje?' today':''}"
         ondragover="onDragOver(event)"
         ondragleave="onDragLeave(event)"
         ondrop="onDrop(event,'${dia}','${dateKey}')">
         <div class="cal-col-header">
-          ${weekLabel}
-          <div class="cal-col-day">${DIAS_SHORT[di]}</div>
-          <div class="cal-col-date${isToday(d)?' today-date':''}">${d.getDate()}</div>
+          <span class="cal-col-day">${DIAS_SHORT[di]}</span>
+          <span class="cal-col-date${hoje?' today-date':''}">${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}</span>
+          ${hoje?'<span class="cal-col-hoje">HOJE</span>':''}
+          ${fulls.length?`<span class="cal-col-qtd">${fulls.length} full${fulls.length>1?'s':''}</span>`:''}
         </div>
         <div class="cal-col-body">${cards}</div>
       </div>`;
     });
+    html += `<div class="cal-semana">
+      <div class="cal-semana-tit">${titulo}<span>Sem. ${wNum} · ${fmtDate(weekDates[0])} – ${fmtDate(weekDates[4])} · ${qtdSemana} full${qtdSemana===1?'':'s'}</span></div>
+      <div class="cal-semana-grid">${cols}</div>
+    </div>`;
   });
 
   grid.innerHTML = html;
-  grid.style.gridTemplateColumns = 'repeat(15,1fr)';
   console.log('[OUTBOX] grid.innerHTML definido. Tamanho:', html.length, '| grid.offsetHeight:', grid.offsetHeight, '| grid.style.display:', grid.style.display, '| computedDisplay:', window.getComputedStyle(grid).display);
   // Atualiza lista mobile
   if(typeof renderCalMobile === 'function') renderCalMobile();
@@ -6181,7 +6194,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 45;
+const APP_VERSAO = 46;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -9214,10 +9227,11 @@ async function confCarregar(fullId, totalEsperado) {
     _confAtual = data;
     const { data: vols } = await _sb
       .from('full_conferencia_volumes')
-      .select('volume_num')
+      .select('id, volume_num, envio_id')
       .eq('conferencia_id', data.id);
-    _confVolumes = new Set((vols||[]).map(v => v.volume_num));
+    _confDefinirEnvio(fullId, vols||[]);
   } else {
+    _confDefinirEnvio(fullId, []);
     const { data: nova } = await _sb
       .from('full_conferencia')
       .insert({ full_id: fullId, total_esperado: totalEsperado })
@@ -9274,41 +9288,169 @@ function beepInputHtml(modo, fullId, totalEsperado) {
       style="width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:10px 12px;outline:none"
       onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border2)'">
     <div id="${id}Msg" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px">
-      Mantenha o cursor no campo e vá bipando as caixas
+      Pode bipar sem olhar: som e voz confirmam cada caixa (verde = ok · alarme = problema)
     </div>
   </div>`;
 }
+
+// ══ Conferência "sem olhar a tela" (v46) ══════════════
+// Cada Full = 1 envio do ML (o número antes da "/" na etiqueta da caixa).
+// A 1ª caixa trava o envio; caixa de outro envio é recusada com alerta forte.
+let _confEnvio = null;          // envio travado desta conferência
+let _confEnvioRecusado = null;  // último envio recusado (permite liberar manualmente)
+let _confExtras = [];           // caixas de OUTRO envio que já estavam gravadas
+let _confUltimo = null;         // último volume bipado (destaque no grid)
+function _confDefinirEnvio(fullId, vols){
+  const cont = {};
+  vols.forEach(v => { const e = String(v.envio_id||''); cont[e] = (cont[e]||0) + 1; });
+  const principal = Object.keys(cont).sort((a,b)=>cont[b]-cont[a])[0] || null;
+  _confEnvio = principal || null;
+  _confEnvioRecusado = null;
+  _confUltimo = null;
+  _confVolumes = new Set(vols.filter(v => !principal || String(v.envio_id||'')===principal).map(v => v.volume_num));
+  _confExtras = vols.filter(v => principal && String(v.envio_id||'')!==principal);
+}
+// Envio esperado pelo nome do Full (ex.: "78900229ML" → 78900229), quando ainda não há caixa bipada
+function _confEnvioDoNome(fullId){
+  const m = String(fullId||'').match(/^(\d{7,10})(?!\d)/);
+  return m ? m[1] : null;
+}
+function _confTotal(fullId, fallback){
+  const m = parseInt(_confAtual?.total_caixas_manual)||0;
+  return (m > 0 && _confAtual?.full_id === fullId) ? m : (parseInt(fallback)||0);
+}
+async function confAjustarTotal(fullId, totalItens){
+  if (!_confAtual) return;
+  const atual = _confTotal(fullId, totalItens);
+  const v = prompt(`Total de CAIXAS deste envio (está na Autorização de Entrada do ML).\n\nSoma dos itens do Full: ${totalItens}\nTotal usado hoje: ${atual}\n\nDeixe em branco para voltar a usar a soma dos itens.`, atual);
+  if (v === null) return;
+  const n = parseInt(String(v).replace(/\D/g,''))||null;
+  const { error } = await _sb.from('full_conferencia').update({ total_caixas_manual: n, updated_at: new Date().toISOString() }).eq('id', _confAtual.id);
+  if (error) { showToast('❌ Não salvou: '+error.message); return; }
+  _confAtual.total_caixas_manual = n;
+  showToast(n ? `Total ajustado para ${n} caixas` : 'Voltou a usar a soma dos itens');
+  confRenderSecao(fullId, totalItens);
+}
+function confLiberarEnvio(fullId, totalItens){
+  if (!_confEnvioRecusado) return;
+  if (!confirm(`Aceitar o envio ${_confEnvioRecusado} como o envio DESTE Full?\n\nSó confirme se tiver certeza que a etiqueta do Full está com o número errado.`)) return;
+  _confEnvio = _confEnvioRecusado;
+  _confEnvioRecusado = null;
+  showToast('Envio liberado — bipe a caixa de novo');
+  confRenderSecao(fullId, totalItens);
+}
+async function confRemoverExtra(volId, fullId, totalItens){
+  if (!confirm('Remover esta caixa de outro envio da conferência?')) return;
+  const { error } = await _sb.from('full_conferencia_volumes').delete().eq('id', volId);
+  if (error) { showToast('❌ '+error.message); return; }
+  _confExtras = _confExtras.filter(v => v.id !== volId);
+  confRenderSecao(fullId, totalItens);
+}
+
+// Voz (pt-BR) — o conferente ouve o resultado sem olhar a tela
+function _confVozLigada(){ try { return localStorage.getItem('expctrl_conf_voz') !== '0'; } catch(e) { return true; } }
+function confToggleVoz(fullId, totalItens){
+  try { localStorage.setItem('expctrl_conf_voz', _confVozLigada() ? '0' : '1'); } catch(e) {}
+  if (_confVozLigada()) _confFalar('Voz ligada');
+  confRenderSecao(fullId, totalItens);
+}
+function _confFalar(txt){
+  if (!_confVozLigada() || !window.speechSynthesis) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(txt);
+    u.lang = 'pt-BR'; u.rate = 1.25;
+    const v = speechSynthesis.getVoices().find(v => /pt[-_]BR/i.test(v.lang));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch(e) {}
+}
+function _somTom(freqs, tipo, dur, vol){
+  try {
+    const ctx = _audioCtx();
+    freqs.forEach((f, i) => {
+      const t = ctx.currentTime + i*dur;
+      const osc = ctx.createOscillator(), gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = tipo; osc.frequency.value = f;
+      gain.gain.setValueAtTime(vol, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + dur*0.95);
+      osc.start(t); osc.stop(t + dur);
+    });
+  } catch(e) {}
+}
+function _somErroForte(){ _somTom([220,0.0001,220,0.0001,220], 'square', 0.16, 0.35); }
+function _somConcluido(){ _somTom([523,659,784,1047], 'sine', 0.14, 0.3); }
+let _confFbTimer = null;
+function _confFeedback(tipo, titulo, sub, mini, ms){
+  let el = document.getElementById('confFeedback');
+  if (!el) { el = document.createElement('div'); el.id = 'confFeedback'; document.body.appendChild(el); }
+  el.className = 'on ' + tipo;
+  el.innerHTML = `<div class="cfb-tit">${titulo}</div>${sub?`<div class="cfb-sub">${sub}</div>`:''}${mini?`<div class="cfb-mini">${mini}</div>`:''}`;
+  clearTimeout(_confFbTimer);
+  _confFbTimer = setTimeout(() => { el.className = ''; }, ms || (tipo==='ok' ? 900 : tipo==='fim' ? 4000 : 3500));
+}
+// Se o foco sair do campo (alguém clicou na tela), a próxima bipada ainda cai na conferência
+document.addEventListener('keydown', ev => {
+  const inp = document.getElementById('confBeepInput') || document.getElementById('carrBeepInput');
+  if (!inp || !inp.isConnected || inp.offsetParent === null) return;
+  const a = document.activeElement;
+  if (a === inp) return;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)) return;
+  if (ev.ctrlKey || ev.altKey || ev.metaKey) return;
+  if (ev.key === 'Enter') {
+    if (!inp.value.trim()) return;
+    ev.preventDefault();
+    inp.focus();
+    inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  } else if (ev.key.length === 1) {
+    ev.preventDefault();
+    inp.value += ev.key;
+    inp.focus();
+  }
+}, true);
 
 // ── Renderiza a seção de conferência no detalhe ───────
 function confRenderSecao(fullId, totalEsperado) {
   const el = document.getElementById('fdConferenciaSecao');
   if (!el) return;
+  const totalItens = parseInt(totalEsperado)||0;
+  totalEsperado = _confTotal(fullId, totalItens);
 
   const conf = _confAtual;
   const bipados = _confVolumes.size;
   const pct = totalEsperado > 0 ? Math.round((bipados / totalEsperado) * 100) : 0;
-  const completo = bipados >= totalEsperado && totalEsperado > 0;
+  let completo = bipados >= totalEsperado && totalEsperado > 0;
   const concluida = conf?.status === 'concluida';
 
-  // Chips de volumes
+  // Grade de caixas — sempre a mesma visão: verde = bipada, vermelho = falta, laranja = acima do total
+  const maxBip = _confVolumes.size ? Math.max(..._confVolumes) : 0;
+  const nGrade = Math.max(totalEsperado, maxBip);
   const todosNums = Array.from({length: totalEsperado}, (_,i) => i+1);
-  const chipsHtml = totalEsperado <= 100
-    ? `<div class="conf-volumes-grid">
-        ${todosNums.map(n => `
-          <span class="conf-vol-chip ${_confVolumes.has(n) ? 'conf-vol-ok' : 'conf-vol-miss'}">${n}</span>
-        `).join('')}
-       </div>`
-    : `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:8px">
-        Bipados: ${[..._confVolumes].sort((a,b)=>a-b).join(', ') || '—'}
-       </div>`;
-
-  // Faltantes
   const faltando = todosNums.filter(n => !_confVolumes.has(n));
-  const faltandoHtml = faltando.length && faltando.length <= 20
-    ? `<div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--red);margin-bottom:8px">
-        Faltando: ${faltando.join(', ')}
+  const acima = [..._confVolumes].filter(n => n > totalEsperado).sort((a,b)=>a-b);
+  const chipsHtml = nGrade === 0 ? '' : nGrade <= 600
+    ? `<div class="conf-volumes-grid${nGrade > 120 ? ' compacto' : ''}">
+        ${Array.from({length: nGrade}, (_,i) => i+1).map(n => {
+          const cls = n > totalEsperado ? (_confVolumes.has(n) ? 'conf-vol-extra' : '') : (_confVolumes.has(n) ? 'conf-vol-ok' : 'conf-vol-miss');
+          if (!cls) return '';
+          return `<span class="conf-vol-chip ${cls}${n===_confUltimo?' conf-vol-ultimo':''}">${n}</span>`;
+        }).join('')}
        </div>`
-    : '';
+    : `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:8px">Mais de 600 caixas — veja a lista de faltantes abaixo.</div>`;
+  const faltandoHtml = (faltando.length ? `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--red);margin-bottom:6px">
+        Faltando (${faltando.length}): ${faltando.slice(0,60).join(', ')}${faltando.length>60?' …':''}</div>` : '')
+    + (acima.length ? `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--orange);margin-bottom:6px">
+        ⚠ ${acima.length} caixa(s) acima do total de ${totalEsperado}: ${acima.slice(0,30).join(', ')} — o total de caixas pode estar errado (ajuste abaixo)</div>` : '')
+    + (_confExtras.length ? `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--red);margin-bottom:6px;padding:6px 8px;border:1px solid rgba(207,34,46,.35);border-radius:6px">
+        ⛔ Caixa(s) de OUTRO envio gravadas neste Full: ${_confExtras.map(v=>`${v.envio_id}/${v.volume_num} <a href="#" onclick="event.preventDefault();confRemoverExtra(${v.id},'${fullId}',${totalItens})" style="color:var(--red)">remover</a>`).join(' · ')}</div>` : '')
+    + (_confEnvioRecusado ? `<div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--red);margin-bottom:6px">
+        ⛔ Caixa do envio ${_confEnvioRecusado} recusada (este Full é do envio ${_confEnvio || _confEnvioDoNome(fullId)}).
+        <a href="#" onclick="event.preventDefault();confLiberarEnvio('${fullId}',${totalItens})" style="color:var(--muted2)">o número do Full está errado? aceitar ${_confEnvioRecusado}</a></div>` : '');
+  const envioRef = _confEnvio || _confEnvioDoNome(fullId);
+  const faltamN = Math.max(0, totalEsperado - [..._confVolumes].filter(n => n <= totalEsperado).length);
+  const totalManual = (parseInt(_confAtual?.total_caixas_manual)||0) > 0;
+  completo = totalEsperado > 0 && faltamN === 0;
 
   // Docs
   const nfOk = conf?.nf_bipada;
@@ -9327,9 +9469,14 @@ function confRenderSecao(fullId, totalEsperado) {
       <div class="conf-body">
         <!-- Progresso caixas -->
         <div class="conf-progress-wrap">
-          <div class="conf-progress-row">
-            <span class="conf-progress-label">Caixas bipadas</span>
-            <span class="conf-progress-count" style="color:${completo?'var(--green)':'var(--text)'}">${bipados}/${totalEsperado}</span>
+          <div class="conf-contador">
+            <b style="color:${completo?'var(--green)':'var(--text)'}">${bipados}<span style="font-size:20px;color:var(--muted)">/${totalEsperado}</span></b>
+            <span style="color:${faltamN?'var(--red)':'var(--green)'}">${faltamN ? `faltam ${faltamN}` : '✓ todas as caixas'}</span>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:6px">
+            <span>Envio: <b style="color:var(--text)">${envioRef || 'definido na 1ª caixa'}</b></span>
+            <span>Total: ${totalManual ? 'ajustado manualmente' : 'soma dos itens'} · <a href="#" onclick="event.preventDefault();confAjustarTotal('${fullId}',${totalItens})" style="color:var(--blue)">✎ ajustar total de caixas</a></span>
+            <a href="#" onclick="event.preventDefault();confToggleVoz('${fullId}',${totalItens})" style="color:var(--blue)">${_confVozLigada() ? '🔊 voz ligada' : '🔇 voz desligada'}</a>
           </div>
           <div class="conf-bar">
             <div class="conf-bar-fill ${completo?'':'warn'}" style="width:${pct}%"></div>
@@ -9349,20 +9496,20 @@ function confRenderSecao(fullId, totalEsperado) {
 
         <!-- Entrada por leitor + botões -->
         ${!concluida ? `
-          ${beepInputHtml('conf', fullId, totalEsperado)}
+          ${beepInputHtml('conf', fullId, totalItens)}
           <button class="conf-btn-scan ${_confScannerMode ? 'active' : ''}"
-            onclick="${_confScannerMode ? 'confFecharScanner()' : `confAbrirScanner('${fullId}',${totalEsperado})`}">
+            onclick="${_confScannerMode ? 'confFecharScanner()' : `confAbrirScanner('${fullId}',${totalItens})`}">
             ${_confScannerMode ? '⏹ Parar scanner' : '📷 Escanear com a câmera'}
           </button>
           ${bipados > 0 ? `
             <button class="conf-btn-scan" style="margin-top:6px;border-color:rgba(248,81,73,.3);color:var(--red)"
-              onclick="confResetar('${fullId}',${totalEsperado})">
+              onclick="confResetar('${fullId}',${totalItens})">
               🗑 Resetar conferência
             </button>
           ` : ''}
           ${completo && autOk ? `
             <button class="conf-btn-scan" style="margin-top:6px;background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.3);color:var(--green)"
-              onclick="confConcluir('${fullId}',${totalEsperado})">
+              onclick="confConcluir('${fullId}',${totalItens})">
               ✅ Concluir conferência
             </button>
           ` : (completo || autOk) ? `
@@ -9370,7 +9517,7 @@ function confRenderSecao(fullId, totalEsperado) {
               ${!completo ? '⚠ Caixas incompletas · ' : ''}${!autOk ? '⚠ Autorização não bipada' : ''}
             </div>
             <button class="conf-btn-scan" style="margin-top:6px;opacity:.6"
-              onclick="confConcluir('${fullId}',${totalEsperado})">
+              onclick="confConcluir('${fullId}',${totalItens})">
               ✅ Concluir mesmo assim
             </button>
           ` : ''}
@@ -9379,7 +9526,7 @@ function confRenderSecao(fullId, totalEsperado) {
             ✓ Conferência concluída
           </div>
           <button class="conf-btn-scan" style="margin-top:6px;border-color:rgba(248,81,73,.3);color:var(--red)"
-            onclick="confReabrir('${fullId}',${totalEsperado})">
+            onclick="confReabrir('${fullId}',${totalItens})">
             ↩ Reabrir conferência
           </button>
         `}
@@ -9441,7 +9588,7 @@ async function confAbrirScanner(fullId, totalEsperado) {
     _scannerCanvas = document.createElement('canvas');
     _scannerCtx    = _scannerCanvas.getContext('2d', { willReadFrequently: true });
     status.textContent = 'Bipe as caixas e a Autorização de Entrada…';
-    updateScannerProgress(_confVolumes.size, totalEsperado);
+    updateScannerProgress(_confVolumes.size, _confTotal(fullId, totalEsperado));
     _confTickScan(video, fullId, totalEsperado);
   } catch(err) {
     status.textContent = err.name === 'NotAllowedError'
@@ -9508,6 +9655,8 @@ function _normalizaLeituraQR(raw){
 async function confOnCodigoLido(raw, fullId, totalEsperado) {
   raw = _normalizaLeituraQR(raw);
   if (!_scannerActive) return;
+  const totalItens = parseInt(totalEsperado)||0;
+  totalEsperado = _confTotal(fullId, totalItens);
   _scannerActive = false;
 
   const flash  = document.getElementById('scannerFlash');
@@ -9550,32 +9699,74 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
   if (volMatch) {
     const envioId  = volMatch[1];
     const volNum   = parseInt(volMatch[2]);
-
-    if (_confVolumes.has(volNum)) {
+    const envioRef = _confEnvio || _confEnvioDoNome(fullId);
+    const erroFb = (tit, sub, voz) => {
       flash.style.background = 'rgba(248,81,73,.3)';
       flash.classList.add('flash');
       setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
+      _somErroForte();
+      if (navigator.vibrate) navigator.vibrate([200,100,200,100,200]);
+      _confFeedback('erro', tit, sub, `Full ${fullId}`);
+      _confFalar(voz);
+    };
+
+    if (envioRef && envioId !== envioRef) {
+      // Caixa de OUTRO envio — não grava
+      _confEnvioRecusado = envioId;
+      erroFb('✗ OUTRO ENVIO', `Caixa ${envioId}/${volNum} não é deste Full (envio ${envioRef}). Separe esta caixa.`, 'Atenção! Caixa de outro envio. Separe esta caixa.');
+      status.textContent = `⛔ Caixa ${envioId}/${volNum} é de outro envio (este Full é ${envioRef}) — NÃO registrada`;
+      status.style.color = 'var(--red)';
+      confRenderSecao(fullId, totalItens);
+    } else if (_confVolumes.has(volNum)) {
       _somDuplicata();
       if (navigator.vibrate) navigator.vibrate([100,80,100]);
+      flash.style.background = 'rgba(248,81,73,.3)';
+      flash.classList.add('flash');
+      setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 350);
+      _confFeedback('aviso', `${volNum}`, 'Caixa REPETIDA — já tinha sido bipada', `${_confVolumes.size}/${totalEsperado}`, 1800);
+      _confFalar(`Repetida. ${volNum}`);
       status.textContent = `⚠️ Volume ${volNum} já conferido!`;
       status.style.color = 'var(--red)';
     } else {
-      await _sb.from('full_conferencia_volumes').insert({
+      _confVolumes.add(volNum);   // marca antes de gravar: evita gravar 2x numa bipada dupla rápida
+      const { error: insErr } = await _sb.from('full_conferencia_volumes').insert({
         conferencia_id: _confAtual.id,
         full_id: fullId,
         envio_id: envioId,
         volume_num: volNum
       });
-      _confVolumes.add(volNum);
-      flash.style.background = 'rgba(63,185,80,.2)';
-      flash.classList.add('flash');
-      setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
-      _somSucesso();
-      if (navigator.vibrate) navigator.vibrate(80);
-      updateScannerProgress(_confVolumes.size, totalEsperado);
-      status.textContent = `✅ Volume ${volNum} — ${_confVolumes.size}/${totalEsperado} conferidos`;
-      status.style.color = 'var(--green)';
-      confRenderSecao(fullId, totalEsperado);
+      if (insErr) {
+        _confVolumes.delete(volNum);
+        erroFb('✗ NÃO SALVOU', `Caixa ${volNum} não foi gravada (${insErr.message||'rede'}). Bipe de novo.`, `Erro. Caixa ${volNum} não salvou. Bipe de novo.`);
+        status.textContent = `❌ Caixa ${volNum} NÃO foi gravada — bipe de novo`;
+        status.style.color = 'var(--red)';
+      } else {
+        if (!_confEnvio) _confEnvio = envioId;
+        _confUltimo = volNum;
+        flash.style.background = 'rgba(63,185,80,.2)';
+        flash.classList.add('flash');
+        setTimeout(()=>{ flash.classList.remove('flash'); flash.style.background=''; }, 200);
+        if (navigator.vibrate) navigator.vibrate(80);
+        updateScannerProgress(_confVolumes.size, totalEsperado);
+        const okDentro = [..._confVolumes].filter(n => n <= totalEsperado).length;
+        const faltam = Math.max(0, totalEsperado - okDentro);
+        if (volNum > totalEsperado) {
+          _somDuplicata();
+          _confFeedback('aviso', `${volNum}`, `Registrada, mas o total é ${totalEsperado} — confira o total de caixas`, `${_confVolumes.size} bipadas`, 2500);
+          _confFalar(`${volNum}. Acima do total. Confira o total de caixas.`);
+        } else if (faltam === 0 && totalEsperado > 0) {
+          _somConcluido();
+          _confFeedback('fim', '✓ COMPLETO', `Todas as ${totalEsperado} caixas conferidas`, _confAtual.aut_bipada ? 'Pode concluir a conferência' : 'Agora bipe a Autorização de Entrada');
+          _confFalar(`Completo. Todas as ${totalEsperado} caixas.` + (_confAtual.aut_bipada ? '' : ' Agora bipe a autorização.'));
+        } else {
+          _somSucesso();
+          _confFeedback('ok', `${volNum}`, totalEsperado ? `faltam ${faltam}` : '', `${_confVolumes.size}/${totalEsperado}`);
+          _confFalar(totalEsperado ? `${volNum}. Faltam ${faltam}` : `${volNum}`);
+        }
+        status.textContent = `✅ Volume ${volNum} — ${_confVolumes.size}/${totalEsperado} conferidos`;
+        status.style.color = 'var(--green)';
+        confRenderSecao(fullId, totalItens);
+      }
     }
 
   // ── Autorização de Entrada ────────────────────────
@@ -9590,6 +9781,8 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
     if (_confAtual.aut_bipada) {
       _somDuplicata();
       if (navigator.vibrate) navigator.vibrate([100,80,100]);
+      _confFeedback('aviso', 'AUTORIZAÇÃO', 'já tinha sido bipada', `Frete ${_confAtual.aut_numero}`, 1800);
+      _confFalar('Autorização já bipada');
       status.textContent = `⚠️ Autorização já foi bipada! (Frete ${_confAtual.aut_numero})`;
       status.style.color = 'var(--orange)';
     } else {
@@ -9608,13 +9801,18 @@ async function confOnCodigoLido(raw, fullId, totalEsperado) {
       if (navigator.vibrate) navigator.vibrate(80);
       status.textContent = `✅ Autorização Frete ${autNum} — confirmada`;
       status.style.color = 'var(--green)';
-      confRenderSecao(fullId, totalEsperado);
+      const faltamA = Math.max(0, totalEsperado - [..._confVolumes].filter(n => n <= totalEsperado).length);
+      _confFeedback(faltamA ? 'ok' : 'fim', '✓ AUTORIZAÇÃO', faltamA ? `faltam ${faltamA} caixas` : 'Caixas e autorização OK — pode concluir', `Frete ${autNum}`, faltamA ? 1500 : 3500);
+      _confFalar(faltamA ? `Autorização ok. Faltam ${faltamA} caixas.` : 'Autorização ok. Conferência completa.');
+      confRenderSecao(fullId, totalItens);
     }
 
   // ── QR não reconhecido — mostra conteúdo bruto para debug ──
   } else {
-    _somDuplicata();
+    _somErroForte();
     const preview = raw.length > 60 ? raw.substring(0,60)+'…' : raw;
+    _confFeedback('erro', '✗ ?', 'Código não reconhecido — não é caixa nem autorização', preview.replace(/</g,'&lt;'));
+    _confFalar('Código não reconhecido');
     status.textContent = `❓ QR: "${preview}"`;
     status.style.color = 'var(--orange)';
   }
@@ -9670,7 +9868,7 @@ async function confResetar(fullId, totalEsperado) {
     aut_bipada: false, aut_numero: null, aut_bipada_em: null,
     updated_at: new Date().toISOString()
   }).eq('id', _confAtual.id);
-  _confVolumes = new Set();
+  _confVolumes = new Set(); _confEnvio = null; _confEnvioRecusado = null; _confExtras = []; _confUltimo = null;
   _confAtual.nf_bipada = false; _confAtual.nf_numero = null;
   _confAtual.aut_bipada = false; _confAtual.aut_numero = null;
   showToast('🗑 Conferência resetada');
