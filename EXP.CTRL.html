@@ -2772,14 +2772,21 @@ const db = {
       const { data, error } = await _sb.from('saidas_hoje').insert(row).select().single();
       if (error) {
         console.error('[Supabase] insertSaida:', error);
-        // 23505 = já existe (bipado neste ou em outro computador); o resto trata como falha de envio
-        s._erro = (error.code === '23505' || /duplicate key|saidas_hoje_unico/i.test(error.message||'')) ? 'duplicado' : 'rede';
+        // 23505 = já existe (bipado neste ou em outro computador)
+        // erro com código do banco = servidor recusou (não adianta reenviar); sem código = rede
+        const dup = error.code === '23505' || /duplicate key|saidas_hoje_unico/i.test(error.message||'');
+        const recusado = !dup && error.code && /^(PGRST|[0-9A-Z]{5}$)/.test(String(error.code));
+        s._erro = dup ? 'duplicado' : recusado ? 'erro' : 'rede';
+        s._erroMsg = error.message || String(error.code||'');
+        if (typeof _conexaoMarcar === 'function') _conexaoMarcar(s._erro !== 'rede');
         return null;
       }
+      if (typeof _conexaoMarcar === 'function') _conexaoMarcar(true);
       return data?.id;
     } catch (e) {
       console.error('[Supabase] insertSaida (exceção):', e);
-      s._erro = 'rede';
+      s._erro = 'rede'; s._erroMsg = e?.message || String(e);
+      if (typeof _conexaoMarcar === 'function') _conexaoMarcar(false);
       return null;
     }
   },
@@ -5327,12 +5334,22 @@ async function registrarSaida(){
 
   // ── Checa duplicata (desktop e mobile) ────────────
   const galpao=document.getElementById('saidaGalpao').value;
-  const jaBipado = SAIDAS_HOJE.some(s => s.galpao === galpao && s.num === num);
+  const jaBipado = SAIDAS_HOJE.find(s => s.galpao === galpao && s.num === num);
   if(jaBipado){
     input.value='';
     input.style.borderColor='var(--red)';
     setTimeout(()=>{ input.style.borderColor='var(--border2)'; },1500);
-    showToast('⚠️ Pedido '+num.slice(-8)+'... já bipado hoje!');
+    if (jaBipado._pendente) {
+      // Bipado aqui, mas o banco ainda não recebeu — não é "já bipado no sistema"
+      if (typeof _somErroForte === 'function') _somErroForte();
+      if (typeof _confFeedback === 'function')
+        _confFeedback('erro', 'SEM CONEXÃO', `Este pacote já foi bipado neste computador às ${jaBipado.hora||'?'}, mas AINDA NÃO CHEGOU ao sistema.`, 'Não precisa bipar de novo · verifique a internet deste computador', 4000);
+      showToast('📶 Bipe guardado neste computador, aguardando conexão — ainda NÃO está no sistema');
+      filaBipesProcessar();
+    } else {
+      if (typeof _somDuplicata === 'function') _somDuplicata();
+      showToast(`⚠️ Pedido ${num.slice(-8)}... já bipado hoje às ${jaBipado.hora||'?'}${jaBipado.funcionario && jaBipado.funcionario!=='—' ? ' por '+jaBipado.funcionario : ''}`);
+    }
     input.focus();
     return;
   }
@@ -5432,6 +5449,11 @@ async function registrarSaida(){
     showToast('⚠️ Já bipado hoje (possivelmente em outro computador) — não foi contado de novo');
     carregarSaidasDoBanco();
     return;
+  } else if (saida._erro === 'erro') {
+    if (typeof _somErroForte === 'function') _somErroForte();
+    if (typeof _confFeedback === 'function') _confFeedback('erro', '✗ NÃO REGISTRADO', 'O sistema recusou este bipe — chame o responsável', (saida._erroMsg||'').slice(0,120), 6000);
+    showToast('❌ Bipe recusado pelo sistema: ' + (saida._erroMsg||'erro'));
+    return;
   } else {
     filaBipesAdicionar(saida); // sem conexão: guarda e reenvia sozinho
   }
@@ -5444,6 +5466,7 @@ async function registrarSaida(){
   renderSaidas();
   const contaLabel = conta ? ' · '+conta : '';
   const skuLabel = pedidoML?.sku ? ' · '+pedidoML.sku : (classifAuto ? '' : ' · classif. manual');
+  if (saida._pendente) return; // ficou na fila local — o aviso de 'sem conexão' já apareceu
   showToast('✅ '+canal+(transportadora?' · '+transportadora:'')+skuLabel+' — '+num.substring(0,8)+'...'+contaLabel+' ('+funcionario+')');
 }
 function renderSaidas(){
@@ -6130,7 +6153,9 @@ function filaBipesAdicionar(s){
   fila.push({ _uid: s._uid, num: s.num, canal: s.canal, market: s.market, galpao: s.galpao, hora: s.hora,
               funcionario: s.funcionario, conta: s.conta, origem: s.origem, transportadora: s.transportadora, data: s.data });
   _filaGravar(fila);
-  if (typeof _somDuplicata === 'function') _somDuplicata();
+  if (typeof _somErroForte === 'function') _somErroForte(); else if (typeof _somDuplicata === 'function') _somDuplicata();
+  if (typeof _confFeedback === 'function')
+    _confFeedback('erro', 'SEM CONEXÃO', 'Bipe guardado NESTE computador — ainda não chegou ao sistema', `${fila.length} bipe(s) aguardando · verifique a internet`, 2500);
   showToast('📶 Sem conexão com o banco — bipe guardado neste computador e será enviado sozinho');
   filaBipesRenderAviso();
 }
@@ -6145,6 +6170,7 @@ async function filaBipesProcessar(){
       const s = { ...item };
       const id = await db.insertSaida(s);
       if (!id && s._erro === 'rede') break;               // ainda sem conexão: tenta depois
+      if (!id && s._erro === 'erro') { console.error('[fila] bipe recusado pelo servidor', item, s._erroMsg); continue; }
       fila = fila.filter(x => x._uid !== item._uid);       // enviado ou duplicado: sai da fila
       _filaGravar(fila);
       const local = SAIDAS_HOJE.find(x => x._uid === item._uid);
@@ -6154,6 +6180,29 @@ async function filaBipesProcessar(){
   filaBipesRenderAviso();
   renderSaidas();
 }
+// ══ ESTADO DA CONEXÃO COM O BANCO ══
+// Se este computador perde a conexão, os bipes ficam só aqui (fila). Antes isso aparecia
+// só como "já bipado" ao rebipar — agora fica um alerta vermelho fixo na aba de Saídas.
+window._conexao = window._conexao || { ok: true, desde: null };
+function _conexaoMarcar(ok){
+  const c = window._conexao;
+  if (ok && !c.ok) { c.ok = true; c.desde = null; filaBipesRenderAviso(); setTimeout(filaBipesProcessar, 300); }
+  else if (!ok && c.ok) { c.ok = false; c.desde = new Date(); filaBipesRenderAviso(); }
+}
+async function _conexaoPing(){
+  try {
+    if (typeof _sb === 'undefined' || !_sb) throw new Error('sem cliente');
+    const { error } = await _sb.from('app_versao').select('versao').eq('id', 1).maybeSingle();
+    _conexaoMarcar(!error);
+  } catch (e) { _conexaoMarcar(false); }
+}
+setInterval(() => {
+  if (document.getElementById('view-saidas')?.classList.contains('active') || _filaLer().length || !window._conexao.ok) _conexaoPing();
+}, 15000);
+window.addEventListener('offline', () => _conexaoMarcar(false));
+window.addEventListener('online', () => setTimeout(_conexaoPing, 1000));
+setTimeout(_conexaoPing, 4000);
+
 function filaBipesRenderAviso(){
   const n = _filaLer().length;
   let el = document.getElementById('filaOfflineAviso');
@@ -6163,7 +6212,16 @@ function filaBipesRenderAviso(){
     el = document.createElement('div'); el.id = 'filaOfflineAviso';
     ref.parentNode.insertBefore(el, ref);
   }
-  el.innerHTML = n ? `<div style="display:flex;align-items:center;gap:10px;background:rgba(248,81,73,.15);border:2px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:12px">
+  const off = !window._conexao?.ok;
+  const hhmm = d => d ? d.toTimeString().slice(0,5) : '';
+  el.innerHTML = off ? `<div style="display:flex;align-items:center;gap:14px;background:#cf222e;color:#fff;border-radius:10px;padding:14px 18px;margin-bottom:12px;box-shadow:0 4px 14px rgba(207,34,46,.35)">
+      <span style="font-size:30px">📶</span>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:900">SEM CONEXÃO COM O SISTEMA${window._conexao.desde ? ' desde ' + hhmm(window._conexao.desde) : ''}</div>
+        <div style="font-size:12px;opacity:.95">Os bipes NÃO estão chegando ao sistema — ${n} guardado(s) neste computador. Não feche a aba nem limpe o navegador. Verifique a internet/Wi-Fi deste computador.</div>
+      </div>
+      <button class="btn btn-sm" style="background:#fff;color:#cf222e;font-weight:800" onclick="_conexaoPing();filaBipesProcessar()">Tentar agora</button></div>`
+    : n ? `<div style="display:flex;align-items:center;gap:10px;background:rgba(248,81,73,.15);border:2px solid var(--red);border-radius:8px;padding:10px 14px;margin-bottom:12px">
       <span style="font-size:18px">📶</span>
       <span style="font-size:13px;font-weight:800;color:var(--red)">${n} bipe(s) aguardando conexão — NÃO feche esta aba nem limpe o navegador</span>
       <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="filaBipesProcessar()">Reenviar agora</button></div>` : '';
@@ -6194,7 +6252,7 @@ async function carregarSaidasDoBanco(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 46;
+const APP_VERSAO = 47;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
