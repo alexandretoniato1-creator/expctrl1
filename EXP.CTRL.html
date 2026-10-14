@@ -943,6 +943,80 @@ select:focus{border-color:var(--accent)}
 .etq-dot-conn{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 2s infinite;flex-shrink:0}
 .etq-dot-disc{width:6px;height:6px;border-radius:50%;background:var(--red);flex-shrink:0}
 .etq-dot-wait{width:6px;height:6px;border-radius:50%;background:var(--orange);animation:pulse 1.5s infinite;flex-shrink:0}
+/* ── Novo envio Full (planejamento estilo Magiic) ── */
+.env-topo{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.env-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}
+.env-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:border-color .15s,transform .15s}
+.env-card:hover{border-color:var(--border2);transform:translateY(-1px)}
+.env-card.ativo{border-color:var(--blue);box-shadow:0 0 0 1px var(--blue) inset}
+.env-card-n{font-size:22px;font-weight:800;letter-spacing:-.5px;font-family:'DM Mono',monospace}
+.env-card-s{font-size:10px;color:var(--muted);margin-top:2px}
+.env-wrap{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:14px;align-items:start}
+.env-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--border)}
+.env-toolbar input[type=text]{flex:1;min-width:180px;font-size:12px;padding:7px 11px;background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none}
+.env-toolbar select{font-size:11px;padding:6px 8px}
+.env-toolbar label{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;white-space:nowrap;margin:0}
+.env-table td{vertical-align:middle}
+.env-table tr.env-sel td{background:rgba(63,185,80,.05)}
+.env-num{text-align:right;font-family:'DM Mono',monospace;white-space:nowrap}
+.env-sub{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;text-align:right}
+.env-prod{display:flex;gap:10px;align-items:center;min-width:260px;max-width:420px}
+.env-prod img,.env-thumb-vazio{width:42px;height:42px;border-radius:8px;object-fit:contain;background:#fff;flex-shrink:0;border:1px solid var(--border)}
+.env-thumb-vazio{display:flex;align-items:center;justify-content:center;background:var(--surface2)}
+.env-tit{font-size:12px;font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.env-meta{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:2px}
+.env-badge{display:inline-block;font-size:9px;padding:1px 6px;border-radius:9px;background:var(--surface2);border:1px solid var(--border2);color:var(--muted2);font-family:'DM Mono',monospace}
+.env-badge.mal{color:var(--red);border-color:rgba(248,81,73,.35)}
+.env-badge.medio{color:var(--orange);border-color:rgba(210,153,34,.35)}
+.env-vendas{display:flex;align-items:flex-end;justify-content:flex-end;gap:8px}
+.env-bars{display:inline-flex;align-items:flex-end;gap:2px;height:22px}
+.env-bar{width:5px;background:var(--blue);border-radius:2px 2px 0 0;opacity:.75}
+.env-bar:last-child{opacity:1}
+.env-cob{display:inline-block;font-size:11px;font-weight:700;font-family:'DM Mono',monospace;padding:3px 8px;border-radius:12px;background:var(--surface2);color:var(--muted)}
+.env-cob.mal{background:rgba(248,81,73,.13);color:var(--red)}
+.env-cob.medio{background:rgba(210,153,34,.13);color:var(--orange)}
+.env-cob.ok{background:rgba(63,185,80,.12);color:var(--green)}
+.env-curva{display:inline-block;width:22px;height:22px;line-height:22px;border-radius:6px;font-size:11px;font-weight:800;background:var(--surface2);color:var(--muted)}
+.env-curva.cA{background:rgba(63,185,80,.15);color:var(--green)}
+.env-curva.cB{background:rgba(88,166,255,.15);color:var(--blue)}
+.env-curva.cC{background:rgba(210,153,34,.15);color:var(--orange)}
+.env-qtd-cel{text-align:center;min-width:110px}
+.env-qtd{width:84px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;font-weight:800;padding:6px 8px;background:var(--bg);border:1px solid var(--border2);border-radius:7px;color:var(--text);outline:none}
+.env-qtd.on{border-color:var(--green);background:rgba(63,185,80,.07)}
+.env-qtd:focus{border-color:var(--blue)}
+.env-cx{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:3px}
+.env-mini{font-size:9px;padding:1px 5px;border-radius:5px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer}
+.env-resumo{position:sticky;top:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px}
+.env-res-tit{font-size:13px;font-weight:800;margin-bottom:12px}
+.env-res-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.env-res-grid>div{background:var(--surface2);border-radius:8px;padding:9px 10px}
+.env-res-n{font-size:19px;font-weight:800;font-family:'DM Mono',monospace;letter-spacing:-.5px}
+.env-res-l{font-size:10px;color:var(--muted)}
+.env-vol{background:var(--surface2);border-radius:8px;padding:9px 10px;margin-bottom:10px}
+.env-vol-bar{height:6px;background:var(--border);border-radius:4px;overflow:hidden;margin:6px 0 4px}
+.env-vol-bar>div{height:100%;border-radius:4px}
+.env-alerta{font-size:11px;color:var(--red);background:rgba(248,81,73,.07);border:1px solid rgba(248,81,73,.25);border-radius:7px;padding:7px 9px;margin:8px 0}
+.env-res-lista{max-height:220px;overflow-y:auto;border-top:1px solid var(--border);padding-top:6px}
+.env-res-lista>div{display:flex;justify-content:space-between;gap:8px;font-size:11px;font-family:'DM Mono',monospace;padding:3px 0;border-bottom:1px dashed var(--border)}
+.env-passo{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px}
+.env-passo-n{width:26px;height:26px;border-radius:50%;background:var(--green);color:#0a0a0a;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+@media (max-width:1100px){.env-wrap{grid-template-columns:1fr}.env-resumo{position:static}.env-cards{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:700px){.env-cards{grid-template-columns:repeat(2,1fr)}}
+/* ── Bipe da embalagem antes de imprimir etiquetas ── */
+.etq-bipe-ov{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:10000;display:flex;align-items:center;justify-content:center;padding:16px}
+.etq-bipe-box{background:var(--surface);border:1px solid var(--border2);border-radius:16px;padding:24px;width:min(520px,100%);text-align:center}
+.etq-bipe-box.tremer{animation:etqTremer .35s}
+@keyframes etqTremer{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.etq-bipe-tit{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.etq-bipe-sku{font-size:26px;font-weight:800;font-family:'DM Mono',monospace;margin-top:8px}
+.etq-bipe-desc{font-size:13px;color:var(--muted2);margin-top:4px}
+.etq-bipe-qtd{display:inline-block;margin-top:8px;font-size:12px;font-family:'DM Mono',monospace;background:var(--surface2);padding:3px 10px;border-radius:10px}
+.etq-bipe-instr{font-size:13px;margin:16px 0 8px}
+.etq-bipe-inp{width:100%;font-size:22px;font-family:'DM Mono',monospace;text-align:center;padding:12px;border-radius:10px;border:2px solid var(--blue);background:var(--bg);color:var(--text);outline:none}
+.etq-bipe-msg{min-height:20px;font-size:13px;margin-top:10px;color:var(--muted)}
+.etq-bipe-msg.erro{color:var(--red);font-weight:700}
+.etq-bipe-msg.ok{color:var(--green);font-weight:800;font-size:16px}
+.etq-bipe-acoes{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -1169,6 +1243,7 @@ select:focus{border-color:var(--accent)}
           <!-- Sub-abas -->
           <div class="saida-tabs" style="margin-bottom:14px">
             <button class="saida-tab active" id="fullsTab-agenda" onclick="switchFullsTab('agenda',this)">📅 Agenda</button>
+            <button class="saida-tab" id="fullsTab-novoenvio" onclick="switchFullsTab('novoenvio',this)">🚀 Novo envio</button>
             <button class="saida-tab" id="fullsTab-estoque" onclick="switchFullsTab('estoque',this)">📦 Estoque Full</button>
             <button class="saida-tab" id="fullsTab-espelho" onclick="switchFullsTab('espelho',this)">🏭 Estoque Principal</button>
             <button class="saida-tab" id="fullsTab-mldeposito" onclick="switchFullsTab('mldeposito',this)">📊 Estoque ML (Full)</button>
@@ -1239,6 +1314,57 @@ select:focus{border-color:var(--accent)}
             </div>
           </div>
           </div><!-- /fullsPane-agenda -->
+
+
+          <!-- ══ SUB-ABA: NOVO ENVIO (planejamento + planilha ML) ══ -->
+          <div id="fullsPane-novoenvio" style="display:none">
+            <div class="env-topo">
+              <div>
+                <div style="font-size:15px;font-weight:800;letter-spacing:-.3px">Novo envio para o Full · Mercado Livre</div>
+                <div style="font-size:11px;color:var(--muted);margin-top:2px" id="envStatus">Estoque do Full, vendas de 30 dias e estoque do galpão lado a lado</div>
+              </div>
+              <button class="btn btn-ghost btn-sm" id="envReloadBtn" onclick="envCarregar(true)">↻ Atualizar do ML</button>
+            </div>
+
+            <div class="env-cards">
+              <div class="env-card" data-f="todos" onclick="envFiltrar('todos')"><div class="card-label">Unidades no Full</div><div class="env-card-n" id="envCardFull">—</div><div class="env-card-s" id="envCardFullSub">—</div></div>
+              <div class="env-card" data-f="ruptura" onclick="envFiltrar('ruptura')"><div class="card-label">Em ruptura</div><div class="env-card-n" id="envCardRuptura" style="color:var(--red)">—</div><div class="env-card-s">Full zerado e vendendo</div></div>
+              <div class="env-card" data-f="baixa" onclick="envFiltrar('baixa')"><div class="card-label">Cobertura &lt; 15 dias</div><div class="env-card-n" id="envCardBaixa" style="color:var(--orange)">—</div><div class="env-card-s">repor logo</div></div>
+              <div class="env-card" data-f="vendas" onclick="envFiltrar('vendas')"><div class="card-label">Vendas 30 dias</div><div class="env-card-n" id="envCardVendas">—</div><div class="env-card-s">unidades no ML</div></div>
+              <div class="env-card" data-f="envio" onclick="envFiltrar('envio')"><div class="card-label">Neste envio</div><div class="env-card-n" id="envCardEnvio" style="color:var(--green)">—</div><div class="env-card-s">produtos com quantidade</div></div>
+            </div>
+
+            <div class="env-wrap">
+              <div class="full-table-wrap" style="min-width:0">
+                <div class="env-toolbar">
+                  <input type="text" id="envBusca" placeholder="🔍 SKU, título ou código ML…" oninput="envRender()">
+                  <select id="envOrdem" onchange="envRender()">
+                    <option value="prioridade">Ordenar: prioridade (menor cobertura)</option>
+                    <option value="vendas">Ordenar: mais vendidos</option>
+                    <option value="full">Ordenar: menor estoque Full</option>
+                    <option value="sku">Ordenar: SKU</option>
+                  </select>
+                  <label><input type="checkbox" id="envSoFull" onchange="envRender()" checked> Só anúncios Full</label>
+                </div>
+                <div style="overflow-x:auto">
+                  <table class="env-table">
+                    <thead><tr>
+                      <th>Produto</th>
+                      <th class="env-num" title="Estoque no galpão (Magis5)">Galpão</th>
+                      <th class="env-num" title="Disponível no Full do ML">Full ML</th>
+                      <th class="env-num" title="Unidades em Fulls abertos no Outbox (ainda não enviados)">A caminho</th>
+                      <th class="env-num" title="Unidades vendidas no ML nos últimos 30 dias (barras = semanas)">Vendas 30d</th>
+                      <th style="text-align:center" title="(Full + a caminho) ÷ venda média por dia">Cobertura</th>
+                      <th style="text-align:center" title="Curva ABC pelas vendas de 30 dias">Curva</th>
+                      <th style="text-align:center">Enviar (un.)</th>
+                    </tr></thead>
+                    <tbody id="envBody"><tr><td colspan="8" style="text-align:center;padding:34px;color:var(--muted)">Carregando…</td></tr></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="env-resumo" id="envResumo"></div>
+            </div>
+          </div><!-- /fullsPane-novoenvio -->
 
           <!-- ══ SUB-ABA: ESTOQUE FULL ══ -->
           <div id="fullsPane-estoque" style="display:none">
@@ -2062,6 +2188,36 @@ select:focus{border-color:var(--accent)}
     <div id="nf-skus-lista" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto"></div>
     <div id="nf-skus-total" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:8px;text-align:right"></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalFull')">Cancelar</button><button class="btn btn-primary" onclick="salvarNovoFull()">Salvar</button></div>
+  </div>
+</div>
+
+<!-- NOVO ENVIO ML: criar Full a partir do planejamento -->
+<div class="modal-overlay" id="modalEnvioCriar">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">Criar envio para o Full <button class="modal-close" onclick="closeModal('modalEnvioCriar')">✕</button></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="envc-resumo"></div>
+    <div class="form-grid">
+      <div class="form-group"><label>Tipo de envio</label><select class="form-sel" id="envc-tipo"><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
+      <div class="form-group"><label>Coleta / entrega em</label><input class="form-sel" type="date" id="envc-agendado"></div>
+      <div class="form-group"><label>Destino</label><select class="form-sel" id="envc-destino"></select></div>
+      <div class="form-group"><label>Nº do envio no ML <span style="color:var(--muted);font-size:9px">se já tiver</span></label><input class="form-sel" type="text" inputmode="numeric" id="envc-numero" placeholder="pode informar depois" style="font-family:'DM Mono',monospace"></div>
+    </div>
+    <div id="envc-avisos"></div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px">O Full entra na agenda com as quantidades em caixas, e as etiquetas dos produtos já ficam prontas no detalhe do Full.</div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalEnvioCriar')">Cancelar</button><button class="btn btn-primary" id="envc-ok" onclick="envConfirmarCriar()">✓ Criar</button></div>
+  </div>
+</div>
+
+<!-- NOVO ENVIO ML: passo a passo depois de criar -->
+<div class="modal-overlay" id="modalEnvioPassos">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">Envio <span id="envp-id" style="color:var(--accent);margin-left:6px"></span> criado <button class="modal-close" onclick="closeModal('modalEnvioPassos')">✕</button></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Agora é avisar o Mercado Livre. São 3 passos:</div>
+    <div class="env-passo"><div class="env-passo-n">1</div><div style="flex:1"><b>Baixar a planilha preenchida</b><div class="env-sub" style="text-align:left">Modelo oficial do ML, com SKU, código ML e quantidade de cada produto.</div></div><button class="btn btn-primary btn-sm" onclick="envPassosBaixar()">⬇ Baixar</button></div>
+    <div class="env-passo"><div class="env-passo-n">2</div><div style="flex:1"><b>Subir no Mercado Livre</b><div class="env-sub" style="text-align:left">No ML: <b>Full → Enviar produtos → Adicionar produtos de uma planilha Excel</b>. Anexe o arquivo e clique em <b>Enviar planilha</b>. Depois escolha coleta/data e confirme.</div></div></div>
+    <div class="env-passo"><div class="env-passo-n">3</div><div style="flex:1"><b>Informar o número do envio criado no ML</b><div class="env-sub" style="text-align:left">O Full passa a se chamar <i>número-ML</i> e as etiquetas que faltavam ganham o código ML.</div>
+      <div style="display:flex;gap:6px;margin-top:8px"><input class="form-sel" id="envp-numero" inputmode="numeric" placeholder="ex.: 79041102" style="font-family:'DM Mono',monospace;flex:1" onkeydown="if(event.key==='Enter')envPassosSalvarNumero()"><button class="btn btn-primary btn-sm" onclick="envPassosSalvarNumero()">Salvar</button></div></div></div>
+    <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalEnvioPassos')">Fazer depois</button></div>
   </div>
 </div>
 
@@ -6123,7 +6279,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 48;
+const APP_VERSAO = 49;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -8848,7 +9004,7 @@ function _confDefinirEnvio(fullId, vols){
 function _pareceCodigoProduto(raw){
   const t = String(raw||'').trim();
   if (!/^\d+$/.test(t)) return false;
-  if ((SKU_DB||[]).some(s => s.ean && String(s.ean).trim() === t)) return true;
+  if ((SKU_DB||[]).some(s => s.ean && String(s.ean).split(/[\s,;|\/]+/).includes(t))) return true;
   if ([13,14].includes(t.length)) {
     const d = t.split('').map(Number), dv = d.pop();
     let soma = 0; d.reverse().forEach((x, i) => { soma += x * (i % 2 === 0 ? 3 : 1); });
@@ -9498,13 +9654,21 @@ async function zplCarregarIndice(forcar) {
   return window._zplBibIndex;
 }
 
+function _bibChave(sku) {
+  const idx = window._zplBibIndex;
+  if (!idx || idx.has(sku)) return sku;
+  const real = (typeof _skuResolvido === 'function') ? _skuResolvido(sku) : sku;
+  if (idx.has(real)) return real;
+  const esc = (typeof _zplHex === 'function') ? _zplHex(real) : real;   // VA-MA10 → VA_2DMA10
+  return idx.has(esc) ? esc : sku;
+}
 function zplEstaNaBiblioteca(sku) {
   if (!window._zplBibIndex) return true; // ainda não carregou — não acusa falso alarme
-  return window._zplBibIndex.has(sku);
+  return window._zplBibIndex.has(_bibChave(sku));
 }
 
 function zplEstoqueDe(sku) {
-  return window._zplBibIndex?.get(sku)?.estoque || 0;
+  return window._zplBibIndex?.get(_bibChave(sku))?.estoque || 0;
 }
 
 // Agrupa um ZPL colado (que pode ter vários SKUs misturados) por SKU,
@@ -9547,6 +9711,7 @@ async function zplSalvar(sku, descricao, zpl) {
 }
 
 async function zplCarregar(sku) {
+  sku = _bibChave(sku);
   if(window._zplCache[sku]) return window._zplCache[sku];
   try {
     const {data} = await _sb.from('zpl_biblioteca').select('zpl').eq('sku',sku).single();
@@ -9615,6 +9780,7 @@ async function bibConfirmarImprimir(sku) {
   if(!reg?.zpl){showToast('❌ ZPL não encontrado');return;}
   const blocos=[...reg.zpl.matchAll(/\^XA[\s\S]*?\^XZ/gi)].map(m=>m[0]);
   if(!blocos.length){showToast('❌ ZPL inválido');return;}
+  if (!(await etqConfirmarProduto(sku, { titulo: reg.descricao, qtd }))) { showToast('Impressão cancelada'); return; }
   const zplFinal=zplCorrigirAlinhamento(zplMontarLote(blocos, qtd));
   const impressora=await zplEnviarParaImpressora(zplFinal);
   if(!impressora) return;
@@ -9654,6 +9820,7 @@ async function bibBaixarPDF(sku){
   if (qtd > 2000) { showToast('⚠️ Máximo de 2000 etiquetas por PDF'); return; }
   const fmt = prompt('Formato do PDF:\n\n1 = Rolo — 1 etiqueta por página, tamanho real (impressora térmica)\n2 = Folha A4 — várias etiquetas por folha', '1');
   if (fmt !== '1' && fmt !== '2') return;
+  if (!(await etqConfirmarProduto(sku, { titulo: reg.descricao, qtd }))) { showToast('PDF cancelado'); return; }
   showToast('📄 Gerando PDF...');
   try {
     const bloco = reg.zpl.match(/\^XA[\s\S]*?\^XZ/i)?.[0] || reg.zpl;
@@ -9789,7 +9956,10 @@ async function etqSalvar(fullId, op) {
     if (op.delta && op.delta[x.id] != null) imp = (b ? (b.impressas||0) : 0) + op.delta[x.id];
     if (op.set && op.set[x.id] != null) imp = op.set[x.id];
     imp = Math.max(0, Math.min(imp, x.total||0));
-    return { id:x.id, sku:x.sku, descricao:x.descricao||'', total:x.total, impressas:imp, criadoEm:x.criadoEm };
+    const r = { id:x.id, sku:x.sku, descricao:x.descricao||'', total:x.total, impressas:imp, criadoEm:x.criadoEm };
+    // etiqueta gerada pelo Outbox: código ML, título e variação (b = versão do banco, se esta for antiga)
+    ['inv','titulo','variacao','origem'].forEach(c => { const v = x[c] || (b && b[c]); if (v) r[c] = v; });
+    return r;
   });
   // SKUs que outro computador adicionou ao Full continuam lá
   doBanco.forEach(b => { if (!idsLocais.has(b.id) && !removidos.has(b.id)) arr.push(b); });
@@ -9945,14 +10115,14 @@ async function etqRenderSecao(fullId) {
     </div>`:'';
 
   const lista=arr.length===0
-    ?`<div class="etq-empty"><div class="etq-empty-icon">🏷</div><div class="etq-empty-title">Nenhum ZPL adicionado</div><div class="etq-empty-sub">Cole o ZPL do Mercado Livre para controlar as impressões</div></div>`
+    ?`<div class="etq-empty"><div class="etq-empty-icon">🏷</div><div class="etq-empty-title">Nenhuma etiqueta ainda</div><div class="etq-empty-sub">Clique em <b>⚡ Gerar pelo ML</b>: o Outbox monta as etiquetas de cada item do Full com o código ML — sem colar ZPL</div></div>`
     :arr.map(etq=>{
         const pct=etq.total?Math.round(((etq.impressas||0)/etq.total)*100):0;
         const cls=pct>=100?'done':pct>0?'partial':'none';
         const faltam=Math.max(0,etq.total-(etq.impressas||0));
         const skuLbl=etq.sku||etq.descricao||'—';
         const descLbl=(etq.sku&&etq.descricao&&etq.descricao!==etq.sku)?etq.descricao:'';
-        const temZpl=zplEstaNaBiblioteca(etq.sku);
+        const temZpl=!!etq.inv||zplEstaNaBiblioteca(etq.sku);
         const estoqueDisp=zplEstoqueDe(etq.sku);
         return `
         <div class="etq-card ${cls}">
@@ -9965,6 +10135,7 @@ async function etqRenderSecao(fullId) {
                   <button class="etq-sku-edit-btn" onclick="etqEditarSku('${fullId}','${etq.id}')" title="Editar SKU">✏</button>
                 </div>
                 ${descLbl?`<div class="etq-card-desc">${descLbl}</div>`:''}
+                ${etq.inv?`<div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--green);margin-top:3px" title="Etiqueta montada pelo Outbox com o código ML do anúncio — não precisa de ZPL">● código ML ${etq.inv}${etq.variacao?' · '+etq.variacao:''}</div>`:''}
                 <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px">${etq.total.toLocaleString('pt-BR')} etiquetas · ${new Date(etq.criadoEm).toLocaleDateString('pt-BR')}</div>
               </div>
               <div class="etq-card-right">
@@ -9975,8 +10146,8 @@ async function etqRenderSecao(fullId) {
             </div>
             ${!temZpl?`
             <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px">
-              <span>⚠️ ZPL não cadastrado na biblioteca pra esse SKU — não dá pra imprimir ainda</span>
-              <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="bibAbrirNovo('${etq.sku}','${(descLbl||skuLbl).replace(/'/g,"\\'")}')">+ Cadastrar</button>
+              <span>⚠️ Ainda sem código ML para esse SKU — se o envio já foi criado no ML, clique em ⚡ Gerar pelo ML</span>
+              <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="etqGerarDoML('${fullId}',{forcar:true})">⚡ Buscar no ML</button>
             </div>`:''}
             ${temZpl&&estoqueDisp>0&&faltam>0?`
             <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.22);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--green);display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -10024,7 +10195,8 @@ async function etqRenderSecao(fullId) {
         <input type="number" step="0.1" value="${window._etqCfg.colDireitaOffsetMm}" onchange="etqDefinirOffsetColuna(parseFloat(this.value))" style="width:56px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px" title="Distância real (mm) entre as duas colunas — calibre com a régua">
         <button onclick="etqTestarRegua()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime marcas de mm pra achar a fenda física real entre as etiquetas">📐 Régua</button>
         <button onclick="etqTestarImpressao()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime uma etiqueta de teste (não consome SKU nenhum)">🧪 Testar impressão</button>
-        <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px">+ Adicionar etiqueta</button>
+        <button onclick="etqGerarDoML('${fullId}',{forcar:true})" class="btn btn-primary btn-sm" style="font-size:11px" title="Cria as etiquetas dos itens do Full com o código ML de cada produto">⚡ Gerar pelo ML</button>
+        <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-ghost btn-sm" style="font-size:11px" title="Jeito antigo: colar o ZPL baixado do ML">+ Colar ZPL</button>
       </div>
     </div>
     ${barra}
@@ -10219,13 +10391,14 @@ async function etqUsarEstoque(fullId, etqId) {
   const etq = arr.find(e=>e.id===etqId);
   if (!etq) return;
   const idx = await zplCarregarIndice();
-  const reg = idx.get(etq.sku);
+  const chave = _bibChave(etq.sku);
+  const reg = idx.get(chave);
   const estoqueAtual = reg?.estoque||0;
   if (estoqueAtual<=0) { showToast('Sem estoque pré-impresso pra esse SKU'); return; }
   const faltam = Math.max(0, etq.total-(etq.impressas||0));
   const usar = Math.min(estoqueAtual, faltam);
   if (usar<=0) return;
-  const r = await zplEstoqueDelta(etq.sku, -usar);
+  const r = await zplEstoqueDelta(chave, -usar);
   if (r.error) { showToast('⚠️ ' + r.error.message); return; }
   await etqSalvar(fullId, { delta: { [etq.id]: usar } });
   etqRenderSecao(fullId);
@@ -10236,7 +10409,8 @@ async function etqPreview(fullId, etqId) {
   const arr = etqGetData(fullId);
   const etq = arr.find(e => e.id === etqId);
   if (!etq) return;
-  const zpl = await zplCarregar(etq.sku);
+  let zpl = null;
+  try { zpl = await etqZplDe(etq); } catch (e) { showToast('❌ ' + e.message); return; }
   if (!zpl) { showToast('❌ ZPL não encontrado'); return; }
 
   const blocos = [];
@@ -10552,8 +10726,11 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   const etq = arr.find(e=>e.id===etqId);
   if (!etq) return;
 
-  const zpl = await zplCarregar(etq.sku);
+  let zpl = null;
+  try { zpl = await etqZplDe(etq); } catch (e) { showToast('❌ ' + e.message); return; }
   if (!zpl) { showToast('❌ ZPL não encontrado para o SKU: ' + etq.sku); return; }
+  // Antes de imprimir: bipar a embalagem do produto que vai receber as etiquetas
+  if (!(await etqConfirmarProduto(etq.sku, { titulo: etq.titulo || etq.descricao, qtd }))) { showToast('Impressão cancelada'); return; }
 
   const blocos = [];
   const regex = /(\^XA[\s\S]*?\^XZ)/gi;
@@ -10600,6 +10777,746 @@ document.addEventListener('DOMContentLoaded', ()=>{
     sel.addEventListener('change', ()=>{ if(isMobile()) renderCalMobile(); });
   }
 });
+
+</script>
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// NOVO ENVIO FULL (Mercado Livre) — planejamento estilo Magiic + planilha ML
+// + ETIQUETAS GERADAS PELO OUTBOX (sem subir ZPL) + BIPE DA EMBALAGEM
+// Dados do ML vêm da função ml-full-planejamento (só leitura no ML).
+// ══════════════════════════════════════════════════════════════════════
+const ML_PLAN_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/ml-full-planejamento';
+const ENV_RASCUNHO_KEY = 'outbox_envio_ml_rascunho';
+
+let _mlCat = null;          // { em, produtos:[...], porSku: Map(SKU→produto) }
+let _envVendas = null;      // { em, dias, porSku: Map(SKU→{u,sem}) }
+let _envEspelho = null;     // Map(SKU→quantidade no galpão / Magis5)
+let _envQtd = {};           // rascunho: { SKU: unidades }
+let _envFiltro = 'todos';
+let _envCarregando = false;
+
+const _envNorm = s => String(s ?? '').trim().toUpperCase();
+// SKUs que vieram de ZPL antigo podem estar com escape ^FH (VA_2DMA10 = VA-MA10)
+// Só decodifica os escapes que o ML usa (- . , / _ + ( ) & e letras acentuadas) — "CX_50" ou "KIT_12" ficam como estão
+const _RX_ESC_ML = /(?:_(?:2D|2E|2C|2F|5F|2B|28|29|26))|(?:_C[2-9A-F]_[89AB][0-9A-F])/gi;
+function _skuReal(s) {
+  s = String(s || '').trim();
+  if (!_RX_ESC_ML.test(s)) return s;
+  _RX_ESC_ML.lastIndex = 0;
+  return s.replace(_RX_ESC_ML, m => { try { return decodeURIComponent(m.replace(/_/g, '%')); } catch (e) { return m; } });
+}
+// SKU como existe de verdade: se o próprio texto já é um SKU conhecido, não decodifica
+function _skuResolvido(s) {
+  s = String(s || '').trim();
+  if (_skuDb(s) || (_mlCat && _mlCat.porSku.has(_envNorm(s)))) return s;
+  return _skuReal(s);
+}
+function _envEsc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function _envJs(s) { return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
+function _envFmt(n) { return (n == null || isNaN(n)) ? '—' : Math.round(n).toLocaleString('pt-BR'); }
+
+try { _envQtd = JSON.parse(localStorage.getItem(ENV_RASCUNHO_KEY) || '{}') || {}; } catch (e) { _envQtd = {}; }
+function _envSalvarRascunho() { try { localStorage.setItem(ENV_RASCUNHO_KEY, JSON.stringify(_envQtd)); } catch (e) {} }
+
+// ── Catálogo ML (SKU → código ML, título da etiqueta, GTIN, estoque Full) ──
+async function mlCatalogo(forcar) {
+  if (_mlCat && !forcar && Date.now() - _mlCat.em < 10 * 60 * 1000) return _mlCat;
+  const r = await fetch(ML_PLAN_API + '?acao=catalogo' + (forcar ? '&forcar=1' : ''), { cache: 'no-store' });
+  const d = await r.json();
+  if (d.erro) throw new Error(d.erro);
+  const porSku = new Map();
+  (d.produtos || []).forEach(p => porSku.set(_envNorm(p.sku), p));
+  _mlCat = { em: Date.now(), geradoEm: d.gerado_em, produtos: d.produtos || [], porSku, avisos: d.avisos || [] };
+  return _mlCat;
+}
+function mlProdutoDoSku(sku) {
+  if (!_mlCat) return null;
+  return _mlCat.porSku.get(_envNorm(sku)) || _mlCat.porSku.get(_envNorm(_skuReal(sku))) || null;
+}
+
+async function _envCarregarVendas(forcar) {
+  const r = await fetch(ML_PLAN_API + '?acao=vendas&dias=30' + (forcar ? '&forcar=1' : ''), { cache: 'no-store' });
+  const d = await r.json();
+  if (d.erro) throw new Error(d.erro);
+  // pedidos sem SKU no anúncio chegam como "?MLB..." → acha o SKU pelo anúncio
+  const porItem = new Map();
+  (_mlCat?.produtos || []).forEach(p => (p.item_ids || []).forEach(id => porItem.set(id, _envNorm(p.sku))));
+  const porSku = new Map();
+  Object.entries(d.por_sku || {}).forEach(([k, v]) => {
+    const sku = k.startsWith('?') ? (porItem.get(k.slice(1)) || k) : _envNorm(k);
+    const at = porSku.get(sku) || { u: 0, sem: [0, 0, 0, 0, 0] };
+    at.u += v.u || 0;
+    (v.sem || []).forEach((x, i) => { at.sem[i] = (at.sem[i] || 0) + (x || 0); });
+    porSku.set(sku, at);
+  });
+  _envVendas = { em: Date.now(), geradoEm: d.gerado_em, dias: d.dias || 30, pedidos: d.pedidos, porSku, erros: d.erros || [] };
+}
+async function _envCarregarEspelho() {
+  const { data, error } = await _sbTodasPaginas(() => _sb.from('estoque_principal_espelho').select('sku,quantidade').order('sku'));
+  if (error) throw new Error(error.message || 'erro');
+  _envEspelho = new Map((data || []).map(l => [_envNorm(l.sku), Number(l.quantidade) || 0]));
+}
+
+async function envCarregar(forcar) {
+  if (_envCarregando) return;
+  _envCarregando = true;
+  const st = document.getElementById('envStatus');
+  const btn = document.getElementById('envReloadBtn');
+  if (btn) btn.disabled = true;
+  if (st) st.textContent = 'Buscando anúncios e estoque no Mercado Livre…';
+  const avisos = [];
+  try {
+    try { await mlCatalogo(forcar); } catch (e) { avisos.push('anúncios/estoque Full: ' + e.message); }
+    if (st) st.textContent = 'Somando vendas dos últimos 30 dias…';
+    await Promise.all([
+      (forcar || !_envVendas || Date.now() - _envVendas.em > 30 * 60 * 1000) ? _envCarregarVendas(forcar).catch(e => avisos.push('vendas: ' + e.message)) : null,
+      _envCarregarEspelho().catch(e => avisos.push('estoque do galpão: ' + e.message)),
+    ]);
+  } finally {
+    _envCarregando = false;
+    if (btn) btn.disabled = false;
+  }
+  if (_mlCat?.avisos?.length) avisos.push('ML incompleto (' + _mlCat.avisos.join(', ') + ') — clique em Atualizar de novo');
+  if (_envVendas?.erros?.length) avisos.push(`vendas de ${_envVendas.erros.length} dia(s) não vieram — total de 30 dias está menor`);
+  if (st) {
+    const quando = _mlCat ? new Date(_mlCat.geradoEm || _mlCat.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
+    st.innerHTML = avisos.length
+      ? `<span style="color:var(--red)">⚠️ Falhou: ${_envEsc(avisos.join(' · '))}</span>`
+      : `Dados do ML de ${quando}${_envVendas ? ` · ${_envFmt(_envVendas.pedidos)} pedidos em 30 dias` : ''}`;
+  }
+  envRender();
+}
+
+// Unidades de um item do Full: o envio guarda as unidades exatas; se as caixas foram editadas depois, volta a caixas × un/cx
+function _unidadesItemEnvio(it) {
+  const u = parseInt(it.unidades);
+  if (u > 0) {
+    const porCx = Math.max(1, parseInt(_skuDb(it.codigo)?.qtdecx) || 1);
+    if (Math.ceil(u / porCx) === (parseInt(it.qtde) || 0)) return u;
+  }
+  return _unidadesItem(it);
+}
+// Unidades já em Fulls abertos no Outbox (ainda não enviados) — evita mandar em dobro
+function _envEmFullsAbertos() {
+  const m = new Map();
+  Object.values(FULLS_DATA || {}).forEach(f => {
+    if (f.marketplace && f.marketplace !== 'ML') return;
+    (f.itens || []).forEach(it => {
+      const k = _envNorm(it.codigo);
+      m.set(k, (m.get(k) || 0) + _unidadesItemEnvio(it));
+    });
+  });
+  return m;
+}
+
+function _envLinhas() {
+  const abertos = _envEmFullsAbertos();
+  const vistos = new Set();
+  const linhas = [];
+  const add = (sku, p) => {
+    const k = _envNorm(sku);
+    if (!k || vistos.has(k)) return;
+    vistos.add(k);
+    const v = _envVendas?.porSku.get(k);
+    const sk = _skuDb(sku);
+    const full = p?.full_disponivel ?? null;
+    const caminho = abertos.get(k) || 0;
+    const v30 = v ? v.u : 0;
+    const porDia = v30 / 30;
+    const semEstoqueMl = p && p.inventory_id && full == null;      // ML não respondeu o estoque deste produto
+    const cobertura = semEstoqueMl ? null : porDia > 0 ? ((full || 0) + caminho) / porDia : (((full || 0) + caminho) > 0 ? Infinity : null);
+    linhas.push({
+      sku: p?.sku || sku, k, p, sk, full, caminho,
+      transf: p?.full_transferencia || 0,
+      galpao: _envEspelho ? (_envEspelho.get(k) ?? null) : null,
+      v30, sem: v ? v.sem : [0, 0, 0, 0, 0], cobertura,
+      qtdecx: Math.max(1, parseInt(sk?.qtdecx) || 1),
+      qtd: parseInt(_envQtd[k]) || 0,
+    });
+  };
+  (_mlCat?.produtos || []).forEach(p => add(p.sku, p));
+  Object.keys(_envQtd).forEach(k => { if (_envQtd[k] > 0) add(k, null); });
+  // Curva ABC pelas vendas de 30 dias
+  const tot = linhas.reduce((s, l) => s + l.v30, 0);
+  let acc = 0;
+  [...linhas].sort((a, b) => b.v30 - a.v30).forEach(l => {
+    if (!l.v30) { l.curva = '—'; return; }
+    const antes = acc / tot;              // participação acumulada ANTES deste produto
+    acc += l.v30;
+    l.curva = antes < 0.8 ? 'A' : antes < 0.95 ? 'B' : 'C';
+  });
+  return linhas;
+}
+
+function envFiltrar(f) { _envFiltro = f; envRender(); }
+
+function envRender() {
+  const corpo = document.getElementById('envBody');
+  if (!corpo) return;
+  const linhas = _envLinhas();
+  const busca = _envNorm(document.getElementById('envBusca')?.value || '');
+  const ordem = document.getElementById('envOrdem')?.value || 'prioridade';
+  const soFull = document.getElementById('envSoFull')?.checked;
+
+  // Cards
+  const comVenda = linhas.filter(l => l.v30 > 0);
+  const ruptura = linhas.filter(l => l.p && l.full === 0 && l.v30 > 0);
+  const baixa = linhas.filter(l => l.cobertura != null && l.cobertura !== Infinity && l.cobertura < 15 && l.v30 > 0);
+  const noEnvio = linhas.filter(l => l.qtd > 0);
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+  set('envCardFull', _envFmt(linhas.reduce((s, l) => s + (l.full || 0), 0)));
+  set('envCardFullSub', `${linhas.filter(l => (l.full || 0) > 0).length} produtos com estoque`);
+  set('envCardRuptura', ruptura.length);
+  set('envCardBaixa', baixa.length);
+  set('envCardVendas', _envFmt(comVenda.reduce((s, l) => s + l.v30, 0)));
+  set('envCardEnvio', noEnvio.length);
+  document.querySelectorAll('.env-card').forEach(c => c.classList.toggle('ativo', c.dataset.f === _envFiltro));
+
+  let lista = linhas;
+  if (_envFiltro === 'ruptura') lista = ruptura;
+  else if (_envFiltro === 'baixa') lista = baixa;
+  else if (_envFiltro === 'envio') lista = noEnvio;
+  else if (_envFiltro === 'vendas') lista = comVenda;
+  if (soFull) lista = lista.filter(l => l.p?.full || l.qtd > 0);
+  if (busca) lista = lista.filter(l => l.k.includes(busca) || _envNorm(l.p?.titulo).includes(busca) || _envNorm(l.p?.inventory_id).includes(busca));
+  const cob = l => l.cobertura == null ? 1e9 : (l.cobertura === Infinity ? 1e8 : l.cobertura);
+  if (ordem === 'prioridade') lista = [...lista].sort((a, b) => (b.v30 > 0) - (a.v30 > 0) || cob(a) - cob(b) || b.v30 - a.v30);
+  else if (ordem === 'vendas') lista = [...lista].sort((a, b) => b.v30 - a.v30);
+  else if (ordem === 'full') lista = [...lista].sort((a, b) => (a.full ?? -1) - (b.full ?? -1));
+  else lista = [...lista].sort((a, b) => a.k.localeCompare(b.k));
+
+  if (!_mlCat && !linhas.length) {
+    corpo.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:34px;color:var(--muted)">Clique em <b>↻ Atualizar do ML</b> para carregar anúncios, estoque Full e vendas</td></tr>`;
+  } else {
+    corpo.innerHTML = lista.map(_envLinhaHtml).join('') || `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">Nenhum produto neste filtro</td></tr>`;
+  }
+  envRenderResumo(linhas);
+}
+
+function _envLinhaHtml(l) {
+  const p = l.p || {};
+  const maxSem = Math.max(1, ...l.sem.slice(0, 4));
+  const barras = l.sem.slice(0, 4).reverse().map((x, i) =>
+    `<span class="env-bar" style="height:${Math.max(2, Math.round(x / maxSem * 22))}px" title="${['há 4 sem.', 'há 3 sem.', 'há 2 sem.', 'últimos 7 dias'][i]}: ${x} un"></span>`).join('');
+  let cobHtml = '<span class="env-cob">—</span>';
+  if (l.cobertura === Infinity) cobHtml = '<span class="env-cob ok" title="sem vendas no período">∞</span>';
+  else if (l.cobertura != null) {
+    const c = l.cobertura, cls = c < 15 ? 'mal' : c < 30 ? 'medio' : 'ok';
+    cobHtml = `<span class="env-cob ${cls}" title="(Full + a caminho) ÷ venda média por dia">${c >= 999 ? '999+' : Math.round(c)} dias</span>`;
+  }
+  const badges = [];
+  if (!l.p) badges.push('<span class="env-badge mal">fora do ML</span>');
+  else {
+    if (!p.full) badges.push('<span class="env-badge">ainda não é Full</span>');
+    if (p.status === 'paused') badges.push('<span class="env-badge medio">pausado</span>');
+    if (p.status === 'under_review') badges.push('<span class="env-badge mal">em revisão</span>');
+    if (p.variacao) badges.push(`<span class="env-badge">${_envEsc(p.variacao)}</span>`);
+  }
+  const cx = l.qtd > 0 ? Math.floor(l.qtd / l.qtdecx) : 0;
+  const avulsas = l.qtd > 0 ? l.qtd % l.qtdecx : 0;
+  let cxHtml = '';
+  if (l.qtd > 0 && l.qtdecx > 1) {
+    cxHtml = `<div class="env-cx">${cx} cx de ${l.qtdecx}${avulsas ? ` <b style="color:var(--orange)">+${avulsas} avulsas</b> <button class="env-mini" onclick="envArredondar('${_envJs(l.k)}')" title="Arredondar para caixa fechada">⤴ cx</button>` : ''}</div>`;
+  } else if (l.qtdecx > 1) cxHtml = `<div class="env-cx">caixa de ${l.qtdecx}</div>`;
+  const acima = l.qtd > 0 && l.galpao != null && l.qtd > l.galpao;
+  const thumb = p.thumbnail ? `<img src="${_envEsc(String(p.thumbnail).replace(/^http:/, 'https:'))}" loading="lazy" alt="">` : '<div class="env-thumb-vazio">📦</div>';
+  return `<tr class="${l.qtd > 0 ? 'env-sel' : ''}">
+    <td><div class="env-prod">${thumb}<div style="min-width:0">
+      <div class="env-tit" title="${_envEsc(p.titulo || l.sk?.descricao || '')}">${_envEsc(p.titulo || l.sk?.descricao || l.sku)}</div>
+      <div class="env-meta">${_envEsc(l.sku)}${p.inventory_id ? ` · <span title="Código ML (vai no código de barras da etiqueta)">${_envEsc(p.inventory_id)}</span>` : ''} ${badges.join(' ')}</div>
+    </div></div></td>
+    <td class="env-num">${l.galpao == null ? '—' : _envFmt(l.galpao)}</td>
+    <td class="env-num"><b>${l.full == null ? (p.inventory_id ? '<span title="O ML não respondeu o estoque deste produto — clique em Atualizar">?</span>' : '—') : _envFmt(l.full)}</b>${l.transf ? `<div class="env-sub" title="Unidades sendo transferidas entre centros do ML">${_envFmt(l.transf)} em transf.</div>` : ''}</td>
+    <td class="env-num">${l.caminho ? _envFmt(l.caminho) : '<span style="color:var(--muted)">—</span>'}</td>
+    <td class="env-num"><div class="env-vendas"><b>${_envFmt(l.v30)}</b><span class="env-bars">${barras}</span></div><div class="env-sub">${l.v30 ? (l.v30 / 30).toFixed(1).replace('.', ',') + '/dia' : ''}</div></td>
+    <td style="text-align:center">${cobHtml}</td>
+    <td style="text-align:center"><span class="env-curva c${l.curva}">${l.curva}</span></td>
+    <td class="env-qtd-cel">
+      <input type="number" min="0" step="1" class="env-qtd${l.qtd > 0 ? ' on' : ''}" value="${l.qtd || ''}" placeholder="0"
+        onchange="envDefinirQtd('${_envJs(l.k)}', this.value)" onkeydown="if(event.key==='Enter'){this.blur();}">
+      ${cxHtml}
+      ${acima ? `<div class="env-cx" style="color:var(--red)">acima do galpão (${_envFmt(l.galpao)})</div>` : ''}
+    </td>
+  </tr>`;
+}
+
+function envDefinirQtd(k, v) {
+  const n = Math.max(0, parseInt(v) || 0);
+  if (n) _envQtd[k] = n; else delete _envQtd[k];
+  _envSalvarRascunho();
+  envRender();
+}
+function envArredondar(k) {
+  const sk = _skuDb(k);
+  const cx = Math.max(1, parseInt(sk?.qtdecx) || 1);
+  const q = parseInt(_envQtd[k]) || 0;
+  if (!q) return;
+  _envQtd[k] = Math.ceil(q / cx) * cx;
+  _envSalvarRascunho();
+  envRender();
+}
+function envLimpar() {
+  if (!Object.keys(_envQtd).length) return;
+  if (!confirm('Zerar todas as quantidades deste envio?')) return;
+  _envQtd = {};
+  _envSalvarRascunho();
+  envRender();
+}
+
+function _envItensDoRascunho() {
+  return Object.entries(_envQtd).filter(([, q]) => q > 0).map(([k, q]) => {
+    const p = mlProdutoDoSku(k);
+    const sk = _skuDb(k);
+    const qtdecx = Math.max(1, parseInt(sk?.qtdecx) || 1);
+    return { k, sku: p?.sku || sk?.sku || k, p, sk, unidades: q, qtdecx, caixas: Math.ceil(q / qtdecx) };
+  }).sort((a, b) => a.sku.localeCompare(b.sku));
+}
+
+function envRenderResumo(linhas) {
+  const el = document.getElementById('envResumo');
+  if (!el) return;
+  const itens = _envItensDoRascunho();
+  const un = itens.reduce((s, i) => s + i.unidades, 0);
+  let cx = 0, m3 = 0, kg = 0, semMedida = 0;
+  itens.forEach(i => {
+    cx += i.caixas;
+    const c = parseFloat(i.sk?.comp) || 0, l = parseFloat(i.sk?.larg) || 0, a = parseFloat(i.sk?.altu) || 0;
+    const frac = i.unidades / i.qtdecx;                      // medidas e peso do catálogo são por caixa
+    if (c && l && a) m3 += frac * c * l * a / 1e6; else semMedida++;
+    kg += frac * (parseFloat(i.sk?.peso) || 0);
+  });
+  const semCodigo = itens.filter(i => !i.p).length;
+  const pct = Math.min(100, Math.round(m3 * 100));
+  el.innerHTML = `
+    <div class="env-res-tit">Resumo do envio</div>
+    <div class="env-res-grid">
+      <div><div class="env-res-n">${itens.length}</div><div class="env-res-l">produtos</div></div>
+      <div><div class="env-res-n">${_envFmt(un)}</div><div class="env-res-l">unidades</div></div>
+      <div><div class="env-res-n">${_envFmt(cx)}</div><div class="env-res-l">caixas</div></div>
+      <div><div class="env-res-n">${kg ? _fmtKg(kg) : '—'}</div><div class="env-res-l">peso est.</div></div>
+    </div>
+    <div class="env-vol">
+      <div style="display:flex;justify-content:space-between;font-size:11px"><span>Volume estimado</span><b>${_fmtM3(m3)}</b></div>
+      <div class="env-vol-bar"><div style="width:${pct}%;background:${m3 >= 1 ? 'var(--green)' : 'var(--orange)'}"></div></div>
+      <div class="env-sub" style="text-align:left">${m3 >= 1 ? '✓ Passou de 1 m³ — faixa de frete mais barata' : 'Acima de 1 m³ o frete do envio costuma ficar mais barato'}${semMedida ? ` · ${semMedida} sem medidas no catálogo` : ''}</div>
+    </div>
+    ${semCodigo ? `<div class="env-alerta">⚠️ ${semCodigo} SKU(s) não foram achados nos anúncios do ML — o ML vai recusar essas linhas.</div>` : ''}
+    <div class="env-res-lista">${itens.map(i => `<div><span>${_envEsc(i.sku)}</span><b>${_envFmt(i.unidades)}</b></div>`).join('') || '<div style="color:var(--muted);justify-content:center">Digite as quantidades na tabela</div>'}</div>
+    <button class="btn btn-primary" style="width:100%;margin-top:10px" ${itens.length ? '' : 'disabled'} onclick="envAbrirCriar()">✓ Criar envio</button>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px" ${itens.length ? '' : 'disabled'} onclick="envBaixarPlanilha()">⬇ Só baixar a planilha do ML</button>
+    <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px;color:var(--muted)" ${itens.length ? '' : 'disabled'} onclick="envLimpar()">Limpar quantidades</button>`;
+}
+
+// ── Planilha do ML (modelo oficial "Envio de estoque Full", aba " Selección de productos") ──
+const _ML_PLANILHA_MODELO_B64 = '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QrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJ20EzbYCdAEmkKzDXbCju2EnbQTNtgJ0ASaQrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJ20EzbYCdAEmkKzDXbCju2EnbQTNtgJ0ASaQrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJ20EzbYCdAEmkKzDXbCju2EnbQTNtgJ0ASaQrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJ20EzbYCdAEmkKzDXbCju2EnbQTNtgJ0ASaQrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJ20EzbYCdAEmkKzDXbCju2EnbQTNtgJ0ASaQrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJ20EzbYCdAEmkKzDXbCju2EnbQTNtgJ0ASaQrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJ20EzbYCdAEmkKzDXbCju2EnbQTNtgJ0ASaQrMNdsKO7YSdtBM22AnQBJpCsw12wo7thJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAEmkKzA3bCie2Ek7QTDtgJ0ASaQrMDdsKJ7YSTtBMO2AnQBJpCswN2wonthJO0Ew7YCdAE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';
+function _envCarregarJSZip() {
+  if (window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise((ok, falha) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+    s.onload = () => window.JSZip ? ok(window.JSZip) : falha(new Error('JSZip não carregou'));
+    s.onerror = () => falha(new Error('sem internet para carregar o gerador de planilha'));
+    document.head.appendChild(s);
+  });
+}
+function _xmlEsc(s) { return String(s ?? '').replace(/[<>&"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c])); }
+// Linhas da planilha: SKU sempre; Código ML quando já existe; publicação/variação só se for variação sem código ML
+function _envLinhasPlanilha(itens) {
+  return itens.map(i => {
+    const p = i.p;
+    const pub = p && !p.inventory_id && p.variation_id ? String(p.item_id || '').replace(/^MLB/i, '') : '';
+    return { sku: i.sku, codigoMl: p?.inventory_id || '', publicacao: pub, variacao: pub ? String(p.variation_id) : '', unidades: i.unidades };
+  });
+}
+async function envGerarPlanilhaBlob(itens) {
+  const JSZip = await _envCarregarJSZip();
+  const zip = await JSZip.loadAsync(_ML_PLANILHA_MODELO_B64, { base64: true });
+  const caminho = 'xl/worksheets/sheet2.xml';
+  let xml = await zip.file(caminho).async('string');
+  const linhas = _envLinhasPlanilha(itens);
+  if (linhas.length > 990) throw new Error('mais de 990 produtos — divida em dois envios');
+  const str = (ref, s, v) => v ? `<c r="${ref}" s="${s}" t="inlineStr"><is><t>${_xmlEsc(v)}</t></is></c>` : `<c r="${ref}" s="${s}"/>`;
+  const num = (ref, s, v) => (v === '' || v == null) ? `<c r="${ref}" s="${s}"/>` : `<c r="${ref}" s="${s}"><v>${Number(v)}</v></c>`;
+  linhas.forEach((l, i) => {
+    const r = 6 + i;
+    const cel = str(`A${r}`, 36, l.sku) + `<c r="B${r}" s="36"/>` + str(`C${r}`, 36, l.codigoMl) +
+      num(`D${r}`, 36, l.publicacao) + num(`E${r}`, 37, l.variacao) + num(`F${r}`, 36, l.unidades);
+    xml = xml.replace(new RegExp(`(<row r="${r}"[^>]*>)[\\s\\S]*?</row>`), `$1${cel}</row>`);
+  });
+  zip.file(caminho, xml);
+  return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', compression: 'DEFLATE' });
+}
+async function envBaixarPlanilha(nomeEnvio, itensFixos) {
+  const itens = itensFixos || _envItensDoRascunho();
+  if (!itens.length) { showToast('⚠️ Nenhuma quantidade no envio'); return; }
+  try {
+    const blob = await envGerarPlanilhaBlob(itens);
+    const a = document.createElement('a');
+    const d = new Date();
+    const carimbo = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+    a.href = URL.createObjectURL(blob);
+    a.download = `Envio-Full-ML-${(nomeEnvio || carimbo).replace(/[^\w.-]+/g, '_')}.xlsx`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+    showToast(`⬇ Planilha gerada — ${itens.length} produtos, ${_envFmt(itens.reduce((s, i) => s + i.unidades, 0))} unidades`);
+  } catch (e) {
+    showToast('❌ Não gerei a planilha: ' + e.message);
+  }
+}
+
+// ── Criar o Full no Outbox a partir do rascunho ──
+function _envDataInput(d) { return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; }
+function envAbrirCriar() {
+  const itens = _envItensDoRascunho();
+  if (!itens.length) return;
+  const semCodigo = itens.filter(i => !i.p);
+  const avulsas = itens.filter(i => i.unidades % i.qtdecx);
+  const amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
+  if (amanha.getDay() === 6) amanha.setDate(amanha.getDate() + 2); else if (amanha.getDay() === 0) amanha.setDate(amanha.getDate() + 1);
+  const m = document.getElementById('modalEnvioCriar');
+  m.querySelector('#envc-agendado').value = _envDataInput(amanha);
+  m.querySelector('#envc-destino').innerHTML = (_NF_DESTINOS.ML || []).map(d => `<option>${d}</option>`).join('');
+  m.querySelector('#envc-numero').value = '';
+  m.querySelector('#envc-avisos').innerHTML =
+    (semCodigo.length ? `<div class="env-alerta">⚠️ Sem anúncio no ML: ${semCodigo.map(i => _envEsc(i.sku)).join(', ')} — confira o SKU no anúncio.</div>` : '') +
+    (avulsas.length ? `<div class="env-alerta" style="border-color:rgba(210,153,34,.35);color:var(--orange)">📦 Não fecham caixa: ${avulsas.map(i => `${_envEsc(i.sku)} (${i.unidades % i.qtdecx} avulsas)`).join(', ')} — no Full do Outbox conta como caixa a mais.</div>` : '');
+  m.querySelector('#envc-resumo').textContent = `${itens.length} produtos · ${_envFmt(itens.reduce((s, i) => s + i.unidades, 0))} unidades · ${_envFmt(itens.reduce((s, i) => s + i.caixas, 0))} caixas`;
+  openModal('modalEnvioCriar');
+}
+
+async function envConfirmarCriar() {
+  const itens = _envItensDoRascunho();
+  if (!itens.length) return;
+  const m = document.getElementById('modalEnvioCriar');
+  const numero = (m.querySelector('#envc-numero').value || '').replace(/\D/g, '');
+  const tipo = m.querySelector('#envc-tipo').value || 'Coleta';
+  const destino = m.querySelector('#envc-destino').value || '';
+  const agVal = m.querySelector('#envc-agendado').value;
+  if (!agVal) { showToast('⚠️ Informe a data da coleta/entrega'); return; }
+  const agendado = agVal.split('-').reverse().join('/');
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  let id = numero ? `${numero}-ML` : '';
+  if (!id) {
+    const d = new Date();
+    id = `ENV-${String(d.getDate()).padStart(2, '0')}${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
+  }
+  if (FULLS_DATA[id] || FULLS_ENVIADOS.find(e => e.id === id)) { showToast('⚠️ Já existe um Full com o ID ' + id); return; }
+  const btn = m.querySelector('#envc-ok'); if (btn) btn.disabled = true;
+  try {
+    const { data: jaEnv } = await _sb.from('fulls_enviados').select('id').eq('id', id).maybeSingle();
+    if (jaEnv) { showToast('⚠️ ID "' + id + '" já existe nos Enviados'); return; }
+    const novoFull = {
+      id, empresa: tipo, tipo_envio: tipo, marketplace: 'ML', destino, agendado, criadoEm: hoje,
+      responsavel: _quemSou('Edipo'), status: 'Pendente', obs: 'Criado pelo planejamento de envio', vol: [], dateKey: agendado,
+      itens: itens.map(i => ({
+        codigo: i.sku, nome: i.sk?.descricao || i.p?.titulo || '', funcionario: '—',
+        qtde: i.caixas, unidades: i.unidades, status: 'pending', avatar: '?', cor: 'av-amber',
+      })),
+    };
+    if (!(await db.saveFull(novoFull, { novo: true }))) return;
+    const calEntry = { id, empresa: tipo, tipo_envio: tipo, marketplace: 'ML', dia: diaDaSemana(agendado), destino, status: 'Pendente', itens: '0/' + novoFull.itens.length, responsavel: novoFull.responsavel, dateKey: agendado };
+    FULLS_DATA[id] = novoFull;
+    CAL_FULLS.push(calEntry);
+    await db.saveCalFull(calEntry);
+    // Etiquetas do Full já ficam prontas (código ML + título + SKU), sem colar ZPL
+    await etqGerarDoML(id, { silencioso: true });
+    const itensPlanilha = itens;
+    _envQtd = {}; _envSalvarRascunho();
+    closeModal('modalEnvioCriar');
+    renderDashboard(); renderCal(); envRender();
+    envAbrirPassos(id, itensPlanilha);
+  } finally { if (btn) btn.disabled = false; }
+}
+
+// Passo a passo depois de criar: planilha → subir no ML → informar o nº do envio
+function envAbrirPassos(fullId, itens) {
+  window._envPassos = { fullId, itens };
+  const m = document.getElementById('modalEnvioPassos');
+  m.querySelector('#envp-id').textContent = fullId;
+  m.querySelector('#envp-numero').value = /^\d+-ML$/.test(fullId) ? fullId.replace('-ML', '') : '';
+  openModal('modalEnvioPassos');
+}
+async function envPassosBaixar() {
+  const ctx = window._envPassos; if (!ctx) return;
+  await envBaixarPlanilha(ctx.fullId, ctx.itens);
+}
+async function envPassosSalvarNumero() {
+  const ctx = window._envPassos; if (!ctx) return;
+  const n = (document.getElementById('envp-numero').value || '').replace(/\D/g, '');
+  if (n.length < 6) { showToast('⚠️ Digite o número do envio que o ML mostrou (ex.: 79041102)'); return; }
+  const novo = `${n}-ML`;
+  if (novo !== ctx.fullId) {
+    const ok = await fullRenomear(ctx.fullId, novo);
+    if (!ok) return;
+    ctx.fullId = novo;
+  }
+  // produto que nunca foi ao Full só ganha código ML depois que o envio existe → busca de novo
+  await etqGerarDoML(novo, { forcar: true, silencioso: true });
+  closeModal('modalEnvioPassos');
+  renderCal();
+  showToast('✅ Envio ' + novo + ' vinculado — etiquetas prontas no detalhe do Full');
+}
+// Renomeia um Full (banco + memória). Usado pelo passo a passo.
+async function fullRenomear(antigo, novo) {
+  if (FULLS_DATA[novo] || FULLS_ENVIADOS.find(e => e.id === novo)) { showToast('⚠️ Já existe um Full ' + novo); return false; }
+  const err = await db.renomearFull(antigo, novo);
+  if (err) { showToast('❌ Não renomeado: ' + (err.message || 'erro')); return false; }
+  const f = FULLS_DATA[antigo];
+  if (f) { f.id = novo; FULLS_DATA[novo] = f; delete FULLS_DATA[antigo]; }
+  const cal = CAL_FULLS.find(c => c.id === antigo); if (cal) cal.id = novo;
+  if (window._etqData[antigo]) { window._etqData[novo] = window._etqData[antigo]; delete window._etqData[antigo]; }
+  if (window._fdFullId === antigo) window._fdFullId = novo;
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ETIQUETA DE PRODUTO GERADA PELO OUTBOX — mesmo layout do ZPL do ML
+// (2 colunas, 203 dpi: código de barras Code128 do código ML, código, título em 2 linhas, variação, SKU)
+// ══════════════════════════════════════════════════════════════════════
+function _zplHex(s) {
+  return Array.from(String(s ?? '')).map(ch => /[A-Za-z0-9 \/]/.test(ch) ? ch
+    : Array.from(new TextEncoder().encode(ch)).map(b => '_' + b.toString(16).toUpperCase().padStart(2, '0')).join('')).join('');
+}
+// Larguras (Helvetica Bold, por 1000) para cortar o título em 2 linhas de 300 dots, como o ML faz
+const _ZPL_LARG = [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584];
+function _zplLarguraTexto(s) {
+  let t = 0;
+  for (const ch of String(s)) {
+    const base = ch.normalize('NFD')[0];
+    const o = base.charCodeAt(0);
+    t += (o >= 32 && o <= 126) ? _ZPL_LARG[o - 32] : 556;
+  }
+  return t * 0.0154;
+}
+function zplTituloEtiqueta(titulo) {
+  const palavras = String(titulo || '').replace(/\s+/g, ' ').trim().split(' ');
+  const linhas = []; let cur = '';
+  for (const w of palavras) {
+    const cand = cur ? cur + ' ' + w : w;
+    if (_zplLarguraTexto(cand) <= 300) { cur = cand; continue; }
+    linhas.push(cur); cur = w;
+    if (linhas.length === 2) { cur = ''; break; }
+  }
+  if (cur && linhas.length < 2) linhas.push(cur);
+  return linhas.filter(Boolean).join(' ');
+}
+function zplEtiquetaML({ inv, titulo, sku, variacao }) {
+  inv = String(inv || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{4,20}$/.test(inv)) throw new Error('código ML inválido: ' + inv);
+  const t = _zplHex(zplTituloEtiqueta(titulo));
+  const v = _zplHex(variacao || '');
+  const s = sku ? 'SKU: ' + _zplHex(sku) : '';
+  const col = (dx, dt) => `^CI28
+^LH0,0
+^FO${30 + dx},15^BY2,,0^BCN,54,N,N^FD${inv}^FS
+^FO${105 + dx},75^A0N,20,25^FH^FD${inv}^FS
+^FO${105 + dx},76^A0N,20,25^FH^FD${inv}^FS
+^FO${16 + dt},115^A0N,18,18^FB300,2,2,L^FH^FD${t}^FS
+^FO${16 + dt},153^A0N,18,18^FB300,1,0,L^FH^FD${v}^FS
+^FO${15 + dt},153^A0N,18,18^FB300,1,0,L^FH^FD${v}^FS
+^FO${16 + dt},172^A0N,18,18^FH^FD${s}
+^FS
+`;
+  return '^XA' + col(0, 0) + col(320, 330) + '^XZ';
+}
+// ZPL de uma etiqueta do Full: gerada pelo código ML; sem código, cai na biblioteca antiga
+async function etqZplDe(etq) {
+  if (etq.inv) return zplEtiquetaML({ inv: etq.inv, titulo: etq.titulo || etq.descricao, sku: _skuResolvido(etq.sku), variacao: etq.variacao });
+  return zplCarregar(etq.sku);
+}
+
+// Cria/atualiza as etiquetas do Full a partir dos itens + anúncios do ML
+async function etqGerarDoML(fullId, op) {
+  op = op || {};
+  const f = FULLS_DATA[fullId];
+  if (!f) return;
+  // unidades por SKU (o mesmo SKU pode estar em mais de uma linha do Full)
+  const porSku = new Map();
+  for (const it of (f.itens || [])) {
+    const sku = String(it.codigo || '').trim();
+    if (!sku) continue;
+    const k = _envNorm(sku);
+    const at = porSku.get(k) || { sku, total: 0, nome: it.nome };
+    at.total += _unidadesItemEnvio(it);
+    porSku.set(k, at);
+  }
+  try {
+    await mlCatalogo(false);
+    // produto que acabou de entrar num envio só ganha código ML no ML → aí sim busca de novo
+    if (op.forcar && [...porSku.values()].some(x => !mlProdutoDoSku(x.sku)?.inventory_id)) await mlCatalogo(true);
+  } catch (e) { if (!op.silencioso) showToast('❌ Não consegui ler os anúncios do ML: ' + e.message); return; }
+  await etqCarregar(fullId);                       // relê do banco: outro PC pode ter gerado agora
+  const arr = etqGetData(fullId);
+  const agora = new Date().toISOString();
+  let novas = 0, atualizadas = 0;
+  const semCodigo = [];
+  for (const { sku, total, nome } of porSku.values()) {
+    if (!total) continue;
+    const it = { nome };
+    const p = mlProdutoDoSku(sku);
+    const existente = arr.find(e => _envNorm(_skuResolvido(e.sku)) === _envNorm(sku)
+      || (p?.inventory_id && (e.inv === p.inventory_id || String(e.descricao || '').trim() === p.inventory_id)));
+    if (!p || !p.inventory_id) semCodigo.push(sku);
+    if (existente) {
+      // completa o código ML de etiqueta antiga/sem código, sem mexer no que já foi impresso
+      if (p?.inventory_id && !existente.inv) {
+        existente.inv = p.inventory_id; existente.titulo = p.titulo_etiqueta || p.titulo; existente.variacao = p.variacao || '';
+        existente.descricao = existente.descricao || p.titulo_etiqueta; atualizadas++;
+      }
+      // quantidade do item mudou no Full → acompanha (só nas etiquetas criadas pelo Outbox)
+      if (existente.origem === 'ml' && existente.total !== total) { existente.total = total; atualizadas++; }
+      continue;
+    }
+    arr.push({
+      id: 'etq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6), sku, total, impressas: 0, criadoEm: agora,
+      descricao: p?.titulo_etiqueta || it.nome || sku, inv: p?.inventory_id || '', titulo: p?.titulo_etiqueta || p?.titulo || '', variacao: p?.variacao || '', origem: 'ml',
+    });
+    novas++;
+  }
+  if (novas || atualizadas) {
+    etqSetData(fullId, arr);
+    await etqSalvar(fullId);
+  }
+  if (window._fdFullId === fullId) etqRenderSecao(fullId);
+  if (!op.silencioso || semCodigo.length) {
+    const partes = [];
+    if (novas) partes.push(`${novas} SKU(s) adicionados`);
+    if (atualizadas) partes.push(`${atualizadas} atualizados com código ML`);
+    if (semCodigo.length) partes.push(`sem código ML ainda: ${semCodigo.slice(0, 4).join(', ')}${semCodigo.length > 4 ? '…' : ''}`);
+    showToast((semCodigo.length ? '⚠️ ' : '🏷 ') + (partes.join(' · ') || 'Etiquetas já estavam em dia'));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BIPE DA EMBALAGEM ANTES DE IMPRIMIR
+// Confere que o produto na mão é o do SKU. Código de referência: GTIN do anúncio no ML e
+// código de barras do catálogo do Outbox. Sem nenhum cadastrado, o 1º bipe cadastra.
+// ══════════════════════════════════════════════════════════════════════
+// Normaliza: só dígitos → sem zeros à esquerda (EAN-13 = GTIN-14 com 0); alfanumérico → maiúsculo
+const _codNorm = c => { c = String(c || '').trim().toUpperCase().replace(/\s+/g, ''); return /^\d+$/.test(c) ? c.replace(/^0+/, '') : c; };
+const _ehEtiquetaML = c => /^[A-Z]{4}\d{5}$/.test(c);            // código ML impresso na etiqueta, não é da embalagem
+const _codValido = c => c.length >= 6 && !_ehEtiquetaML(c);
+const _listaCodigos = txt => String(txt || '').split(/[\s,;|\/]+/).map(_codNorm).filter(_codValido);
+function _codigosDoCatalogo(skuObj) { return _listaCodigos(skuObj?.ean); }
+// Mapa código → SKUs (anúncios do ML + catálogo do Outbox)
+function _mapaCodigos() {
+  const m = new Map();
+  const add = (cod, sku, fonte) => { if (!cod) return; const a = m.get(cod) || []; if (!a.some(x => x.sku === sku)) a.push({ sku, fonte }); m.set(cod, a); };
+  (_mlCat?.produtos || []).forEach(p => _listaCodigos(p.gtin).forEach(c => add(c, _envNorm(p.sku), 'ml')));
+  (SKU_DB || []).forEach(s => _codigosDoCatalogo(s).forEach(c => add(c, _envNorm(s.sku), 'cat')));
+  return m;
+}
+function _codigosEsperados(sku, mapa) {
+  const k = _envNorm(sku);
+  const p = mlProdutoDoSku(sku);
+  const doMl = _listaCodigos(p?.gtin);
+  // código do catálogo que o ML diz ser de OUTRO produto não vale (ex.: 110v × 220v)
+  const doCat = _codigosDoCatalogo(_skuDb(k)).filter(c => !doMl.length || !(mapa.get(c) || []).some(x => x.fonte === 'ml' && x.sku !== k));
+  return new Set([...doMl, ...doCat]);
+}
+async function _envGravarCodigo(sku, codigo, titulo) {
+  const k = _envNorm(sku);
+  const sk = _skuDb(k);
+  if (sk) {
+    const antigos = String(sk.ean || '').split(/\s*\/\s*/).map(x => x.trim()).filter(Boolean);
+    const ean = [codigo, ...antigos.filter(x => x !== codigo)].join(' / ');
+    const r = await db.saveSku({ ...sk, ean });
+    if (r?.error) { showToast('⚠️ Não gravei o código no catálogo: ' + r.error.message); return false; }
+    sk.ean = ean;
+  } else {
+    const novo = { sku: _skuResolvido(sku), ean: codigo, descricao: titulo || _skuResolvido(sku), galpao: 'LogBox', comp: 0, larg: 0, altu: 0, peso: 0, qtdecx: 1, tempo: 0 };
+    const r = await db.saveSku(novo);
+    if (r?.error) { showToast('⚠️ Não gravei o código no catálogo: ' + r.error.message); return false; }
+    SKU_DB.push({ ...novo, _id: r.id, vol: 0 });
+  }
+  return true;
+}
+// Abre a tela de bipe. Resolve true (pode imprimir) ou false (cancelou).
+let _etqBipeAberto = false;
+function etqConfirmarProduto(sku, info) {
+  info = info || {};
+  if (_etqBipeAberto) return Promise.resolve(false);     // já tem uma conferência aberta (clique duplo)
+  _etqBipeAberto = true;
+  return new Promise(async resolve0 => {
+    const resolve = v => { _etqBipeAberto = false; resolve0(v); };
+    const espera = document.createElement('div');
+    espera.className = 'etq-bipe-ov';
+    espera.innerHTML = '<div class="etq-bipe-box"><div class="etq-bipe-tit">Conferindo cadastro do produto…</div></div>';
+    document.body.appendChild(espera);
+    // sem ML (ou lento) segue só com o catálogo do Outbox
+    try { await Promise.race([mlCatalogo(), new Promise((_, r) => setTimeout(() => r(new Error('tempo')), 8000))]); } catch (e) {}
+    espera.remove();
+    const mapa = _mapaCodigos();
+    const k = _envNorm(_skuResolvido(sku));
+    const esperados = _codigosEsperados(k, mapa);
+    const ov = document.createElement('div');
+    ov.className = 'etq-bipe-ov';
+    ov.innerHTML = `<div class="etq-bipe-box">
+      <div class="etq-bipe-tit">🔎 Confirme o produto antes de imprimir</div>
+      <div class="etq-bipe-sku">${_envEsc(_skuResolvido(sku))}</div>
+      <div class="etq-bipe-desc">${_envEsc(info.titulo || mlProdutoDoSku(k)?.titulo || _skuDb(k)?.descricao || '')}</div>
+      ${info.qtd ? `<div class="etq-bipe-qtd">${_envFmt(info.qtd)} etiquetas</div>` : ''}
+      <div class="etq-bipe-instr">Bipe o código de barras da <b>embalagem</b> do produto</div>
+      <input class="etq-bipe-inp" autocomplete="off" inputmode="numeric" placeholder="aguardando bipe…">
+      <div class="etq-bipe-msg">${esperados.size ? '' : 'Este SKU ainda não tem código de barras cadastrado — o primeiro bipe vai cadastrar.'}</div>
+      <div class="etq-bipe-acoes"><button class="btn btn-ghost btn-sm" data-a="cancelar">Cancelar</button></div>
+    </div>`;
+    document.body.appendChild(ov);
+    const inp = ov.querySelector('.etq-bipe-inp');
+    const msg = ov.querySelector('.etq-bipe-msg');
+    const acoes = ov.querySelector('.etq-bipe-acoes');
+    let fim = false;
+    const fechar = ok => { if (fim) return; fim = true; ov.remove(); resolve(ok); };
+    const foco = () => setTimeout(() => { if (!fim) inp.focus(); }, 30);
+    const erro = (html, extra) => {
+      msg.className = 'etq-bipe-msg erro'; msg.innerHTML = html;
+      ov.querySelector('.etq-bipe-box').classList.remove('tremer'); void ov.offsetWidth; ov.querySelector('.etq-bipe-box').classList.add('tremer');
+      try { _somErroForte(); } catch (e) {}
+      acoes.innerHTML = '<button class="btn btn-ghost btn-sm" data-a="cancelar">Cancelar</button>' + (extra || '');
+      inp.value = ''; foco();
+    };
+    const liberarDigitandoSku = codigo => {
+      const r = prompt(`Para liberar mesmo assim e corrigir o cadastro, digite o SKU ${_skuResolvido(sku)}:`);
+      if (r == null) { foco(); return; }
+      if (_envNorm(r) !== k) { showToast('SKU digitado não confere'); foco(); return; }
+      _envGravarCodigo(k, codigo, info.titulo).then(() => { try { _somSucesso(); } catch (e) {} fechar(true); });
+    };
+    ov.addEventListener('click', ev => {
+      const a = ev.target?.dataset?.a;
+      if (a === 'cancelar') fechar(false);
+      else if (a === 'gravar') { const c = ev.target.dataset.c; _envGravarCodigo(k, c, info.titulo).then(ok => { if (ok) { try { _somSucesso(); } catch (e) {} fechar(true); } else foco(); }); }
+      else if (a === 'liberar') liberarDigitandoSku(ev.target.dataset.c);
+      else foco();
+    });
+    inp.addEventListener('keydown', ev => {
+      if (ev.key === 'Escape') { fechar(false); return; }
+      if (ev.key !== 'Enter') return;
+      ev.preventDefault();
+      const lido = String(inp.value || '').trim();
+      if (!lido) return;
+      const c = _codNorm(lido);
+      if (_ehEtiquetaML(c)) { erro(`Isso é o código de uma <b>etiqueta do ML</b> (${_envEsc(lido)}). Bipe o código de barras da <b>embalagem</b> do produto.`); return; }
+      if (!_codValido(c)) { erro(`Código curto demais (<b>${_envEsc(lido)}</b>). Bipe o código de barras da embalagem.`); return; }
+      if (esperados.has(c)) { try { _somSucesso(); } catch (e) {} msg.className = 'etq-bipe-msg ok'; msg.textContent = '✓ Produto confere'; setTimeout(() => fechar(true), 350); return; }
+      const outros = (mapa.get(c) || []).filter(x => x.sku !== k);
+      if (outros.length && esperados.size) { erro(`❌ PRODUTO ERRADO — esse código é do SKU <b>${_envEsc(outros.map(x => x.sku).join(', '))}</b>`); return; }
+      if (outros.length) {   // este SKU não tem código próprio: pode ser kit/embalagem compartilhada — só libera digitando o SKU
+        erro(`⚠️ Esse código está cadastrado no SKU <b>${_envEsc(outros.map(x => x.sku).join(', '))}</b>. Confira o produto.`,
+          `<button class="btn btn-ghost btn-sm" data-a="liberar" data-c="${_envEsc(c)}" style="color:var(--orange)">É o produto certo — liberar</button>`);
+        return;
+      }
+      if (!esperados.size) {
+        msg.className = 'etq-bipe-msg'; msg.innerHTML = `Código lido: <b>${_envEsc(lido)}</b>. Gravar como código de barras de <b>${_envEsc(_skuResolvido(sku))}</b>?`;
+        acoes.innerHTML = `<button class="btn btn-ghost btn-sm" data-a="cancelar">Cancelar</button><button class="btn btn-primary btn-sm" data-a="gravar" data-c="${_envEsc(c)}">✓ Gravar e imprimir</button>`;
+        inp.value = '';
+        return;
+      }
+      erro(`❌ O código <b>${_envEsc(lido)}</b> não é o cadastrado para este SKU. Confira se pegou o produto certo (voltagem, cor, modelo).`,
+        `<button class="btn btn-ghost btn-sm" data-a="liberar" data-c="${_envEsc(c)}" style="color:var(--orange)">É o produto certo — corrigir cadastro</button>`);
+    });
+    foco();
+  });
+}
 
 </script>
 
@@ -11927,9 +12844,10 @@ const FULL_ESTOQUE_API = 'https://kdpxhbvndbzszynvrafe.supabase.co/functions/v1/
 let _efDados = null;
 
 function switchFullsTab(tab, btn) {
-  document.querySelectorAll('#fullsTab-agenda,#fullsTab-estoque,#fullsTab-espelho,#fullsTab-mldeposito,#fullsTab-envios').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#fullsTab-agenda,#fullsTab-novoenvio,#fullsTab-estoque,#fullsTab-espelho,#fullsTab-mldeposito,#fullsTab-envios').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   document.getElementById('fullsPane-agenda').style.display     = tab==='agenda'     ? '' : 'none';
+  document.getElementById('fullsPane-novoenvio').style.display  = tab==='novoenvio'  ? '' : 'none';
   document.getElementById('fullsPane-estoque').style.display    = tab==='estoque'    ? '' : 'none';
   document.getElementById('fullsPane-espelho').style.display    = tab==='espelho'    ? '' : 'none';
   document.getElementById('fullsPane-mldeposito').style.display = tab==='mldeposito' ? '' : 'none';
@@ -11937,6 +12855,7 @@ function switchFullsTab(tab, btn) {
   if (tab === 'estoque' || tab === 'espelho') carregarEstoqueFull(false);
   if (tab === 'mldeposito') carregarMlDeposito(false);
   if (tab === 'envios') renderEnviados();
+  if (tab === 'novoenvio') { if (_mlCat && _envVendas) { envRender(); _envCarregarEspelho().then(envRender).catch(()=>{}); } else envCarregar(false); }
 }
 
 function switchEstoqueFullSub(sub, btn) {
