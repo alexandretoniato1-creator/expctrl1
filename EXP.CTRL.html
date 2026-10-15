@@ -1428,7 +1428,7 @@ select:focus{border-color:var(--accent)}
                       <th>Produto</th>
                       <th class="env-num" title="Estoque no galpão (Magis5)">Galpão</th>
                       <th class="env-num" title="Disponível no Full do ML">Full ML</th>
-                      <th class="env-num" title="Unidades em Fulls do Outbox que o ML ainda não recebeu: abertos + enviados aguardando recebimento (passe o mouse no número para ver os fulls)">Entrada pendente</th>
+                      <th class="env-num" title="Unidades em Fulls abertos no Outbox, ainda no galpão (passe o mouse no número para ver os fulls)">Entrada pendente</th>
                       <th class="env-num" title="Unidades vendidas no ML nos últimos 30 dias (barras = semanas)">Vendas 30d</th>
                       <th style="text-align:center" title="(Full + entrada pendente) ÷ venda média por dia">Cobertura</th>
                       <th style="text-align:center" title="Curva ABC pelas vendas de 30 dias">Curva</th>
@@ -6502,7 +6502,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 51;
+const APP_VERSAO = 52;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -11106,7 +11106,6 @@ async function envCarregar(forcar) {
     if (btn) btn.disabled = false;
   }
   if (_mlCat?.avisos?.length) avisos.push('ML incompleto (' + _mlCat.avisos.join(', ') + ') — clique em Atualizar de novo');
-  if (_envPend?.semTabela) avisos.push('entrada pendente mostra só os Fulls abertos (falta criar a tabela de recebimentos)');
   if (_envVendas?.erros?.length) avisos.push(`vendas de ${_envVendas.erros.length} dia(s) não vieram — total de 30 dias está menor`);
   if (st) {
     const quando = _mlCat ? new Date(_mlCat.geradoEm || _mlCat.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -11126,72 +11125,32 @@ function _unidadesItemEnvio(it) {
   }
   return _unidadesItem(it);
 }
-// ── ENTRADA PENDENTE (o que já está num Full e o ML ainda não recebeu) ──
-// = Fulls abertos no Outbox + Fulls enviados cujo envio o ML ainda não terminou de receber.
-// Recebimentos vêm de ml_full_operacoes (operações INBOUND_RECEPTION/ADJUSTMENT com o nº do envio),
-// gravadas pela função ml-full-operacoes a partir das notificações do ML.
-let _envPend = null;   // { porSku: Map(SKU→{total, partes:[{id,un,rec,tipo}]}), semTabela, cobertura }
-const _envNumeroEnvio = id => (String(id || '').match(/^(\d{7,9})/) || [])[1] || null;
-function _envDataBr(s) { const m = String(s || '').match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/); return m ? new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)) : null; }
+// ── ENTRADA PENDENTE: o que já está em Fulls abertos no Outbox (ainda no galpão) ──
+// Ao marcar o Full como enviado ele sai da conta. Quantidade = etiquetas do Full (= o que vai para o ML);
+// SKU sem etiqueta usa a quantidade do item.
+let _envPend = null;   // { porSku: Map(SKU→{total, partes:[{id,un}]}) }
 async function _envCarregarPendentes() {
-  const desde = new Date(Date.now() - 45 * 864e5).toISOString();
-  let ops = [], semTabela = false, cobertura = null;
-  const r = await _sbTodasPaginas(() => _sb.from('ml_full_operacoes').select('inventory_id,inbound_id,quantidade,data,tipo').in('tipo', ['INBOUND_RECEPTION', 'ADJUSTMENT']).gte('data', desde).order('data'));
-  if (r.error) semTabela = true;
-  else {
-    ops = (r.data || []).filter(o => o.inbound_id);
-    const { data: prim } = await _sb.from('ml_full_operacoes').select('data').order('data').limit(1);
-    cobertura = prim && prim[0] ? new Date(prim[0].data) : null;
-  }
-  // recebido por envio e por código ML
-  const receb = new Map();
-  ops.forEach(o => {
-    const n = String(o.inbound_id);
-    const at = receb.get(n) || { porInv: new Map(), ultima: 0 };
-    at.porInv.set(o.inventory_id, (at.porInv.get(o.inventory_id) || 0) + (Number(o.quantidade) || 0));
-    at.ultima = Math.max(at.ultima, new Date(o.data).getTime());
-    receb.set(n, at);
-  });
-  // Fulls que entram na conta
-  const lim = Date.now() - 30 * 864e5;
   const abertos = Object.values(FULLS_DATA || {}).filter(f => derivarMarketplace(f.destino) === 'ML' || f.marketplace === 'ML');
-  const enviados = semTabela || !cobertura ? [] : (FULLS_ENVIADOS || []).filter(f => {
-    if (derivarMarketplace(f.destino) !== 'ML') return false;
-    const d = _envDataBr(f.enviadoEm);
-    return d && d.getTime() >= lim && d >= cobertura && _envNumeroEnvio(f.id);
-  });
-  // quantidade real do envio: etiquetas do Full (= o que foi para o ML); sem etiquetas, os itens
-  const ids = [...abertos, ...enviados].map(f => f.id);
+  const ids = abertos.map(f => f.id);
   const etqPorFull = new Map();
   for (let i = 0; i < ids.length; i += 100) {
     const { data } = await _sb.from('full_etiquetas').select('full_id,dados').in('full_id', ids.slice(i, i + 100));
     (data || []).forEach(e => { try { etqPorFull.set(e.full_id, JSON.parse(e.dados || '[]')); } catch (x) {} });
   }
-  const unidadesDoFull = f => {
+  const porSku = new Map();
+  abertos.forEach(f => {
     const m = new Map();
     (etqPorFull.get(f.id) || []).forEach(e => { const k = _envNorm(_skuResolvido(e.sku)); if (k) m.set(k, (m.get(k) || 0) + (Number(e.total) || 0)); });
-    const comEtq = new Set(m.keys());          // SKU sem etiqueta no Full: vale a quantidade do item
+    const comEtq = new Set(m.keys());
     (f.itens || []).forEach(it => { const k = _envNorm(it.codigo); if (k && !comEtq.has(k)) m.set(k, (m.get(k) || 0) + _unidadesItemEnvio(it)); });
-    return m;
-  };
-  const porSku = new Map();
-  const somar = (k, parte) => { if (parte.un <= 0) return; const a = porSku.get(k) || { total: 0, partes: [] }; a.total += parte.un; a.partes.push(parte); porSku.set(k, a); };
-  const recebidoDe = (n, k) => {
-    const rc = n && receb.get(n); if (!rc) return 0;
-    const p = mlProdutoDoSku(k);
-    return (p?.inventarios || (p?.inventory_id ? [p.inventory_id] : [])).reduce((s, inv) => s + (rc.porInv.get(inv) || 0), 0);
-  };
-  abertos.forEach(f => {
-    const n = _envNumeroEnvio(f.id);
-    unidadesDoFull(f).forEach((un, k) => { const rec = recebidoDe(n, k); somar(k, { id: f.id, un: Math.max(0, un - rec), rec, tipo: 'aberto' }); });
+    m.forEach((un, k) => {
+      if (un <= 0) return;
+      const a = porSku.get(k) || { total: 0, partes: [] };
+      a.total += un; a.partes.push({ id: f.id, un });
+      porSku.set(k, a);
+    });
   });
-  enviados.forEach(f => {
-    const n = _envNumeroEnvio(f.id);
-    const rc = receb.get(n);
-    if (rc && Date.now() - rc.ultima > 3 * 864e5) return;     // ML terminou de receber há mais de 3 dias: envio fechado
-    unidadesDoFull(f).forEach((un, k) => { const rec = recebidoDe(n, k); somar(k, { id: f.id, un: Math.max(0, un - rec), rec, tipo: 'enviado', em: f.enviadoEm }); });
-  });
-  _envPend = { porSku, semTabela, cobertura };
+  _envPend = { porSku };
 }
 
 function _envLinhas() {
@@ -11312,7 +11271,7 @@ function _envLinhaHtml(l) {
     </div></div></td>
     <td class="env-num">${l.galpao == null ? '—' : _envFmt(l.galpao)}</td>
     <td class="env-num"><b>${l.full == null ? (p.inventory_id ? '<span title="O ML não respondeu o estoque deste produto — clique em Atualizar">?</span>' : '—') : _envFmt(l.full)}</b>${l.transf ? `<div class="env-sub" title="Unidades sendo transferidas entre centros do ML">${_envFmt(l.transf)} em transf.</div>` : ''}</td>
-    <td class="env-num" title="${_envEsc(l.pendPartes.map(x => `${x.id}: ${x.un} un ${x.tipo === 'aberto' ? '(Full ainda no galpão)' : `(enviado ${String(x.em || '').slice(0, 5)}${x.rec ? `, ML já recebeu ${x.rec}` : ', ML ainda não recebeu'})`}`).join('\n'))}">${l.caminho ? `<b>${_envFmt(l.caminho)}</b><div class="env-sub">${l.pendPartes.length} full${l.pendPartes.length > 1 ? 's' : ''}${l.pendPartes.some(x => x.tipo === 'enviado') ? ' · em trânsito' : ''}</div>` : '<span style="color:var(--muted)">—</span>'}</td>
+    <td class="env-num" title="${_envEsc(l.pendPartes.map(x => `${x.id}: ${x.un} un`).join('\n'))}">${l.caminho ? `<b>${_envFmt(l.caminho)}</b><div class="env-sub">${l.pendPartes.length} full${l.pendPartes.length > 1 ? 's' : ''}</div>` : '<span style="color:var(--muted)">—</span>'}</td>
     <td class="env-num"><div class="env-vendas"><b>${_envFmt(l.v30)}</b><span class="env-bars">${barras}</span></div><div class="env-sub">${l.v30 ? (l.v30 / 30).toFixed(1).replace('.', ',') + '/dia' : ''}</div></td>
     <td style="text-align:center">${cobHtml}</td>
     <td style="text-align:center"><span class="env-curva c${l.curva}">${l.curva}</span></td>
