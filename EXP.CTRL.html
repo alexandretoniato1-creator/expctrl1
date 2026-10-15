@@ -1017,6 +1017,17 @@ select:focus{border-color:var(--accent)}
 .etq-bipe-msg.erro{color:var(--red);font-weight:700}
 .etq-bipe-msg.ok{color:var(--green);font-weight:800;font-size:16px}
 .etq-bipe-acoes{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.cal-sku-wrap{position:relative;display:flex;align-items:center}
+.cal-sku-wrap input{font-size:11px;padding:5px 24px 5px 8px;width:150px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;outline:none}
+.cal-sku-wrap input.on{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.cal-sku-wrap button{position:absolute;right:4px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 3px}
+.cal-full-card.cal-sku-miss{opacity:.28;filter:grayscale(.6)}
+.cal-full-card.cal-sku-hit{box-shadow:0 0 0 2px var(--green),0 4px 14px rgba(63,185,80,.25)}
+.cal-sku-tag{margin-top:4px;font-size:10px;font-family:'DM Mono',monospace;font-weight:700;color:var(--green);background:rgba(63,185,80,.12);border-radius:5px;padding:2px 6px;display:inline-block}
+.cal-sku-resumo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:rgba(63,185,80,.07);border:1px solid rgba(63,185,80,.3);border-radius:9px;padding:8px 12px;margin-bottom:10px;font-size:12px}
+.cal-sku-resumo.vazio{background:var(--surface2);border-color:var(--border2);color:var(--muted)}
+.cal-sku-chip{font-family:'DM Mono',monospace;font-size:11px;padding:3px 8px;border-radius:12px;border:1px solid var(--border2);background:var(--surface);color:var(--text);cursor:pointer}
+.cal-sku-chip:hover{border-color:var(--green)}
 </style>
 </head>
 <body>
@@ -1265,10 +1276,12 @@ select:focus{border-color:var(--accent)}
                 <div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--muted)"></div>Pendente</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:#e07a30"></div>Produzindo</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--purple)"></div>Conferência</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--green)"></div>Pronto</div><div style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted2)"><div style="width:4px;height:12px;border-radius:2px;background:var(--red)"></div>Atrasado</div>
               </div>
               <select id="calFiltroMkt" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Todos MKT</option><option value="ML">ML</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok</option><option value="Magalu">Magalu</option></select>
+              <div class="cal-sku-wrap"><input id="calFiltroSku" list="calSkuLista" placeholder="🔎 SKU nos fulls" oninput="renderCal()" onkeydown="if(event.key==='Escape'){this.value='';renderCal();}" autocomplete="off"><button title="Limpar" onclick="document.getElementById('calFiltroSku').value='';renderCal()">✕</button><datalist id="calSkuLista"></datalist></div>
               <select id="calFiltroTipo" onchange="renderCal()" style="font-size:11px;padding:5px 8px"><option value="">Coleta + Envio</option><option value="Coleta">Coleta ML</option><option value="Envio próprio">Envio próprio</option></select>
               <button class="btn btn-primary btn-sm" onclick="openModal('modalFull')">+ Novo Full</button>
             </div>
           </div>
+          <div id="calSkuResumo"></div>
           <div class="cal-grid" id="calGrid"></div>
 
           <!-- LISTA MOBILE DE FULLS (visível só em mobile) -->
@@ -1352,9 +1365,9 @@ select:focus{border-color:var(--accent)}
                       <th>Produto</th>
                       <th class="env-num" title="Estoque no galpão (Magis5)">Galpão</th>
                       <th class="env-num" title="Disponível no Full do ML">Full ML</th>
-                      <th class="env-num" title="Unidades em Fulls abertos no Outbox (ainda não enviados)">A caminho</th>
+                      <th class="env-num" title="Unidades em Fulls do Outbox que o ML ainda não recebeu: abertos + enviados aguardando recebimento (passe o mouse no número para ver os fulls)">Entrada pendente</th>
                       <th class="env-num" title="Unidades vendidas no ML nos últimos 30 dias (barras = semanas)">Vendas 30d</th>
-                      <th style="text-align:center" title="(Full + a caminho) ÷ venda média por dia">Cobertura</th>
+                      <th style="text-align:center" title="(Full + entrada pendente) ÷ venda média por dia">Cobertura</th>
                       <th style="text-align:center" title="Curva ABC pelas vendas de 30 dias">Curva</th>
                       <th style="text-align:center">Enviar (un.)</th>
                     </tr></thead>
@@ -3222,6 +3235,8 @@ function renderCalMobile(){
   // o filtro do topo é de MARKETPLACE (ML, Amazon…) — antes comparava com o tipo de envio e nunca achava nada
   if(filtroEmpresa) filtered = filtered.filter(f=>derivarMarketplace(f.destino)===filtroEmpresa);
   if(_calMobileFilter) filtered = filtered.filter(f=>_stFull(f)===_calMobileFilter);
+  const _skuMob = _calSkuFiltro();
+  if(_skuMob) filtered = filtered.filter(f=>_calItensDoSku(f.id, _skuMob).length);
 
   // ── Helpers de data ───────────────────────────────
   // agendado pode ser "DD/MM/YYYY" ou "YYYY-MM-DD" ou ""
@@ -4462,8 +4477,48 @@ function _semaforoHtml(id, dateKey){
   </div>`;
 }
 
+// ── Filtro por SKU na agenda: destaca os fulls que têm o SKU e apaga os demais ──
+function _calSkuFiltro(){ return String(document.getElementById('calFiltroSku')?.value||'').trim().toUpperCase(); }
+// Itens do Full que batem com o SKU digitado (exato; com 3+ letras também vale "contém")
+function _calItensDoSku(fullId, alvo){
+  if (!alvo) return [];
+  const itens = (FULLS_DATA[fullId]?.itens)||[];
+  const exatos = itens.filter(it => String(it.codigo||'').trim().toUpperCase() === alvo);
+  if (exatos.length) return exatos;
+  return alvo.length >= 3 ? itens.filter(it => String(it.codigo||'').toUpperCase().includes(alvo)) : [];
+}
+function _calSkuTexto(itens){
+  const cx = itens.reduce((s,it)=>s+(parseInt(it.qtde)||0),0);
+  const un = itens.reduce((s,it)=>s+(typeof _unidadesItemEnvio==='function'?_unidadesItemEnvio(it):_unidadesItem(it)),0);
+  const skus = [...new Set(itens.map(it=>it.codigo))];
+  return `${skus.length>1?skus.length+' SKUs':skus[0]} · ${cx} cx${un&&un!==cx?' · '+un.toLocaleString('pt-BR')+' un':''}`;
+}
+function _calSkuAtualizarLista(){
+  const dl = document.getElementById('calSkuLista'); if (!dl) return;
+  const skus = new Set();
+  Object.values(FULLS_DATA||{}).forEach(f => (f.itens||[]).forEach(it => { if (it.codigo) skus.add(String(it.codigo).trim()); }));
+  const html = [...skus].sort().map(s => `<option value="${s.replace(/"/g,'&quot;')}">`).join('');
+  if (dl.innerHTML !== html) dl.innerHTML = html;
+}
+function _calSkuRenderResumo(alvo){
+  const el = document.getElementById('calSkuResumo'); if (!el) return;
+  const inp = document.getElementById('calFiltroSku'); if (inp) inp.classList.toggle('on', !!alvo);
+  if (!alvo) { el.innerHTML = ''; return; }
+  const achados = CAL_FULLS.map(c => ({ c, itens: _calItensDoSku(c.id, alvo) })).filter(x => x.itens.length);
+  if (!achados.length) { el.innerHTML = `<div class="cal-sku-resumo vazio">Nenhum full aberto tem <b>${alvo.replace(/</g,'&lt;')}</b></div>`; return; }
+  const p = k => { const a=String(k||'').split('/'); return a.length===3 ? new Date(+a[2],+a[1]-1,+a[0]).getTime() : 9e15; };
+  achados.sort((a,b) => p(a.c.dateKey) - p(b.c.dateKey));
+  const todos = achados.flatMap(x => x.itens);
+  el.innerHTML = `<div class="cal-sku-resumo"><span>🔎 <b>${achados.length} full${achados.length>1?'s':''}</b> com ${_calSkuTexto(todos)} no total:</span>`
+    + achados.map(x => `<button class="cal-sku-chip" onclick="openDetail('${x.c.id}')" title="${_calSkuTexto(x.itens)}">${x.c.id} · ${x.c.dateKey ? x.c.dateKey.slice(0,5) : (x.c.dia||'—')} · ${x.itens.reduce((s,it)=>s+(parseInt(it.qtde)||0),0)} cx</button>`).join('')
+    + `</div>`;
+}
+
 function renderCal(){
   _semaforoCarregar();
+  const skuAlvo = _calSkuFiltro();
+  _calSkuAtualizarLista();
+  _calSkuRenderResumo(skuAlvo);
   const filtroMkt  = document.getElementById('calFiltroMkt')?.value||'';
   const filtroTipo = document.getElementById('calFiltroTipo')?.value||'';
   // Build 3 weeks of dates
@@ -4496,7 +4551,9 @@ function renderCal(){
       const cards = fulls.map(f=>{
         const stx=_stFull(f);
         const sc=statusCalClass(stx);
-        return `<div class="cal-full-card ${sc}"
+        const itSku = skuAlvo ? _calItensDoSku(f.id, skuAlvo) : [];
+        const clsSku = !skuAlvo ? '' : (itSku.length ? ' cal-sku-hit' : ' cal-sku-miss');
+        return `<div class="cal-full-card ${sc}${clsSku}"
           draggable="true"
           ondragstart="onDragStart(event,'${f.id}')"
           ondragend="onDragEnd(event)"
@@ -4507,6 +4564,7 @@ function renderCal(){
           <div style="display:flex;gap:3px;flex-wrap:wrap">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
           <div class="cal-full-dest">📍 ${f.destino||'—'}</div>
           <div class="cal-semaforo">${_semaforoHtml(f.id, f.dateKey || dateKey)}</div>
+          ${itSku.length ? `<div class="cal-sku-tag">🔎 ${_calSkuTexto(itSku)}</div>` : ''}
         </div>`;
       }).join('') || '<div class="cal-empty">—</div>';
 
@@ -6279,7 +6337,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 49;
+const APP_VERSAO = 50;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -10872,11 +10930,13 @@ async function envCarregar(forcar) {
       (forcar || !_envVendas || Date.now() - _envVendas.em > 30 * 60 * 1000) ? _envCarregarVendas(forcar).catch(e => avisos.push('vendas: ' + e.message)) : null,
       _envCarregarEspelho().catch(e => avisos.push('estoque do galpão: ' + e.message)),
     ]);
+    await _envCarregarPendentes().catch(e => avisos.push('entrada pendente: ' + e.message));
   } finally {
     _envCarregando = false;
     if (btn) btn.disabled = false;
   }
   if (_mlCat?.avisos?.length) avisos.push('ML incompleto (' + _mlCat.avisos.join(', ') + ') — clique em Atualizar de novo');
+  if (_envPend?.semTabela) avisos.push('entrada pendente mostra só os Fulls abertos (falta criar a tabela de recebimentos)');
   if (_envVendas?.erros?.length) avisos.push(`vendas de ${_envVendas.erros.length} dia(s) não vieram — total de 30 dias está menor`);
   if (st) {
     const quando = _mlCat ? new Date(_mlCat.geradoEm || _mlCat.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—';
@@ -10896,21 +10956,75 @@ function _unidadesItemEnvio(it) {
   }
   return _unidadesItem(it);
 }
-// Unidades já em Fulls abertos no Outbox (ainda não enviados) — evita mandar em dobro
-function _envEmFullsAbertos() {
-  const m = new Map();
-  Object.values(FULLS_DATA || {}).forEach(f => {
-    if (f.marketplace && f.marketplace !== 'ML') return;
-    (f.itens || []).forEach(it => {
-      const k = _envNorm(it.codigo);
-      m.set(k, (m.get(k) || 0) + _unidadesItemEnvio(it));
-    });
+// ── ENTRADA PENDENTE (o que já está num Full e o ML ainda não recebeu) ──
+// = Fulls abertos no Outbox + Fulls enviados cujo envio o ML ainda não terminou de receber.
+// Recebimentos vêm de ml_full_operacoes (operações INBOUND_RECEPTION/ADJUSTMENT com o nº do envio),
+// gravadas pela função ml-full-operacoes a partir das notificações do ML.
+let _envPend = null;   // { porSku: Map(SKU→{total, partes:[{id,un,rec,tipo}]}), semTabela, cobertura }
+const _envNumeroEnvio = id => (String(id || '').match(/^(\d{7,9})/) || [])[1] || null;
+function _envDataBr(s) { const m = String(s || '').match(/(\d{2})\/(\d{2})\/(\d{4})(?:\s+(\d{2}):(\d{2}))?/); return m ? new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0)) : null; }
+async function _envCarregarPendentes() {
+  const desde = new Date(Date.now() - 45 * 864e5).toISOString();
+  let ops = [], semTabela = false, cobertura = null;
+  const r = await _sbTodasPaginas(() => _sb.from('ml_full_operacoes').select('inventory_id,inbound_id,quantidade,data,tipo').in('tipo', ['INBOUND_RECEPTION', 'ADJUSTMENT']).gte('data', desde).order('data'));
+  if (r.error) semTabela = true;
+  else {
+    ops = (r.data || []).filter(o => o.inbound_id);
+    const { data: prim } = await _sb.from('ml_full_operacoes').select('data').order('data').limit(1);
+    cobertura = prim && prim[0] ? new Date(prim[0].data) : null;
+  }
+  // recebido por envio e por código ML
+  const receb = new Map();
+  ops.forEach(o => {
+    const n = String(o.inbound_id);
+    const at = receb.get(n) || { porInv: new Map(), ultima: 0 };
+    at.porInv.set(o.inventory_id, (at.porInv.get(o.inventory_id) || 0) + (Number(o.quantidade) || 0));
+    at.ultima = Math.max(at.ultima, new Date(o.data).getTime());
+    receb.set(n, at);
   });
-  return m;
+  // Fulls que entram na conta
+  const lim = Date.now() - 30 * 864e5;
+  const abertos = Object.values(FULLS_DATA || {}).filter(f => derivarMarketplace(f.destino) === 'ML' || f.marketplace === 'ML');
+  const enviados = semTabela || !cobertura ? [] : (FULLS_ENVIADOS || []).filter(f => {
+    if (derivarMarketplace(f.destino) !== 'ML') return false;
+    const d = _envDataBr(f.enviadoEm);
+    return d && d.getTime() >= lim && d >= cobertura && _envNumeroEnvio(f.id);
+  });
+  // quantidade real do envio: etiquetas do Full (= o que foi para o ML); sem etiquetas, os itens
+  const ids = [...abertos, ...enviados].map(f => f.id);
+  const etqPorFull = new Map();
+  for (let i = 0; i < ids.length; i += 100) {
+    const { data } = await _sb.from('full_etiquetas').select('full_id,dados').in('full_id', ids.slice(i, i + 100));
+    (data || []).forEach(e => { try { etqPorFull.set(e.full_id, JSON.parse(e.dados || '[]')); } catch (x) {} });
+  }
+  const unidadesDoFull = f => {
+    const m = new Map();
+    (etqPorFull.get(f.id) || []).forEach(e => { const k = _envNorm(_skuResolvido(e.sku)); if (k) m.set(k, (m.get(k) || 0) + (Number(e.total) || 0)); });
+    const comEtq = new Set(m.keys());          // SKU sem etiqueta no Full: vale a quantidade do item
+    (f.itens || []).forEach(it => { const k = _envNorm(it.codigo); if (k && !comEtq.has(k)) m.set(k, (m.get(k) || 0) + _unidadesItemEnvio(it)); });
+    return m;
+  };
+  const porSku = new Map();
+  const somar = (k, parte) => { if (parte.un <= 0) return; const a = porSku.get(k) || { total: 0, partes: [] }; a.total += parte.un; a.partes.push(parte); porSku.set(k, a); };
+  const recebidoDe = (n, k) => {
+    const rc = n && receb.get(n); if (!rc) return 0;
+    const p = mlProdutoDoSku(k);
+    return (p?.inventarios || (p?.inventory_id ? [p.inventory_id] : [])).reduce((s, inv) => s + (rc.porInv.get(inv) || 0), 0);
+  };
+  abertos.forEach(f => {
+    const n = _envNumeroEnvio(f.id);
+    unidadesDoFull(f).forEach((un, k) => { const rec = recebidoDe(n, k); somar(k, { id: f.id, un: Math.max(0, un - rec), rec, tipo: 'aberto' }); });
+  });
+  enviados.forEach(f => {
+    const n = _envNumeroEnvio(f.id);
+    const rc = receb.get(n);
+    if (rc && Date.now() - rc.ultima > 3 * 864e5) return;     // ML terminou de receber há mais de 3 dias: envio fechado
+    unidadesDoFull(f).forEach((un, k) => { const rec = recebidoDe(n, k); somar(k, { id: f.id, un: Math.max(0, un - rec), rec, tipo: 'enviado', em: f.enviadoEm }); });
+  });
+  _envPend = { porSku, semTabela, cobertura };
 }
 
 function _envLinhas() {
-  const abertos = _envEmFullsAbertos();
   const vistos = new Set();
   const linhas = [];
   const add = (sku, p) => {
@@ -10920,13 +11034,14 @@ function _envLinhas() {
     const v = _envVendas?.porSku.get(k);
     const sk = _skuDb(sku);
     const full = p?.full_disponivel ?? null;
-    const caminho = abertos.get(k) || 0;
+    const pend = _envPend?.porSku.get(k);
+    const caminho = pend ? pend.total : 0;
     const v30 = v ? v.u : 0;
     const porDia = v30 / 30;
     const semEstoqueMl = p && p.inventory_id && full == null;      // ML não respondeu o estoque deste produto
     const cobertura = semEstoqueMl ? null : porDia > 0 ? ((full || 0) + caminho) / porDia : (((full || 0) + caminho) > 0 ? Infinity : null);
     linhas.push({
-      sku: p?.sku || sku, k, p, sk, full, caminho,
+      sku: p?.sku || sku, k, p, sk, full, caminho, pendPartes: pend ? pend.partes : [],
       transf: p?.full_transferencia || 0,
       galpao: _envEspelho ? (_envEspelho.get(k) ?? null) : null,
       v30, sem: v ? v.sem : [0, 0, 0, 0, 0], cobertura,
@@ -11002,7 +11117,7 @@ function _envLinhaHtml(l) {
   if (l.cobertura === Infinity) cobHtml = '<span class="env-cob ok" title="sem vendas no período">∞</span>';
   else if (l.cobertura != null) {
     const c = l.cobertura, cls = c < 15 ? 'mal' : c < 30 ? 'medio' : 'ok';
-    cobHtml = `<span class="env-cob ${cls}" title="(Full + a caminho) ÷ venda média por dia">${c >= 999 ? '999+' : Math.round(c)} dias</span>`;
+    cobHtml = `<span class="env-cob ${cls}" title="(Full + entrada pendente) ÷ venda média por dia">${c >= 999 ? '999+' : Math.round(c)} dias</span>`;
   }
   const badges = [];
   if (!l.p) badges.push('<span class="env-badge mal">fora do ML</span>');
@@ -11027,7 +11142,7 @@ function _envLinhaHtml(l) {
     </div></div></td>
     <td class="env-num">${l.galpao == null ? '—' : _envFmt(l.galpao)}</td>
     <td class="env-num"><b>${l.full == null ? (p.inventory_id ? '<span title="O ML não respondeu o estoque deste produto — clique em Atualizar">?</span>' : '—') : _envFmt(l.full)}</b>${l.transf ? `<div class="env-sub" title="Unidades sendo transferidas entre centros do ML">${_envFmt(l.transf)} em transf.</div>` : ''}</td>
-    <td class="env-num">${l.caminho ? _envFmt(l.caminho) : '<span style="color:var(--muted)">—</span>'}</td>
+    <td class="env-num" title="${_envEsc(l.pendPartes.map(x => `${x.id}: ${x.un} un ${x.tipo === 'aberto' ? '(Full ainda no galpão)' : `(enviado ${String(x.em || '').slice(0, 5)}${x.rec ? `, ML já recebeu ${x.rec}` : ', ML ainda não recebeu'})`}`).join('\n'))}">${l.caminho ? `<b>${_envFmt(l.caminho)}</b><div class="env-sub">${l.pendPartes.length} full${l.pendPartes.length > 1 ? 's' : ''}${l.pendPartes.some(x => x.tipo === 'enviado') ? ' · em trânsito' : ''}</div>` : '<span style="color:var(--muted)">—</span>'}</td>
     <td class="env-num"><div class="env-vendas"><b>${_envFmt(l.v30)}</b><span class="env-bars">${barras}</span></div><div class="env-sub">${l.v30 ? (l.v30 / 30).toFixed(1).replace('.', ',') + '/dia' : ''}</div></td>
     <td style="text-align:center">${cobHtml}</td>
     <td style="text-align:center"><span class="env-curva c${l.curva}">${l.curva}</span></td>
@@ -11224,6 +11339,7 @@ async function envConfirmarCriar() {
     _envQtd = {}; _envSalvarRascunho();
     closeModal('modalEnvioCriar');
     renderDashboard(); renderCal(); envRender();
+    _envCarregarPendentes().then(envRender).catch(() => {});
     envAbrirPassos(id, itensPlanilha);
   } finally { if (btn) btn.disabled = false; }
 }
@@ -12855,7 +12971,7 @@ function switchFullsTab(tab, btn) {
   if (tab === 'estoque' || tab === 'espelho') carregarEstoqueFull(false);
   if (tab === 'mldeposito') carregarMlDeposito(false);
   if (tab === 'envios') renderEnviados();
-  if (tab === 'novoenvio') { if (_mlCat && _envVendas) { envRender(); _envCarregarEspelho().then(envRender).catch(()=>{}); } else envCarregar(false); }
+  if (tab === 'novoenvio') { if (_mlCat && _envVendas) { envRender(); Promise.all([_envCarregarEspelho(), _envCarregarPendentes()]).then(envRender).catch(()=>{}); } else envCarregar(false); }
 }
 
 function switchEstoqueFullSub(sub, btn) {
