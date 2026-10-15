@@ -2230,8 +2230,8 @@ select:focus{border-color:var(--accent)}
   <div class="modal" style="max-width:560px">
     <div class="modal-title">Envio <span id="envp-id" style="color:var(--accent);margin-left:6px"></span> criado <button class="modal-close" onclick="closeModal('modalEnvioPassos')">✕</button></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Agora é avisar o Mercado Livre. São 3 passos:</div>
-    <div class="env-passo"><div class="env-passo-n">1</div><div style="flex:1"><b>Baixar a planilha preenchida</b><div class="env-sub" style="text-align:left">Modelo oficial do ML, com SKU, código ML e quantidade de cada produto.</div></div><button class="btn btn-primary btn-sm" onclick="envPassosBaixar()">⬇ Baixar</button></div>
-    <div class="env-passo"><div class="env-passo-n">2</div><div style="flex:1"><b>Subir no Mercado Livre</b><div class="env-sub" style="text-align:left">No ML: <b>Full → Enviar produtos → Adicionar produtos de uma planilha Excel</b>. Anexe o arquivo e clique em <b>Enviar planilha</b>. Depois escolha coleta/data e confirme.</div></div></div>
+    <div class="env-passo"><div class="env-passo-n">1</div><div style="flex:1"><b>Planilha preenchida</b><div class="env-sub" style="text-align:left" id="envp-baixada">Modelo oficial do ML, com SKU, código ML e quantidade de cada produto.</div></div><button class="btn btn-ghost btn-sm" onclick="envPassosBaixar()">⬇ Baixar de novo</button></div>
+    <div class="env-passo"><div class="env-passo-n">2</div><div style="flex:1"><b>Subir no Mercado Livre</b><div class="env-sub" style="text-align:left">Abra a página de upload do Full, anexe a planilha baixada e clique em <b>Enviar planilha</b>. Depois escolha coleta/data e confirme o envio.</div></div><a class="btn btn-primary btn-sm" href="https://myaccount.mercadolivre.com.br/shipping/import/excel/upload" target="_blank" rel="noopener" style="text-decoration:none;white-space:nowrap">Abrir no ML ↗</a></div>
     <div class="env-passo"><div class="env-passo-n">3</div><div style="flex:1"><b>Informar o número do envio criado no ML</b><div class="env-sub" style="text-align:left">O Full passa a se chamar <i>número-ML</i> e as etiquetas que faltavam ganham o código ML.</div>
       <div style="display:flex;gap:6px;margin-top:8px"><input class="form-sel" id="envp-numero" inputmode="numeric" placeholder="ex.: 79041102" style="font-family:'DM Mono',monospace;flex:1" onkeydown="if(event.key==='Enter')envPassosSalvarNumero()"><button class="btn btn-primary btn-sm" onclick="envPassosSalvarNumero()">Salvar</button></div></div></div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalEnvioPassos')">Fazer depois</button></div>
@@ -6502,7 +6502,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 52;
+const APP_VERSAO = 53;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -11348,6 +11348,7 @@ function envRenderResumo(linhas) {
     <div class="env-res-lista">${itens.map(i => `<div><span>${_envEsc(i.sku)}</span><b>${_envFmt(i.unidades)}</b></div>`).join('') || '<div style="color:var(--muted);justify-content:center">Digite as quantidades na tabela</div>'}</div>
     <button class="btn btn-primary" style="width:100%;margin-top:10px" ${itens.length ? '' : 'disabled'} onclick="envAbrirCriar()">✓ Criar envio</button>
     <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px" ${itens.length ? '' : 'disabled'} onclick="envBaixarPlanilha()">⬇ Só baixar a planilha do ML</button>
+    <a class="btn btn-ghost btn-sm" href="https://myaccount.mercadolivre.com.br/shipping/import/excel/upload" target="_blank" rel="noopener" style="width:100%;margin-top:6px;display:block;text-align:center;text-decoration:none;box-sizing:border-box">↗ Abrir upload de planilha no ML</a>
     <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:6px;color:var(--muted)" ${itens.length ? '' : 'disabled'} onclick="envLimpar()">Limpar quantidades</button>`;
 }
 
@@ -11470,6 +11471,10 @@ async function envConfirmarCriar() {
     renderDashboard(); renderCal(); envRender();
     _envCarregarPendentes().then(envRender).catch(() => {});
     envAbrirPassos(id, itensPlanilha);
+    // automático: a planilha já sai baixada junto com a criação do Full
+    await envBaixarPlanilha(id, itensPlanilha);
+    const bx = document.getElementById('envp-baixada');
+    if (bx) bx.innerHTML = '✓ Baixada agora (<b>Envio-Full-ML-' + id.replace(/[^\w.-]+/g, '_') + '.xlsx</b>, na pasta de downloads).';
   } finally { if (btn) btn.disabled = false; }
 }
 
