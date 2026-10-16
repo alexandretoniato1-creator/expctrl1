@@ -1012,6 +1012,18 @@ select:focus{border-color:var(--accent)}
 .etq-bipe-msg.erro{color:var(--red);font-weight:700}
 .etq-bipe-msg.ok{color:var(--green);font-weight:800;font-size:16px}
 .etq-bipe-acoes{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.etq-bipe-cad{font-size:11px;color:var(--muted2);margin-top:8px;font-family:'DM Mono',monospace;line-height:1.6}
+.etq-bipe-cad span{color:var(--muted)}
+.etq-bipe-lido{font-family:'DM Mono',monospace;font-weight:400;color:var(--text)}
+.etq-bipe-dica{display:inline-block;margin-top:6px;font-size:12px;font-weight:400;color:var(--muted2)}
+.etq-bipe-forcar{background:transparent;border:1px solid var(--orange);color:var(--orange)}
+.etq-bipe-forcar.confirmar{background:var(--orange);color:#0a0a0a}
+.sku-bipe-aviso{background:rgba(210,153,34,.1);border:1px solid rgba(210,153,34,.35);border-radius:9px;padding:10px 12px;margin:0 0 12px;font-size:12px}
+.sku-bipe-aviso b{font-family:'DM Mono',monospace}
+.sku-bipe-acoes{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 4px}
+.sku-bipe-ml{font-size:11px;color:var(--muted2);margin-top:4px}
+.sku-bipe-pisca{outline:2px solid var(--orange);outline-offset:1px}
+.etq-div-aviso{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);border-radius:7px;padding:7px 11px;margin:8px 0;font-size:11px;color:var(--orange)}
 .cal-sku-wrap{position:relative;display:flex;align-items:center}
 .cal-sku-wrap input{font-size:11px;padding:5px 24px 5px 8px;width:150px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;outline:none}
 .cal-sku-wrap input.on{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
@@ -6500,7 +6512,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 55;
+const APP_VERSAO = 56;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -10181,6 +10193,10 @@ async function etqSalvar(fullId, op) {
     const r = { id:x.id, sku:x.sku, descricao:x.descricao||'', total:x.total, impressas:imp, criadoEm:x.criadoEm };
     // etiqueta gerada pelo Outbox: código ML, título e variação (b = versão do banco, se esta for antiga)
     ['inv','titulo','variacao','origem'].forEach(c => { const v = x[c] || (b && b[c]); if (v) r[c] = v; });
+    // lotes impressos com código de barras diferente do cadastro (o banco manda; o novo entra no fim)
+    const div = [...((b ? b.divergencias : x.divergencias) || [])];
+    if (op.divergencia && op.divergencia[x.id]) div.push(op.divergencia[x.id]);
+    if (div.length) r.divergencias = div.slice(-30);
     return r;
   });
   // SKUs que outro computador adicionou ao Full continuam lá
@@ -10366,6 +10382,8 @@ async function etqRenderSecao(fullId) {
                 <div class="etq-card-pct-badge ${cls}">${pct}%</div>
               </div>
             </div>
+            ${(etq.divergencias||[]).length?(()=>{ const d=etq.divergencias, u=d[d.length-1], q=d.reduce((a,x)=>a+(x.qtd||0),0);
+              return `<div class="etq-div-aviso" title="${_envEsc(d.map(x=>`${new Date(x.em).toLocaleString('pt-BR')} · ${x.por} · bipou ${x.cod}${x.outroSku?' (do SKU '+x.outroSku+')':''} · ${x.qtd||0} etiquetas`).join('\n'))}">⚠️ ${q.toLocaleString('pt-BR')} etiqueta(s) impressas com código de barras diferente do cadastro — último: <b>${_envEsc(u.cod)}</b>${u.outroSku?' (do SKU '+_envEsc(u.outroSku)+')':''} por ${_envEsc(u.por)} em ${new Date(u.em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`; })():''}
             ${!temZpl?`
             <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px">
               <span>⚠️ Ainda sem código ML para esse SKU — se o envio já foi criado no ML, clique em ⚡ Gerar pelo ML</span>
@@ -10952,7 +10970,8 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   try { zpl = await etqZplDe(etq); } catch (e) { showToast('❌ ' + e.message); return; }
   if (!zpl) { showToast('❌ ZPL não encontrado para o SKU: ' + etq.sku); return; }
   // Antes de imprimir: bipar a embalagem do produto que vai receber as etiquetas
-  if (!(await etqConfirmarProduto(etq.sku, { titulo: etq.titulo || etq.descricao, qtd }))) { showToast('Impressão cancelada'); return; }
+  const infoBipe = { titulo: etq.titulo || etq.descricao, qtd };
+  if (!(await etqConfirmarProduto(etq.sku, infoBipe))) { showToast('Impressão cancelada'); return; }
 
   const blocos = [];
   const regex = /(\^XA[\s\S]*?\^XZ)/gi;
@@ -10967,7 +10986,7 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   if (!impressora) return;
   showToast(`✅ ${qtd} etiquetas → ${impressora}`);
 
-  await etqSalvar(fullId, { delta: { [etq.id]: qtd } });
+  await etqSalvar(fullId, { delta: { [etq.id]: qtd }, divergencia: infoBipe.divergencia ? { [etq.id]: { ...infoBipe.divergencia, qtd } } : null });
   etqFecharLote(etqId);
   etqRenderSecao(fullId);
 }
@@ -11665,7 +11684,56 @@ async function _envGravarCodigo(sku, codigo, titulo) {
   if (typeof oC === 'function') window.confRenderSecao = function(fullId){ const r = oC.apply(this, arguments); if (window._fdFullId === fullId && typeof fdAtualizarPassos === 'function') fdAtualizarPassos(fullId); return r; };
 })();
 
+// De onde vem cada código esperado (pra mostrar ao Max o que está cadastrado e onde corrigir)
+function _codigosEsperadosFontes(sku, mapa) {
+  const k = _envNorm(sku);
+  const esp = _codigosEsperados(k, mapa);
+  const doMl = new Set(_listaCodigos(mlProdutoDoSku(k)?.gtin));
+  return [...esp].map(c => ({ cod: c, fonte: doMl.has(c) ? 'ml' : 'cat' }));
+}
+// Abre o cadastro do SKU no catálogo por cima da tela de bipe, com o código lido à mão
+function _etqAbrirCorrecaoCatalogo(sku, codigoLido, info, aoFechar) {
+  const k = _envNorm(sku);
+  const idx = (SKU_DB || []).findIndex(s => _envNorm(s.sku) === k);
+  if (idx >= 0) editarSku(idx);
+  else {
+    novoSku();
+    document.getElementById('sk-sku').value = _skuResolvido(sku);
+    document.getElementById('sk-desc').value = info.titulo || mlProdutoDoSku(k)?.titulo || _skuResolvido(sku);
+    const g = document.getElementById('sk-galpao'); if (g && !g.value) g.value = 'LogBox';
+  }
+  const modal = document.getElementById('modalSku');
+  modal.style.zIndex = '10001';
+  const gtinMl = _listaCodigos(mlProdutoDoSku(k)?.gtin);
+  const aviso = document.createElement('div');
+  aviso.id = 'skuBipeAviso';
+  aviso.className = 'sku-bipe-aviso';
+  aviso.innerHTML = `<div>Código bipado na embalagem: <b>${_envEsc(codigoLido)}</b></div>
+    <div class="sku-bipe-acoes">
+      <button class="btn btn-primary btn-sm" data-b="trocar">Usar este código</button>
+      <button class="btn btn-ghost btn-sm" data-b="somar" title="Mantém os códigos atuais e acrescenta este (ex.: embalagem nova)">+ Adicionar aos atuais</button>
+    </div>
+    ${gtinMl.length ? `<div class="sku-bipe-ml">No anúncio do ML o código é <b>${_envEsc(gtinMl.join(', '))}</b> — se o errado for o do anúncio, avise o Ale para corrigir no ML.</div>` : ''}
+    <div class="sku-bipe-ml">Depois clique em <b>Salvar SKU</b>: o Outbox volta para a conferência sozinho.</div>`;
+  aviso.addEventListener('click', ev => {
+    const bt = ev.target?.dataset?.b; if (!bt) return;
+    const inp = document.getElementById('sk-ean');
+    if (bt === 'trocar') inp.value = codigoLido;
+    else { const at = String(inp.value || '').split(/\s*\/\s*/).map(x => x.trim()).filter(Boolean).filter(x => _codNorm(x) !== _codNorm(codigoLido)); inp.value = [codigoLido, ...at].join(' / '); }
+    inp.classList.add('sku-bipe-pisca'); setTimeout(() => inp.classList.remove('sku-bipe-pisca'), 900);
+  });
+  modal.querySelector('.modal-title').insertAdjacentElement('afterend', aviso);
+  const obs = new MutationObserver(() => {
+    if (modal.classList.contains('open')) return;
+    obs.disconnect(); aviso.remove(); modal.style.zIndex = '';
+    aoFechar();
+  });
+  obs.observe(modal, { attributes: true, attributeFilter: ['class'] });
+}
+
 // Abre a tela de bipe. Resolve true (pode imprimir) ou false (cancelou).
+// Código diferente do cadastro: avisa, deixa corrigir o catálogo na hora ou imprimir mesmo assim
+// (fica registrado em info.divergencia, que o lote do Full grava na etiqueta).
 let _etqBipeAberto = false;
 function etqConfirmarProduto(sku, info) {
   info = info || {};
@@ -11680,9 +11748,10 @@ function etqConfirmarProduto(sku, info) {
     // sem ML (ou lento) segue só com o catálogo do Outbox
     try { await Promise.race([mlCatalogo(), new Promise((_, r) => setTimeout(() => r(new Error('tempo')), 8000))]); } catch (e) {}
     espera.remove();
-    const mapa = _mapaCodigos();
     const k = _envNorm(_skuResolvido(sku));
-    const esperados = _codigosEsperados(k, mapa);
+    let mapa, esperados, fontes;
+    const recalcular = () => { mapa = _mapaCodigos(); esperados = _codigosEsperados(k, mapa); fontes = _codigosEsperadosFontes(k, mapa); };
+    recalcular();
     const ov = document.createElement('div');
     ov.className = 'etq-bipe-ov';
     ov.innerHTML = `<div class="etq-bipe-box">
@@ -11693,33 +11762,86 @@ function etqConfirmarProduto(sku, info) {
       <div class="etq-bipe-instr">Bipe o código de barras da <b>embalagem</b> do produto</div>
       <input class="etq-bipe-inp" autocomplete="off" inputmode="numeric" placeholder="aguardando bipe…">
       <div class="etq-bipe-msg">${esperados.size ? '' : 'Este SKU ainda não tem código de barras cadastrado — o primeiro bipe vai cadastrar.'}</div>
+      <div class="etq-bipe-cad"></div>
       <div class="etq-bipe-acoes"><button class="btn btn-ghost btn-sm" data-a="cancelar">Cancelar</button></div>
     </div>`;
     document.body.appendChild(ov);
     const inp = ov.querySelector('.etq-bipe-inp');
     const msg = ov.querySelector('.etq-bipe-msg');
+    const cad = ov.querySelector('.etq-bipe-cad');
     const acoes = ov.querySelector('.etq-bipe-acoes');
-    let fim = false;
+    let fim = false, ultimo = null;     // ultimo = { lido, c, outros } do bipe divergente
     const fechar = ok => { if (fim) return; fim = true; ov.remove(); resolve(ok); };
-    const foco = () => setTimeout(() => { if (!fim) inp.focus(); }, 30);
+    const foco = () => setTimeout(() => { if (!fim && ov.style.display !== 'none') inp.focus(); }, 30);
+    const tremer = () => { const bx = ov.querySelector('.etq-bipe-box'); bx.classList.remove('tremer'); void ov.offsetWidth; bx.classList.add('tremer'); try { _somErroForte(); } catch (e) {} };
     const erro = (html, extra) => {
-      msg.className = 'etq-bipe-msg erro'; msg.innerHTML = html;
-      ov.querySelector('.etq-bipe-box').classList.remove('tremer'); void ov.offsetWidth; ov.querySelector('.etq-bipe-box').classList.add('tremer');
-      try { _somErroForte(); } catch (e) {}
+      msg.className = 'etq-bipe-msg erro'; msg.innerHTML = html; cad.innerHTML = '';
+      tremer();
       acoes.innerHTML = '<button class="btn btn-ghost btn-sm" data-a="cancelar">Cancelar</button>' + (extra || '');
       inp.value = ''; foco();
     };
-    const liberarDigitandoSku = codigo => {
-      const r = prompt(`Para liberar mesmo assim e corrigir o cadastro, digite o SKU ${_skuResolvido(sku)}:`);
-      if (r == null) { foco(); return; }
-      if (_envNorm(r) !== k) { showToast('SKU digitado não confere'); foco(); return; }
-      _envGravarCodigo(k, codigo, info.titulo).then(() => { try { _somSucesso(); } catch (e) {} fechar(true); });
+    const mostrarCadastrados = () => {
+      cad.innerHTML = fontes.length
+        ? 'Cadastrado para este SKU: ' + fontes.map(f => `<b>${_envEsc(f.cod)}</b> <span>(${f.fonte === 'ml' ? 'anúncio ML' : 'catálogo'})</span>`).join(' · ')
+        : '';
+    };
+    // Código diferente do cadastro: avisa e oferece corrigir ou seguir
+    const divergente = (lido, c, outros) => {
+      ultimo = { lido, c, outros };
+      const deOutro = outros.length ? `Esse código está cadastrado no SKU <b>${_envEsc(outros.map(x => x.sku).join(', '))}</b>.` : '';
+      const tit = outros.length && esperados.size ? '❌ PRODUTO ERRADO?' : '⚠️ Código de barras diferente do cadastrado';
+      erro(`${tit}<br><span class="etq-bipe-lido">Lido: <b>${_envEsc(lido)}</b></span>${deOutro ? '<br>' + deOutro : ''}<br><span class="etq-bipe-dica">Confira se é o produto certo (voltagem, cor, modelo). Se for, corrija o cadastro ou imprima mesmo assim.</span>`,
+        `<button class="btn btn-ghost btn-sm" data-a="corrigir">✏️ Corrigir no catálogo</button>
+         <button class="btn btn-sm etq-bipe-forcar" data-a="forcar">Imprimir mesmo assim</button>`);
+      mostrarCadastrados();
+    };
+    const imprimirMesmoAssim = bt => {
+      if (!ultimo) return;
+      if (ultimo.outros.length) {   // código de outro SKU: risco alto de produto trocado → digita o SKU
+        const r = prompt(`O código bipado é do SKU ${ultimo.outros.map(x => x.sku).join(', ')}.\nPara imprimir as etiquetas de ${_skuResolvido(sku)} mesmo assim, digite o SKU ${_skuResolvido(sku)}:`);
+        if (r == null) { foco(); return; }
+        if (_envNorm(r) !== k) { showToast('SKU digitado não confere'); foco(); return; }
+      } else if (!bt.classList.contains('confirmar')) {   // código desconhecido: 2º clique confirma
+        bt.classList.add('confirmar'); bt.textContent = 'Confirmar: imprimir com código diferente';
+        foco(); return;
+      }
+      info.divergencia = { cod: ultimo.c, esperados: fontes.map(f => f.cod), outroSku: ultimo.outros.map(x => x.sku).join(', ') || null,
+        por: window.USUARIO?.nome || '—', em: new Date().toISOString() };
+      showToast('⚠️ Impressão liberada com código diferente — fica registrado no Full');
+      fechar(true);
+    };
+    const avaliar = lido => {
+      const c = _codNorm(lido);
+      if (_ehEtiquetaML(c)) { erro(`Isso é o código de uma <b>etiqueta do ML</b> (${_envEsc(lido)}). Bipe o código de barras da <b>embalagem</b> do produto.`); return; }
+      if (!_codValido(c)) { erro(`Código curto demais (<b>${_envEsc(lido)}</b>). Bipe o código de barras da embalagem.`); return; }
+      if (esperados.has(c)) { try { _somSucesso(); } catch (e) {} msg.className = 'etq-bipe-msg ok'; msg.textContent = '✓ Produto confere'; cad.innerHTML = ''; acoes.innerHTML = ''; setTimeout(() => fechar(true), 350); return; }
+      const outros = (mapa.get(c) || []).filter(x => x.sku !== k);
+      if (!esperados.size && !outros.length) {   // 1º bipe cadastra
+        msg.className = 'etq-bipe-msg'; msg.innerHTML = `Código lido: <b>${_envEsc(lido)}</b>. Gravar como código de barras de <b>${_envEsc(_skuResolvido(sku))}</b>?`;
+        acoes.innerHTML = `<button class="btn btn-ghost btn-sm" data-a="cancelar">Cancelar</button><button class="btn btn-primary btn-sm" data-a="gravar" data-c="${_envEsc(c)}">✓ Gravar e imprimir</button>`;
+        inp.value = '';
+        return;
+      }
+      divergente(lido, c, outros);
     };
     ov.addEventListener('click', ev => {
-      const a = ev.target?.dataset?.a;
+      const bt = ev.target?.closest?.('[data-a]');
+      const a = bt?.dataset?.a;
       if (a === 'cancelar') fechar(false);
-      else if (a === 'gravar') { const c = ev.target.dataset.c; _envGravarCodigo(k, c, info.titulo).then(ok => { if (ok) { try { _somSucesso(); } catch (e) {} fechar(true); } else foco(); }); }
-      else if (a === 'liberar') liberarDigitandoSku(ev.target.dataset.c);
+      else if (a === 'gravar') { const c = bt.dataset.c; _envGravarCodigo(k, c, info.titulo).then(ok => { if (ok) { try { _somSucesso(); } catch (e) {} fechar(true); } else foco(); }); }
+      else if (a === 'forcar') imprimirMesmoAssim(bt);
+      else if (a === 'corrigir' && ultimo) {
+        ov.style.display = 'none';
+        const lido = ultimo.lido;
+        _etqAbrirCorrecaoCatalogo(sku, lido, info, () => {
+          if (fim) return;
+          ov.style.display = '';
+          recalcular();
+          if (esperados.has(_codNorm(lido))) { avaliar(lido); return; }
+          divergente(lido, _codNorm(lido), (mapa.get(_codNorm(lido)) || []).filter(x => x.sku !== k));
+          msg.insertAdjacentHTML('afterbegin', '<span class="etq-bipe-dica" style="margin:0 0 6px">Cadastro não foi alterado com esse código.</span><br>');
+        });
+      }
       else foco();
     });
     inp.addEventListener('keydown', ev => {
@@ -11728,25 +11850,7 @@ function etqConfirmarProduto(sku, info) {
       ev.preventDefault();
       const lido = String(inp.value || '').trim();
       if (!lido) return;
-      const c = _codNorm(lido);
-      if (_ehEtiquetaML(c)) { erro(`Isso é o código de uma <b>etiqueta do ML</b> (${_envEsc(lido)}). Bipe o código de barras da <b>embalagem</b> do produto.`); return; }
-      if (!_codValido(c)) { erro(`Código curto demais (<b>${_envEsc(lido)}</b>). Bipe o código de barras da embalagem.`); return; }
-      if (esperados.has(c)) { try { _somSucesso(); } catch (e) {} msg.className = 'etq-bipe-msg ok'; msg.textContent = '✓ Produto confere'; setTimeout(() => fechar(true), 350); return; }
-      const outros = (mapa.get(c) || []).filter(x => x.sku !== k);
-      if (outros.length && esperados.size) { erro(`❌ PRODUTO ERRADO — esse código é do SKU <b>${_envEsc(outros.map(x => x.sku).join(', '))}</b>`); return; }
-      if (outros.length) {   // este SKU não tem código próprio: pode ser kit/embalagem compartilhada — só libera digitando o SKU
-        erro(`⚠️ Esse código está cadastrado no SKU <b>${_envEsc(outros.map(x => x.sku).join(', '))}</b>. Confira o produto.`,
-          `<button class="btn btn-ghost btn-sm" data-a="liberar" data-c="${_envEsc(c)}" style="color:var(--orange)">É o produto certo — liberar</button>`);
-        return;
-      }
-      if (!esperados.size) {
-        msg.className = 'etq-bipe-msg'; msg.innerHTML = `Código lido: <b>${_envEsc(lido)}</b>. Gravar como código de barras de <b>${_envEsc(_skuResolvido(sku))}</b>?`;
-        acoes.innerHTML = `<button class="btn btn-ghost btn-sm" data-a="cancelar">Cancelar</button><button class="btn btn-primary btn-sm" data-a="gravar" data-c="${_envEsc(c)}">✓ Gravar e imprimir</button>`;
-        inp.value = '';
-        return;
-      }
-      erro(`❌ O código <b>${_envEsc(lido)}</b> não é o cadastrado para este SKU. Confira se pegou o produto certo (voltagem, cor, modelo).`,
-        `<button class="btn btn-ghost btn-sm" data-a="liberar" data-c="${_envEsc(c)}" style="color:var(--orange)">É o produto certo — corrigir cadastro</button>`);
+      avaliar(lido);
     });
     foco();
   });
