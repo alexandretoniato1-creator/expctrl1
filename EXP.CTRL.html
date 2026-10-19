@@ -1043,6 +1043,17 @@ select:focus{border-color:var(--accent)}
 .sku-bipe-ml{font-size:11px;color:var(--muted2);margin-top:4px}
 .sku-bipe-pisca{outline:2px solid var(--orange);outline-offset:1px}
 .etq-div-aviso{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);border-radius:7px;padding:7px 11px;margin:8px 0;font-size:11px;color:var(--orange)}
+.skuc-topo{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.skuc-chk{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);text-transform:none;letter-spacing:0;font-family:inherit;margin:0;cursor:pointer}
+.skuc-chk input{width:auto!important}
+.skuc-wrap{max-height:68vh;overflow:auto;border:1px solid var(--border);border-radius:9px}
+.skuc-tab td{vertical-align:top;padding:9px 10px}
+.skuc-tab td:first-child{max-width:300px}
+.skuc-prob{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:11px;color:var(--red);padding:3px 0}
+.skuc-prob.leve{color:var(--orange)}
+.skuc-prob.info{color:var(--muted)}
+.skuc-prob button{flex-shrink:0;font-size:10px;padding:4px 8px}
+.modal-overlay#skuConfOv{display:flex;z-index:9000}
 .etq-ja-info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.28);border-radius:7px;padding:7px 11px;margin:8px 0;font-size:11px;color:var(--blue)}
 .etq-btn-ja{font-size:11px;padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;font-weight:600}
 .etq-btn-ja:hover{border-color:var(--blue);color:var(--blue)}
@@ -2185,6 +2196,7 @@ select:focus{border-color:var(--accent)}
             </div>
             <div style="display:flex;gap:8px;align-items:center">
               <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)" id="catCount">0 SKUs</span>
+              <button class="btn btn-ghost btn-sm" onclick="skuConferirAbrir()" title="Cruza os SKUs do Outbox com os anúncios do ML e o Magis5 pelo código ML">🔎 Conferir com ML</button>
               <button class="btn btn-primary btn-sm" onclick="novoSku()">+ Novo SKU</button>
             </div>
           </div>
@@ -2380,6 +2392,8 @@ select:focus{border-color:var(--accent)}
     <div class="section-divider">Identificação</div>
     <div class="form-grid-3"><div class="form-group"><label>SKU *</label><input class="form-sel" id="sk-sku" type="text" placeholder="SKU-001" onblur="checarSkuGenerico('sk-sku')"></div><div class="form-group span2"><label>Descrição *</label><input class="form-sel" id="sk-desc" type="text"></div></div>
     <div class="form-grid"><div class="form-group"><label>EAN</label><input class="form-sel" id="sk-ean" type="text"></div><div class="form-group"><label>Galpão *</label><select class="form-sel" id="sk-galpao"><option value="">Selecione</option><option value="LogBox">LogBox</option></select></div></div>
+    <div class="form-group"><label>SKUs antigos / outros nomes</label><input class="form-sel" id="sk-antigos" type="text" placeholder="ex.: VA-BA02 / VA-BA02-110" oninput="checarSkuGenerico('sk-sku')" style="font-family:'DM Mono',monospace">
+      <div style="font-size:10px;color:var(--muted);margin-top:4px">O Outbox reconhece o produto por qualquer um desses nomes (Magis5, Fulls e etiquetas antigas). Ao trocar o SKU acima, o antigo entra aqui sozinho.</div></div>
     <div class="section-divider">Dimensões da caixa</div>
     <div class="form-grid-3"><div class="form-group"><label>C (cm)</label><input class="form-sel" id="sk-comp" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>L (cm)</label><input class="form-sel" id="sk-larg" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>A (cm)</label><input class="form-sel" id="sk-altu" type="number" oninput="calcSkuVol()"></div></div>
     <div class="form-grid"><div class="form-group"><label>Peso (kg)</label><input class="form-sel" id="sk-peso" type="number" step="0.01"></div><div class="form-group"><label>Volume (L)</label><input type="text" id="sk-vol" readonly style="color:var(--green)"></div></div>
@@ -2672,7 +2686,7 @@ const db = {
         _id: s.id,
         sku: s.sku, ean: s.ean, descricao: s.descricao,
         galpao: s.galpao, comp: s.comp, larg: s.larg, altu: s.altu,
-        peso: s.peso, vol: s.vol, qtdecx: s.qtdecx, tempo: s.tempo
+        peso: s.peso, vol: s.vol, qtdecx: s.qtdecx, tempo: s.tempo, skus_antigos: s.skus_antigos || ''
       }));
 
       window._saidasDia = new Date().toLocaleDateString('pt-BR');
@@ -2844,6 +2858,7 @@ const db = {
       vol: parseFloat(((s.comp||0)*(s.larg||0)*(s.altu||0)/1000).toFixed(3)),
       qtdecx: s.qtdecx||1, tempo: s.tempo||0
     };
+    if (s.skus_antigos !== undefined) row.skus_antigos = s.skus_antigos || null;
     if (s._id) {
       const { error } = await _sb.from('sku_db').update(row).eq('id', s._id);
       if (error) { console.error('[Supabase] saveSku update:', error); return { error }; }
@@ -5087,10 +5102,22 @@ function skuAutoItem(inputEl,idx){
   }
 }
 // Busca no catálogo sem diferenciar maiúsculas ("6cr100m" = "6CR100M")
+// SKUs antigos / outros nomes do mesmo produto (ex.: VA-BA02 → hoje VA-BF2000-110). O SKU principal é o do ML.
+function _skuApelidos(s){ return String(s?.skus_antigos||'').split(/[\/,;|\n]+/).map(x=>x.trim().toUpperCase()).filter(Boolean); }
 function _skuDb(codigo){
   if (!codigo) return null;
   const alvo = String(codigo).trim().toUpperCase();
-  return SKU_DB.find(s => String(s.sku||'').trim().toUpperCase() === alvo) || null;
+  return SKU_DB.find(s => String(s.sku||'').trim().toUpperCase() === alvo)
+      || SKU_DB.find(s => _skuApelidos(s).includes(alvo)) || null;
+}
+// SKU principal (o atual) de qualquer nome do produto
+function _skuCanon(codigo){ const s = _skuDb(codigo); return s ? String(s.sku).trim() : String(codigo||'').trim(); }
+// Todos os nomes do produto, principal primeiro (maiúsculo)
+function _skuTodosNomes(codigo){
+  const s = _skuDb(codigo);
+  const base = String(codigo||'').trim().toUpperCase();
+  if (!s) return base ? [base] : [];
+  return [...new Set([String(s.sku).trim().toUpperCase(), ..._skuApelidos(s), base])];
 }
 // Peso (kg) e volume (m³) do envio a partir do catálogo: qtde = caixas; peso e medidas por caixa
 function fullPesoVolume(itens){
@@ -6555,7 +6582,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 58;
+const APP_VERSAO = 59;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -7141,7 +7168,7 @@ async function excluirDiaHist(data, galpao){
 function renderCatalogo(){
   const galpao=document.getElementById('catFiltroGalpao')?.value||'';
   const busca=(document.getElementById('catBusca')?.value||'').toLowerCase();
-  const lista=SKU_DB.filter(s=>(!galpao||s.galpao===galpao)&&(!busca||s.sku.toLowerCase().includes(busca)||s.descricao.toLowerCase().includes(busca)));
+  const lista=SKU_DB.filter(s=>(!galpao||s.galpao===galpao)&&(!busca||s.sku.toLowerCase().includes(busca)||s.descricao.toLowerCase().includes(busca)||String(s.skus_antigos||'').toLowerCase().includes(busca)||String(s.ean||'').toLowerCase().includes(busca)));
   document.getElementById('catTotal').textContent=SKU_DB.length;
   document.getElementById('catLogbox').textContent=SKU_DB.filter(s=>s.galpao==='LogBox').length;
   const tm=SKU_DB.length?(SKU_DB.reduce((a,s)=>a+(s.tempo||0),0)/SKU_DB.length).toFixed(1):0;
@@ -7151,7 +7178,7 @@ function renderCatalogo(){
   tbody.innerHTML=lista.map(s=>{
     const idx=SKU_DB.indexOf(s);
     return `<tr class="full-row" onclick="editarSku(${idx})">
-      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${s.sku}</td>
+      <td style="font-family:'DM Mono',monospace;color:var(--accent);font-size:11px">${s.sku}${s.skus_antigos?`<div style="font-size:9px;color:var(--muted)" title="SKUs antigos / outros nomes">antes: ${_envEsc(s.skus_antigos)}</div>`:''}</td>
       <td style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${s.ean||'—'}</td>
       <td style="font-size:12px;font-weight:600">${s.descricao}</td>
       <td><span class="badge ${'b-blue'}">${s.galpao}</span></td>
@@ -7172,13 +7199,15 @@ function editarSku(idx){
   // (o campo "sk-desc" é a "descricao" — antes a descrição aparecia vazia ao editar)
   const campo = {'sk-desc':'descricao'};
   ['sk-sku','sk-desc','sk-ean','sk-galpao','sk-comp','sk-larg','sk-altu','sk-peso','sk-qtdecx','sk-tempo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=s[campo[id]||id.replace('sk-','')]||'';});
+  const ant=document.getElementById('sk-antigos'); if(ant) ant.value=s.skus_antigos||'';
   calcSkuVol();calcSkuTempoun();openModal('modalSku');
+  checarSkuGenerico('sk-sku');
 }
 // "+ Novo SKU" abre o formulário limpo (antes vinha com os dados do último editado)
 function novoSku(){
   editingSkuIdx=null;
   document.getElementById('skuModalTitle').textContent='Novo SKU';
-  ['sk-sku','sk-desc','sk-ean','sk-comp','sk-larg','sk-altu','sk-peso','sk-vol','sk-qtdecx','sk-tempo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['sk-sku','sk-desc','sk-ean','sk-antigos','sk-comp','sk-larg','sk-altu','sk-peso','sk-vol','sk-qtdecx','sk-tempo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   calcSkuVol();calcSkuTempoun();openModal('modalSku');
 }
 async function salvarSku(){
@@ -7188,6 +7217,14 @@ async function salvarSku(){
   const obj={sku,ean:document.getElementById('sk-ean').value,descricao:desc,galpao,comp:c,larg:l,altu:a,peso:parseFloat(document.getElementById('sk-peso').value)||0,vol:parseFloat(((c*l*a)/1000).toFixed(2)),qtdecx:parseInt(document.getElementById('sk-qtdecx').value)||1,tempo:parseFloat(document.getElementById('sk-tempo').value)||0};
   const editando = editingSkuIdx!==null;
   if (!editando && SKU_DB.some(x => String(x.sku).toUpperCase() === sku.toUpperCase())) { showToast('⚠️ O SKU '+sku+' já está cadastrado — edite o existente'); return; }
+  // apelidos: o SKU antigo entra sozinho quando o SKU é trocado
+  const antes = editando ? String(SKU_DB[editingSkuIdx].sku||'') : '';
+  let apel = String(document.getElementById('sk-antigos')?.value||'').split(/[\/,;|\n]+/).map(x=>x.trim()).filter(Boolean);
+  if (editando && antes && antes.toUpperCase() !== sku.toUpperCase()) apel.unshift(antes);
+  apel = [...new Map(apel.filter(x => x.toUpperCase() !== sku.toUpperCase()).map(x => [x.toUpperCase(), x])).values()];
+  const conflito = SKU_DB.find((x, i) => i !== editingSkuIdx && [String(x.sku).toUpperCase(), ..._skuApelidos(x)].some(n => n === sku.toUpperCase() || apel.some(a => a.toUpperCase() === n)));
+  if (conflito) { showToast('⚠️ ' + sku + ' ou um dos nomes antigos já pertence ao SKU ' + conflito.sku); return; }
+  obj.skus_antigos = apel.join(' / ');
   if (editando) obj._id = SKU_DB[editingSkuIdx]._id;
   const r = await db.saveSku(obj);
   if (r.error) { showToast('❌ SKU não salvo: ' + (r.error.message||'erro')); return; }
@@ -7197,6 +7234,135 @@ async function salvarSku(){
   editingSkuIdx=null;
   closeModal('modalSku');renderCatalogo();
 }
+// ══════════════════════════════════════════════════════════════════════
+// CONFERIR SKUs: catálogo do Outbox × anúncios do ML × Magis5, ligados pelo código ML
+// (só lê o ML e o Magis5; as correções são no catálogo do Outbox)
+// ══════════════════════════════════════════════════════════════════════
+let _skuConfSoProblemas = true;
+const _codsBrutos = txt => String(txt || '').split(/[\s,;|\/]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
+const _ehCodMl = c => /^[A-Z]{4}\d{5}$/.test(c);
+const _ehGtin = c => /^\d{8,14}$/.test(c);
+const _gtinNorm = c => String(c || '').replace(/^0+/, '');
+async function skuConferirAbrir() {
+  let ov = document.getElementById('skuConfOv');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'skuConfOv';
+    ov.className = 'modal-overlay open';
+    ov.innerHTML = `<div class="modal" style="max-width:1100px;width:96vw">
+      <div class="modal-title">🔎 Conferir SKUs com ML e Magis5 <button class="modal-close" onclick="document.getElementById('skuConfOv').remove()">✕</button></div>
+      <div class="skuc-topo"><div id="skuConfResumo" style="font-size:12px;color:var(--muted)">Carregando anúncios do ML e estoque do Magis5…</div>
+        <label class="skuc-chk"><input type="checkbox" id="skuConfSoProb" ${_skuConfSoProblemas ? 'checked' : ''} onchange="_skuConfSoProblemas=this.checked;skuConferirRender()"> Só o que precisa de atenção</label></div>
+      <div class="skuc-wrap"><table class="env-table skuc-tab"><thead><tr><th>Anúncio no ML</th><th>Catálogo do Outbox</th><th>Magis5</th><th>O que fazer</th></tr></thead><tbody id="skuConfBody"></tbody></table></div>
+    </div>`;
+    ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+    document.body.appendChild(ov);
+  }
+  try {
+    await Promise.all([mlCatalogo(false), garantirEspelhoGlobal(false)]);
+  } catch (e) { document.getElementById('skuConfResumo').innerHTML = `<span style="color:var(--red)">❌ ${_envEsc(e.message)}</span>`; return; }
+  skuConferirRender();
+}
+function _skuConfLinhas() {
+  const magis = new Map((window._espelhoGlobal || []).map(e => [String(e.sku || '').trim().toUpperCase(), e]));
+  const linhas = [];
+  const skusMl = new Set((_mlCat?.produtos || []).map(x => String(x.sku || '').trim().toUpperCase()));
+  for (const p of (_mlCat?.produtos || [])) {
+    if (!p.sku) continue;
+    const mlSku = String(p.sku).trim();
+    const exato = SKU_DB.find(x => String(x.sku).trim().toUpperCase() === mlSku.toUpperCase());
+    const porApelido = !exato ? SKU_DB.find(x => _skuApelidos(x).includes(mlSku.toUpperCase())) : null;
+    // mesmo código ML em mais de um cadastro (cópia errada): fica o mais parecido (mesma linha do SKU + palavras do título)
+    const _pal = t => new Set(String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/[^a-z0-9]+/).filter(w => w.length >= 4));
+    const _score = x => (String(x.sku).split('-')[0].toUpperCase() === mlSku.split('-')[0].toUpperCase() ? 3 : 0) + [..._pal(x.descricao)].filter(w => _pal(p.titulo).has(w)).length;
+    const porCodigo = !exato && !porApelido && p.inventory_id ? SKU_DB.filter(x => _codsBrutos(x.ean).includes(p.inventory_id) && !skusMl.has(String(x.sku).trim().toUpperCase())).sort((a, b) => _score(b) - _score(a))[0] || null : null;
+    const abandonado = p.status === 'paused' && !(Number(p.full_disponivel) > 0);   // anúncio pausado sem estoque no Full
+    const sk = exato || porApelido || porCodigo;
+    const probs = [];   // {txt, acao, rot}
+    const idx = sk ? SKU_DB.indexOf(sk) : -1;
+    if (!sk) probs.push({ txt: 'Falta no catálogo do Outbox (sem caixa e medidas)' + (abandonado ? ' — anúncio pausado e sem estoque no Full' : ''), acao: `skuConfCadastrar('${_envJs(mlSku)}')`, rot: '+ Cadastrar', info: abandonado });
+    else if (porCodigo) probs.push({ txt: `No Outbox o mesmo código ML está como <b>${_envEsc(sk.sku)}</b>`, acao: `skuConfRenomear(${idx},'${_envJs(mlSku)}')`, rot: `Renomear para ${_envEsc(mlSku)}` });
+    else if (porApelido) probs.push({ txt: `O ML ainda usa o nome antigo — no Outbox o principal é <b>${_envEsc(sk.sku)}</b>`, info: true });
+    if (sk) {
+      const cods = _codsBrutos(sk.ean);
+      const codsMl = cods.filter(_ehCodMl);
+      if (p.inventory_id && codsMl.length && !codsMl.includes(p.inventory_id) && !porCodigo)
+        probs.push({ txt: `Código ML no Outbox <b>${_envEsc(codsMl.join(', '))}</b> ≠ anúncio <b>${_envEsc(p.inventory_id)}</b>`, acao: `skuConfTrocarCodigo(${idx},'${_envJs(p.inventory_id)}')`, rot: `Usar ${_envEsc(p.inventory_id)}` });
+      const gt = _gtinNorm(p.gtin);
+      const gtinsOut = cods.filter(_ehGtin);
+      if (gt && gtinsOut.length && !gtinsOut.some(c => _gtinNorm(c) === gt)) {
+        const deOutro = (_mlCat.produtos || []).find(o => o !== p && gtinsOut.some(c => _gtinNorm(c) === _gtinNorm(o.gtin)));
+        probs.push({ txt: `EAN no Outbox <b>${_envEsc(gtinsOut.join(', '))}</b> ≠ EAN do anúncio <b>${_envEsc(p.gtin)}</b>${deOutro ? ` (o do Outbox é do anúncio ${_envEsc(deOutro.sku)})` : ''}`, acao: `skuConfAddGtin(${idx},'${_envJs(p.gtin)}')`, rot: `Somar ${_envEsc(p.gtin)}`, leve: !deOutro });
+      }
+    }
+    const nomes = sk ? [String(sk.sku).toUpperCase(), ..._skuApelidos(sk), mlSku.toUpperCase()] : [mlSku.toUpperCase()];
+    const presentes = nomes.filter(n => magis.has(n));
+    const noMagis = presentes.find(n => (Number(magis.get(n).quantidade) || 0) > 0) || presentes[0];
+    let magisHtml;
+    if (!(window._espelhoGlobal || []).length) magisHtml = '<span style="color:var(--muted)">—</span>';
+    else if (!noMagis) { magisHtml = '<span style="color:var(--orange)">não achado</span>'; probs.push({ txt: 'Nenhum dos nomes existe no Magis5 — o Outbox não acha o estoque do galpão', info: true }); }
+    else magisHtml = `<b>${_envEsc(magis.get(noMagis).sku)}</b>${noMagis !== mlSku.toUpperCase() ? ' <span class="env-badge medio" title="O Magis5 ainda está com outro nome deste produto">nome antigo</span>' : ''}<div class="env-sub" style="text-align:left">${_envFmt(magis.get(noMagis).quantidade)} un.</div>`;
+    linhas.push({ p, mlSku, sk, probs, magisHtml, grave: probs.some(x => !x.info && !x.leve) });
+  }
+  // Outbox: dois SKUs com o mesmo código ML
+  return linhas.sort((a, b) => (b.grave - a.grave) || (b.probs.length - a.probs.length) || a.mlSku.localeCompare(b.mlSku));
+}
+function skuConferirRender() {
+  const corpo = document.getElementById('skuConfBody');
+  if (!corpo) return;
+  const linhas = _skuConfLinhas();
+  const comProb = linhas.filter(l => l.probs.some(x => !x.info));
+  document.getElementById('skuConfResumo').innerHTML = `${linhas.length} anúncios no ML · <b style="color:${comProb.length ? 'var(--orange)' : 'var(--green)'}">${comProb.length} para corrigir</b> · ${linhas.filter(l => l.probs.length && l.probs.every(x => x.info)).length} só aviso`;
+  const lista = _skuConfSoProblemas ? linhas.filter(l => l.probs.length) : linhas;
+  corpo.innerHTML = lista.map(l => `<tr>
+      <td><div class="env-tit" title="${_envEsc(l.p.titulo)}">${_envEsc(l.p.titulo)}</div><div class="env-meta"><b>${_envEsc(l.mlSku)}</b>${l.p.inventory_id ? ' · ' + _envEsc(l.p.inventory_id) : ''}${l.p.full ? ' · Full' : ''}${l.p.status === 'paused' ? ' · <span style="color:var(--orange)">pausado</span>' : ''}</div></td>
+      <td>${l.sk ? `<b class="env-cod" onclick="skuConfEditar(${SKU_DB.indexOf(l.sk)})" title="Abrir cadastro">${_envEsc(l.sk.sku)}</b>${l.sk.skus_antigos ? `<div class="env-sub" style="text-align:left">antes: ${_envEsc(l.sk.skus_antigos)}</div>` : ''}<div class="env-sub" style="text-align:left">${_envEsc(l.sk.ean || '')}</div>` : '<span style="color:var(--red)">não cadastrado</span>'}</td>
+      <td>${l.magisHtml}</td>
+      <td>${l.probs.length ? l.probs.map(x => `<div class="skuc-prob ${x.info ? 'info' : x.leve ? 'leve' : ''}"><span>${x.txt}</span>${x.acao ? `<button class="btn btn-ghost btn-sm" onclick="${x.acao}">${x.rot}</button>` : ''}</div>`).join('') : '<span style="color:var(--green)">✓ ok</span>'}</td>
+    </tr>`).join('') || '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--green)">✓ Tudo batendo</td></tr>';
+}
+async function _skuConfSalvar(idx, mud, msg) {
+  const s = SKU_DB[idx]; if (!s) return;
+  const novo = { ...s, ...mud };
+  const r = await db.saveSku(novo);
+  if (r?.error) { showToast('❌ Não salvei: ' + r.error.message); return; }
+  SKU_DB[idx] = novo;
+  showToast(msg); renderCatalogo(); skuConferirRender();
+}
+function skuConfRenomear(idx, novoSku) {
+  const s = SKU_DB[idx]; if (!s) return;
+  if (SKU_DB.some((x, i) => i !== idx && String(x.sku).toUpperCase() === novoSku.toUpperCase())) { showToast('⚠️ Já existe um cadastro ' + novoSku + ' — junte os dois pelo cadastro'); return; }
+  const apel = [s.sku, ..._skuApelidos(s).map(a => a)].filter(a => a.toUpperCase() !== novoSku.toUpperCase());
+  _skuConfSalvar(idx, { sku: novoSku, skus_antigos: [...new Map(apel.map(a => [a.toUpperCase(), a])).values()].join(' / ') }, `✅ ${s.sku} agora é ${novoSku} (nome antigo guardado)`);
+}
+function skuConfTrocarCodigo(idx, inv) {
+  const s = SKU_DB[idx]; if (!s) return;
+  const resto = String(s.ean || '').split(/\s*[\/,;|]\s*/).map(x => x.trim()).filter(x => x && !_ehCodMl(x.toUpperCase()));
+  _skuConfSalvar(idx, { ean: [inv, ...resto].join(' / ') }, `✅ Código ML de ${s.sku} corrigido para ${inv}`);
+}
+function skuConfAddGtin(idx, gtin) {
+  const s = SKU_DB[idx]; if (!s) return;
+  const at = String(s.ean || '').split(/\s*[\/,;|]\s*/).map(x => x.trim()).filter(Boolean);
+  _skuConfSalvar(idx, { ean: [gtin, ...at.filter(x => _gtinNorm(x) !== _gtinNorm(gtin))].join(' / ') }, `✅ EAN ${gtin} somado em ${s.sku}`);
+}
+function _skuConfPorCima() {
+  const m = document.getElementById('modalSku'); m.style.zIndex = '10002';
+  const obs = new MutationObserver(() => { if (!m.classList.contains('open')) { obs.disconnect(); m.style.zIndex = ''; skuConferirRender(); } });
+  obs.observe(m, { attributes: true, attributeFilter: ['class'] });
+}
+function skuConfEditar(idx) { editarSku(idx); _skuConfPorCima(); }
+function skuConfCadastrar(mlSku) {
+  const p = mlProdutoDoSku(mlSku) || (_mlCat?.produtos || []).find(x => x.sku === mlSku);
+  novoSku();
+  document.getElementById('sk-sku').value = mlSku;
+  document.getElementById('sk-desc').value = p?.titulo || '';
+  document.getElementById('sk-ean').value = [p?.inventory_id, p?.gtin].filter(Boolean).join(' / ');
+  const g = document.getElementById('sk-galpao'); if (g && !g.value) g.value = 'LogBox';
+  _skuConfPorCima();
+  checarSkuGenerico('sk-sku');
+  showToast('Preencha caixa, medidas e peso e salve');
+}
+
 async function removerSku(idx){
   const s=SKU_DB[idx]; if(!s) return;
   if(!confirm('Remover o SKU '+s.sku+' ('+(s.descricao||'')+') do catálogo?'))return;
@@ -9937,7 +10103,14 @@ function _bibChave(sku) {
   const real = (typeof _skuResolvido === 'function') ? _skuResolvido(sku) : sku;
   if (idx.has(real)) return real;
   const esc = (typeof _zplHex === 'function') ? _zplHex(real) : real;   // VA-MA10 → VA_2DMA10
-  return idx.has(esc) ? esc : sku;
+  if (idx.has(esc)) return esc;
+  // pré-etiquetagem gravada com o nome antigo (ou novo) do produto
+  for (const n of _skuTodosNomes(real)) {
+    if (idx.has(n)) return n;
+    const e = (typeof _zplHex === 'function') ? _zplHex(n) : n;
+    if (idx.has(e)) return e;
+  }
+  return sku;
 }
 function zplEstaNaBiblioteca(sku) {
   if (!window._zplBibIndex) return true; // ainda não carregou — não acusa falso alarme
@@ -11164,7 +11337,19 @@ async function mlCatalogo(forcar) {
 }
 function mlProdutoDoSku(sku) {
   if (!_mlCat) return null;
-  return _mlCat.porSku.get(_envNorm(sku)) || _mlCat.porSku.get(_envNorm(_skuReal(sku))) || null;
+  // SKU principal primeiro: um item antigo (VA-BA10-220) acha o anúncio atual (VA-BF1000-220), não o abandonado
+  const nomes = [_skuCanon(sku), _skuCanon(_skuReal(sku)), sku, _skuReal(sku), ..._skuTodosNomes(sku)];
+  for (const n of nomes) { const p = _mlCat.porSku.get(_envNorm(n)); if (p) return p; }
+  return null;
+}
+// Estoque do galpão (espelho do Magis5) por qualquer nome do produto
+function _envGalpaoDe(sku) {
+  if (!_envEspelho) return null;
+  // nome atual primeiro; se ele estiver zerado e um nome antigo tiver saldo (Magis5 no meio da troca), usa o antigo.
+  // Não soma: no Magis5 os dois nomes podem apontar para o mesmo estoque.
+  const achados = _skuTodosNomes(sku).filter(n => _envEspelho.has(n));
+  if (!achados.length) return null;
+  return _envEspelho.get(achados.find(n => _envEspelho.get(n) > 0) || achados[0]);
 }
 
 async function _envCarregarVendas(forcar) {
@@ -11173,10 +11358,10 @@ async function _envCarregarVendas(forcar) {
   if (d.erro) throw new Error(d.erro);
   // pedidos sem SKU no anúncio chegam como "?MLB..." → acha o SKU pelo anúncio
   const porItem = new Map();
-  (_mlCat?.produtos || []).forEach(p => (p.item_ids || []).forEach(id => porItem.set(id, _envNorm(p.sku))));
+  (_mlCat?.produtos || []).forEach(p => (p.item_ids || []).forEach(id => porItem.set(id, _envNorm(_skuCanon(p.sku)))));
   const porSku = new Map();
   Object.entries(d.por_sku || {}).forEach(([k, v]) => {
-    const sku = k.startsWith('?') ? (porItem.get(k.slice(1)) || k) : _envNorm(k);
+    const sku = k.startsWith('?') ? (porItem.get(k.slice(1)) || k) : _envNorm(_skuCanon(k));   // venda com SKU antigo soma no atual
     const at = porSku.get(sku) || { u: 0, sem: [0, 0, 0, 0, 0] };
     at.u += v.u || 0;
     (v.sem || []).forEach((x, i) => { at.sem[i] = (at.sem[i] || 0) + (x || 0); });
@@ -11249,9 +11434,9 @@ async function _envCarregarPendentes() {
   const porSku = new Map();
   abertos.forEach(f => {
     const m = new Map();
-    (etqPorFull.get(f.id) || []).forEach(e => { const k = _envNorm(_skuResolvido(e.sku)); if (k) m.set(k, (m.get(k) || 0) + (Number(e.total) || 0)); });
+    (etqPorFull.get(f.id) || []).forEach(e => { const k = _envNorm(_skuCanon(_skuResolvido(e.sku))); if (k) m.set(k, (m.get(k) || 0) + (Number(e.total) || 0)); });
     const comEtq = new Set(m.keys());
-    (f.itens || []).forEach(it => { const k = _envNorm(it.codigo); if (k && !comEtq.has(k)) m.set(k, (m.get(k) || 0) + _unidadesItemEnvio(it)); });
+    (f.itens || []).forEach(it => { const k = _envNorm(_skuCanon(it.codigo)); if (k && !comEtq.has(k)) m.set(k, (m.get(k) || 0) + _unidadesItemEnvio(it)); });
     m.forEach((un, k) => {
       if (un <= 0) return;
       const a = porSku.get(k) || { total: 0, partes: [] };
@@ -11266,7 +11451,9 @@ function _envLinhas() {
   const vistos = new Set();
   const linhas = [];
   const add = (sku, p) => {
-    const k = _envNorm(sku);
+    const k = _envNorm(_skuCanon(sku));
+    // anúncio antigo de um produto renomeado (ex.: VA-BA10-220 → VA-BF1000-220): fica de fora, o atual já aparece
+    if (p && k !== _envNorm(sku) && _mlCat?.porSku.has(k)) return;
     if (!k || vistos.has(k)) return;
     vistos.add(k);
     const v = _envVendas?.porSku.get(k);
@@ -11281,7 +11468,7 @@ function _envLinhas() {
     linhas.push({
       sku: p?.sku || sku, k, p, sk, full, caminho, pendPartes: pend ? pend.partes : [],
       transf: p?.full_transferencia || 0,
-      galpao: _envEspelho ? (_envEspelho.get(k) ?? null) : null,
+      galpao: _envGalpaoDe(k),
       v30, sem: v ? v.sem : [0, 0, 0, 0, 0], cobertura,
       qtdecx: Math.max(1, parseInt(sk?.qtdecx) || 1),
     });
@@ -11481,6 +11668,7 @@ async function envImportarArquivos(files) {
   const etiquetas = lidos.map(x => {
     const ml = _mlProdutoDoInv(x.inv);
     let sku = x.sku ? (_skuDb(x.sku) || mlProdutoDoSku(x.sku) ? x.sku : _skuResolvido(x.sku)) : (ml?.sku || '');
+    if (sku) sku = _skuCanon(sku);
     return { ...x, sku, ml, semSku: !sku };
   });
   // itens do Full: por SKU (sem SKU fica o código ML)
@@ -11495,7 +11683,7 @@ async function envImportarArquivos(files) {
   const itens = [...porSku.values()].map(i => {
     const sk = _skuDb(i.sku);
     const qtdecx = Math.max(1, parseInt(sk?.qtdecx) || 1);
-    return { ...i, sk, qtdecx, caixas: Math.ceil(i.unidades / qtdecx), galpao: _envEspelho ? (_envEspelho.get(i.k) ?? null) : null };
+    return { ...i, sk, qtdecx, caixas: Math.ceil(i.unidades / qtdecx), galpao: _envGalpaoDe(i.k) };
   }).sort((a, b) => a.sku.localeCompare(b.sku));
   window._envImport = { itens, etiquetas, arquivo: files.map(f => f.name).join(', '), numero: _envNumeroDoNome(files.map(f => f.name).join(' ')) };
   envAbrirImportacao();
@@ -11716,7 +11904,7 @@ async function etqGerarDoML(fullId, op) {
   // unidades por SKU (o mesmo SKU pode estar em mais de uma linha do Full)
   const porSku = new Map();
   for (const it of (f.itens || [])) {
-    const sku = String(it.codigo || '').trim();
+    const sku = _skuCanon(String(it.codigo || '').trim());
     if (!sku) continue;
     const k = _envNorm(sku);
     const at = porSku.get(k) || { sku, total: 0, nome: it.nome };
@@ -11737,7 +11925,7 @@ async function etqGerarDoML(fullId, op) {
     if (!total) continue;
     const it = { nome };
     const p = mlProdutoDoSku(sku);
-    const existente = arr.find(e => _envNorm(_skuResolvido(e.sku)) === _envNorm(sku)
+    const existente = arr.find(e => _envNorm(_skuCanon(_skuResolvido(e.sku))) === _envNorm(sku)
       || (p?.inventory_id && (e.inv === p.inventory_id || String(e.descricao || '').trim() === p.inventory_id)));
     if (!p || !p.inventory_id) semCodigo.push(sku);
     if (existente) {
@@ -11785,7 +11973,7 @@ function _codigosDoCatalogo(skuObj) { return _listaCodigos(skuObj?.ean); }
 function _mapaCodigos() {
   const m = new Map();
   const add = (cod, sku, fonte) => { if (!cod) return; const a = m.get(cod) || []; if (!a.some(x => x.sku === sku)) a.push({ sku, fonte }); m.set(cod, a); };
-  (_mlCat?.produtos || []).forEach(p => _listaCodigos(p.gtin).forEach(c => add(c, _envNorm(p.sku), 'ml')));
+  (_mlCat?.produtos || []).forEach(p => _listaCodigos(p.gtin).forEach(c => add(c, _envNorm(_skuCanon(p.sku)), 'ml')));
   (SKU_DB || []).forEach(s => _codigosDoCatalogo(s).forEach(c => add(c, _envNorm(s.sku), 'cat')));
   return m;
 }
@@ -11885,7 +12073,7 @@ function etqConfirmarProduto(sku, info) {
     // sem ML (ou lento) segue só com o catálogo do Outbox
     try { await Promise.race([mlCatalogo(), new Promise((_, r) => setTimeout(() => r(new Error('tempo')), 8000))]); } catch (e) {}
     espera.remove();
-    const k = _envNorm(_skuResolvido(sku));
+    const k = _envNorm(_skuCanon(_skuResolvido(sku)));
     let mapa, esperados, fontes;
     const recalcular = () => { mapa = _mapaCodigos(); esperados = _codigosEsperados(k, mapa); fontes = _codigosEsperadosFontes(k, mapa); };
     recalcular();
@@ -13146,7 +13334,12 @@ async function checarSkuGenerico(inputId) {
   const valor = (input.value||'').trim();
   const aviso = criarAvisoSkuInline(inputId);
   if (!valor) { if(aviso) aviso.style.display='none'; return; }
-  const existe = await skuExisteNoMagis(valor);
+  let existe = await skuExisteNoMagis(valor);
+  if (!existe && inputId === 'sk-sku') {
+    // o Magis5 pode ainda estar com o nome antigo (apelido)
+    const apel = String(document.getElementById('sk-antigos')?.value||'').split(/[\/,;|\n]+/).map(x=>x.trim()).filter(Boolean);
+    for (const a of apel) if (await skuExisteNoMagis(a)) { existe = true; break; }
+  }
   if (aviso) aviso.style.display = existe ? 'none' : 'flex';
 }
 
