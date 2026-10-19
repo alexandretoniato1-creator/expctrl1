@@ -1043,6 +1043,17 @@ select:focus{border-color:var(--accent)}
 .sku-bipe-ml{font-size:11px;color:var(--muted2);margin-top:4px}
 .sku-bipe-pisca{outline:2px solid var(--orange);outline-offset:1px}
 .etq-div-aviso{background:rgba(210,153,34,.08);border:1px solid rgba(210,153,34,.3);border-radius:7px;padding:7px 11px;margin:8px 0;font-size:11px;color:var(--orange)}
+.etq-ja-info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.28);border-radius:7px;padding:7px 11px;margin:8px 0;font-size:11px;color:var(--blue)}
+.etq-btn-ja{font-size:11px;padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;font-weight:600}
+.etq-btn-ja:hover{border-color:var(--blue);color:var(--blue)}
+.etq-ja-box{border-color:rgba(88,166,255,.35)!important}
+.etq-ja-mot{display:flex;flex-wrap:wrap;gap:6px}
+.etq-ja-mot label{display:inline-flex;align-items:center;justify-content:flex-start;gap:7px;width:auto;font-size:12px;color:var(--text);cursor:pointer;text-transform:none;letter-spacing:0;font-family:inherit;margin:0;padding:7px 11px;border:1px solid var(--border2);border-radius:8px;background:var(--surface)}
+.etq-ja-mot label:has(input:checked){border-color:var(--blue);background:rgba(88,166,255,.1)}
+.etq-ja-mot input[type=radio]{width:auto!important;height:auto;margin:0;padding:0;flex:0 0 auto;accent-color:var(--blue)}
+.etq-ja-mot label span{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)}
+.etq-ja-qtd{width:90px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;font-weight:800;padding:6px 10px;outline:none;text-align:center}
+.etq-ja-ok{padding:6px 16px;border-radius:7px;border:none;background:var(--blue);color:#fff;font-size:11px;font-weight:700;cursor:pointer}
 .cal-sku-wrap{position:relative;display:flex;align-items:center}
 .cal-sku-wrap input{font-size:11px;padding:5px 24px 5px 8px;width:150px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;outline:none}
 .cal-sku-wrap input.on{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
@@ -6544,7 +6555,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 57;
+const APP_VERSAO = 58;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -10229,6 +10240,10 @@ async function etqSalvar(fullId, op) {
     const div = [...((b ? b.divergencias : x.divergencias) || [])];
     if (op.divergencia && op.divergencia[x.id]) div.push(op.divergencia[x.id]);
     if (div.length) r.divergencias = div.slice(-30);
+    // unidades que não precisaram de etiqueta (pré-etiquetadas pela expedição / vieram da China etiquetadas)
+    let ja = (op.set && op.set[x.id] === 0) ? [] : [...((b ? b.ja_etiq : x.ja_etiq) || [])];
+    if (op.jaEtiq && op.jaEtiq[x.id]) ja.push(op.jaEtiq[x.id]);
+    if (ja.length) r.ja_etiq = ja.slice(-50);
     return r;
   });
   // SKUs que outro computador adicionou ao Full continuam lá
@@ -10394,6 +10409,9 @@ async function etqRenderSecao(fullId) {
         const descLbl=(etq.sku&&etq.descricao&&etq.descricao!==etq.sku)?etq.descricao:'';
         const temZpl=!!etq.inv||zplEstaNaBiblioteca(etq.sku);
         const estoqueDisp=zplEstoqueDe(etq.sku);
+        const jaPre=(etq.ja_etiq||[]).filter(x=>x.motivo!=='china').reduce((a,x)=>a+(x.qtd||0),0);
+        const jaChina=(etq.ja_etiq||[]).filter(x=>x.motivo==='china').reduce((a,x)=>a+(x.qtd||0),0);
+        const jaTot=jaPre+jaChina;
         return `
         <div class="etq-card ${cls}">
           <div class="etq-card-stripe ${cls}"></div>
@@ -10421,19 +10439,21 @@ async function etqRenderSecao(fullId) {
               <span>⚠️ Ainda sem código ML para esse SKU — se o envio já foi criado no ML, clique em ⚡ Gerar pelo ML</span>
               <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="etqGerarDoML('${fullId}',{forcar:true})">⚡ Buscar no ML</button>
             </div>`:''}
-            ${temZpl&&estoqueDisp>0&&faltam>0?`
+            ${estoqueDisp>0&&faltam>0?`
             <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.22);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--green);display:flex;align-items:center;justify-content:space-between;gap:8px">
-              <span>📦 ${estoqueDisp.toLocaleString('pt-BR')} etiqueta(s) já impressas no estoque pré-impresso</span>
-              <button class="btn btn-sm" style="background:var(--green);color:#0a0a0a;font-size:10px;flex-shrink:0" onclick="etqUsarEstoque('${fullId}','${etq.id}')">Usar do estoque</button>
+              <span>📦 ${estoqueDisp.toLocaleString('pt-BR')} unidade(s) já pré-etiquetadas pela expedição</span>
+              <button class="btn btn-sm" style="background:var(--green);color:#0a0a0a;font-size:10px;flex-shrink:0" onclick="etqAbrirJa('${fullId}','${etq.id}','pre')">Usar pré-etiquetadas</button>
             </div>`:''}
+            ${jaTot?`<div class="etq-ja-info" title="${_envEsc((etq.ja_etiq||[]).map(x=>`${new Date(x.em).toLocaleString('pt-BR')} · ${x.por} · ${x.qtd} un · ${x.motivo==='china'?'veio da China etiquetado':'pré-etiquetado pela expedição'+(x.descontado!=null&&x.descontado<x.qtd?' (descontou '+x.descontado+' do saldo)':'')}`).join('\n'))}">🏷 ${jaTot.toLocaleString('pt-BR')} sem precisar etiquetar${jaPre?` · ${jaPre.toLocaleString('pt-BR')} pré-etiquetadas pela expedição`:''}${jaChina?` · ${jaChina.toLocaleString('pt-BR')} vieram da China etiquetadas`:''}</div>`:''}
             <div class="etq-card-bar-wrap">
               <div class="etq-card-bar"><div class="etq-card-bar-fill ${cls}" style="width:${pct}%"></div></div>
-              <div class="etq-card-bar-label"><span>${(etq.impressas||0).toLocaleString('pt-BR')} impressas</span><span>${faltam.toLocaleString('pt-BR')} restantes</span></div>
+              <div class="etq-card-bar-label"><span>${Math.max(0,(etq.impressas||0)-jaTot).toLocaleString('pt-BR')} impressas${jaTot?` + ${jaTot.toLocaleString('pt-BR')} já etiquetadas`:''}</span><span>${faltam.toLocaleString('pt-BR')} restantes</span></div>
             </div>
             <div class="etq-card-actions">
               ${pct<100
                 ?(temZpl?`<button class="etq-btn-print" onclick="etqAbrirLote('${fullId}','${etq.id}')">🖨 Imprimir lote</button>
               <button class="etq-btn-reset" onclick="etqPreview('${fullId}','${etq.id}')" title="Preview da etiqueta" style="width:auto;padding:5px 10px;font-size:11px">👁 Preview</button>`:'')
+                +`<button class="etq-btn-ja" onclick="etqAbrirJa('${fullId}','${etq.id}')" title="Pré-etiquetado pela expedição ou veio da China com a etiqueta colada">🏷 Já etiquetado</button>`
                 :`<div class="etq-btn-done-tag">✅ Tudo impresso</div>`}
               <div style="flex:1"></div>
               <button class="etq-btn-reset" onclick="etqResetar('${fullId}','${etq.id}')" title="Resetar">↺</button>
@@ -10451,6 +10471,21 @@ async function etqRenderSecao(fullId) {
                 <button onclick="etqConfirmarLote('${fullId}','${etq.id}',${faltam})"
                   style="padding:6px 16px;border-radius:7px;border:none;background:var(--green);color:#0a0a0a;font-family:'Syne',sans-serif;font-size:11px;font-weight:700;cursor:pointer">✓ Confirmar</button>
                 <button onclick="etqFecharLote('${etq.id}')" class="etq-btn-reset">✕</button>
+              </div>
+            </div>
+            <div class="etq-lote-box etq-ja-box" id="etqJa_${etq.id}" style="display:none">
+              <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:7px">Unidades que NÃO precisam de etiqueta agora</div>
+              <div class="etq-ja-mot">
+                <label><input type="radio" name="etqJaMot_${etq.id}" value="pre" checked> Pré-etiquetado pela expedição <span>saldo ${estoqueDisp.toLocaleString('pt-BR')}</span></label>
+                <label><input type="radio" name="etqJaMot_${etq.id}" value="china"> Veio da China com etiqueta</label>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px">
+                <input type="number" id="etqJaQtd_${etq.id}" value="${faltam}" min="1" max="${faltam}" class="etq-ja-qtd"
+                  onkeydown="if(event.key==='Enter')etqConfirmarJa('${fullId}','${etq.id}')">
+                <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">de ${faltam.toLocaleString('pt-BR')} restantes</span>
+                <div style="flex:1"></div>
+                <button onclick="etqConfirmarJa('${fullId}','${etq.id}')" class="etq-ja-ok">✓ Confirmar</button>
+                <button onclick="etqFecharJa('${etq.id}')" class="etq-btn-reset">✕</button>
               </div>
             </div>`:''}
           </div>
@@ -10656,26 +10691,55 @@ async function etqResetar(fullId, etqId) {
   showToast('↺ Contagem resetada');
 }
 
-// Consome etiquetas do estoque pré-impresso da biblioteca em vez de
-// imprimir agora — usa quando já tem etiquetas prontas adiantadas.
-async function etqUsarEstoque(fullId, etqId) {
-  const arr = etqGetData(fullId);
-  const etq = arr.find(e=>e.id===etqId);
-  if (!etq) return;
-  const idx = await zplCarregarIndice();
-  const chave = _bibChave(etq.sku);
-  const reg = idx.get(chave);
-  const estoqueAtual = reg?.estoque||0;
-  if (estoqueAtual<=0) { showToast('Sem estoque pré-impresso pra esse SKU'); return; }
-  const faltam = Math.max(0, etq.total-(etq.impressas||0));
-  const usar = Math.min(estoqueAtual, faltam);
-  if (usar<=0) return;
-  const r = await zplEstoqueDelta(chave, -usar);
-  if (r.error) { showToast('⚠️ ' + r.error.message); return; }
-  await etqSalvar(fullId, { delta: { [etq.id]: usar } });
-  etqRenderSecao(fullId);
-  showToast(`📦 ${usar} etiqueta(s) puxadas do estoque pré-impresso`);
+// ── "Já etiquetado": unidades que não precisam de etiqueta neste Full ──
+// pre   = pré-etiquetado pela expedição → desconta do saldo da pré-etiquetagem (Estoque Full → Etiquetas pré-impressas)
+// china = veio da China com a etiqueta colada → só registra
+function etqAbrirJa(fullId, etqId, motivo) {
+  document.querySelectorAll('[id^="etqLote_"],[id^="etqJa_"]').forEach(b => b.style.display = 'none');
+  const box = document.getElementById(`etqJa_${etqId}`);
+  if (!box) return;
+  box.style.display = '';
+  if (motivo) { const r = box.querySelector(`input[value="${motivo}"]`); if (r) r.checked = true; }
+  const inp = box.querySelector('.etq-ja-qtd'); inp?.focus(); inp?.select();
 }
+function etqFecharJa(etqId) { const box = document.getElementById(`etqJa_${etqId}`); if (box) box.style.display = 'none'; }
+let _etqJaSalvando = false;
+async function etqConfirmarJa(fullId, etqId) {
+  if (_etqJaSalvando) return;
+  const arr = etqGetData(fullId);
+  const etq = arr.find(e => e.id === etqId);
+  if (!etq) return;
+  const faltam = Math.max(0, (etq.total || 0) - (etq.impressas || 0));
+  let qtd = parseInt(document.getElementById(`etqJaQtd_${etqId}`)?.value) || 0;
+  if (qtd <= 0) { showToast('⚠️ Digite uma quantidade válida'); return; }
+  if (qtd > faltam) qtd = faltam;
+  if (!qtd) return;
+  const motivo = document.querySelector(`input[name="etqJaMot_${etqId}"]:checked`)?.value || 'pre';
+  _etqJaSalvando = true;
+  try {
+    let descontado = null;
+    if (motivo === 'pre') {
+      const idx = await zplCarregarIndice();
+      const chave = _bibChave(etq.sku);
+      const saldo = idx.get(chave)?.estoque || 0;
+      descontado = Math.min(saldo, qtd);
+      if (saldo < qtd && !confirm(`O saldo da pré-etiquetagem de ${etq.sku} é ${saldo}.\n\nDescontar ${descontado} do saldo e marcar ${qtd} como já etiquetadas mesmo assim?`)) return;
+      if (descontado > 0) {
+        const r = await zplEstoqueDelta(chave, -descontado);
+        if (r.error) { showToast('⚠️ Saldo não descontado: ' + r.error.message); return; }
+      }
+    }
+    const reg = { motivo, qtd, descontado, por: _quemSou('—'), em: new Date().toISOString() };
+    const ok = await etqSalvar(fullId, { delta: { [etq.id]: qtd }, jaEtiq: { [etq.id]: reg } });
+    if (!ok && descontado > 0) await zplEstoqueDelta(_bibChave(etq.sku), descontado);   // devolve o saldo se não salvou
+    if (!ok) return;
+    etqFecharJa(etqId);
+    etqRenderSecao(fullId);
+    showToast(motivo === 'china' ? `🏷 ${qtd} un. marcadas como vindas da China etiquetadas` : `📦 ${qtd} un. pré-etiquetadas${descontado != null && descontado < qtd ? ` (saldo descontado: ${descontado})` : ''}`);
+  } finally { _etqJaSalvando = false; }
+}
+// compatibilidade: botão antigo "Usar do estoque"
+function etqUsarEstoque(fullId, etqId) { etqAbrirJa(fullId, etqId, 'pre'); }
 /* ── Lote parcial ────────────────────────────────── */
 async function etqPreview(fullId, etqId) {
   const arr = etqGetData(fullId);
@@ -10772,7 +10836,7 @@ async function etqTestarImpressao() {
 }
 
 function etqAbrirLote(fullId, etqId) {
-  document.querySelectorAll('[id^="etqLote_"]').forEach(b=>b.style.display='none');
+  document.querySelectorAll('[id^="etqLote_"],[id^="etqJa_"]').forEach(b=>b.style.display='none');
   const box = document.getElementById(`etqLote_${etqId}`);
   if (box) { box.style.display=''; const inp=box.querySelector('input'); inp?.focus(); inp?.select(); }
 }
