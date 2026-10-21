@@ -958,7 +958,13 @@ select:focus{border-color:var(--accent)}
 .env-cod:hover{color:var(--blue)}
 .env-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;align-items:center}
 .env-badges .env-curva{width:18px;height:16px;line-height:16px;font-size:9px;border-radius:4px;text-align:center}
-.envi-res{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px}
+.envi-res{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:10px}
+.envi-res>div.envi-cheio b{color:var(--red)}
+.env-cap{cursor:pointer;display:inline-block}
+.env-cap:hover b{color:var(--blue)}
+.env-cap-def{color:var(--muted);border-style:dashed}
+.env-cap-lin{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text);text-transform:none;letter-spacing:0;font-family:inherit}
+.env-cap-lin input{width:120px!important;text-align:center;font-family:'DM Mono',monospace;font-size:15px;font-weight:800;padding:7px;border-radius:8px;border:1px solid var(--border2);background:var(--bg);color:var(--text)}
 .envi-res>div{background:var(--surface2);border-radius:8px;padding:8px 10px}
 .envi-res b{display:block;font-size:17px;font-family:'DM Mono',monospace;letter-spacing:-.4px}
 .envi-res span{font-size:10px;color:var(--muted)}
@@ -1498,6 +1504,7 @@ select:focus{border-color:var(--accent)}
                 <select id="envHorizonte" onchange="envDefinirHorizonte(this.value)" title="Quantos dias de venda a coluna Repor quer cobrir">
                   <option value="15">Repor p/ 15 dias</option><option value="30">Repor p/ 30 dias</option><option value="45">Repor p/ 45 dias</option><option value="60">Repor p/ 60 dias</option>
                 </select>
+                <select id="envVeiculo" onchange="envDefinirVeiculo(this.value)" title="Carro usado na coluna 🚚"></select>
                 <label><input type="checkbox" id="envSoFull" onchange="envRender()" checked> Só Full</label>
               </div>
               <div style="overflow-x:auto">
@@ -1510,8 +1517,9 @@ select:focus{border-color:var(--accent)}
                     <th class="env-num" title="Unidades vendidas no ML nos últimos 30 dias (barras = semanas)">Vendas 30d</th>
                     <th style="text-align:center" title="(Full + a caminho) ÷ venda média por dia">Cobertura</th>
                     <th class="env-num" id="envThRepor" title="Venda por dia × dias escolhidos − Full − a caminho, arredondado para caixa fechada. Referência para comparar com a sugestão do ML">Repor 30d</th>
+                    <th class="env-num" id="envThCarro" title="Carro cheio só com este produto: caixas que cabem, unidades e quantos dias de venda cobre">🚚 Ducato</th>
                   </tr></thead>
-                  <tbody id="envBody"><tr><td colspan="7" style="text-align:center;padding:34px;color:var(--muted)">Carregando…</td></tr></tbody>
+                  <tbody id="envBody"><tr><td colspan="8" style="text-align:center;padding:34px;color:var(--muted)">Carregando…</td></tr></tbody>
                 </table>
               </div>
             </div>
@@ -2397,6 +2405,9 @@ select:focus{border-color:var(--accent)}
     <div class="section-divider">Dimensões da caixa</div>
     <div class="form-grid-3"><div class="form-group"><label>C (cm)</label><input class="form-sel" id="sk-comp" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>L (cm)</label><input class="form-sel" id="sk-larg" type="number" oninput="calcSkuVol()"></div><div class="form-group"><label>A (cm)</label><input class="form-sel" id="sk-altu" type="number" oninput="calcSkuVol()"></div></div>
     <div class="form-grid"><div class="form-group"><label>Peso (kg)</label><input class="form-sel" id="sk-peso" type="number" step="0.01"></div><div class="form-group"><label>Volume (L)</label><input type="text" id="sk-vol" readonly style="color:var(--green)"></div></div>
+    <div class="section-divider">Caminhões — quantas caixas cabem</div>
+    <div class="form-grid-3" id="sk-caps"></div>
+    <div style="font-size:10px;color:var(--muted);margin:-4px 0 10px">Caixas deste produto que cabem no carro cheio (pela experiência da expedição). Aparece na Consulta de envio e na importação do envio.</div>
     <div class="section-divider">Produção</div>
     <div class="form-grid"><div class="form-group"><label>Qtde produtos/caixa</label><input class="form-sel" id="sk-qtdecx" type="number" min="1"></div><div class="form-group"><label>Tempo/caixa (min)</label><input class="form-sel" id="sk-tempo" type="number" step="0.5" oninput="calcSkuTempoun()"></div></div>
     <div style="background:var(--surface2);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--muted);margin-bottom:4px">💡 10 caixas deste SKU = <strong style="color:var(--accent)" id="sk-preview-tempo">—</strong></div>
@@ -2686,7 +2697,7 @@ const db = {
         _id: s.id,
         sku: s.sku, ean: s.ean, descricao: s.descricao,
         galpao: s.galpao, comp: s.comp, larg: s.larg, altu: s.altu,
-        peso: s.peso, vol: s.vol, qtdecx: s.qtdecx, tempo: s.tempo, skus_antigos: s.skus_antigos || ''
+        peso: s.peso, vol: s.vol, qtdecx: s.qtdecx, tempo: s.tempo, skus_antigos: s.skus_antigos || '', cap_veiculos: s.cap_veiculos || {}
       }));
 
       window._saidasDia = new Date().toLocaleDateString('pt-BR');
@@ -2859,6 +2870,7 @@ const db = {
       qtdecx: s.qtdecx||1, tempo: s.tempo||0
     };
     if (s.skus_antigos !== undefined) row.skus_antigos = s.skus_antigos || null;
+    if (s.cap_veiculos !== undefined) row.cap_veiculos = (s.cap_veiculos && Object.keys(s.cap_veiculos).length) ? s.cap_veiculos : null;
     if (s._id) {
       const { error } = await _sb.from('sku_db').update(row).eq('id', s._id);
       if (error) { console.error('[Supabase] saveSku update:', error); return { error }; }
@@ -5110,6 +5122,18 @@ function _skuDb(codigo){
   return SKU_DB.find(s => String(s.sku||'').trim().toUpperCase() === alvo)
       || SKU_DB.find(s => _skuApelidos(s).includes(alvo)) || null;
 }
+// ── Caminhões: quantas caixas de cada SKU cabem em cada carro (conhecimento da operação) ──
+window._VEICULOS = [{ nome: 'Ducato' }, { nome: 'Master' }];
+async function _veiculosCarregar() {
+  try {
+    const { data, error } = await _sb.from('veiculos').select('*').eq('ativo', true).order('ordem');
+    if (!error && data && data.length) window._VEICULOS = data;
+  } catch (e) {}
+  return window._VEICULOS;
+}
+setTimeout(() => { if (typeof _sb !== 'undefined') _veiculosCarregar(); }, 1500);
+// { Ducato: 120, Master: 140 } (caixas) do produto, por qualquer nome dele
+function _skuCap(codigo) { return _skuDb(codigo)?.cap_veiculos || {}; }
 // SKU principal (o atual) de qualquer nome do produto
 function _skuCanon(codigo){ const s = _skuDb(codigo); return s ? String(s.sku).trim() : String(codigo||'').trim(); }
 // Todos os nomes do produto, principal primeiro (maiúsculo)
@@ -6582,7 +6606,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 59;
+const APP_VERSAO = 60;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -7193,6 +7217,15 @@ function renderCatalogo(){
     </tr>`;
   }).join('')||'<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--muted)">Nenhum SKU encontrado</td></tr>';
 }
+function _skuCapsRender(caps) {
+  const box = document.getElementById('sk-caps'); if (!box) return;
+  box.innerHTML = (window._VEICULOS || []).map(v => `<div class="form-group"><label>🚚 ${_envEsc(v.nome)} (caixas)</label><input class="form-sel" type="number" min="0" step="1" data-veic="${_envEsc(v.nome)}" value="${caps[v.nome] || ''}" placeholder="—"></div>`).join('');
+}
+function _skuCapsLer() {
+  const caps = {};
+  document.querySelectorAll('#sk-caps input[data-veic]').forEach(i => { const n = parseInt(i.value); if (n > 0) caps[i.dataset.veic] = n; });
+  return caps;
+}
 function editarSku(idx){
   const s=SKU_DB[idx];editingSkuIdx=idx;
   document.getElementById('skuModalTitle').textContent='Editar SKU — '+s.sku;
@@ -7200,6 +7233,7 @@ function editarSku(idx){
   const campo = {'sk-desc':'descricao'};
   ['sk-sku','sk-desc','sk-ean','sk-galpao','sk-comp','sk-larg','sk-altu','sk-peso','sk-qtdecx','sk-tempo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=s[campo[id]||id.replace('sk-','')]||'';});
   const ant=document.getElementById('sk-antigos'); if(ant) ant.value=s.skus_antigos||'';
+  _skuCapsRender(s.cap_veiculos||{});
   calcSkuVol();calcSkuTempoun();openModal('modalSku');
   checarSkuGenerico('sk-sku');
 }
@@ -7208,6 +7242,7 @@ function novoSku(){
   editingSkuIdx=null;
   document.getElementById('skuModalTitle').textContent='Novo SKU';
   ['sk-sku','sk-desc','sk-ean','sk-antigos','sk-comp','sk-larg','sk-altu','sk-peso','sk-vol','sk-qtdecx','sk-tempo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  _skuCapsRender({});
   calcSkuVol();calcSkuTempoun();openModal('modalSku');
 }
 async function salvarSku(){
@@ -7225,6 +7260,7 @@ async function salvarSku(){
   const conflito = SKU_DB.find((x, i) => i !== editingSkuIdx && [String(x.sku).toUpperCase(), ..._skuApelidos(x)].some(n => n === sku.toUpperCase() || apel.some(a => a.toUpperCase() === n)));
   if (conflito) { showToast('⚠️ ' + sku + ' ou um dos nomes antigos já pertence ao SKU ' + conflito.sku); return; }
   obj.skus_antigos = apel.join(' / ');
+  obj.cap_veiculos = _skuCapsLer();
   if (editando) obj._id = SKU_DB[editingSkuIdx]._id;
   const r = await db.saveSku(obj);
   if (r.error) { showToast('❌ SKU não salvo: ' + (r.error.message||'erro')); return; }
@@ -11493,6 +11529,17 @@ function _envLinhas() {
 function envFiltrar(f) { _envFiltro = f; envRender(); }
 let _envHorizonte = 30;
 try { _envHorizonte = parseInt(localStorage.getItem('outbox_envio_horizonte')) || 30; } catch (e) {}
+let _envVeiculo = null;
+try { _envVeiculo = localStorage.getItem('outbox_envio_veiculo') || null; } catch (e) {}
+function envDefinirVeiculo(v) {
+  _envVeiculo = v;
+  try { localStorage.setItem('outbox_envio_veiculo', v); } catch (e) {}
+  envRender();
+}
+function _envVeiculoAtual() {
+  const vs = (window._VEICULOS || []).map(v => v.nome);
+  return vs.includes(_envVeiculo) ? _envVeiculo : (vs[0] || 'Ducato');
+}
 function envDefinirHorizonte(v) {
   _envHorizonte = parseInt(v) || 30;
   try { localStorage.setItem('outbox_envio_horizonte', String(_envHorizonte)); } catch (e) {}
@@ -11513,6 +11560,10 @@ function envRender() {
   const soFull = document.getElementById('envSoFull')?.checked;
   const hz = document.getElementById('envHorizonte'); if (hz && hz.value !== String(_envHorizonte)) hz.value = String(_envHorizonte);
   const th = document.getElementById('envThRepor'); if (th) th.textContent = `Repor ${_envHorizonte}d`;
+  const veic = _envVeiculoAtual();
+  const sv = document.getElementById('envVeiculo');
+  if (sv) { const ops = (window._VEICULOS || []).map(v => `<option value="${_envEsc(v.nome)}">🚚 ${_envEsc(v.nome)}</option>`).join(''); if (sv.innerHTML !== ops) sv.innerHTML = ops; sv.value = veic; }
+  const thc = document.getElementById('envThCarro'); if (thc) thc.textContent = '🚚 ' + veic;
 
   const comVenda = linhas.filter(l => l.v30 > 0);
   const ruptura = linhas.filter(l => l.p && l.full === 0 && l.v30 > 0);
@@ -11542,12 +11593,52 @@ function envRender() {
   else lista = [...lista].sort((a, b) => a.k.localeCompare(b.k));
 
   if (!_mlCat && !linhas.length) {
-    corpo.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:34px;color:var(--muted)">Clique em <b>↻ Atualizar</b> para carregar anúncios, estoque Full e vendas</td></tr>`;
+    corpo.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:34px;color:var(--muted)">Clique em <b>↻ Atualizar</b> para carregar anúncios, estoque Full e vendas</td></tr>`;
   } else {
-    corpo.innerHTML = lista.map(_envLinhaHtml).join('') || `<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">${busca ? 'Nenhum produto com “' + _envEsc(busca) + '”' : 'Nenhum produto neste filtro'}</td></tr>`;
+    corpo.innerHTML = lista.map(_envLinhaHtml).join('') || `<tr><td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">${busca ? 'Nenhum produto com “' + _envEsc(busca) + '”' : 'Nenhum produto neste filtro'}</td></tr>`;
   }
 }
 
+// Carro cheio só com este produto
+function _envCarroHtml(l) {
+  const veic = _envVeiculoAtual();
+  const cap = parseInt(_skuCap(l.k)[veic]) || 0;
+  const js = _envJs(l.k);
+  if (!cap) return `<button class="env-mini env-cap-def" onclick="envCapEditar('${js}')" title="Quantas caixas deste produto cabem no carro">+ definir</button>`;
+  const un = cap * l.qtdecx;
+  const porDia = l.v30 / 30;
+  const dias = porDia > 0 ? Math.round(un / porDia) : null;
+  const viagens = l.repor > 0 ? Math.ceil(l.repor / l.qtdecx) / cap : 0;
+  return `<span class="env-cap" onclick="envCapEditar('${js}')" title="Clique para mudar${viagens ? ` · a reposição de ${_envHorizonte} dias ocupa ${viagens.toFixed(1).replace('.', ',')} ${veic}` : ''}"><b>${_envFmt(cap)} cx</b>${l.qtdecx > 1 ? `<div class="env-sub">${_envFmt(un)} un.</div>` : ''}${dias != null ? `<div class="env-sub" title="Dias de venda que um carro cheio cobre">≈ ${dias >= 999 ? '999+' : dias} dias</div>` : ''}</span>`;
+}
+// Editar a carga do produto direto da consulta
+function envCapEditar(k) {
+  const idx = SKU_DB.indexOf(_skuDb(k));
+  if (idx < 0) { showToast('⚠️ ' + k + ' não está no catálogo do Outbox — cadastre primeiro (Catálogo → 🔎 Conferir com ML)'); return; }
+  const s = SKU_DB[idx], caps = s.cap_veiculos || {};
+  document.getElementById('envCapOv')?.remove();
+  const ov = document.createElement('div');
+  ov.id = 'envCapOv'; ov.className = 'etq-bipe-ov';
+  ov.innerHTML = `<div class="etq-bipe-box" style="text-align:left;width:min(420px,100%)">
+    <div class="etq-bipe-tit">🚚 Quantas caixas cabem no carro</div>
+    <div style="font-size:15px;font-weight:800;font-family:'DM Mono',monospace;margin-top:6px">${_envEsc(s.sku)}</div>
+    <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">${_envEsc(s.descricao || '')}${(parseInt(s.qtdecx) || 1) > 1 ? ` · caixa com ${s.qtdecx} un.` : ''}</div>
+    ${(window._VEICULOS || []).map(v => `<label class="env-cap-lin"><span>${_envEsc(v.nome)}</span><input type="number" min="0" step="1" data-veic="${_envEsc(v.nome)}" value="${caps[v.nome] || ''}" placeholder="caixas"></label>`).join('')}
+    <div class="etq-bipe-acoes" style="justify-content:flex-end"><button class="btn btn-ghost btn-sm" data-a="x">Cancelar</button><button class="btn btn-primary btn-sm" data-a="ok">Salvar</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const salvar = async () => {
+    const novo = {};
+    ov.querySelectorAll('input[data-veic]').forEach(i => { const n = parseInt(i.value); if (n > 0) novo[i.dataset.veic] = n; });
+    const obj = { ...SKU_DB[idx], cap_veiculos: novo };
+    const r = await db.saveSku(obj);
+    if (r?.error) { showToast('❌ Não salvei: ' + r.error.message); return; }
+    SKU_DB[idx] = obj; ov.remove(); envRender(); showToast('🚚 Carga de ' + s.sku + ' salva');
+  };
+  ov.addEventListener('click', e => { const a = e.target?.dataset?.a; if (a === 'x' || e.target === ov) ov.remove(); else if (a === 'ok') salvar(); });
+  ov.addEventListener('keydown', e => { if (e.key === 'Enter') salvar(); else if (e.key === 'Escape') ov.remove(); });
+  setTimeout(() => ov.querySelector('input')?.focus(), 30);
+}
 function _envLinhaHtml(l) {
   const p = l.p || {};
   const maxSem = Math.max(1, ...l.sem.slice(0, 4));
@@ -11589,6 +11680,7 @@ function _envLinhaHtml(l) {
     <td class="env-num"><div class="env-vendas"><b>${_envFmt(l.v30)}</b><span class="env-bars">${barras}</span></div><div class="env-sub">${l.v30 ? (l.v30 / 30).toFixed(1).replace('.', ',') + '/dia' : ''}</div></td>
     <td style="text-align:center">${cobHtml}</td>
     <td class="env-num">${reporHtml}</td>
+    <td class="env-num">${_envCarroHtml(l)}</td>
   </tr>`;
 }
 
@@ -11709,7 +11801,14 @@ function envAbrirImportacao() {
     <div><b>${_envFmt(un)}</b><span>unidades</span></div>
     <div><b>${_envFmt(cx)}</b><span>caixas</span></div>
     <div><b>${kg ? _fmtKg(kg) : '—'}</b><span>peso est.</span></div>
-    <div><b>${m3 ? _fmtM3(m3) : '—'}</b><span>volume${semMedida ? ` · ${semMedida} sem medida` : ''}</span></div>`;
+    <div><b>${m3 ? _fmtM3(m3) : '—'}</b><span>volume${semMedida ? ` · ${semMedida} sem medida` : ''}</span></div>` +
+    (window._VEICULOS || []).map(v => {
+      const sem = itens.filter(i => !(parseInt(_skuCap(i.sku)[v.nome]) > 0));
+      if (sem.length === itens.length) return '';
+      const ocup = itens.reduce((t, i) => { const c = parseInt(_skuCap(i.sku)[v.nome]) || 0; return c ? t + i.caixas / c : t; }, 0);
+      const pct = Math.round(ocup * 100);
+      return `<div class="${pct > 100 ? 'envi-cheio' : ''}" title="${sem.length ? 'Sem carga definida: ' + _envEsc(sem.map(i => i.sku).join(', ')) : 'Soma de caixas ÷ caixas que cabem, produto a produto'}"><b>${pct}%${sem.length ? '*' : ''}</b><span>🚚 ${_envEsc(v.nome)}${ocup > 1 ? ` · ${Math.ceil(ocup)} viagens` : ''}</span></div>`;
+    }).join('');
   const semSku = itens.filter(i => i.semSku);
   const foraCat = itens.filter(i => !i.semSku && !i.sk);
   const avulsas = itens.filter(i => i.sk && i.unidades % i.qtdecx);
