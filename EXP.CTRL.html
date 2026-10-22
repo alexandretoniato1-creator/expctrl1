@@ -293,6 +293,7 @@ body.light-mode .ins-tab-btn.active{box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .cal-full-card.status-conferencia{border-left-color:var(--purple)}
 .cal-full-card.status-pendente{border-left-color:var(--muted)}
 .cal-full-card.status-atrasado{border-left-color:var(--red);background:linear-gradient(rgba(207,34,46,.07),rgba(207,34,46,.07)),var(--surface)}
+.cal-full-hora{font-size:11px;font-family:"DM Mono",monospace;font-weight:800;color:var(--blue);margin:1px 0 2px}
 .cal-full-id{font-size:12px;font-family:"DM Mono",monospace;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:16px}
 .cal-card-status{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px;padding:1px 6px;border-radius:100px;margin:4px 0 4px}
 .cal-full-card.status-pronto .cal-card-status{background:rgba(26,127,55,.12);color:var(--green)}
@@ -2275,7 +2276,7 @@ select:focus{border-color:var(--accent)}
       <div class="form-group"><label>Marketplace</label><select class="form-sel" id="nf-marketplace" onchange="nfAtualizarDestinos()"><option value="ML">Mercado Livre</option><option value="Amazon">Amazon</option><option value="Shopee">Shopee</option><option value="TikTok">TikTok Shop</option><option value="Magalu">Magalu</option></select></div>
       <div class="form-group"><label>Tipo de envio</label><select class="form-sel" id="nf-tipo"><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
       <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="nf-criadoEm"></div>
-      <div class="form-group"><label>Agendado para</label><input class="form-sel" type="date" id="nf-agendado"></div>
+      <div class="form-group"><label>Agendado para</label><div style="display:flex;gap:6px"><input class="form-sel" type="date" id="nf-agendado" style="flex:1;min-width:0"><input class="form-sel" type="time" id="nf-horario" style="width:110px;flex-shrink:0"></div></div>
       <div class="form-group"><label>Responsável</label><select class="form-sel" id="nf-responsavel"><option>Edipo</option><option>Max</option></select></div>
       <div class="form-group"><label>Destino</label><select class="form-sel" id="nf-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
       <div class="form-group"><label>Status</label><select class="form-sel" id="nf-status"><option>Pendente</option><option>Produzindo</option><option>Em conferência</option><option>Pronto</option></select></div>
@@ -2302,7 +2303,7 @@ select:focus{border-color:var(--accent)}
     <div class="form-grid" style="margin-top:12px">
       <div class="form-group"><label>Nº do envio no ML</label><input class="form-sel" type="text" inputmode="numeric" id="envc-numero" placeholder="ex.: 79565431" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:700" oninput="envChecarNumero()"></div>
       <div class="form-group"><label>Modo de envio (como ficou no ML)</label><select class="form-sel" id="envc-tipo"><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
-      <div class="form-group"><label>Data da coleta / entrega</label><input class="form-sel" type="date" id="envc-agendado"></div>
+      <div class="form-group"><label>Data e horário da coleta / entrega</label><div style="display:flex;gap:6px"><input class="form-sel" type="date" id="envc-agendado" style="flex:1;min-width:0"><input class="form-sel" type="time" id="envc-hora" style="width:110px;flex-shrink:0"></div></div>
       <div class="form-group"><label>Destino</label><select class="form-sel" id="envc-destino"></select></div>
     </div>
     <div id="envc-numaviso"></div>
@@ -2328,7 +2329,7 @@ select:focus{border-color:var(--accent)}
         <div class="form-group"><label>Status</label><select class="form-sel" id="ef-status" onchange="checkConferenciaStatus()"><option value="Pendente">Pendente</option><option value="Produzindo">Produzindo</option><option value="Em conferência">Em conferência</option><option value="Pronto">Pronto</option></select><div id="efStatusDica" style="display:none;font-size:10px;font-family:'DM Mono',monospace;margin-top:5px;padding:5px 8px;border-radius:5px;background:rgba(0,0,0,.15)"></div></div>
         <div class="form-group"><label>Responsável</label><select class="form-sel" id="ef-responsavel"><option>Edipo</option><option>Max</option></select></div>
         <div class="form-group"><label>Destino</label><select class="form-sel" id="ef-destino"><option>ML Cajamar/SP</option><option>ML Perus/SP</option><option>ML Sumaré/SP</option><option>ML Franco da Rocha/SP</option><option>ML Guarulhos/SP</option><option>ML Embu das Artes/SP</option><option>Amazon SP</option><option>Shopee SP</option></select></div>
-        <div class="form-group"><label>Data agendada</label><input class="form-sel" type="date" id="ef-agendado"></div>
+        <div class="form-group"><label>Data e horário agendados</label><div style="display:flex;gap:6px"><input class="form-sel" type="date" id="ef-agendado" style="flex:1;min-width:0"><input class="form-sel" type="time" id="ef-horario" style="width:110px;flex-shrink:0"></div></div>
         <div class="form-group"><label>Data de criação</label><input class="form-sel" type="date" id="ef-criadoEm"></div>
         <div class="form-group full"><label>Observações</label><input class="form-sel" type="text" id="ef-obs" placeholder="Observações"></div>
       </div>
@@ -2668,7 +2669,7 @@ const db = {
         agendado: f.agendado, criadoEm: f.criado_em,
         responsavel: f.responsavel, status: f.status,
         obs: f.obs, vol: f.vol||[], itens: f.itens||[],
-        dateKey: f.date_key||'', statusHist: f.status_hist||[], _snap: _fullSnap(f)
+        dateKey: f.date_key||'', horario: f.horario||'', statusHist: f.status_hist||[], _snap: _fullSnap(f)
       }]));
 
       CAL_FULLS = (calFulls||[]).map(c => ({
@@ -2678,7 +2679,7 @@ const db = {
         dia: c.dia,
         destino: c.destino, status: c.status,
         itens: c.itens, responsavel: c.responsavel,
-        dateKey: c.date_key||''
+        dateKey: c.date_key||'', horario: c.horario||''
       }));
 
       FULLS_ENVIADOS = (enviados||[]).map(f => ({
@@ -2770,6 +2771,7 @@ const db = {
       obs: f.obs||'', vol: f.vol||[], itens: f.itens||[],
       date_key: f.dateKey||''
     };
+    if (f.horario !== undefined) row.horario = f.horario || null;
     if (opt && opt.novo) {
       const { error } = await _sb.from('fulls').insert(row);
       if (error) {
@@ -2804,6 +2806,7 @@ const db = {
       itens: c.itens||'0/0', responsavel: c.responsavel||'',
       date_key: c.dateKey||''
     };
+    if (c.horario !== undefined) row.horario = c.horario || null;
     const { error } = await _sb.from('cal_fulls').upsert(row, { onConflict: 'id' });
     if (error) { console.error('[Supabase] saveCalFull:', error); showToast('⚠️ Calendário não atualizado: ' + (error.message||'erro')); return false; }
     return true;
@@ -2998,12 +3001,12 @@ function _jsonEstavel(v){
   return JSON.stringify(v === undefined ? null : v);
 }
 function _fullSnap(r){
-  return _jsonEstavel([r.status||'', r.destino||'', r.agendado||'', r.responsavel||'', r.obs||'', r.date_key||'', r.empresa||'', r.itens||[]]);
+  return _jsonEstavel([r.status||'', r.destino||'', r.agendado||'', r.responsavel||'', r.obs||'', r.date_key||'', r.empresa||'', r.itens||[], r.horario||'']);
 }
 function _fullDoBanco(f){
   return { id: f.id, empresa: f.empresa, tipo_envio: derivarTipoLabel(f.empresa), marketplace: derivarMarketplace(f.destino),
     destino: f.destino, agendado: f.agendado, criadoEm: f.criado_em, responsavel: f.responsavel, status: f.status,
-    obs: f.obs, vol: f.vol||[], itens: f.itens||[], dateKey: f.date_key||'', statusHist: f.status_hist||[], _snap: _fullSnap(f) };
+    obs: f.obs, vol: f.vol||[], itens: f.itens||[], dateKey: f.date_key||'', horario: f.horario||'', statusHist: f.status_hist||[], _snap: _fullSnap(f) };
 }
 // Recarrega UM Full do banco (depois de conflito) e redesenha as telas
 async function _fullRecarregar(id, row){
@@ -3379,6 +3382,7 @@ function renderCalMobile(){
   filtered.sort((a,b)=>{
     const ta = agendadoTimestamp(a.agendado), tb = agendadoTimestamp(b.agendado);
     if(ta !== tb) return ta - tb;
+    if((a.horario||'') !== (b.horario||'')) return String(a.horario||'99').localeCompare(String(b.horario||'99'));
     const oa = orderStatus[a.status]??5, ob = orderStatus[b.status]??5;
     return oa - ob;
   });
@@ -3429,7 +3433,7 @@ function renderCalMobile(){
       html += `<div class="cal-mobile-card status-${slug}" onclick="calMobileOpenFull('${f.id}')">
         <div class="cal-mobile-card-top">
           <div class="cal-mobile-card-id">${f.id}</div>
-          <div class="cal-mobile-card-date">📅 ${dataFmt}</div>
+          <div class="cal-mobile-card-date">📅 ${dataFmt}${f.horario ? ' · 🕒 ' + f.horario : ''}</div>
         </div>
         <div class="cal-mobile-card-info">
           <span class="cal-full-empresa ${empClass}">${empresa}</span>
@@ -4412,7 +4416,7 @@ function fdRenderCabecalho(id) {
   const mkt = f.marketplace || derivarMarketplace(f.destino);
   const st = _stFull(f);
   document.getElementById('fdTitle').textContent = f.id;
-  document.getElementById('fdSub').innerHTML = `${mktBadgeHtml(mkt)} ${tipoBadgeHtml(f.tipo_envio || derivarTipoLabel(f.empresa))} · ${_fdEsc(f.destino || '—')} · ${_fdEsc(f.agendado || '—')} <span class="badge ${statusClass(st)}" style="margin-left:6px">${statusIcon(st)} ${st}</span>`;
+  document.getElementById('fdSub').innerHTML = `${mktBadgeHtml(mkt)} ${tipoBadgeHtml(f.tipo_envio || derivarTipoLabel(f.empresa))} · ${_fdEsc(f.destino || '—')} · ${_fdEsc(f.agendado || '—')}${f.horario ? ' às <b>' + _fdEsc(f.horario) + '</b>' : ''} <span class="badge ${statusClass(st)}" style="margin-left:6px">${statusIcon(st)} ${st}</span>`;
 }
 
 // ── Passo 1: separar e montar (status de cada item direto aqui) ──
@@ -4741,6 +4745,8 @@ function _calSkuRenderResumo(alvo){
     + `</div>`;
 }
 
+// horário do Full (o calendário guarda uma cópia; o Full é a fonte)
+function _calHora(c){ return (FULLS_DATA[c.id] && FULLS_DATA[c.id].horario) || c.horario || ''; }
 function renderCal(){
   _semaforoCarregar();
   const skuAlvo = _calSkuFiltro();
@@ -4772,7 +4778,7 @@ function renderCal(){
       // Com dateKey: só na coluna daquela data. Sem dateKey: só na semana atual, pelo nome do dia
       const fimDeSemana = k => { const p=String(k||'').split('/'); if(p.length!==3) return null; const d=new Date(+p[2],+p[1]-1,+p[0]); const w=d.getDay(); if(w!==0&&w!==6) return null; d.setDate(d.getDate()-(w===6?1:2)); return dateToStr(d); };
       const fulls = lista.filter(f=> f.dateKey ? (f.dateKey===dateKey || (di===4 && fimDeSemana(f.dateKey)===dateKey)) : (wi===0 && f.dia===dia))
-        .sort((a,b)=>(_ordemStatus[_stFull(a)]??9)-(_ordemStatus[_stFull(b)]??9));
+        .sort((a,b)=>(_ordemStatus[_stFull(a)]??9)-(_ordemStatus[_stFull(b)]??9) || String(_calHora(a)||'99').localeCompare(String(_calHora(b)||'99')));
       qtdSemana += fulls.length;
       const hoje = isToday(d);
       const cards = fulls.map(f=>{
@@ -4787,6 +4793,7 @@ function renderCal(){
           onclick="openDetail('${f.id}')" title="${(f.destino||'').replace(/"/g,'&quot;')}">
           <button class="cal-card-del" title="Excluir Full" onclick="event.stopPropagation();excluirFull('${f.id}')">✕</button>
           <div class="cal-full-id">${f.id}</div>
+          ${_calHora(f) ? `<div class="cal-full-hora">🕒 ${_calHora(f)}</div>` : ''}
           <div class="cal-card-status">${statusIcon(stx)} ${stx}</div>
           <div style="display:flex;gap:3px;flex-wrap:wrap">${mktBadgeHtml(derivarMarketplace(f.destino))}${tipoBadgeHtml(derivarTipoLabel(f.empresa))}</div>
           <div class="cal-full-dest">📍 ${f.destino||'—'}</div>
@@ -4898,6 +4905,7 @@ function openEditFull(id){
   document.getElementById('ef-obs').value=f.obs||'';
   document.getElementById('ef-agendado').value='';
   if(f.agendado){const p=f.agendado.split('/');if(p.length===3)document.getElementById('ef-agendado').value=p[2]+'-'+p[1]+'-'+p[0];}
+  document.getElementById('ef-horario').value=f.horario||'';
   if(f.criadoEm){const p=f.criadoEm.split('/');if(p.length===3)document.getElementById('ef-criadoEm').value=p[2]+'-'+p[1]+'-'+p[0];}
   else { document.getElementById('ef-criadoEm').value=''; }
   switchEditTab('full',document.querySelector('.edit-tab'));
@@ -5196,7 +5204,7 @@ async function salvarEditFull(){
     editingFullId=novoId;
     document.getElementById('editFullTitleId').textContent=novoId;
   }
-  const antes = { status:f.status, responsavel:f.responsavel, destino:f.destino, obs:f.obs, agendado:f.agendado, dateKey:f.dateKey, criadoEm:f.criadoEm };
+  const antes = { status:f.status, responsavel:f.responsavel, destino:f.destino, obs:f.obs, agendado:f.agendado, dateKey:f.dateKey, criadoEm:f.criadoEm, horario:f.horario };
   const novoStatus=document.getElementById('ef-status').value;
   f.status=novoStatus;
   f.responsavel=document.getElementById('ef-responsavel').value;
@@ -5205,6 +5213,7 @@ async function salvarEditFull(){
   f.obs=document.getElementById('ef-obs').value;
   const ag=document.getElementById('ef-agendado').value;
   if(ag){const p=ag.split('-');f.agendado=p[2]+'/'+p[1]+'/'+p[0]; f.dateKey=f.agendado;}
+  f.horario=document.getElementById('ef-horario').value||'';
   const cr=document.getElementById('ef-criadoEm').value;
   if(cr){const p=cr.split('-');f.criadoEm=p[2]+'/'+p[1]+'/'+p[0];}
   const avMap=name=>name!=='—'?name.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?';
@@ -5222,7 +5231,7 @@ async function salvarEditFull(){
   await _efRegistrarProdutividade(f, novosProd);
   const cal=CAL_FULLS.find(c=>c.id===editingFullId);
   if(cal){
-    cal.status=f.status; cal.destino=f.destino; cal.responsavel=f.responsavel;
+    cal.status=f.status; cal.destino=f.destino; cal.responsavel=f.responsavel; cal.horario=f.horario||'';
     const done=f.itens.filter(i=>i.status==='done').length; cal.itens=done+'/'+f.itens.length;
     if(f.dateKey){ cal.dateKey=f.dateKey; cal.dia=diaDaSemana(f.agendado); }
     await db.saveCalFull(cal);
@@ -6606,7 +6615,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 60;
+const APP_VERSAO = 61;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -7428,7 +7437,7 @@ function openModal(id){
       .then(([a,b]) => { const ids=[...(a.data||[]),...(b.data||[])].map(r=>r.id); if (el && el.value === sugestao) el.value = sugerir([...locais, ...ids]); })
       .catch(()=>{});
     // limpa o formulário (antes guardava valores do último cadastro)
-    ['nf-agendado','nf-obs'].forEach(k=>{const x=document.getElementById(k); if(x) x.value='';});
+    ['nf-agendado','nf-horario','nf-obs'].forEach(k=>{const x=document.getElementById(k); if(x) x.value='';});
     const st=document.getElementById('nf-status'); if(st) st.value='Pendente';
     const ce=document.getElementById('nf-criadoEm');
     if(ce){const d=new Date();ce.value=d.getFullYear()+'-'+(d.getMonth()+1).toString().padStart(2,'0')+'-'+d.getDate().toString().padStart(2,'0');}
@@ -7474,8 +7483,9 @@ async function salvarNovoFull() {
     codigo: s.sku, nome: s.descricao, funcionario:'—',
     qtde: s.qtde, status:'pending', avatar:'?', cor:'av-amber'
   }));
-  const novoFull = { id, empresa: tipo_envio, tipo_envio, marketplace, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens, dateKey };
-  const calEntry = { id, empresa: tipo_envio, tipo_envio, marketplace, dia, destino, status, itens:'0/'+itens.length, responsavel, dateKey };
+  const horario = document.getElementById('nf-horario')?.value||'';
+  const novoFull = { id, empresa: tipo_envio, tipo_envio, marketplace, destino, agendado, criadoEm, responsavel, status, obs, vol:[], itens, dateKey, horario };
+  const calEntry = { id, empresa: tipo_envio, tipo_envio, marketplace, dia, destino, status, itens:'0/'+itens.length, responsavel, dateKey, horario };
   // Confere também em Enviados no banco (o insert já barra ID repetido entre os ativos)
   const { data: jaEnv } = await _sb.from('fulls_enviados').select('id').eq('id', id).maybeSingle();
   if (jaEnv) { showToast('⚠️ ID "'+id+'" já existe nos Enviados'); return; }
@@ -11830,6 +11840,7 @@ function envAbrirImportacao() {
   const amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
   if (amanha.getDay() === 6) amanha.setDate(amanha.getDate() + 2); else if (amanha.getDay() === 0) amanha.setDate(amanha.getDate() + 1);
   m.querySelector('#envc-agendado').value = _envDataInput(amanha);
+  m.querySelector('#envc-hora').value = '';
   m.querySelector('#envc-destino').innerHTML = (_NF_DESTINOS.ML || []).map(d => `<option>${d}</option>`).join('');
   m.querySelector('#envc-numero').value = imp.numero || '';
   envChecarNumero();
@@ -11855,6 +11866,7 @@ async function envConfirmarImportacao() {
   const tipo = m.querySelector('#envc-tipo').value || 'Coleta';
   const destino = m.querySelector('#envc-destino').value || '';
   const agVal = m.querySelector('#envc-agendado').value;
+  const horario = m.querySelector('#envc-hora').value || '';
   if (numero.length < 6) { showToast('⚠️ Digite o número do envio que o ML criou (ex.: 79565431)'); m.querySelector('#envc-numero')?.focus(); return; }
   if (!agVal) { showToast('⚠️ Informe a data da coleta/entrega escolhida no ML'); return; }
   const agendado = agVal.split('-').reverse().join('/');
@@ -11867,14 +11879,14 @@ async function envConfirmarImportacao() {
     if (jaEnv) { showToast('⚠️ ID "' + id + '" já existe nos Enviados'); return; }
     const novoFull = {
       id, empresa: tipo, tipo_envio: tipo, marketplace: 'ML', destino, agendado, criadoEm: hoje,
-      responsavel: _quemSou('Edipo'), status: 'Pendente', obs: 'Importado do envio do ML (' + imp.arquivo + ')', vol: [], dateKey: agendado,
+      responsavel: _quemSou('Edipo'), status: 'Pendente', obs: 'Importado do envio do ML (' + imp.arquivo + ')', vol: [], dateKey: agendado, horario,
       itens: imp.itens.map(i => ({
         codigo: i.sku, nome: i.sk?.descricao || i.titulo || '', funcionario: '—',
         qtde: i.caixas, unidades: i.unidades, status: 'pending', avatar: '?', cor: 'av-amber',
       })),
     };
     if (!(await db.saveFull(novoFull, { novo: true }))) return;
-    const calEntry = { id, empresa: tipo, tipo_envio: tipo, marketplace: 'ML', dia: diaDaSemana(agendado), destino, status: 'Pendente', itens: '0/' + novoFull.itens.length, responsavel: novoFull.responsavel, dateKey: agendado };
+    const calEntry = { id, empresa: tipo, tipo_envio: tipo, marketplace: 'ML', dia: diaDaSemana(agendado), destino, status: 'Pendente', itens: '0/' + novoFull.itens.length, responsavel: novoFull.responsavel, dateKey: agendado, horario };
     FULLS_DATA[id] = novoFull;
     CAL_FULLS.push(calEntry);
     await db.saveCalFull(calEntry);
