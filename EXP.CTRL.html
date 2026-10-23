@@ -1061,6 +1061,9 @@ select:focus{border-color:var(--accent)}
 .skuc-prob.info{color:var(--muted)}
 .skuc-prob button{flex-shrink:0;font-size:10px;padding:4px 8px}
 .modal-overlay#skuConfOv{display:flex;z-index:9000}
+.etq-incons{display:flex;gap:12px;align-items:center;justify-content:space-between;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.4);color:var(--red);border-radius:9px;padding:10px 14px;margin:10px 16px;font-size:12px}
+.etq-incons .t{display:block;font-weight:800;margin-bottom:3px}
+.etq-incons button{background:var(--red);color:#fff;flex-shrink:0}
 .etq-ja-info{background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.28);border-radius:7px;padding:7px 11px;margin:8px 0;font-size:11px;color:var(--blue)}
 .etq-btn-ja{font-size:11px;padding:5px 10px;border-radius:7px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;font-weight:600}
 .etq-btn-ja:hover{border-color:var(--blue);color:var(--blue)}
@@ -2817,6 +2820,11 @@ const db = {
     const { error } = await _sb.from('fulls').delete().eq('id', id);
     if (error) { console.error('[Supabase] deleteFull:', error); return error; }
     await _sb.from('cal_fulls').delete().eq('id', id);
+    // o que fica pendurado no número do Full sai junto — senão volta se o mesmo número for criado de novo
+    for (const t of ['full_etiquetas', 'full_conferencia', 'full_conferencia_volumes', 'full_carregamento', 'full_carregamento_volumes']) {
+      try { await _sb.from(t).delete().eq('full_id', id); } catch (e) {}
+    }
+    if (window._etqData) delete window._etqData[id];
     return null;
   },
 
@@ -6615,7 +6623,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 61;
+const APP_VERSAO = 62;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -10465,8 +10473,17 @@ async function etqSalvar(fullId, op) {
     if (ja.length) r.ja_etiq = ja.slice(-50);
     return r;
   });
-  // SKUs que outro computador adicionou ao Full continuam lá
-  doBanco.forEach(b => { if (!idsLocais.has(b.id) && !removidos.has(b.id)) arr.push(b); });
+  // SKUs que outro computador adicionou ao Full continuam lá — menos:
+  //  · quando a lista local substitui tudo (importação do envio: o arquivo do ML é a verdade)
+  //  · etiqueta do mesmo SKU que já está aqui e ainda não foi usada (dois PCs gerando ao mesmo tempo = duplicata)
+  const _ch = x => _envNorm(_skuCanon(_skuResolvido(x.sku || '')));
+  const skusLocais = new Set(arr.map(_ch));
+  if (!op.substituir) doBanco.forEach(b => {
+    if (idsLocais.has(b.id) || removidos.has(b.id)) return;
+    const usada = (b.impressas || 0) > 0 || (b.ja_etiq || []).length || (b.divergencias || []).length;
+    if (!usada && skusLocais.has(_ch(b))) return;
+    arr.push(b);
+  });
   const { error } = await _sb.from('full_etiquetas')
     .upsert({full_id:fullId,dados:JSON.stringify(arr),versao:2,updated_at:new Date().toISOString()},{onConflict:'full_id'});
   if (error) { console.error('[Supabase] etqSalvar:', error); showToast('⚠️ Erro ao salvar etiquetas — recarregue e tente de novo'); return false; }
@@ -10494,6 +10511,47 @@ async function zplEstoqueDelta(sku, delta) {
   return { error: { message: 'muitas alterações ao mesmo tempo — tente de novo' } };
 }
 
+// ── Etiquetas têm que bater com os itens do Full (SKU e quantidade) ──
+function _etqChave(sku) { return _envNorm(_skuCanon(_skuResolvido(String(sku || '')))); }
+function _etqItensPorSku(fullId) {
+  const f = FULLS_DATA[fullId]; const m = new Map();
+  (f?.itens || []).forEach(it => { const k = _etqChave(it.codigo); if (k) m.set(k, (m.get(k) || 0) + _unidadesItemEnvio(it)); });
+  return m;
+}
+function _etqInconsistencias(fullId, arr) {
+  const itens = _etqItensPorSku(fullId);
+  if (!itens.size) return [];
+  const probs = [];
+  const porSku = new Map();
+  arr.forEach(e => { const k = _etqChave(e.sku); const a = porSku.get(k) || []; a.push(e); porSku.set(k, a); });
+  porSku.forEach((lista, k) => {
+    if (!itens.has(k)) { probs.push({ k, txt: `<b>${_envEsc(k)}</b> tem etiquetas (${_envFmt(lista.reduce((t, e) => t + (e.total || 0), 0))}) mas não está nos itens do Full` }); return; }
+    if (lista.length > 1) probs.push({ k, txt: `<b>${_envEsc(k)}</b> aparece ${lista.length} vezes nas etiquetas (${lista.map(e => _envFmt(e.total)).join(' + ')})` });
+    const tot = lista.reduce((t, e) => t + (e.total || 0), 0), un = itens.get(k);
+    if (un > 0 && tot !== un && lista.length === 1) probs.push({ k, txt: `<b>${_envEsc(k)}</b>: ${_envFmt(tot)} etiquetas para ${_envFmt(un)} unidades no Full` });
+  });
+  return probs;
+}
+// Deixa as etiquetas iguais aos itens do Full sem perder o que já foi impresso
+async function etqAjustarAoFull(fullId) {
+  await etqCarregar(fullId);
+  const arr = etqGetData(fullId), itens = _etqItensPorSku(fullId);
+  const removidos = [], travados = [];
+  const porSku = new Map();
+  arr.forEach(e => { const k = _etqChave(e.sku); const a = porSku.get(k) || []; a.push(e); porSku.set(k, a); });
+  const usada = e => (e.impressas || 0) > 0 || (e.ja_etiq || []).length;
+  porSku.forEach((lista, k) => {
+    if (!itens.has(k)) { lista.forEach(e => usada(e) ? travados.push(k) : removidos.push(e.id)); return; }
+    lista.sort((a, b) => (b.impressas || 0) - (a.impressas || 0) || String(b.criadoEm).localeCompare(String(a.criadoEm)));
+    lista.slice(1).forEach(e => usada(e) ? travados.push(k) : removidos.push(e.id));
+    const fica = lista[0], un = itens.get(k);
+    if (un > 0 && (fica.impressas || 0) <= un && fica.total !== un) fica.total = un;
+  });
+  etqSetData(fullId, arr.filter(e => !removidos.includes(e.id)));
+  if (!(await etqSalvar(fullId, { removidos }))) return;
+  etqRenderSecao(fullId);
+  showToast(travados.length ? `⚠️ Ajustado, mas ${[...new Set(travados)].join(', ')} já tem etiqueta impressa — confira à mão` : '✅ Etiquetas iguais aos itens do Full');
+}
 async function etqCarregar(fullId) {
   try {
     const {data} = await _sb.from('full_etiquetas').select('dados').eq('full_id',fullId).single();
@@ -10726,6 +10784,7 @@ async function etqRenderSecao(fullId) {
       </div>
     </div>
     ${barra}
+    ${(() => { const pr = _etqInconsistencias(fullId, arr); return pr.length ? `<div class="etq-incons"><div><span class="t">⚠️ As etiquetas não batem com os itens do Full</span>${pr.map(x => `<div>· ${x.txt}</div>`).join('')}</div><button class="btn btn-sm" onclick="etqAjustarAoFull('${fullId}')">Ajustar ao Full</button></div>` : ''; })()}
     <div class="etq-list">${lista}</div>
 
     <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
@@ -11285,6 +11344,15 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   try { zpl = await etqZplDe(etq); } catch (e) { showToast('❌ ' + e.message); return; }
   if (!zpl) { showToast('❌ ZPL não encontrado para o SKU: ' + etq.sku); return; }
   // Antes de imprimir: bipar a embalagem do produto que vai receber as etiquetas
+  // trava: não imprime etiqueta de SKU fora do Full nem acima das unidades do Full
+  const itensFull = _etqItensPorSku(fullId);
+  if (itensFull.size) {
+    const k = _etqChave(etq.sku);
+    if (!itensFull.has(k)) { alert(`⚠️ ${etq.sku} não está nos itens deste Full.\n\nNão vou imprimir. Confira o Full (ou use "Ajustar ao Full").`); return; }
+    const jaImpresso = arr.filter(e => _etqChave(e.sku) === k).reduce((t, e) => t + (e.impressas || 0), 0);
+    const un = itensFull.get(k);
+    if (un > 0 && jaImpresso + qtd > un) { alert(`⚠️ ${etq.sku}: o Full tem ${un} unidades e já saíram ${jaImpresso} etiquetas.\n\nImprimir mais ${qtd} passaria do Full. Confira as etiquetas (ou use "Ajustar ao Full").`); return; }
+  }
   const infoBipe = { titulo: etq.titulo || etq.descricao, qtd };
   if (!(await etqConfirmarProduto(etq.sku, infoBipe))) { showToast('Impressão cancelada'); return; }
 
@@ -11896,7 +11964,7 @@ async function envConfirmarImportacao() {
       id: 'etq_' + Date.now() + '_' + n + '_' + Math.random().toString(36).slice(2, 5), sku: e.sku || e.inv, total: e.unidades, impressas: 0, criadoEm: agora,
       descricao: e.titulo || e.sku || e.inv, inv: e.inv, titulo: e.titulo || '', variacao: e.variacao || '', origem: 'ml',
     })));
-    if (!(await etqSalvar(id))) showToast('⚠️ Full criado, mas as etiquetas não salvaram — no detalhe use ⚡ Gerar pelo ML');
+    if (!(await etqSalvar(id, { substituir: true }))) showToast('⚠️ Full criado, mas as etiquetas não salvaram — no detalhe use ⚡ Gerar pelo ML');
     window._envImport = null;
     closeModal('modalEnvioCriar');
     renderDashboard(); renderCal();
