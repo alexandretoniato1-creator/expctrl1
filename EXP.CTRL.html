@@ -1059,6 +1059,27 @@ select:focus{border-color:var(--accent)}
 .skuc-prob.info{color:var(--muted)}
 .skuc-prob button{flex-shrink:0;font-size:10px;padding:4px 8px}
 .modal-overlay#skuConfOv{display:flex;z-index:9000}
+.etq-para{width:auto!important;min-width:170px;font-size:12px;padding:6px 8px}
+.etq-para-erro{border-color:var(--red)!important;box-shadow:0 0 0 2px rgba(248,81,73,.25)}
+.etq-cx-hint{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted2)}
+.fd-item-porfrac{font-size:11px;font-family:'DM Mono',monospace;color:var(--muted2);text-align:right;white-space:nowrap}
+.fd-fracs{display:flex;flex-direction:column;gap:4px;margin:-2px 0 4px 26px;padding-left:10px;border-left:2px solid var(--border2)}
+.fd-frac{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto auto;gap:10px;align-items:center;font-size:12px;padding:5px 8px;border-radius:7px;background:var(--surface2);border:1px solid var(--border)}
+.fd-frac.pronto{border-color:rgba(63,185,80,.35);background:rgba(63,185,80,.05)}
+.fd-frac.montando{border-color:rgba(210,153,34,.35)}
+.fd-frac-cod{font-family:'DM Mono',monospace;font-weight:800;font-size:13px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;padding:1px 7px}
+.fd-frac-nome{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fd-frac-qtd{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted2);white-space:nowrap}
+.fd-frac-st{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--orange)}
+.fd-frac.pronto .fd-frac-st{color:var(--green)}
+.fd-frac-acoes{display:flex;gap:4px}
+.fd-frac-acoes button{font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;font-weight:700}
+.fd-frac-acoes .fd-frac-ok{background:var(--green);border-color:var(--green);color:#0a0a0a}
+.fd-frac-falta{font-size:11px;color:var(--orange);padding:2px 4px}
+@media (max-width:900px){.fd-frac{grid-template-columns:auto minmax(0,1fr) auto}.fd-frac-qtd,.fd-frac-acoes{grid-column:2 / span 2}}
+.cat-cap{width:62px!important;text-align:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:700;padding:4px 6px;border-radius:6px;border:1px solid var(--border2);background:var(--bg);color:var(--text)}
+.cat-cap-ok{border-color:var(--green)!important;box-shadow:0 0 0 2px rgba(63,185,80,.25)}
+.func-cod{width:56px!important;text-align:center;font-family:'DM Mono',monospace;font-weight:800;font-size:14px;padding:6px;border-radius:7px;border:1px solid var(--border2);background:var(--bg);color:var(--text);text-transform:uppercase}
 .etq-incons{display:flex;gap:12px;align-items:center;justify-content:space-between;background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.4);color:var(--red);border-radius:9px;padding:10px 14px;margin:10px 16px;font-size:12px}
 .etq-incons .t{display:block;font-weight:800;margin-bottom:3px}
 .etq-incons button{background:var(--red);color:#fff;flex-shrink:0}
@@ -2726,7 +2747,7 @@ const db = {
       }, {});
 
       SEMANAS_HIST = semanasHist||[];
-      FUNCIONARIOS_DATA = (funcionariosDb||[]).map(f => ({ _id: f.id, nome: f.nome, empresa: f.empresa }));
+      FUNCIONARIOS_DATA = (funcionariosDb||[]).map(f => ({ _id: f.id, nome: f.nome, empresa: f.empresa, codigo_etq: f.codigo_etq || '' }));
       INS_PRODUTOS = (insProdutosDb||[]).map(p => ({ _id: p.id, nome: p.nome, estoqueMinimo: p.estoque_minimo||0, ativo: p.ativo, galpao: p.galpao||'LogBox' }));
       PROD_DATA = (prodData||[]).map(p => ({
         _id: p.id, funcionario: p.funcionario, caixas: p.caixas||0,
@@ -2957,11 +2978,16 @@ const db = {
     return data?.id||null;
   },
   async saveFuncionario(f) {
-    const { data, error } = await _sb.from('funcionarios').insert({ nome: f.nome, empresa: f.empresa }).select().single();
+    const { data, error } = await _sb.from('funcionarios').insert({ nome: f.nome, empresa: f.empresa, codigo_etq: f.codigo_etq || null }).select().single();
     if (error) { console.error('[Supabase] saveFuncionario:', error); showToast('⚠️ Erro ao salvar funcionário'); return null; }
     return data?.id||null;
   },
 
+  async saveFuncionarioCodigo(id, codigo) {
+    const { error } = await _sb.from('funcionarios').update({ codigo_etq: codigo || null }).eq('id', id);
+    if (error) { showToast('⚠️ Código não salvo: ' + error.message); return false; }
+    return true;
+  },
   async deleteFuncionario(id) {
     await _sb.from('funcionarios').delete().eq('id', id);
   },
@@ -4445,13 +4471,14 @@ function fdRenderSeparar(id) {
       <div class="sdot ${dot}"></div>
       <div style="min-width:0"><div class="fd-item-nome" title="${_fdEsc(it.nome || '')}">${_fdEsc(it.nome || it.codigo || '—')}</div><div class="fd-item-cod">${_fdEsc(it.codigo || '')}</div></div>
       <div class="fd-item-qtd">${parseInt(it.qtde) || 0} <span>cx</span>${un && un !== (parseInt(it.qtde) || 0) ? `<div><span>${un.toLocaleString('pt-BR')} un</span></div>` : ''}</div>
+      ${(it.fracoes || []).length ? `<div class="fd-item-porfrac">${(() => { const pr = it.fracoes.filter(x => x.status === 'pronto').reduce((t, x) => t + x.unidades, 0); return `<b>${_envFmt(pr)}</b>/${_envFmt(un)} un prontas`; })()}</div><div class="fd-item-porfrac">${it.fracoes.length} montador${it.fracoes.length > 1 ? 'es' : ''}</div>` : `
       <select ${dis || (st === 'done' ? 'disabled title="Volte para Montando para trocar"' : '')} onchange="fdItemFuncionario(${i}, this.value)">${opcoesFunc(it.funcionario)}</select>
       <div class="fd-st">
         <button ${dis} class="p ${st === 'pending' ? 'on' : ''}" onclick="fdItemStatus(${i},'pending')">Pendente</button>
         <button ${dis} class="d ${st === 'doing' ? 'on' : ''}" onclick="fdItemStatus(${i},'doing')">Montando</button>
         <button ${dis} class="c ${st === 'done' ? 'on' : ''}" onclick="fdItemStatus(${i},'done')">✓ Pronto</button>
-      </div>
-    </div>`;
+      </div>`}
+    </div>${_fdFracoesHtml(f, it)}`;
   }).join('') || '<div style="font-size:12px;color:var(--muted);text-align:center;padding:14px">Sem itens — use ✏️ Editar para adicionar</div>';
 
   // Produção registrada (recolhida)
@@ -5124,6 +5151,9 @@ function skuAutoItem(inputEl,idx){
   }
 }
 // Busca no catálogo sem diferenciar maiúsculas ("6cr100m" = "6CR100M")
+// escape de HTML/JS (também definidos mais abaixo; aqui para as telas que desenham antes daquele trecho carregar)
+function _envEsc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function _envJs(s) { return String(s ?? '').replace(/\\/g, '\\\\').replace(/'/g, "\\'"); }
 // SKUs antigos / outros nomes do mesmo produto (ex.: VA-BA02 → hoje VA-BF2000-110). O SKU principal é o do ML.
 function _skuApelidos(s){ return String(s?.skus_antigos||'').split(/[\/,;|\n]+/).map(x=>x.trim().toUpperCase()).filter(Boolean); }
 function _skuDb(codigo){
@@ -5141,7 +5171,7 @@ async function _veiculosCarregar() {
   } catch (e) {}
   return window._VEICULOS;
 }
-setTimeout(() => { if (typeof _sb !== 'undefined') _veiculosCarregar(); }, 1500);
+setTimeout(() => { if (typeof _sb !== 'undefined') _veiculosCarregar().then(() => { try { if (document.getElementById('view-catalogo')?.classList.contains('active')) renderCatalogo(); } catch (e) {} }); }, 1500);
 // { Ducato: 120, Master: 140 } (caixas) do produto, por qualquer nome dele
 function _skuCap(codigo) { return _skuDb(codigo)?.cap_veiculos || {}; }
 // SKU principal (o atual) de qualquer nome do produto
@@ -6615,7 +6645,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 63;
+const APP_VERSAO = 64;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -7208,6 +7238,13 @@ function renderCatalogo(){
   document.getElementById('catTempo').textContent=tm;
   document.getElementById('catCount').textContent=lista.length+' SKUs';
   const tbody=document.getElementById('catBody');
+  // colunas dos caminhões (caixas que cabem) — editáveis direto na lista
+  const thr = tbody.closest('table')?.querySelector('thead tr');
+  if (thr) {
+    thr.querySelectorAll('.cat-veic-th').forEach(x => x.remove());
+    const ult = thr.lastElementChild;
+    (window._VEICULOS||[]).forEach(v => { const th = document.createElement('th'); th.className = 'cat-veic-th'; th.title = 'Caixas que cabem na ' + v.nome; th.textContent = '🚚 ' + v.nome; thr.insertBefore(th, ult); });
+  }
   tbody.innerHTML=lista.map(s=>{
     const idx=SKU_DB.indexOf(s);
     return `<tr class="full-row" onclick="editarSku(${idx})">
@@ -7221,6 +7258,7 @@ function renderCatalogo(){
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--green)">${(s.vol||0).toFixed(2)}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;text-align:center">${s.qtdecx||1}</td>
       <td style="font-family:'DM Mono',monospace;font-size:11px;color:var(--accent);text-align:center">${s.tempo||'—'} min</td>
+      ${(window._VEICULOS||[]).map(v=>`<td onclick="event.stopPropagation()"><input class="cat-cap" type="number" min="0" step="1" value="${(s.cap_veiculos||{})[v.nome]||''}" placeholder="—" title="Caixas de ${_envEsc(s.sku)} que cabem na ${_envEsc(v.nome)}" onchange="catSalvarCap(${idx},'${_envJs(v.nome)}',this)"></td>`).join('')}
       <td><button class="btn-danger-sm" onclick="event.stopPropagation();removerSku(${idx})">✕</button></td>
     </tr>`;
   }).join('')||'<tr><td colspan="12" style="text-align:center;padding:30px;color:var(--muted)">Nenhum SKU encontrado</td></tr>';
@@ -7407,6 +7445,18 @@ function skuConfCadastrar(mlSku) {
   showToast('Preencha caixa, medidas e peso e salve');
 }
 
+async function catSalvarCap(idx, veic, inp) {
+  const s = SKU_DB[idx]; if (!s) return;
+  const n = parseInt(inp.value);
+  const caps = { ...(s.cap_veiculos || {}) };
+  if (n > 0) caps[veic] = n; else delete caps[veic];
+  const novo = { ...s, cap_veiculos: caps };
+  const r = await db.saveSku(novo);
+  if (r?.error) { showToast('❌ Não salvei: ' + r.error.message); inp.value = (s.cap_veiculos || {})[veic] || ''; return; }
+  SKU_DB[idx] = novo;
+  inp.classList.add('cat-cap-ok'); setTimeout(() => inp.classList.remove('cat-cap-ok'), 900);
+  showToast(`🚚 ${s.sku}: ${n > 0 ? n + ' cx' : 'sem número'} na ${veic}`);
+}
 async function removerSku(idx){
   const s=SKU_DB[idx]; if(!s) return;
   if(!confirm('Remover o SKU '+s.sku+' ('+(s.descricao||'')+') do catálogo?'))return;
@@ -8554,8 +8604,9 @@ function renderFuncList() {
       <div class="prod-avatar ${funcCor(f.empresa)}" style="width:28px;height:28px;font-size:10px">${funcAv(f.nome)}</div>
       <div style="flex:1">
         <div style="font-size:12px;font-weight:600">${f.nome}</div>
-        <div style="font-size:10px;color:var(--muted)">${f.empresa}</div>
+        <div style="font-size:10px;color:var(--muted)">código na etiqueta de caixa</div>
       </div>
+      <input class="func-cod" maxlength="3" value="${_envEsc(_funcCodigo(f.nome))}" title="Código que sai grande na etiqueta da caixa" onchange="funcSalvarCodigo(${i}, this)">
       <button class="btn-danger-sm" onclick="removerFuncionario(${i})">✕</button>
     </div>`).join('');
 }
@@ -8565,7 +8616,7 @@ async function adicionarFuncionario() {
   const empresa = document.getElementById('funcEmpresa')?.value||'';
   if (!nome || !empresa) { showToast('⚠️ Nome e empresa obrigatórios'); return; }
   if (FUNCIONARIOS_DATA.find(f=>f.nome.toLowerCase()===nome.toLowerCase())) { showToast('⚠️ Funcionário já existe'); return; }
-  const novoFunc = {nome, empresa};
+  const novoFunc = {nome, empresa, codigo_etq: _funcCodigoLivre(nome)};
   const newId = await db.saveFuncionario(novoFunc);
   if (!newId) return; // erro já exibido pelo db.saveFuncionario
   novoFunc._id = newId;
@@ -8576,6 +8627,29 @@ async function adicionarFuncionario() {
   showToast('✅ '+nome+' adicionado!');
 }
 
+// Código do funcionário na etiqueta de caixa (ex.: DA = Daniel, DO = Douglas)
+function _funcCodigo(nome) {
+  const f = FUNCIONARIOS_DATA.find(x => x.nome === nome);
+  return (f && f.codigo_etq) || String(nome || '?').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || '?';
+}
+// Sugere um código que ainda não está em uso
+function _funcCodigoLivre(nome) {
+  const usados = new Set(FUNCIONARIOS_DATA.map(f => (f.codigo_etq || '').toUpperCase()));
+  const l = String(nome).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z ]/g, '').toUpperCase();
+  const partes = l.split(' ').filter(Boolean);
+  const cand = [l.replace(/ /g, '').slice(0, 2), partes.length > 1 ? partes[0][0] + partes[1][0] : '', ...[...l.replace(/ /g, '').slice(1)].map(c => l[0] + c)];
+  return cand.find(c => c && c.length >= 2 && !usados.has(c)) || (l.slice(0, 1) + (FUNCIONARIOS_DATA.length + 1));
+}
+async function funcSalvarCodigo(idx, inp) {
+  const f = FUNCIONARIOS_DATA[idx]; if (!f) return;
+  const cod = String(inp.value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 3);
+  if (!cod) { inp.value = _funcCodigo(f.nome); return; }
+  const dono = FUNCIONARIOS_DATA.find((x, i) => i !== idx && (x.codigo_etq || '').toUpperCase() === cod);
+  if (dono) { showToast('⚠️ ' + cod + ' já é de ' + dono.nome); inp.value = _funcCodigo(f.nome); return; }
+  if (!(await db.saveFuncionarioCodigo(f._id, cod))) { inp.value = _funcCodigo(f.nome); return; }
+  f.codigo_etq = cod; inp.value = cod;
+  showToast('✅ ' + f.nome + ' = ' + cod + ' na etiqueta da caixa');
+}
 async function removerFuncionario(idx) {
   const f = FUNCIONARIOS_DATA[idx];
   if (!confirm('Remover '+f.nome+'?')) return;
@@ -10723,9 +10797,12 @@ async function etqRenderSecao(fullId) {
             </div>
             ${pct<100?`
             <div class="etq-lote-box" id="etqLote_${etq.id}" style="display:none">
-              <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:7px">Quantas etiquetas imprimir agora?</div>
+              <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:7px">Quantas unidades e para quem? Saem as etiquetas de produto + 1 etiqueta por caixa com o código do funcionário</div>
+              ${_etqItemIdx(fullId, etq.sku) >= 0 ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+                <select class="form-sel etq-para" id="etqPara_${etq.id}">${_etqOpcoesFunc()}</select>
+                <span class="etq-cx-hint" id="etqCxHint_${etq.id}"></span></div>` : ''}
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
-                <input type="number" id="etqQtd_${etq.id}" value="${faltam}" min="1" max="${faltam}"
+                <input type="number" id="etqQtd_${etq.id}" value="${faltam}" min="1" max="${faltam}" oninput="etqCxHint('${fullId}','${etq.id}','etqQtd_${etq.id}','etqCxHint_${etq.id}')"
                   style="width:90px;background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;font-weight:800;padding:6px 10px;outline:none;text-align:center"
                   onkeydown="if(event.key==='Enter')etqConfirmarLote('${fullId}','${etq.id}',${faltam})">
                 <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">de ${faltam.toLocaleString('pt-BR')} restantes</span>
@@ -10741,8 +10818,12 @@ async function etqRenderSecao(fullId) {
                 <label><input type="radio" name="etqJaMot_${etq.id}" value="pre" checked> Pré-etiquetado pela expedição <span>saldo ${estoqueDisp.toLocaleString('pt-BR')}</span></label>
                 <label><input type="radio" name="etqJaMot_${etq.id}" value="china"> Veio da China com etiqueta</label>
               </div>
+              ${_etqItemIdx(fullId, etq.sku) >= 0 ? `<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px">
+                <select class="form-sel etq-para" id="etqJaPara_${etq.id}">${_etqOpcoesFunc()}</select>
+                <span class="etq-cx-hint" id="etqJaCxHint_${etq.id}"></span>
+                <span style="font-size:10px;color:var(--muted)">sai só a etiqueta de caixa</span></div>` : ''}
               <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px">
-                <input type="number" id="etqJaQtd_${etq.id}" value="${faltam}" min="1" max="${faltam}" class="etq-ja-qtd"
+                <input type="number" id="etqJaQtd_${etq.id}" value="${faltam}" min="1" max="${faltam}" class="etq-ja-qtd" oninput="etqCxHint('${fullId}','${etq.id}','etqJaQtd_${etq.id}','etqJaCxHint_${etq.id}')"
                   onkeydown="if(event.key==='Enter')etqConfirmarJa('${fullId}','${etq.id}')">
                 <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">de ${faltam.toLocaleString('pt-BR')} restantes</span>
                 <div style="flex:1"></div>
@@ -10954,6 +11035,176 @@ async function etqResetar(fullId, etqId) {
   showToast('↺ Contagem resetada');
 }
 
+// ══════════════════════════════════════════════════════════════════════
+// FRAÇÕES DO ENVIO: o Max entrega parte das unidades para um funcionário.
+// Saem as etiquetas de produto + 1 etiqueta por caixa com o código dele (ex.: DA),
+// numeradas no item (cx 21/80). Fica "montando" até o Max marcar pronto → produtividade.
+// ══════════════════════════════════════════════════════════════════════
+function _etqItemIdx(fullId, sku) {
+  const f = FULLS_DATA[fullId]; const k = _etqChave(sku);
+  return (f?.itens || []).findIndex(it => _etqChave(it.codigo) === k);
+}
+function _fracQtdecx(it) {
+  const sk = _skuDb(it.codigo);
+  return Math.max(1, parseInt(sk?.qtdecx) || ((parseInt(it.unidades) > 0 && parseInt(it.qtde) > 0) ? Math.round(parseInt(it.unidades) / parseInt(it.qtde)) : 1));
+}
+function _etqOpcoesFunc() {
+  return '<option value="">Para quem?</option>' + FUNCIONARIOS_DATA.map(fu => `<option value="${_envEsc(fu.nome)}">${_envEsc(_funcCodigo(fu.nome))} · ${_envEsc(fu.nome)}</option>`).join('');
+}
+// "= 3 caixas de 32 (a última com 12)"
+function etqCxHint(fullId, etqId, inputId, alvoId) {
+  const el = document.getElementById(alvoId); if (!el) return;
+  const etq = etqGetData(fullId).find(e => e.id === etqId); if (!etq) return;
+  const i = _etqItemIdx(fullId, etq.sku); const it = FULLS_DATA[fullId]?.itens?.[i];
+  const un = parseInt(document.getElementById(inputId)?.value) || 0;
+  if (!it || un <= 0) { el.textContent = ''; return; }
+  const q = _fracQtdecx(it), cx = Math.ceil(un / q), resto = un - (cx - 1) * q;
+  el.innerHTML = `= <b>${cx}</b> caixa${cx > 1 ? 's' : ''}${q > 1 ? ` de ${q}` : ''}${resto !== q && q > 1 ? ` <span style="color:var(--orange)">(a última com ${resto})</span>` : ''}`;
+}
+// corta o texto para caber na largura (dots) com a fonte de ~cw dots por letra
+function _cxCorta(t, larg, cw) { const n = Math.max(3, Math.floor(larg / cw)); return t.length > n ? t.slice(0, n) : t; }
+// ZPL das etiquetas de caixa (2 colunas, mesmo rolo das etiquetas do ML)
+function zplEtiquetasCaixa(lista) {
+  const dpmm = (window._etqCfg?.dpi || 203) / 25.4;
+  const shift = Math.round((window._etqCfg?.colDireitaOffsetMm || 50.8) * dpmm) - 320;
+  const H = _zplHex;
+  const col = (e, dx) => {
+    const cod = String(e.cod || '?').toUpperCase();
+    const w = cod.length <= 2 ? 66 : 48;
+    const xr = 16 + cod.length * w + 14;
+    const larg = Math.max(80, 300 - (xr - 16));
+    return `^FO${16 + dx},14^A0N,96,${w}^FH^FD${H(cod)}^FS
+^FO${xr + dx},16^A0N,22,20^FB${larg},1,0,L^FH^FD${H(_cxCorta(String(e.nome || '').split(' ')[0], larg, 12))}^FS
+^FO${xr + dx},44^A0N,30,24^FB${larg},1,0,L^FH^FD${H(_cxCorta('cx ' + e.n + '/' + e.de, larg, 14))}^FS
+^FO${xr + dx},84^A0N,20,18^FB${larg},1,0,L^FH^FD${e.un} un.^FS
+^FO${16 + dx},120^A0N,22,20^FB300,1,0,L^FH^FD${H(_cxCorta(e.sku, 300, 12))}^FS
+^FO${16 + dx},148^A0N,18,16^FB300,1,0,L^FH^FDFull ${H(e.fullId)}^FS
+^FO${16 + dx},170^A0N,16,14^FB300,1,0,L^FH^FD${H(e.data)}^FS`;
+  };
+  const blocos = [];
+  for (let i = 0; i < lista.length; i += 2) {
+    blocos.push('^XA^CI28\n^LH0,0\n' + col(lista[i], 0) + (lista[i + 1] ? '\n' + col(lista[i + 1], 330 + shift) : '') + '\n^XZ');
+  }
+  return blocos.join('\n');
+}
+function _fracEtiquetas(fullId, it, fr) {
+  const q = _fracQtdecx(it);
+  const de = Math.max(parseInt(it.qtde) || 0, ...(it.fracoes || []).map(x => x.cx_ate || 0));
+  const data = new Date(fr.impresso_em || Date.now()).toLocaleDateString('pt-BR');
+  const out = [];
+  for (let n = fr.cx_de; n <= fr.cx_ate; n++) {
+    const un = n < fr.cx_ate ? q : fr.unidades - (fr.caixas - 1) * q;
+    out.push({ cod: fr.codigo, nome: fr.funcionario, n, de, un, sku: it.codigo, fullId, data });
+  }
+  return out;
+}
+// Situação do item a partir das frações
+function _fracSyncItem(it) {
+  const fr = it.fracoes || [];
+  if (!fr.length) return;
+  const un = _unidadesItemEnvio(it);
+  const pronto = fr.filter(x => x.status === 'pronto').reduce((t, x) => t + (x.unidades || 0), 0);
+  it.funcionario = [...new Set(fr.map(x => x.funcionario))].join(' + ');
+  it.avatar = fr.length === 1 ? fr[0].codigo : '+';
+  it.iniciado_em = it.iniciado_em || fr.map(x => x.impresso_em).filter(Boolean).sort()[0];
+  it.prod_registrado = true;            // quem registra produtividade são as frações
+  if (un > 0 && pronto >= un) { it.status = 'done'; it.concluido_em = it.concluido_em || new Date().toISOString(); }
+  else { it.status = 'doing'; delete it.concluido_em; }
+}
+const _fracCopia = itens => itens.map(x => ({ ...x, fracoes: x.fracoes ? x.fracoes.map(y => ({ ...y })) : undefined }));
+// Cria a fração no item (reserva a numeração das caixas) e grava o Full
+async function _fracReservar(fullId, sku, funcionario, unidades, origem) {
+  const f = FULLS_DATA[fullId]; const i = _etqItemIdx(fullId, sku);
+  if (!f || i < 0) { showToast('⚠️ ' + sku + ' não está nos itens do Full'); return null; }
+  if (_fdSalvando) { showToast('Aguarde, salvando…'); return null; }
+  const antes = _fracCopia(f.itens);
+  const statusAntes = f.status;
+  const it = f.itens[i];
+  const q = _fracQtdecx(it);
+  const caixas = Math.ceil(unidades / q);
+  const de = (it.fracoes || []).reduce((m, x) => Math.max(m, x.cx_ate || 0), 0) + 1;
+  const fr = { id: 'fr_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), funcionario, codigo: _funcCodigo(funcionario),
+    unidades, caixas, cx_de: de, cx_ate: de + caixas - 1, status: 'montando', origem: origem || 'impressao',
+    impresso_em: new Date().toISOString(), por: _quemSou('—') };
+  it.fracoes = [...(it.fracoes || []), fr];
+  _fracSyncItem(it);
+  if (f.status === 'Pendente') f.status = 'Produzindo';
+  _fdSalvando = true;
+  try { if (!(await _fdSalvarItens(f, antes, null, statusAntes))) return null; } finally { _fdSalvando = false; }
+  return { f: FULLS_DATA[fullId], it: FULLS_DATA[fullId].itens[i], fr };
+}
+async function _fracApagar(fullId, fracId, motivo) {
+  const f = FULLS_DATA[fullId]; if (!f) return false;
+  const i = f.itens.findIndex(it => (it.fracoes || []).some(x => x.id === fracId)); if (i < 0) return false;
+  const antes = _fracCopia(f.itens);
+  const it = f.itens[i];
+  it.fracoes = it.fracoes.filter(x => x.id !== fracId);
+  if (!it.fracoes.length) { delete it.fracoes; delete it.prod_registrado; it.funcionario = '—'; it.avatar = '?'; it.status = 'pending'; delete it.iniciado_em; delete it.concluido_em; }
+  else _fracSyncItem(it);
+  _fdSalvando = true;
+  try { return await _fdSalvarItens(f, antes, motivo || null); } finally { _fdSalvando = false; }
+}
+async function fracPronto(fullId, fracId) {
+  if (!pode('full_editar')) { showToast('🔒 Sem permissão para editar o Full'); return; }
+  const f = FULLS_DATA[fullId]; if (!f || _fdSalvando) return;
+  const i = f.itens.findIndex(it => (it.fracoes || []).some(x => x.id === fracId)); if (i < 0) return;
+  const antes = _fracCopia(f.itens);
+  const it = f.itens[i], fr = it.fracoes.find(x => x.id === fracId);
+  if (fr.status === 'pronto') return;
+  fr.status = 'pronto'; fr.pronto_em = new Date().toISOString(); fr.prod_registrado = true;
+  _fracSyncItem(it);
+  _fdSalvando = true;
+  let ok = false;
+  try { ok = await _fdSalvarItens(f, antes, null); } finally { _fdSalvando = false; }
+  if (!ok) return;
+  // produtividade de quem montou estas caixas
+  const sk = _skuDb(it.codigo);
+  let tempo_real_min = null;
+  const d = (new Date(fr.pronto_em) - new Date(fr.impresso_em)) / 60000;
+  if (d > 0 && d <= 720) tempo_real_min = Math.round(d);
+  const reg = { funcionario: fr.funcionario, caixas: fr.caixas, produtos: fr.unidades, tempo_min: sk ? parseFloat(((parseFloat(sk.tempo) || 0) * fr.caixas).toFixed(1)) : 0,
+    tempo_real_min, full_id: f.id, sku: it.codigo || '', empresa: 'LogBox', status: 'Concluído', data: new Date().toLocaleDateString('pt-BR') };
+  const newId = await db.saveProd(reg);
+  if (newId) { reg._id = newId; PROD_DATA.push(reg); showToast(`✅ ${fr.codigo} · ${fr.funcionario.split(' ')[0]}: ${fr.caixas} cx prontas`); }
+  else showToast('⚠️ Produtividade de ' + fr.funcionario + ' não gravou — anote ' + fr.caixas + ' cx');
+  fdRenderSeparar(f.id);
+}
+async function fracReimprimir(fullId, fracId) {
+  const f = FULLS_DATA[fullId]; if (!f) return;
+  const it = f.itens.find(x => (x.fracoes || []).some(y => y.id === fracId)); if (!it) return;
+  const fr = it.fracoes.find(x => x.id === fracId);
+  const imp = await zplEnviarParaImpressora(zplEtiquetasCaixa(_fracEtiquetas(f.id, it, fr)));
+  if (imp) showToast(`🖨 ${fr.caixas} etiqueta(s) de caixa de ${fr.codigo} → ${imp}`);
+}
+async function fracRemover(fullId, fracId) {
+  if (!pode('full_editar')) { showToast('🔒 Sem permissão para editar o Full'); return; }
+  const f = FULLS_DATA[fullId]; if (!f) return;
+  const fr = f.itens.flatMap(x => x.fracoes || []).find(x => x.id === fracId); if (!fr) return;
+  if (fr.status === 'pronto') { showToast('Fração já está pronta (produtividade registrada)'); return; }
+  if (!confirm(`Tirar a fração de ${fr.funcionario} (${fr.unidades} un · cx ${fr.cx_de}–${fr.cx_ate})?\n\nAs etiquetas que já saíram continuam contadas como impressas.`)) return;
+  await _fracApagar(fullId, fracId, '↺ Fração removida');
+}
+// Lista de frações embaixo do item, no passo "Separar e montar"
+function _fdFracoesHtml(f, it) {
+  const fr = it.fracoes || [];
+  if (!fr.length) return '';
+  const un = _unidadesItemEnvio(it);
+  const atribuido = fr.reduce((t, x) => t + (x.unidades || 0), 0);
+  const ed = pode('full_editar');
+  const js = s => _envJs(s);
+  return `<div class="fd-fracs">${fr.map(x => `<div class="fd-frac ${x.status}">
+      <span class="fd-frac-cod">${_envEsc(x.codigo)}</span>
+      <span class="fd-frac-nome">${_envEsc(x.funcionario)}</span>
+      <span class="fd-frac-qtd">${_envFmt(x.unidades)} un · cx ${x.cx_de}${x.cx_ate !== x.cx_de ? '–' + x.cx_ate : ''}${x.origem && x.origem !== 'impressao' ? ` · <span title="Unidades já etiquetadas">${x.origem === 'china' ? 'China' : 'pré-etiq.'}</span>` : ''}</span>
+      <span class="fd-frac-st">${x.status === 'pronto' ? '✓ pronto' : 'montando'}</span>
+      <span class="fd-frac-acoes">
+        ${x.status !== 'pronto' && ed ? `<button class="fd-frac-ok" onclick="fracPronto('${js(f.id)}','${x.id}')">✓ Pronto</button>` : ''}
+        <button title="Reimprimir as etiquetas de caixa" onclick="fracReimprimir('${js(f.id)}','${x.id}')">🖨 cx</button>
+        ${x.status !== 'pronto' && ed ? `<button title="Tirar esta fração" onclick="fracRemover('${js(f.id)}','${x.id}')">✕</button>` : ''}
+      </span></div>`).join('')}
+    ${un > atribuido ? `<div class="fd-frac-falta">Faltam ${_envFmt(un - atribuido)} un sem montador — imprima pela etapa 2 escolhendo para quem</div>` : ''}</div>`;
+}
+
 // ── "Já etiquetado": unidades que não precisam de etiqueta neste Full ──
 // pre   = pré-etiquetado pela expedição → desconta do saldo da pré-etiquetagem (Estoque Full → Etiquetas pré-impressas)
 // china = veio da China com a etiqueta colada → só registra
@@ -10964,6 +11215,7 @@ function etqAbrirJa(fullId, etqId, motivo) {
   box.style.display = '';
   if (motivo) { const r = box.querySelector(`input[value="${motivo}"]`); if (r) r.checked = true; }
   const inp = box.querySelector('.etq-ja-qtd'); inp?.focus(); inp?.select();
+  etqCxHint(fullId, etqId, `etqJaQtd_${etqId}`, `etqJaCxHint_${etqId}`);
 }
 function etqFecharJa(etqId) { const box = document.getElementById(`etqJa_${etqId}`); if (box) box.style.display = 'none'; }
 let _etqJaSalvando = false;
@@ -10978,6 +11230,9 @@ async function etqConfirmarJa(fullId, etqId) {
   if (qtd > faltam) qtd = faltam;
   if (!qtd) return;
   const motivo = document.querySelector(`input[name="etqJaMot_${etqId}"]:checked`)?.value || 'pre';
+  const selPara = document.getElementById(`etqJaPara_${etqId}`);
+  const para = selPara ? selPara.value : '';
+  if (selPara && !para) { showToast('⚠️ Escolha quem vai montar estas caixas'); selPara.focus(); selPara.classList.add('etq-para-erro'); setTimeout(() => selPara.classList.remove('etq-para-erro'), 2000); return; }
   _etqJaSalvando = true;
   try {
     let descontado = null;
@@ -10997,6 +11252,13 @@ async function etqConfirmarJa(fullId, etqId) {
     if (!ok && descontado > 0) await zplEstoqueDelta(_bibChave(etq.sku), descontado);   // devolve o saldo se não salvou
     if (!ok) return;
     etqFecharJa(etqId);
+    if (para) {
+      const reserva = await _fracReservar(fullId, etq.sku, para, qtd, motivo);
+      if (reserva) {
+        const imp = await zplEnviarParaImpressora(zplEtiquetasCaixa(_fracEtiquetas(fullId, reserva.it, reserva.fr)));
+        if (!imp) showToast('⚠️ Fração registrada, mas as etiquetas de caixa não saíram — reimprima em "Separar e montar" (🖨 cx)');
+      }
+    }
     etqRenderSecao(fullId);
     showToast(motivo === 'china' ? `🏷 ${qtd} un. marcadas como vindas da China etiquetadas` : `📦 ${qtd} un. pré-etiquetadas${descontado != null && descontado < qtd ? ` (saldo descontado: ${descontado})` : ''}`);
   } finally { _etqJaSalvando = false; }
@@ -11101,7 +11363,7 @@ async function etqTestarImpressao() {
 function etqAbrirLote(fullId, etqId) {
   document.querySelectorAll('[id^="etqLote_"],[id^="etqJa_"]').forEach(b=>b.style.display='none');
   const box = document.getElementById(`etqLote_${etqId}`);
-  if (box) { box.style.display=''; const inp=box.querySelector('input'); inp?.focus(); inp?.select(); }
+  if (box) { box.style.display=''; const inp=box.querySelector('input'); inp?.focus(); inp?.select(); etqCxHint(fullId, etqId, `etqQtd_${etqId}`, `etqCxHint_${etqId}`); }
 }
 
 function etqFecharLote(etqId) {
@@ -11338,8 +11600,14 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
     const un = itensFull.get(k);
     if (un > 0 && jaImpresso + qtd > un) { alert(`⚠️ ${etq.sku}: o Full tem ${un} unidades e já saíram ${jaImpresso} etiquetas.\n\nImprimir mais ${qtd} passaria do Full. Confira as etiquetas (ou use "Ajustar ao Full").`); return; }
   }
+  // para quem vão estas unidades (etiqueta de caixa com o código dele)
+  const selPara = document.getElementById(`etqPara_${etqId}`);
+  const para = selPara ? selPara.value : '';
+  if (selPara && !para) { showToast('⚠️ Escolha para quem vão estas unidades'); selPara.focus(); selPara.classList.add('etq-para-erro'); setTimeout(() => selPara.classList.remove('etq-para-erro'), 2000); return; }
   const infoBipe = { titulo: etq.titulo || etq.descricao, qtd };
   if (!(await etqConfirmarProduto(etq.sku, infoBipe))) { showToast('Impressão cancelada'); return; }
+  let reserva = null;
+  if (para) { reserva = await _fracReservar(fullId, etq.sku, para, qtd, 'impressao'); if (!reserva) return; }
 
   const blocos = [];
   const regex = /(\^XA[\s\S]*?\^XZ)/gi;
@@ -11348,11 +11616,12 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   if (!blocos.length) { showToast('❌ ZPL inválido'); return; }
 
   // Fileiras de 2 + 1 etiqueta sozinha se a quantidade for ímpar
-  const zplFinal = zplCorrigirAlinhamento(zplMontarLote(blocos, qtd));
+  let zplFinal = zplCorrigirAlinhamento(zplMontarLote(blocos, qtd));
+  if (reserva) zplFinal += '\n' + zplEtiquetasCaixa(_fracEtiquetas(fullId, reserva.it, reserva.fr));
 
   const impressora = await zplEnviarParaImpressora(zplFinal);
-  if (!impressora) return;
-  showToast(`✅ ${qtd} etiquetas → ${impressora}`);
+  if (!impressora) { if (reserva) await _fracApagar(fullId, reserva.fr.id); return; }
+  showToast(reserva ? `✅ ${qtd} etiquetas + ${reserva.fr.caixas} de caixa (${reserva.fr.codigo}) → ${impressora}` : `✅ ${qtd} etiquetas → ${impressora}`);
 
   await etqSalvar(fullId, { delta: { [etq.id]: qtd }, divergencia: infoBipe.divergencia ? { [etq.id]: { ...infoBipe.divergencia, qtd } } : null });
   etqFecharLote(etqId);
