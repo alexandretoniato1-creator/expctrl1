@@ -1180,6 +1180,20 @@ select:focus{border-color:var(--accent)}
 .env-fluxo-p.destaque{background:var(--green);border-color:var(--green);color:#0a0a0a}
 .env-fluxo-p.destaque small{color:rgba(0,0,0,.65)}
 .env-fluxo-p.destaque span{background:rgba(0,0,0,.12);border-color:transparent}
+
+.cxs-box{margin-top:14px;border:1px solid rgba(238,77,45,.3);border-radius:10px;padding:12px 14px;background:rgba(238,77,45,.04)}
+.cxs-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.cxs-tit{font-weight:700;font-size:13px;color:var(--text)}
+.cxs-tit span{font-family:'DM Mono',monospace;font-size:10px;font-weight:600;color:#ee4d2d;border:1px solid rgba(238,77,45,.4);border-radius:4px;padding:1px 5px;margin-left:4px}
+.cxs-acoes{display:flex;gap:6px;flex-wrap:wrap}
+.cxs-vazio{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
+.cxs-res{font-size:12px;color:var(--text);margin-top:10px}
+.cxs-res span{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)}
+.cxs-res .etq-progress-bar{margin-top:6px}
+.cxs-faixas{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:6px}
+.cxs-linha{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted)}
+.cxs-linha input{width:64px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:5px 6px}
+.cxs-ok{color:var(--green);font-weight:600}
 </style>
 </head>
 <body>
@@ -6645,7 +6659,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 66;
+const APP_VERSAO = 67;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -10856,6 +10870,7 @@ async function etqRenderSecao(fullId) {
     ${barra}
     ${(() => { const pr = _etqInconsistencias(fullId, arr); return pr.length ? `<div class="etq-incons"><div><span class="t">⚠️ As etiquetas não batem com os itens do Full</span>${pr.map(x => `<div>· ${x.txt}</div>`).join('')}</div><button class="btn btn-sm" onclick="etqAjustarAoFull('${fullId}')">Ajustar ao Full</button></div>` : ''; })()}
     <div class="etq-list">${lista}</div>
+    ${shopee?`<div id="cxShopee_${fullId}"></div>`:''}
 
     <div class="etq-add-area" id="etqAddArea_${fullId}" style="display:none">
       <div style="display:flex;gap:6px;margin-bottom:12px;border-bottom:1px solid var(--border)">
@@ -10896,6 +10911,7 @@ async function etqRenderSecao(fullId) {
       </div>
     </div>
   </div>`;
+  if(shopee) cxsRender(fullId);
   etqRenderQzStatus();
   if(window._qzStatus==='disconnected'&&typeof qz!=='undefined') qzConectar();
 }
@@ -12591,6 +12607,208 @@ function _carregarQrLib() {
     s.onerror = () => falha(new Error('sem internet para desenhar o QR'));
     document.head.appendChild(s);
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ETIQUETA DE CAIXA DA SHOPEE (10×15) — arquivo "Carton_….txt" do Seller Center.
+// Cada caixa tem um código único (SPXBR…A): o Outbox guarda as etiquetas ORIGINAIS da Shopee
+// e controla quais números de caixa já saíram, para nenhuma etiqueta sair duas vezes sem querer.
+// ══════════════════════════════════════════════════════════════════════
+const _CXS_TAB = 'full_caixas_shopee';
+window._cxShopee = window._cxShopee || {};     // fullId → [{n,total,asn,spx,impressoes,impressa_em,por}]
+
+// separa o arquivo em etiquetas (1 imagem ~DG + 1 impressão ^XA…^XZ cada)
+function _cxsSeparar(texto) {
+  const partes = String(texto || '').split(/(?=~DG)/).filter(p => /^~DG/.test(p));
+  return partes.filter(p => /\^XG/.test(p) && /\^XZ/.test(p)).map(p => p.trim());
+}
+async function _cxsImagem(chunk) {
+  const m = chunk.match(/~DG[^,]+,(\d+),(\d+),:Z64:([A-Za-z0-9+/=]+):/);
+  if (!m || typeof DecompressionStream === 'undefined') return null;
+  const row = +m[2];
+  const bin = Uint8Array.from(atob(m[3]), c => c.charCodeAt(0));
+  const raw = new Uint8Array(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer());
+  return { w: row * 8, h: Math.floor(raw.length / row), row, raw };
+}
+function _cxsLerQr(g, y0, y1) {
+  if (!g || typeof jsQR !== 'function') return '';
+  const X0 = Math.floor(g.w * 0.18), X1 = Math.floor(g.w * 0.82), Y0 = Math.floor(g.h * y0), Y1 = Math.floor(g.h * y1);
+  const w = X1 - X0, h = Y1 - Y0, d = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const X = X0 + x, bit = (g.raw[(Y0 + y) * g.row + (X >> 3)] >> (7 - (X & 7))) & 1, v = bit ? 0 : 255, i = (y * w + x) * 4;
+    d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255;
+  }
+  try { return jsQR(d, w, h, { inversionAttempts: 'dontInvert' })?.data || ''; } catch (e) { return ''; }
+}
+const _cxsLerSpx = g => { const v = _cxsLerQr(g, 0.12, 0.39); return /^SPX/i.test(v) ? v : ''; };
+const _cxsLerAsn = g => { const v = _cxsLerQr(g, 0.62, 0.88); return /^INBR/i.test(v) ? v : ''; };
+
+async function cxsCarregar(fullId, forcar) {
+  if (window._cxShopee[fullId] && !forcar) return window._cxShopee[fullId];
+  const { data, error } = await _sb.from(_CXS_TAB).select('n,total,asn,spx,impressoes,impressa_em,por').eq('full_id', fullId).order('n', { ascending: true });
+  if (error) { console.error('[cxs]', error); return window._cxShopee[fullId] || []; }
+  return (window._cxShopee[fullId] = data || []);
+}
+function cxsSubir(fullId) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.txt,.zpl,.prn,.zip,text/plain';
+  inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) cxsImportar(fullId, f); };
+  inp.click();
+}
+async function cxsImportar(fullId, file) {
+  const f = FULLS_DATA[fullId];
+  if (!f) return;
+  let texto = '';
+  try {
+    if (/\.zip$/i.test(file.name)) {
+      const JSZip = await _envCarregarJSZip();
+      const z = await JSZip.loadAsync(await file.arrayBuffer());
+      for (const e of Object.values(z.files)) if (!e.dir && /\.(txt|zpl|prn)$/i.test(e.name)) texto += await e.async('string') + '\n';
+      if (!texto) { showToast('⚠️ Esse zip só tem PDF. No Seller Center baixe as etiquetas de caixa para impressora térmica (o arquivo .txt)'); return; }
+    } else if (/\.pdf$/i.test(file.name)) { showToast('⚠️ Esse é o PDF. No Seller Center baixe as etiquetas de caixa para impressora térmica (o arquivo .txt)'); return; }
+    else texto = await file.text();
+  } catch (e) { showToast('❌ Não consegui ler o arquivo: ' + e.message); return; }
+  const etqs = _cxsSeparar(texto);
+  if (!etqs.length) { showToast('⚠️ Não achei etiquetas de caixa da Shopee nesse arquivo'); return; }
+  showToast(`Conferindo ${etqs.length} etiquetas de caixa…`);
+  // lê o QR de cada caixa (código SPX) e o do ASN
+  const lidos = [];
+  for (let i = 0; i < etqs.length; i++) {
+    let g = null; try { g = await _cxsImagem(etqs[i]); } catch (e) {}
+    lidos.push({ spx: _cxsLerSpx(g), asn: (i === 0 || i === etqs.length - 1) ? _cxsLerAsn(g) : '' });
+  }
+  const numFull = String(fullId).split('-')[0];
+  const asns = [...new Set(lidos.map(x => x.asn).filter(Boolean))];
+  if (asns.some(a => a.replace(/\D/g, '') !== numFull)) {
+    alert(`❌ Essas etiquetas de caixa são do ASN ${asns.join(', ')}, não do ${fullId}.\n\nNada foi importado.`); return;
+  }
+  if (!asns.length && !confirm(`⚠️ Não consegui ler o número do ASN nas etiquetas.\n\nConfirme que esse arquivo é das caixas do ${fullId} (${etqs.length} caixas).`)) return;
+  const spxs = lidos.map(x => x.spx).filter(Boolean);
+  if (new Set(spxs).size !== spxs.length) { alert('❌ O arquivo tem caixas com o mesmo código SPX repetido. Nada foi importado — baixe as etiquetas de novo no Seller Center.'); return; }
+  const cxFull = (f.itens || []).reduce((t, it) => t + (parseInt(it.qtde) || 0), 0);
+  const avisos = [];
+  if (cxFull && cxFull !== etqs.length) avisos.push(`A Shopee gerou ${etqs.length} etiquetas de caixa, mas o Full tem ${cxFull} caixas pelo catálogo.`);
+  const atuais = await cxsCarregar(fullId, true);
+  const jaImp = atuais.filter(x => x.impressoes > 0).length;
+  if (atuais.length) avisos.push(`Este Full já tem ${atuais.length} etiquetas de caixa${jaImp ? ` e ${jaImp} JÁ FORAM IMPRESSAS — se substituir, as impressas antigas deixam de valer (tire das caixas)` : ''}.`);
+  if (avisos.length && !confirm(`⚠️ ${avisos.join('\n\n')}\n\nImportar ${etqs.length} etiquetas de caixa no ${fullId} assim mesmo?`)) return;
+  const agora = new Date().toISOString();
+  const linhas = etqs.map((z, i) => ({ full_id: fullId, n: i + 1, total: etqs.length, asn: asns[0] || '', spx: lidos[i].spx || '', zpl: z, impressoes: 0, impressa_em: null, por: null, criado_em: agora }));
+  const { error: eDel } = await _sb.from(_CXS_TAB).delete().eq('full_id', fullId);
+  if (eDel) { showToast('❌ Não salvou: ' + eDel.message); return; }
+  for (let i = 0; i < linhas.length; i += 20) {
+    const { error } = await _sb.from(_CXS_TAB).insert(linhas.slice(i, i + 20));
+    if (error) { showToast('❌ Salvou só ' + i + ' de ' + linhas.length + ' etiquetas: ' + error.message + ' — suba o arquivo de novo'); await cxsCarregar(fullId, true); cxsRender(fullId); return; }
+  }
+  await cxsCarregar(fullId, true);
+  cxsRender(fullId);
+  const semSpx = lidos.filter(x => !x.spx).length;
+  showToast(`✅ ${etqs.length} etiquetas de caixa da Shopee no ${fullId}${semSpx ? ` (${semSpx} sem o código lido — imprimem normal)` : ''}`);
+}
+// impressora 10×15 (a do Flex): escolhida uma vez e salva neste computador, separada da do rolo do ML
+async function cxsImpressora(trocar) {
+  if (!(await qzConectar())) { showToast('⚠️ QZ Tray offline — abra o programa e tente de novo'); return null; }
+  const lista = await zplListarImpressoras();
+  const salva = localStorage.getItem('expctrl_impressora_10x15');
+  if (!trocar && salva && lista.includes(salva)) return salva;
+  if (!lista.length) { showToast('❌ O QZ Tray não encontrou nenhuma impressora neste PC'); return null; }
+  const r = prompt(`Qual é a impressora 10×15 (a das etiquetas do Flex)?\n\n${lista.map((n, i) => `${i + 1}) ${n}`).join('\n')}\n\nDigite o número:`, '');
+  const nome = lista[parseInt(r, 10) - 1];
+  if (!nome) return null;
+  if (nome === localStorage.getItem('expctrl_impressora') && !confirm(`⚠️ "${nome}" é a impressora do rolo do ML (etiquetas pequenas).\nA etiqueta de caixa da Shopee é 10×15. Usar essa mesmo assim?`)) return null;
+  localStorage.setItem('expctrl_impressora_10x15', nome);
+  showToast('🖨 Impressora 10×15: ' + nome);
+  return nome;
+}
+let _cxsImprimindo = false;
+async function _cxsImprimir(fullId, nums, reimpressao) {
+  if (_cxsImprimindo) return;
+  _cxsImprimindo = true;
+  try {
+    const imp = await cxsImpressora(false);
+    if (!imp) return;
+    const { data, error } = await _sb.from(_CXS_TAB).select('n,zpl,impressoes').eq('full_id', fullId).in('n', nums);
+    if (error || !data || data.length !== nums.length) { showToast('❌ Não consegui buscar as etiquetas no banco' + (error ? ': ' + error.message : '')); return; }
+    if (!reimpressao && data.some(x => x.impressoes > 0)) { showToast('⚠️ Outra pessoa acabou de imprimir algumas dessas caixas — atualizei a lista'); await cxsCarregar(fullId, true); cxsRender(fullId); return; }
+    data.sort((a, b) => a.n - b.n);
+    try { await qz.print(qz.configs.create(imp), [{ type: 'raw', format: 'plain', data: data.map(x => x.zpl).join('\n') }]); }
+    catch (e) {
+      const msg = String(e?.message || e);
+      if (/not found/i.test(msg)) localStorage.removeItem('expctrl_impressora_10x15');
+      showToast('❌ Não imprimiu: ' + msg); return;
+    }
+    const agora = new Date().toISOString(), por = window.USUARIO?.nome || '—';
+    let falhou = false;
+    for (const x of data) {
+      const { error: eU } = await _sb.from(_CXS_TAB).update({ impressoes: (x.impressoes || 0) + 1, impressa_em: agora, por }).eq('full_id', fullId).eq('n', x.n);
+      if (eU) falhou = true;
+    }
+    await cxsCarregar(fullId, true);
+    cxsRender(fullId);
+    const faixa = nums.length > 1 ? `${nums[0]} a ${nums[nums.length - 1]}` : nums[0];
+    showToast(falhou ? `⚠️ Imprimiu a(s) caixa(s) ${faixa}, mas não marcou no banco — anote para não imprimir de novo` : `✅ Caixa(s) ${faixa} → ${imp}`);
+  } finally { _cxsImprimindo = false; }
+}
+async function cxsImprimirProximas(fullId) {
+  const lista = await cxsCarregar(fullId, true);
+  const faltam = lista.filter(x => !(x.impressoes > 0)).map(x => x.n);
+  let q = parseInt(document.getElementById('cxsQtd_' + fullId)?.value) || 0;
+  if (q <= 0) { showToast('⚠️ Quantas etiquetas de caixa?'); return; }
+  if (!faltam.length) { showToast('✅ Todas as etiquetas de caixa já saíram'); return; }
+  q = Math.min(q, faltam.length);
+  await _cxsImprimir(fullId, faltam.slice(0, q), false);
+}
+async function cxsReimprimir(fullId) {
+  const n = parseInt(document.getElementById('cxsRe_' + fullId)?.value) || 0;
+  const lista = await cxsCarregar(fullId, true);
+  const c = lista.find(x => x.n === n);
+  if (!c) { showToast('⚠️ Digite o número da caixa (1 a ' + lista.length + ')'); return; }
+  if (c.impressoes > 0 && !confirm(`A caixa ${n} de ${c.total} já foi impressa${c.impressa_em ? ' em ' + new Date(c.impressa_em).toLocaleString('pt-BR') : ''}${c.por ? ' por ' + c.por : ''}.\n\nReimprima só se a etiqueta estragou ou caiu — nunca cole a mesma etiqueta em duas caixas.\n\nReimprimir a caixa ${n}?`)) return;
+  await _cxsImprimir(fullId, [n], true);
+}
+async function cxsVer(fullId, n) {
+  const { data } = await _sb.from(_CXS_TAB).select('zpl').eq('full_id', fullId).eq('n', n).maybeSingle();
+  const g = data && await _cxsImagem(data.zpl).catch(() => null);
+  if (!g) { showToast('⚠️ Não consegui montar a imagem dessa etiqueta'); return; }
+  const cv = document.createElement('canvas'); cv.width = g.w; cv.height = g.h;
+  const ctx = cv.getContext('2d'), im = ctx.createImageData(g.w, g.h);
+  for (let y = 0; y < g.h; y++) for (let x = 0; x < g.w; x++) {
+    const v = ((g.raw[y * g.row + (x >> 3)] >> (7 - (x & 7))) & 1) ? 0 : 255, i = (y * g.w + x) * 4;
+    im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255;
+  }
+  ctx.putImageData(im, 0, 0);
+  cv.style.cssText = 'max-height:82vh;max-width:90vw;background:#fff;border:2px solid #fff;border-radius:4px';
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:9999;display:flex;align-items:center;justify-content:center;cursor:pointer';
+  ov.onclick = () => ov.remove();
+  ov.appendChild(cv); document.body.appendChild(ov);
+}
+const _cxsFaixas = ns => { const r = []; ns.forEach(n => { const u = r[r.length - 1]; if (u && n === u[1] + 1) u[1] = n; else r.push([n, n]); }); return r.map(([a, b]) => a === b ? a : a + '–' + b).join(', '); };
+async function cxsRender(fullId) {
+  const el = document.getElementById('cxShopee_' + fullId);
+  if (!el) return;
+  const lista = await cxsCarregar(fullId);
+  const imp = lista.filter(x => x.impressoes > 0), faltam = lista.length - imp.length;
+  const nomeImp = (() => { try { return localStorage.getItem('expctrl_impressora_10x15'); } catch (e) { return null; } })();
+  const pct = lista.length ? Math.round(imp.length / lista.length * 100) : 0;
+  el.innerHTML = `<div class="cxs-box">
+    <div class="cxs-top">
+      <div class="cxs-tit">📦 Etiquetas de caixa Shopee <span>10×15</span></div>
+      <div class="cxs-acoes">
+        <button class="btn btn-ghost btn-sm" onclick="cxsImpressora(true).then(()=>cxsRender('${_envJs(fullId)}'))" title="Impressora das etiquetas 10×15 (a do Flex)">🖨 ${nomeImp ? _envEsc(nomeImp) : 'Escolher impressora 10×15'}</button>
+        <button class="btn ${lista.length ? 'btn-ghost' : 'btn-primary'} btn-sm" onclick="cxsSubir('${_envJs(fullId)}')" title="Arquivo Carton_….txt do Seller Center (impressora térmica)">📄 ${lista.length ? 'Trocar arquivo' : 'Subir etiquetas de caixa'}</button>
+      </div>
+    </div>
+    ${!lista.length ? `<div class="cxs-vazio">No Seller Center, depois de criar o ASN, baixe as <b>etiquetas de caixa para impressora térmica</b> (Carton_….txt) e suba aqui. Cada caixa tem um código único — o Outbox controla para nenhuma sair repetida.</div>` : `
+    <div class="cxs-res"><b>${imp.length}</b> de ${lista.length} caixas impressas <span>· ASN ${_envEsc(lista[0].asn || '—')}</span><div class="etq-progress-bar"><div class="etq-progress-fill${!faltam ? ' done' : ''}" style="width:${pct}%"></div></div></div>
+    ${imp.length ? `<div class="cxs-faixas">Já saíram: ${_cxsFaixas(imp.map(x => x.n))}</div>` : ''}
+    <div class="cxs-linha">
+      ${faltam ? `<span>Próximas</span><input type="number" min="1" max="${faltam}" value="${faltam}" id="cxsQtd_${fullId}"><button class="btn btn-primary btn-sm" onclick="cxsImprimirProximas('${_envJs(fullId)}')">🖨 Imprimir a partir da caixa ${lista.find(x => !(x.impressoes > 0)).n}</button>` : '<span class="cxs-ok">✅ Todas as etiquetas de caixa saíram</span>'}
+      <span style="flex:1"></span>
+      <span>Caixa nº</span><input type="number" min="1" max="${lista.length}" id="cxsRe_${fullId}" placeholder="—"><button class="btn btn-ghost btn-sm" onclick="cxsReimprimir('${_envJs(fullId)}')">↺ Reimprimir</button>
+      <button class="btn btn-ghost btn-sm" onclick="cxsVer('${_envJs(fullId)}', parseInt(document.getElementById('cxsRe_${_envJs(fullId)}').value)||1)" title="Ver a etiqueta (caixa nº digitada, ou a 1)">👁</button>
+    </div>`}
+  </div>`;
 }
 
 // Cria/atualiza as etiquetas do Full a partir dos itens + anúncios do ML
