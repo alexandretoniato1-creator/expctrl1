@@ -6645,7 +6645,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 64;
+const APP_VERSAO = 65;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -10383,8 +10383,7 @@ async function bibBaixarPDF(sku){
   if (qtd > 2000) { showToast('⚠️ Máximo de 2000 etiquetas por PDF'); return; }
   const fmt = prompt('Formato do PDF:\n\n1 = Rolo — 1 etiqueta por página, tamanho real (impressora térmica)\n2 = Folha A4 — várias etiquetas por folha', '1');
   if (fmt !== '1' && fmt !== '2') return;
-  if (!(await etqConfirmarProduto(sku, { titulo: reg.descricao, qtd }))) { showToast('PDF cancelado'); return; }
-  showToast('📄 Gerando PDF...');
+  showToast('📄 Gerando PDF...');   // PDF não passa pelo bipe da embalagem (só a impressão térmica)
   try {
     const bloco = reg.zpl.match(/\^XA[\s\S]*?\^XZ/i)?.[0] || reg.zpl;
     const img = _etqImagemUnica(bloco);
