@@ -1498,11 +1498,11 @@ select:focus{border-color:var(--accent)}
             </div>
 
             <label class="env-import" id="envImport" for="envImportArq">
-              <input type="file" id="envImportArq" accept=".txt,.zpl,.prn,.zip,text/plain" multiple style="display:none" onchange="envImportarArquivos(this.files); this.value=''">
+              <input type="file" id="envImportArq" accept=".txt,.zpl,.prn,.zip,.pdf,text/plain,application/pdf" multiple style="display:none" onchange="envImportarArquivos(this.files); this.value=''">
               <div class="env-import-ico">📥</div>
               <div style="min-width:0">
-                <div class="env-import-tit">Importar envio criado no ML</div>
-                <div class="env-import-passos"><span>1</span> Crie o envio no ML <span>2</span> Baixe as etiquetas para <b>impressora térmica</b> (ZPL) <span>3</span> Solte o arquivo aqui</div>
+                <div class="env-import-tit">Importar envio criado no ML ou na Shopee</div>
+                <div class="env-import-passos"><span>1</span> Crie o envio no ML / na Shopee <span>2</span> ML: baixe as etiquetas para <b>impressora térmica</b> (ZPL) · Shopee: baixe o <b>PDF do ASN</b> <span>3</span> Solte o arquivo aqui</div>
               </div>
               <div class="env-import-bt">Escolher arquivo</div>
             </label>
@@ -2318,18 +2318,18 @@ select:focus{border-color:var(--accent)}
 <!-- NOVO ENVIO ML: criar Full a partir do planejamento -->
 <div class="modal-overlay" id="modalEnvioCriar">
   <div class="modal" style="max-width:760px">
-    <div class="modal-title">Importar envio do ML <button class="modal-close" onclick="closeModal('modalEnvioCriar')">✕</button></div>
+    <div class="modal-title"><span id="envc-titulo">Importar envio do ML</span> <button class="modal-close" onclick="closeModal('modalEnvioCriar')">✕</button></div>
     <div class="envi-res" id="envc-resumo"></div>
     <div id="envc-avisos"></div>
     <div class="envi-lista-wrap"><table class="env-table envi-lista"><thead><tr><th>Produto</th><th class="env-num">Unidades</th><th class="env-num">Caixas</th><th class="env-num">Galpão</th></tr></thead><tbody id="envc-lista"></tbody></table></div>
     <div class="form-grid" style="margin-top:12px">
-      <div class="form-group"><label>Nº do envio no ML</label><input class="form-sel" type="text" inputmode="numeric" id="envc-numero" placeholder="ex.: 79565431" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:700" oninput="envChecarNumero()"></div>
-      <div class="form-group"><label>Modo de envio (como ficou no ML)</label><select class="form-sel" id="envc-tipo"><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
+      <div class="form-group"><label id="envc-numlbl">Nº do envio no ML</label><input class="form-sel" type="text" inputmode="numeric" id="envc-numero" placeholder="ex.: 79565431" style="font-family:'DM Mono',monospace;font-size:15px;font-weight:700" oninput="envChecarNumero()"></div>
+      <div class="form-group"><label id="envc-tipolbl">Modo de envio (como ficou no ML)</label><select class="form-sel" id="envc-tipo"><option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option></select></div>
       <div class="form-group"><label>Data e horário da coleta / entrega</label><div style="display:flex;gap:6px"><input class="form-sel" type="date" id="envc-agendado" style="flex:1;min-width:0"><input class="form-sel" type="time" id="envc-hora" style="width:110px;flex-shrink:0"></div></div>
       <div class="form-group"><label>Destino</label><select class="form-sel" id="envc-destino"></select></div>
     </div>
     <div id="envc-numaviso"></div>
-    <div style="font-size:11px;color:var(--muted);margin-top:8px">O Full entra na agenda como <b>número-ML</b>, com as quantidades em caixas, e as etiquetas ficam prontas no detalhe do Full — iguais às do arquivo do ML.</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px" id="envc-rodape">O Full entra na agenda como <b>número-ML</b>, com as quantidades em caixas, e as etiquetas ficam prontas no detalhe do Full — iguais às do arquivo do ML.</div>
     <div class="modal-footer"><button class="btn btn-ghost" onclick="closeModal('modalEnvioCriar')">Cancelar</button><button class="btn btn-primary" id="envc-ok" onclick="envConfirmarImportacao()">✓ Criar Full na agenda</button></div>
   </div>
 </div>
@@ -6645,7 +6645,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 65;
+const APP_VERSAO = 66;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -10520,7 +10520,7 @@ async function etqSalvar(fullId, op) {
     imp = Math.max(0, Math.min(imp, x.total||0));
     const r = { id:x.id, sku:x.sku, descricao:x.descricao||'', total:x.total, impressas:imp, criadoEm:x.criadoEm };
     // etiqueta gerada pelo Outbox: código ML, título e variação (b = versão do banco, se esta for antiga)
-    ['inv','titulo','variacao','origem'].forEach(c => { const v = x[c] || (b && b[c]); if (v) r[c] = v; });
+    ['inv','whs','tipo','titulo','variacao','origem'].forEach(c => { const v = x[c] || (b && b[c]); if (v) r[c] = v; });
     // lotes impressos com código de barras diferente do cadastro (o banco manda; o novo entra no fim)
     const div = [...((b ? b.divergencias : x.divergencias) || [])];
     if (op.divergencia && op.divergencia[x.id]) div.push(op.divergencia[x.id]);
@@ -10734,15 +10734,17 @@ async function etqRenderSecao(fullId) {
       <div class="etq-progress-bar"><div class="etq-progress-fill${ok?' done':''}" style="width:${pctG}%"></div></div>
     </div>`:'';
 
+  const shopee=_fullEhShopee(FULLS_DATA[fullId]);
   const lista=arr.length===0
-    ?`<div class="etq-empty"><div class="etq-empty-icon">🏷</div><div class="etq-empty-title">Nenhuma etiqueta ainda</div><div class="etq-empty-sub">Clique em <b>⚡ Gerar pelo ML</b>: o Outbox monta as etiquetas de cada item do Full com o código ML — sem colar ZPL</div></div>`
+    ?(shopee?`<div class="etq-empty"><div class="etq-empty-icon">🏷</div><div class="etq-empty-title">Nenhuma etiqueta ainda</div><div class="etq-empty-sub">Clique em <b>📄 Subir ASN</b> e escolha o PDF do ASN deste envio (Seller Center → Envio ao Armazém): o Outbox monta as etiquetas Shopee com o QR de cada SKU</div></div>`
+      :`<div class="etq-empty"><div class="etq-empty-icon">🏷</div><div class="etq-empty-title">Nenhuma etiqueta ainda</div><div class="etq-empty-sub">Clique em <b>⚡ Gerar pelo ML</b>: o Outbox monta as etiquetas de cada item do Full com o código ML — sem colar ZPL</div></div>`)
     :arr.map(etq=>{
         const pct=etq.total?Math.round(((etq.impressas||0)/etq.total)*100):0;
         const cls=pct>=100?'done':pct>0?'partial':'none';
         const faltam=Math.max(0,etq.total-(etq.impressas||0));
         const skuLbl=etq.sku||etq.descricao||'—';
         const descLbl=(etq.sku&&etq.descricao&&etq.descricao!==etq.sku)?etq.descricao:'';
-        const temZpl=!!etq.inv||zplEstaNaBiblioteca(etq.sku);
+        const temZpl=!!etq.inv||!!etq.whs||zplEstaNaBiblioteca(etq.sku);
         const estoqueDisp=zplEstoqueDe(etq.sku);
         const jaPre=(etq.ja_etiq||[]).filter(x=>x.motivo!=='china').reduce((a,x)=>a+(x.qtd||0),0);
         const jaChina=(etq.ja_etiq||[]).filter(x=>x.motivo==='china').reduce((a,x)=>a+(x.qtd||0),0);
@@ -10759,6 +10761,7 @@ async function etqRenderSecao(fullId) {
                 </div>
                 ${descLbl?`<div class="etq-card-desc">${descLbl}</div>`:''}
                 ${etq.inv?`<div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--green);margin-top:3px" title="Etiqueta montada pelo Outbox com o código ML do anúncio — não precisa de ZPL">● código ML ${etq.inv}${etq.variacao?' · '+etq.variacao:''}</div>`:''}
+                ${etq.whs?`<div style="font-size:10px;font-family:'DM Mono',monospace;color:#ee4d2d;margin-top:3px" title="Etiqueta Shopee montada pelo Outbox a partir do ASN — QR com o ID do SKU do armazém">● Shopee ${etq.whs}${etq.variacao?' · '+_envEsc(etq.variacao):''}</div>`:''}
                 <div style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px">${etq.total.toLocaleString('pt-BR')} etiquetas · ${new Date(etq.criadoEm).toLocaleDateString('pt-BR')}</div>
               </div>
               <div class="etq-card-right">
@@ -10771,8 +10774,9 @@ async function etqRenderSecao(fullId) {
               return `<div class="etq-div-aviso" title="${_envEsc(d.map(x=>`${new Date(x.em).toLocaleString('pt-BR')} · ${x.por} · bipou ${x.cod}${x.outroSku?' (do SKU '+x.outroSku+')':''} · ${x.qtd||0} etiquetas`).join('\n'))}">⚠️ ${q.toLocaleString('pt-BR')} etiqueta(s) impressas com código de barras diferente do cadastro — último: <b>${_envEsc(u.cod)}</b>${u.outroSku?' (do SKU '+_envEsc(u.outroSku)+')':''} por ${_envEsc(u.por)} em ${new Date(u.em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</div>`; })():''}
             ${!temZpl?`
             <div style="background:rgba(248,81,73,.08);border:1px solid rgba(248,81,73,.25);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px">
-              <span>⚠️ Ainda sem código ML para esse SKU — se o envio já foi criado no ML, clique em ⚡ Gerar pelo ML</span>
-              <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="etqGerarDoML('${fullId}',{forcar:true})">⚡ Buscar no ML</button>
+              ${shopee?`<span>⚠️ Sem o código Shopee desse SKU — suba o PDF do ASN deste envio</span>
+              <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="etqSubirAsn('${fullId}')">📄 Subir ASN</button>`:`<span>⚠️ Ainda sem código ML para esse SKU — se o envio já foi criado no ML, clique em ⚡ Gerar pelo ML</span>
+              <button class="btn btn-sm" style="background:var(--red);color:#fff;font-size:10px;flex-shrink:0" onclick="etqGerarDoML('${fullId}',{forcar:true})">⚡ Buscar no ML</button>`}
             </div>`:''}
             ${estoqueDisp>0&&faltam>0?`
             <div style="background:rgba(63,185,80,.08);border:1px solid rgba(63,185,80,.22);border-radius:7px;padding:8px 11px;margin:8px 0;font-size:11px;color:var(--green);display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -10837,15 +10841,16 @@ async function etqRenderSecao(fullId) {
   el.innerHTML=`
   <div class="etq-section">
     <div class="etq-header">
-      <div class="etq-title">🏷 Etiquetas ML ${badge}</div>
+      <div class="etq-title">🏷 Etiquetas ${shopee?'Shopee':'ML'} ${badge}</div>
       <div style="display:flex;align-items:center;gap:10px">
         <div class="etq-qztray-status"></div>
         <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)">Offset dir.</span>
         <input type="number" step="0.1" value="${window._etqCfg.colDireitaOffsetMm}" onchange="etqDefinirOffsetColuna(parseFloat(this.value))" style="width:56px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:4px 6px" title="Distância real (mm) entre as duas colunas — calibre com a régua">
         <button onclick="etqTestarRegua()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime marcas de mm pra achar a fenda física real entre as etiquetas">📐 Régua</button>
         <button onclick="etqTestarImpressao()" class="btn btn-ghost btn-sm" style="font-size:11px" title="Imprime uma etiqueta de teste (não consome SKU nenhum)">🧪 Testar impressão</button>
-        <button onclick="etqGerarDoML('${fullId}',{forcar:true})" class="btn btn-primary btn-sm" style="font-size:11px" title="Cria as etiquetas dos itens do Full com o código ML de cada produto">⚡ Gerar pelo ML</button>
-        <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-ghost btn-sm" style="font-size:11px" title="Jeito antigo: colar o ZPL baixado do ML">+ Colar ZPL</button>
+        ${shopee?`<button onclick="etqSubirAsn('${fullId}')" class="btn btn-primary btn-sm" style="font-size:11px" title="Lê o PDF do ASN da Shopee e monta as etiquetas de cada SKU (QR do armazém)">📄 Subir ASN</button>`
+        :`<button onclick="etqGerarDoML('${fullId}',{forcar:true})" class="btn btn-primary btn-sm" style="font-size:11px" title="Cria as etiquetas dos itens do Full com o código ML de cada produto">⚡ Gerar pelo ML</button>
+        <button onclick="etqAbrirAdicionar('${fullId}')" class="btn btn-ghost btn-sm" style="font-size:11px" title="Jeito antigo: colar o ZPL baixado do ML">+ Colar ZPL</button>`}
       </div>
     </div>
     ${barra}
@@ -11283,7 +11288,8 @@ async function etqPreview(fullId, etqId) {
   const hMm = window._etqCfg.alturaMm;
 
   // Renderiza o primeiro bloco no canvas e abre em popup
-  const blocoCorrigido = zplCorrigirAlinhamento(blocos[0]);
+  if (etq.whs) { try { await _carregarQrLib(); } catch (e) {} }
+  const blocoCorrigido = etq.whs ? blocos[0] : zplCorrigirAlinhamento(blocos[0]);
   const canvas = _zplRender(blocoCorrigido, 2);
 
   // Cria modal de preview
@@ -11485,6 +11491,7 @@ function _zplRender(zplBloco, pxPerDot) {
     else if(cmd==='FO'){const p=rest.split(',');foX=parseInt(p[0])||0;foY=parseInt(p[1])||0;cur={x:lhX+foX,y:lhY+foY};useHex=false;fbW=0;fbLines=1;}
     else if(cmd==='BY'){const p=rest.split(',');byMod=parseInt(p[0])||2;if(p[1])byH=parseInt(p[1])||54;}
     else if(cmd==='BC'){if(cur){cur.type='barcode';cur.h=byH;cur.mod=byMod;}}
+    else if(cmd==='BQ'){const p=rest.split(',');if(cur){cur.type='qr';cur.mag=parseInt(p[2])||4;}}
     else if(cmd==='A0'){const p=rest.replace(/^[NR]/,'').split(',');fontH=parseInt(p[0])||20;fontW=parseInt(p[1])||fontH;if(cur){cur.type='text';cur.fontH=fontH;cur.fontW=fontW;}}
     else if(cmd==='FB'){const p=rest.split(',');fbW=parseInt(p[0])||0;fbLines=parseInt(p[1])||1;if(cur){cur.fbW=fbW;cur.fbLines=fbLines;}}
     else if(cmd==='FH'){useHex=true;}
@@ -11509,7 +11516,7 @@ function _zplRender(zplBloco, pxPerDot) {
   // Se ^PW não estiver no ZPL, calcula pelo X máximo dos ^FO
   const foXvals=(zpl.match(/\^FO(\d+),/g)||[]).map(s=>parseInt(s.replace(/\^FO|,/g,'')));
   const xMax=foXvals.length?Math.max(...foXvals):430;
-  const autoW=xMax+120; // X_máx + largura do campo direito
+  const autoW=xMax+180; // X_máx + largura do campo direito
   const W=(pw>autoW?pw:autoW)*pxPerDot, H=ll*pxPerDot;
   const canvas=document.createElement('canvas');
   canvas.width=W;canvas.height=H;
@@ -11520,7 +11527,13 @@ function _zplRender(zplBloco, pxPerDot) {
   for(const f of fields){
     if(!f.text)continue;
     const sx=f.x*pxPerDot, sy=f.y*pxPerDot;
-    if(f.type==='barcode'){
+    if(f.type==='qr'){
+      const dado=f.text.replace(/^[HQML]A,/,'');
+      const m=(f.mag||4)*pxPerDot;
+      if(window.qrcode){ const q=qrcode(0,'M'); q.addData(dado,'Byte'); q.make(); const nm=q.getModuleCount();
+        for(let r=0;r<nm;r++)for(let c=0;c<nm;c++)if(q.isDark(r,c))ctx.fillRect(sx+c*m,sy+r*m,m,m); }
+      else { ctx.strokeRect(sx,sy,25*m,25*m); ctx.font=`${10*pxPerDot}px Arial`; ctx.fillText('QR',sx+8*m,sy+14*m); }
+    } else if(f.type==='barcode'){
       _drawCode128(ctx,f.text,sx,sy,(f.mod||2)*pxPerDot,(f.h||54)*pxPerDot);
     } else {
       const fs=(f.fontH||18)*pxPerDot*0.9;
@@ -11608,14 +11621,17 @@ async function etqConfirmarLote(fullId, etqId, maxRestantes) {
   let reserva = null;
   if (para) { reserva = await _fracReservar(fullId, etq.sku, para, qtd, 'impressao'); if (!reserva) return; }
 
-  const blocos = [];
-  const regex = /(\^XA[\s\S]*?\^XZ)/gi;
-  let m;
-  while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
-  if (!blocos.length) { showToast('❌ ZPL inválido'); return; }
-
-  // Fileiras de 2 + 1 etiqueta sozinha se a quantidade for ímpar
-  let zplFinal = zplCorrigirAlinhamento(zplMontarLote(blocos, qtd));
+  let zplFinal;
+  if (etq.whs) zplFinal = zplLoteShopee(etq, qtd);        // Shopee: já sai na quantidade e no alinhamento certos
+  else {
+    const blocos = [];
+    const regex = /(\^XA[\s\S]*?\^XZ)/gi;
+    let m;
+    while ((m = regex.exec(zpl)) !== null) blocos.push(m[1]);
+    if (!blocos.length) { showToast('❌ ZPL inválido'); if (reserva) await _fracApagar(fullId, reserva.fr.id); return; }
+    // Fileiras de 2 + 1 etiqueta sozinha se a quantidade for ímpar
+    zplFinal = zplCorrigirAlinhamento(zplMontarLote(blocos, qtd));
+  }
   if (reserva) zplFinal += '\n' + zplEtiquetasCaixa(_fracEtiquetas(fullId, reserva.it, reserva.fr));
 
   const impressora = await zplEnviarParaImpressora(zplFinal);
@@ -12077,7 +12093,8 @@ async function envImportarArquivos(files) {
         const z = await JSZip.loadAsync(await f.arrayBuffer());
         for (const e of Object.values(z.files)) if (!e.dir && /\.(txt|zpl|prn)$/i.test(e.name)) textos.push(await e.async('string'));
       } else if (/\.pdf$/i.test(f.name)) {
-        showToast('⚠️ Esse é o PDF. No ML, baixe as etiquetas para impressora térmica (ZPL)'); return;
+        if (files.length > 1) { showToast('⚠️ Shopee: solte só o PDF do ASN (um envio por vez)'); return; }
+        await envImportarAsnShopee(f); return;
       } else textos.push(await f.text());
     }
   } catch (e) { showToast('❌ Não consegui ler o arquivo: ' + e.message); return; }
@@ -12160,9 +12177,19 @@ function envAbrirImportacao() {
   }).join('');
   const amanha = new Date(); amanha.setDate(amanha.getDate() + 1);
   if (amanha.getDay() === 6) amanha.setDate(amanha.getDate() + 2); else if (amanha.getDay() === 0) amanha.setDate(amanha.getDate() + 1);
-  m.querySelector('#envc-agendado').value = _envDataInput(amanha);
-  m.querySelector('#envc-hora').value = '';
-  m.querySelector('#envc-destino').innerHTML = (_NF_DESTINOS.ML || []).map(d => `<option>${d}</option>`).join('');
+  const sp = imp.mkt === 'SHOPEE';
+  m.querySelector('#envc-titulo').textContent = sp ? `Importar envio da Shopee · ASN ${imp.asn}` : 'Importar envio do ML';
+  m.querySelector('#envc-numlbl').textContent = sp ? 'Nº do ASN (sem o INBR…)' : 'Nº do envio no ML';
+  m.querySelector('#envc-tipolbl').textContent = sp ? 'Modo de envio (como ficou na Shopee)' : 'Modo de envio (como ficou no ML)';
+  m.querySelector('#envc-tipo').innerHTML = sp ? '<option value="Coleta">🚚 Coleta Shopee (Pickup)</option><option value="Envio próprio">📦 Envio próprio (Dropoff)</option>'
+    : '<option value="Coleta">🚚 Coleta ML</option><option value="Envio próprio">📦 Envio próprio</option>';
+  m.querySelector('#envc-tipo').value = sp && imp.metodo && !/pickup/i.test(imp.metodo) ? 'Envio próprio' : 'Coleta';
+  m.querySelector('#envc-rodape').innerHTML = sp
+    ? `O Full entra na agenda como <b>número-SHOPEE</b>, e as etiquetas Shopee (QR do armazém, ${_envEsc(imp.armazem || 'BRFSP1')}) ficam prontas no detalhe do Full — imprimem no rolo do ML, 2 por fileira. Requisição ${_envEsc(imp.requisicao || '—')}.`
+    : 'O Full entra na agenda como <b>número-ML</b>, com as quantidades em caixas, e as etiquetas ficam prontas no detalhe do Full — iguais às do arquivo do ML.';
+  m.querySelector('#envc-agendado').value = sp && imp.data ? imp.data : _envDataInput(amanha);
+  m.querySelector('#envc-hora').value = sp && imp.hora ? imp.hora : '';
+  m.querySelector('#envc-destino').innerHTML = ((sp ? _NF_DESTINOS.Shopee : _NF_DESTINOS.ML) || []).map(d => `<option>${d}</option>`).join('');
   m.querySelector('#envc-numero').value = imp.numero || '';
   envChecarNumero();
   setTimeout(() => m.querySelector('#envc-numero')?.focus(), 80);
@@ -12172,10 +12199,13 @@ function envAbrirImportacao() {
 function envChecarNumero() {
   const m = document.getElementById('modalEnvioCriar');
   const numero = (m.querySelector('#envc-numero').value || '').replace(/\D/g, '');
-  const id = numero + '-ML';
+  const sp = window._envImport?.mkt === 'SHOPEE';
+  const id = numero + (sp ? '-SHOPEE' : '-ML');
   const existe = numero.length >= 6 && (FULLS_DATA[id] || FULLS_ENVIADOS.find(e => e.id === id));
   m.querySelector('#envc-numaviso').innerHTML = existe
-    ? `<div class="env-alerta">⚠️ O envio ${_envEsc(id)} já está no Outbox. <button class="btn btn-ghost btn-sm" onclick="closeModal('modalEnvioCriar');switchFullsTab('agenda',document.getElementById('fullsTab-agenda'));setTimeout(()=>openDetail('${_envJs(id)}'),200)">Abrir</button></div>` : '';
+    ? (sp && FULLS_DATA[id]
+      ? `<div class="env-alerta" style="border-color:rgba(238,77,45,.35)">ℹ️ O envio ${_envEsc(id)} já está na agenda. Não crio outro — posso só montar as etiquetas Shopee dele a partir deste ASN (os itens do Full não mudam). <button class="btn btn-primary btn-sm" onclick="envAsnNoFull('${_envJs(id)}')">🏷 Montar etiquetas no ${_envEsc(id)}</button></div>`
+      : `<div class="env-alerta">⚠️ O envio ${_envEsc(id)} já está no Outbox. <button class="btn btn-ghost btn-sm" onclick="closeModal('modalEnvioCriar');switchFullsTab('agenda',document.getElementById('fullsTab-agenda'));setTimeout(()=>openDetail('${_envJs(id)}'),200)">Abrir</button></div>`) : '';
   const btn = m.querySelector('#envc-ok'); if (btn) btn.disabled = !!existe;
 }
 
@@ -12188,36 +12218,38 @@ async function envConfirmarImportacao() {
   const destino = m.querySelector('#envc-destino').value || '';
   const agVal = m.querySelector('#envc-agendado').value;
   const horario = m.querySelector('#envc-hora').value || '';
-  if (numero.length < 6) { showToast('⚠️ Digite o número do envio que o ML criou (ex.: 79565431)'); m.querySelector('#envc-numero')?.focus(); return; }
-  if (!agVal) { showToast('⚠️ Informe a data da coleta/entrega escolhida no ML'); return; }
+  const sp = imp.mkt === 'SHOPEE';
+  if (numero.length < 6) { showToast(sp ? '⚠️ Digite o número do ASN (ex.: 12610230146)' : '⚠️ Digite o número do envio que o ML criou (ex.: 79565431)'); m.querySelector('#envc-numero')?.focus(); return; }
+  if (!agVal) { showToast('⚠️ Informe a data da coleta/entrega escolhida no ' + (sp ? 'Seller Center' : 'ML')); return; }
   const agendado = agVal.split('-').reverse().join('/');
   const hoje = new Date().toLocaleDateString('pt-BR');
-  const id = `${numero}-ML`;
+  const id = `${numero}-${sp ? 'SHOPEE' : 'ML'}`;
   if (FULLS_DATA[id] || FULLS_ENVIADOS.find(e => e.id === id)) { showToast('⚠️ Já existe um Full com o ID ' + id); return; }
   const btn = m.querySelector('#envc-ok'); if (btn) btn.disabled = true;
   try {
     const { data: jaEnv } = await _sb.from('fulls_enviados').select('id').eq('id', id).maybeSingle();
     if (jaEnv) { showToast('⚠️ ID "' + id + '" já existe nos Enviados'); return; }
     const novoFull = {
-      id, empresa: tipo, tipo_envio: tipo, marketplace: 'ML', destino, agendado, criadoEm: hoje,
-      responsavel: _quemSou('Edipo'), status: 'Pendente', obs: 'Importado do envio do ML (' + imp.arquivo + ')', vol: [], dateKey: agendado, horario,
+      id, empresa: tipo, tipo_envio: tipo, marketplace: sp ? 'Shopee' : 'ML', destino, agendado, criadoEm: hoje,
+      responsavel: _quemSou('Edipo'), status: 'Pendente', obs: sp ? `Importado do ASN da Shopee ${imp.asn} · requisição ${imp.requisicao} · armazém ${imp.armazem} (${imp.arquivo})` : 'Importado do envio do ML (' + imp.arquivo + ')', vol: [], dateKey: agendado, horario,
       itens: imp.itens.map(i => ({
         codigo: i.sku, nome: i.sk?.descricao || i.titulo || '', funcionario: '—',
         qtde: i.caixas, unidades: i.unidades, status: 'pending', avatar: '?', cor: 'av-amber',
       })),
     };
     if (!(await db.saveFull(novoFull, { novo: true }))) return;
-    const calEntry = { id, empresa: tipo, tipo_envio: tipo, marketplace: 'ML', dia: diaDaSemana(agendado), destino, status: 'Pendente', itens: '0/' + novoFull.itens.length, responsavel: novoFull.responsavel, dateKey: agendado, horario };
+    const calEntry = { id, empresa: tipo, tipo_envio: tipo, marketplace: sp ? 'Shopee' : 'ML', dia: diaDaSemana(agendado), destino, status: 'Pendente', itens: '0/' + novoFull.itens.length, responsavel: novoFull.responsavel, dateKey: agendado, horario };
     FULLS_DATA[id] = novoFull;
     CAL_FULLS.push(calEntry);
     await db.saveCalFull(calEntry);
     // Etiquetas = as do arquivo do ML (código, título, variação e quantidade exatos)
     const agora = new Date().toISOString();
-    etqSetData(id, imp.etiquetas.map((e, n) => ({
+    if (sp) etqSetData(id, _envEtqShopee([], imp));
+    else etqSetData(id, imp.etiquetas.map((e, n) => ({
       id: 'etq_' + Date.now() + '_' + n + '_' + Math.random().toString(36).slice(2, 5), sku: e.sku || e.inv, total: e.unidades, impressas: 0, criadoEm: agora,
       descricao: e.titulo || e.sku || e.inv, inv: e.inv, titulo: e.titulo || '', variacao: e.variacao || '', origem: 'ml',
     })));
-    if (!(await etqSalvar(id, { substituir: true }))) showToast('⚠️ Full criado, mas as etiquetas não salvaram — no detalhe use ⚡ Gerar pelo ML');
+    if (!(await etqSalvar(id, { substituir: true }))) showToast(sp ? '⚠️ Full criado, mas as etiquetas não salvaram — no detalhe use 📄 Subir ASN' : '⚠️ Full criado, mas as etiquetas não salvaram — no detalhe use ⚡ Gerar pelo ML');
     window._envImport = null;
     closeModal('modalEnvioCriar');
     renderDashboard(); renderCal();
@@ -12324,8 +12356,241 @@ function zplEtiquetaML({ inv, titulo, sku, variacao }) {
 }
 // ZPL de uma etiqueta do Full: gerada pelo código ML; sem código, cai na biblioteca antiga
 async function etqZplDe(etq) {
+  if (etq.whs) return zplLoteShopee(etq, 2);
   if (etq.inv) return zplEtiquetaML({ inv: etq.inv, titulo: etq.titulo || etq.descricao, sku: _skuResolvido(etq.sku), variacao: etq.variacao });
   return zplCarregar(etq.sku);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SHOPEE FULL (FBS): importar o PDF do ASN (Solicitação de Envio ao Armazém)
+// e gerar as etiquetas de produto da Shopee (QR = whs skuid) no rolo do ML.
+// ══════════════════════════════════════════════════════════════════════
+function _envCarregarPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+  return new Promise((ok, falha) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload = () => {
+      if (!window.pdfjsLib) { falha(new Error('leitor de PDF não carregou')); return; }
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      ok(window.pdfjsLib);
+    };
+    s.onerror = () => falha(new Error('sem internet para carregar o leitor de PDF'));
+    document.head.appendChild(s);
+  });
+}
+// Lê o ASN da Shopee pela posição dos textos na página (a tabela quebra SKU e IDs em várias linhas)
+async function envLerAsnShopee(buf) {
+  const pdfjs = await _envCarregarPdfJs();
+  const pdf = await pdfjs.getDocument({ data: new Uint8Array(buf) }).promise;
+  const itens = [];
+  let texto = '';
+  const todos = [];
+  for (let pn = 1; pn <= pdf.numPages; pn++) {
+    const page = await pdf.getPage(pn);
+    const tc = await page.getTextContent();
+    const its = tc.items.filter(i => String(i.str).trim()).map(i => ({ s: String(i.str).trim(), x: i.transform[4], y: i.transform[5] }));
+    todos.push(its);
+    texto += ' ' + its.map(i => i.s).join(' ');
+    // cabeçalho da tabela de SKUs
+    const hQnt = its.find(i => /^Qnt/.test(i.s));
+    if (!hQnt) continue;
+    // o cabeçalho ocupa 2-3 linhas e às vezes junta colunas ("No. SKU do")
+    const cab = its.filter(i => i.y <= hQnt.y + 3 && i.y >= hQnt.y - 25);
+    const pegaX = re => cab.filter(i => re.test(i.s)).map(i => i.x).sort((a, b) => a - b);
+    const xSkuId = pegaX(/^SKU ID/)[0];
+    const col = {
+      no: pegaX(/^No\./)[0], seller: pegaX(/^vendedor/)[0] ?? pegaX(/^SKU do/)[0], whs: pegaX(/^ID do SKU/)[0],
+      nome: pegaX(/^Nome do Produto/)[0], vari: pegaX(/^Varia/)[0], skuid: xSkuId,
+      armazem: pegaX(/^SKU do$/).find(x => xSkuId != null && x > xSkuId), qtd: hQnt.x,
+    };
+    if ([col.no, col.seller, col.whs, col.nome, col.qtd].some(v => v == null)) continue;
+    const ordem = Object.entries(col).filter(([, v]) => v != null).sort((a, b) => a[1] - b[1]);
+    const colDe = x => { let c = null; for (const [k, v] of ordem) if (x >= v - 3) c = k; return c; };
+    const total = its.find(i => /^Total$/.test(i.s));
+    const corpo = its.filter(i => i.y < hQnt.y - 2 && (!total || i.y > total.y + 2));
+    const ancoras = corpo.filter(i => colDe(i.x) === 'no' && /^\d+$/.test(i.s)).sort((a, b) => b.y - a.y);
+    if (!ancoras.length) continue;
+    const linhas = ancoras.map(a => ({ y: a.y, no: +a.s, c: {} }));
+    corpo.forEach(i => {
+      if (i.y > ancoras[0].y + 3) return;                       // continuação do cabeçalho
+      let r = null;
+      for (const l of linhas) if (l.y >= i.y - 3) r = l;        // linha mais próxima acima
+      if (!r) return;
+      const c = colDe(i.x); if (!c || c === 'no') return;
+      (r.c[c] = r.c[c] || []).push(i);
+    });
+    const junta = (arr, sep) => (arr || []).sort((a, b) => b.y - a.y || a.x - b.x).map(i => i.s).join(sep);
+    linhas.forEach(l => {
+      const sellerSku = junta(l.c.seller, '').replace(/\s+/g, '');
+      const whs = junta(l.c.whs, '').replace(/\s+/g, '');
+      const qtd = parseInt(junta(l.c.qtd, '').replace(/\D/g, '')) || 0;
+      const ean = junta(l.c.armazem, '').replace(/\D/g, '');
+      if (!whs && !sellerSku) return;
+      itens.push({ sellerSku, whs, nome: junta(l.c.nome, ' ').replace(/\s+/g, ' ').trim(), variacao: junta(l.c.vari, ' ').trim(), qtd, ean });
+    });
+  }
+  const m = re => (texto.match(re) || [])[1] || '';
+  // valor ao lado de um rótulo (mesma altura, à direita)
+  const ao = re => {
+    for (const pg of todos) {
+      const r = pg.find(i => re.test(i.s)); if (!r) continue;
+      const v = pg.filter(i => i.x > r.x + 20 && Math.abs(i.y - r.y) < 4).sort((a, b) => a.x - b.x)[0];
+      if (v) return v.s;
+    }
+    return '';
+  };
+  const dtTxt = ao(/^Data e Hora de Envio/);
+  const dt = (dtTxt || texto).match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}:\d{2})/);
+  const totalPdf = parseInt(ao(/^Total$/)) || null;
+  return {
+    eAsn: /Envio ao\s+Armaz[eé]m da Shopee|FBSINBR\d+/i.test(texto),
+    requisicao: ao(/^ID da Requisi/) || m(/(FBSINBR\d+)/), asn: ao(/^ASN ID$/) || m(/(INBR[A-Z]+\d+)/),
+    armazem: ao(/^ID do Armaz[eé]m/), metodo: ao(/^M[eé]todo de Entrega/),
+    data: dt ? `${dt[1]}-${dt[2]}-${dt[3]}` : '', hora: dt ? dt[4] : '',
+    itens, totalPdf, totalLido: itens.reduce((t, i) => t + i.qtd, 0),
+  };
+}
+// Etiqueta de produto da Shopee no rolo do ML (2 por fileira): QR (whs skuid) à esquerda, nome e variação à direita,
+// SKU do vendedor e whs skuid embaixo — o mesmo conteúdo da etiqueta 60×40 que a Shopee gera
+function _zplQuebra(t, larg, maxLin, fator) {
+  const pal = String(t || '').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  const lin = []; let cur = '';
+  for (let n = 0; n < pal.length; n++) {
+    const c = cur ? cur + ' ' + pal[n] : pal[n];
+    if (_zplLarguraTexto(c) * fator <= larg || !cur) { cur = c; continue; }
+    lin.push(cur); cur = pal[n];
+    if (lin.length === maxLin) { cur = ''; lin[maxLin - 1] = lin[maxLin - 1].replace(/\s*\S*$/, '') + '…'; break; }
+  }
+  if (cur) lin.push(cur);
+  return lin;
+}
+// fonte que cabe na largura (de "max" descendo até "min")
+function _zplFonteQueCabe(t, larg, max, min) {
+  for (let f = max; f > min; f--) if (_zplLarguraTexto(t) * f / 18 <= larg) return f;
+  return min;
+}
+function _zplColShopee(e, dx) {
+  const H = _zplHex;
+  const tit = _zplQuebra(e.titulo, 168, 4, 16 / 18);
+  const fv = _zplFonteQueCabe(e.variacao || '', 168, 24, 14);
+  const sku = 'SKU: ' + (e.sku || '');
+  const fs = _zplFonteQueCabe(sku, 296, 22, 14);
+  const fw = _zplFonteQueCabe(e.whs, 296, 18, 12);
+  return `^FO${10 + dx},14^BQN,2,4^FDMA,${e.whs}^FS
+${tit.map((l, i) => `^FO${140 + dx},${14 + i * 19}^A0N,16,16^FH^FD${H(l)}^FS`).join('\n')}
+${e.variacao ? `^FO${140 + dx},${tit.length * 19 + 22}^A0N,${fv},${fv}^FH^FD${H(e.variacao)}^FS\n^FO${141 + dx},${tit.length * 19 + 22}^A0N,${fv},${fv}^FH^FD${H(e.variacao)}^FS` : ''}
+^FO${14 + dx},140^A0N,${fs},${fs}^FH^FD${H(sku)}^FS
+^FO${15 + dx},140^A0N,${fs},${fs}^FH^FD${H(sku)}^FS
+^FO${14 + dx},166^A0N,${fw},${fw}^FH^FD${H(e.whs)}^FS`;
+}
+function _zplDadosShopee(etq) {
+  const whs = String(etq.whs || '').trim();
+  if (!/^\d{5,}_\d{5,}$/.test(whs)) throw new Error('código Shopee inválido: ' + whs);
+  return { whs, titulo: etq.titulo || etq.descricao || '', variacao: etq.variacao || '', sku: _skuResolvido(etq.sku) };
+}
+// Lote de etiquetas Shopee com a quantidade exata (fileiras de 2 + 1 sozinha se ímpar).
+// Já sai com a coluna direita na distância calibrada (Offset dir.) — não passa por zplCorrigirAlinhamento.
+function zplLoteShopee(etq, qtd) {
+  const e = _zplDadosShopee(etq);
+  const dpmm = (window._etqCfg?.dpi || 203) / 25.4;
+  const dxR = 330 + Math.round((window._etqCfg?.colDireitaOffsetMm || 50.8) * dpmm) - 320;
+  const par = '^XA^CI28\n^LH0,0\n' + _zplColShopee(e, 0) + '\n' + _zplColShopee(e, dxR) + '\n^XZ';
+  const so = '^XA^CI28\n^LH0,0\n' + _zplColShopee(e, 0) + '\n^XZ';
+  const out = [];
+  for (let i = 0; i < Math.floor(qtd / 2); i++) out.push(par);
+  if (qtd % 2) out.push(so);
+  return out.join('\n');
+}
+const _fullEhShopee = f => !!f && (derivarMarketplace(f.destino) === 'Shopee' || /-SHOPEE$/i.test(f.id || ''));
+
+// ── Importar o ASN: monta o mesmo resumo do envio do ML ──
+async function envImportarAsnShopee(file, fullDestino) {
+  showToast('Lendo o ASN da Shopee…');
+  let a;
+  try { a = await envLerAsnShopee(await file.arrayBuffer()); }
+  catch (e) { showToast('❌ Não consegui ler o PDF: ' + e.message); return; }
+  if (!a.eAsn) { showToast('⚠️ Esse PDF não é o ASN da Shopee. Shopee: suba o PDF do ASN · ML: as etiquetas para impressora térmica (ZPL)'); return; }
+  if (!a.itens.length) { showToast('⚠️ Não achei a tabela de SKUs nesse ASN'); return; }
+  const ruins = a.itens.filter(i => !/^\d{5,}_\d{5,}$/.test(i.whs) || !i.qtd || !i.sellerSku);
+  if (ruins.length || (a.totalPdf && a.totalPdf !== a.totalLido)) {
+    alert(`⚠️ Não consegui ler o ASN com segurança${a.totalPdf ? ` (total do PDF ${a.totalPdf}, li ${a.totalLido})` : ''}${ruins.length ? `\n\nLinhas com problema: ${ruins.map(i => i.sellerSku || i.whs || '?').join(', ')}` : ''}.\n\nNada foi importado. Me mande esse PDF para eu ajustar a leitura.`);
+    return;
+  }
+  if (!_envEspelho) await _envCarregarEspelho(false).catch(() => {});
+  const etiquetas = a.itens.map(i => {
+    const sku = _skuDb(i.sellerSku) ? _skuCanon(i.sellerSku) : i.sellerSku;
+    return { sku, whs: i.whs, titulo: i.nome, variacao: i.variacao, unidades: i.qtd, ean: i.ean || '' };
+  });
+  const porSku = new Map();
+  etiquetas.forEach(e => {
+    const k = _envNorm(e.sku);
+    const at = porSku.get(k) || { k, sku: e.sku, unidades: 0, titulo: e.titulo + (e.variacao ? ' · ' + e.variacao : ''), invs: [], semSku: false };
+    at.unidades += e.unidades; at.invs.push(e.whs);
+    porSku.set(k, at);
+  });
+  const itens = [...porSku.values()].map(i => {
+    const sk = _skuDb(i.sku);
+    const qtdecx = Math.max(1, parseInt(sk?.qtdecx) || 1);
+    return { ...i, sk, qtdecx, caixas: Math.ceil(i.unidades / qtdecx), galpao: _envGalpaoDe(i.k) };
+  }).sort((x, y) => x.sku.localeCompare(y.sku));
+  const imp = {
+    mkt: 'SHOPEE', itens, etiquetas, arquivo: file.name, numero: (a.asn.match(/\d+$/) || [''])[0],
+    asn: a.asn, requisicao: a.requisicao, armazem: a.armazem, metodo: a.metodo, data: a.data, hora: a.hora,
+  };
+  if (fullDestino) { await envAsnNoFull(fullDestino, imp); return; }
+  window._envImport = imp;
+  envAbrirImportacao();
+}
+// Etiquetas do Full a partir do ASN (Full novo ou que já existia): mantém o que já foi impresso
+function _envEtqShopee(atuais, imp) {
+  const agora = new Date().toISOString();
+  const arr = (atuais || []).map(e => ({ ...e }));
+  imp.etiquetas.forEach((e, n) => {
+    const k = _etqChave(e.sku);
+    const ex = arr.find(x => x.whs === e.whs) || arr.find(x => !x.whs && !x.inv && _etqChave(x.sku) === k);
+    const campos = { whs: e.whs, tipo: 'shopee', titulo: e.titulo || '', variacao: e.variacao || '', origem: 'shopee', descricao: e.titulo + (e.variacao ? ' · ' + e.variacao : '') };
+    if (ex) { Object.assign(ex, campos); if ((ex.impressas || 0) <= e.unidades) ex.total = e.unidades; return; }
+    arr.push({ id: 'etq_' + Date.now() + '_' + n + '_' + Math.random().toString(36).slice(2, 5), sku: e.sku, total: e.unidades, impressas: 0, criadoEm: agora, ...campos });
+  });
+  return arr;
+}
+// Full já existe na agenda (ex.: criado à mão): só monta as etiquetas Shopee, sem mexer nos itens
+async function envAsnNoFull(fullId, imp) {
+  imp = imp || window._envImport;
+  const f = FULLS_DATA[fullId];
+  if (!f || !imp) { showToast('⚠️ Full ' + fullId + ' não está aberto no Outbox'); return; }
+  await etqCarregar(fullId);
+  const itensFull = _etqItensPorSku(fullId);
+  const dif = [];
+  imp.itens.forEach(i => { const un = itensFull.get(_etqChave(i.sku)); if (un == null) dif.push(`${i.sku}: ${i.unidades} un. no ASN, não está no Full`); else if (un !== i.unidades) dif.push(`${i.sku}: ${i.unidades} un. no ASN, ${un} no Full`); });
+  itensFull.forEach((un, k) => { if (!imp.itens.some(i => _etqChave(i.sku) === k)) dif.push(`${k}: está no Full (${un} un.), não está no ASN`); });
+  if (dif.length && !confirm(`⚠️ O ASN não bate com os itens do ${fullId}:\n\n· ${dif.join('\n· ')}\n\nAs etiquetas seguem o ASN (é o que a Shopee aprovou). Os itens do Full NÃO mudam — ajuste em Editar Full se precisar.\n\nCriar as etiquetas assim mesmo?`)) return;
+  etqSetData(fullId, _envEtqShopee(etqGetData(fullId), imp));
+  if (!(await etqSalvar(fullId, {}))) return;
+  window._envImport = null;
+  closeModal('modalEnvioCriar');
+  showToast(`✅ Etiquetas Shopee prontas no ${fullId} (${_envFmt(imp.etiquetas.reduce((t, e) => t + e.unidades, 0))} un.)`);
+  if (window._fdFullId === fullId) etqRenderSecao(fullId);
+  else { switchFullsTab('agenda', document.getElementById('fullsTab-agenda')); setTimeout(() => openDetail(fullId), 200); }
+}
+// botão no detalhe do Full Shopee
+function etqSubirAsn(fullId) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.pdf,application/pdf';
+  inp.onchange = () => { const f = inp.files && inp.files[0]; if (f) envImportarAsnShopee(f, fullId); };
+  inp.click();
+}
+// QR no preview (o renderizador offline desenha o QR com a lib qrcode-generator)
+function _carregarQrLib() {
+  if (window.qrcode) return Promise.resolve(window.qrcode);
+  return new Promise((ok, falha) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js';
+    s.onload = () => window.qrcode ? ok(window.qrcode) : falha(new Error('QR não carregou'));
+    s.onerror = () => falha(new Error('sem internet para desenhar o QR'));
+    document.head.appendChild(s);
+  });
 }
 
 // Cria/atualiza as etiquetas do Full a partir dos itens + anúncios do ML
@@ -12333,6 +12598,7 @@ async function etqGerarDoML(fullId, op) {
   op = op || {};
   const f = FULLS_DATA[fullId];
   if (!f) return;
+  if (_fullEhShopee(f)) { showToast('Full da Shopee: as etiquetas vêm do PDF do ASN (📄 Subir ASN)'); return; }
   // unidades por SKU (o mesmo SKU pode estar em mais de uma linha do Full)
   const porSku = new Map();
   for (const it of (f.itens || [])) {
@@ -12398,7 +12664,8 @@ async function etqGerarDoML(fullId, op) {
 // Normaliza: só dígitos → sem zeros à esquerda (EAN-13 = GTIN-14 com 0); alfanumérico → maiúsculo
 const _codNorm = c => { c = String(c || '').trim().toUpperCase().replace(/\s+/g, ''); return /^\d+$/.test(c) ? c.replace(/^0+/, '') : c; };
 const _ehEtiquetaML = c => /^[A-Z]{4}\d{5}$/.test(c);            // código ML impresso na etiqueta, não é da embalagem
-const _codValido = c => c.length >= 6 && !_ehEtiquetaML(c);
+const _ehEtiquetaShopee = c => /^\d{5,}_\d{5,}$/.test(c);       // QR da etiqueta Shopee (whs skuid)
+const _codValido = c => c.length >= 6 && !_ehEtiquetaML(c) && !_ehEtiquetaShopee(c);
 const _listaCodigos = txt => String(txt || '').split(/[\s,;|\/]+/).map(_codNorm).filter(_codValido);
 function _codigosDoCatalogo(skuObj) { return _listaCodigos(skuObj?.ean); }
 // Mapa código → SKUs (anúncios do ML + catálogo do Outbox)
@@ -12569,6 +12836,7 @@ function etqConfirmarProduto(sku, info) {
     };
     const avaliar = lido => {
       const c = _codNorm(lido);
+      if (_ehEtiquetaShopee(c)) { erro(`Isso é o QR de uma <b>etiqueta da Shopee</b> (${_envEsc(lido)}). Bipe o código de barras da <b>embalagem</b> do produto.`); return; }
       if (_ehEtiquetaML(c)) { erro(`Isso é o código de uma <b>etiqueta do ML</b> (${_envEsc(lido)}). Bipe o código de barras da <b>embalagem</b> do produto.`); return; }
       if (!_codValido(c)) { erro(`Código curto demais (<b>${_envEsc(lido)}</b>). Bipe o código de barras da embalagem.`); return; }
       if (esperados.has(c)) { try { _somSucesso(); } catch (e) {} msg.className = 'etq-bipe-msg ok'; msg.textContent = '✓ Produto confere'; cad.innerHTML = ''; acoes.innerHTML = ''; setTimeout(() => fechar(true), 350); return; }
