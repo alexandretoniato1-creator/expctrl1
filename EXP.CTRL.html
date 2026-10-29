@@ -1194,6 +1194,31 @@ select:focus{border-color:var(--accent)}
 .cxs-linha{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--muted)}
 .cxs-linha input{width:64px;background:var(--bg);border:1px solid var(--border2);border-radius:6px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:5px 6px}
 .cxs-ok{color:var(--green);font-weight:600}
+
+.arq-info{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin:4px 0 10px}
+.arq-info b{color:var(--text)}
+.arq-obs{font-size:11px;color:var(--muted);background:var(--surface2);border-radius:8px;padding:8px 10px;margin-bottom:10px;white-space:pre-wrap}
+.arq-sec{margin-top:14px}
+.arq-sub{text-transform:none;letter-spacing:0;color:var(--text);font-weight:600}
+.arq-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;margin-bottom:6px}
+.arq-item-top{display:flex;justify-content:space-between;gap:10px}
+.arq-item-q{text-align:right;font-family:'DM Mono',monospace;font-size:12px;display:flex;flex-direction:column}
+.arq-item-q span{font-size:10px;color:var(--muted)}
+.arq-item-meta{font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);margin-top:4px}
+.arq-tab{width:100%;border-collapse:collapse;margin-top:6px;font-size:10.5px}
+.arq-tab th{text-align:left;font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:600;padding:3px 4px;border-bottom:1px solid var(--border)}
+.arq-tab td{padding:4px;border-bottom:1px solid var(--border);vertical-align:top}
+.arq-alerta{color:var(--orange);font-size:10px;line-height:1.5}
+.arq-bloco{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 11px;margin-bottom:6px}
+.arq-linha{font-size:11px;color:var(--muted);padding:2px 0}
+.arq-linha b{color:var(--text)}
+.arq-bloco summary{font-size:11px;color:var(--accent);cursor:pointer;margin-top:4px}
+.arq-vols{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;max-height:180px;overflow:auto}
+.arq-vols span{font-family:'DM Mono',monospace;font-size:9.5px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:1px 5px}
+.arq-tl{display:flex;gap:10px;font-size:11px;padding:2px 0}
+.arq-tl b{min-width:110px}
+.arq-tl span{font-family:'DM Mono',monospace;color:var(--muted);min-width:90px}
+.arq-vazio,.arq-carregando{font-size:11px;color:var(--muted);background:var(--surface2);border:1px dashed var(--border2);border-radius:8px;padding:10px 12px;margin-top:14px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -2723,6 +2748,7 @@ const db = {
         responsavel: f.responsavel, enviadoEm: f.enviado_em,
         totalItens: f.total_itens, totalCaixas: f.total_caixas,
         itens: f.itens||[], vol: f.vol||[], statusHist: f.status_hist||[], obs: f.obs||'',
+        horario: f.horario || f.dados?.horario || '', dados: f.dados || null,
         gravadoEm: f.inserted_at || null
       }));
 
@@ -2845,11 +2871,13 @@ const db = {
   },
 
   // Remove full (o calendário sai junto pela chave estrangeira). Retorna o erro, se houver.
-  async deleteFull(id) {
+  async deleteFull(id, op) {
     const { error } = await _sb.from('fulls').delete().eq('id', id);
     if (error) { console.error('[Supabase] deleteFull:', error); return error; }
     await _sb.from('cal_fulls').delete().eq('id', id);
-    // o que fica pendurado no número do Full sai junto — senão volta se o mesmo número for criado de novo
+    // Full ENVIADO: etiquetas, conferência e carregamento ficam guardados (o banco também não deixa apagar)
+    if (op && op.manterDados) { if (window._etqData) delete window._etqData[id]; return null; }
+    // Full excluído: o que fica pendurado no número sai junto (o banco guarda uma cópia na lixeira por 90 dias)
     for (const t of ['full_etiquetas', 'full_conferencia', 'full_conferencia_volumes', 'full_carregamento', 'full_carregamento_volumes']) {
       try { await _sb.from(t).delete().eq('full_id', id); } catch (e) {}
     }
@@ -2864,11 +2892,12 @@ const db = {
       agendado: enviado.agendado||'', criado_em: enviado.criadoEm||'',
       responsavel: enviado.responsavel||'', enviado_em: enviado.enviadoEm||'',
       total_itens: enviado.totalItens||0, total_caixas: enviado.totalCaixas||0,
-      itens: enviado.itens||[], vol: f.vol||[], obs: f.obs||'', status: f.status||'Pronto'
+      itens: enviado.itens||[], vol: f.vol||[], obs: f.obs||'', status: f.status||'Pronto',
+      horario: f.horario||null, dados: enviado.dados||null
     };
     const { error } = await _sb.from('fulls_enviados').upsert(row, { onConflict: 'id' });
     if (error) { console.error('[Supabase] enviarFull:', error); return error; }
-    const eDel = await this.deleteFull(f.id);
+    const eDel = await this.deleteFull(f.id, { manterDados: true });
     if (eDel) showToast('⚠️ ' + f.id + ' foi para Enviados, mas a cópia ativa não foi apagada (' + (eDel.message||'erro') + ') — exclua manualmente');
     return null;
   },
@@ -5397,31 +5426,108 @@ function renderEnviados() {
     </tr>`).join('');
 }
 
-function openEnviadoDetail(id) {
+// ── Detalhe do envio arquivado: tudo o que aconteceu com o Full (guardado pelo banco) ──
+const _envH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const _envDH = v => { if (!v) return '—'; const d = new Date(v); return isNaN(d) ? _envH(v) : d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+const _envN = n => (n == null || isNaN(n)) ? '—' : Math.round(n).toLocaleString('pt-BR');
+function _envSec(tit, corpo, extra) {
+  return `<div class="arq-sec"><div class="item-section-title">${tit}${extra ? ` <span class="arq-sub">${extra}</span>` : ''}</div>${corpo}</div>`;
+}
+async function openEnviadoDetail(id) {
   const f = FULLS_ENVIADOS.find(e => e.id === id);
   if (!f) return;
+  const d = f.dados || {};
+  const itens = (d.itens && d.itens.length ? d.itens : f.itens) || [];
+  const horario = f.horario || d.horario || '';
   document.getElementById('detailTitle').textContent = f.id + ' ✈';
-  document.getElementById('detailSub').innerHTML = f.empresa + ' · ' + f.destino + ' · Enviado em ' + f.enviadoEm;
-  document.getElementById('detailBody').innerHTML = `
+  document.getElementById('detailSub').innerHTML = _envH(f.empresa) + ' · ' + _envH(f.destino) + ' · Enviado em ' + _envH(f.enviadoEm);
+  const un = itens.reduce((t, i) => t + (parseInt(i.unidades) || 0), 0);
+  const topo = `
     <div class="detail-stats">
-      <div class="detail-stat"><div class="detail-stat-val" style="color:var(--green)">${f.totalItens}</div><div class="detail-stat-label">Itens</div></div>
-      <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${f.totalCaixas}</div><div class="detail-stat-label">Caixas</div></div>
-      <div class="detail-stat"><div class="detail-stat-val" style="font-size:13px;color:var(--muted)">${f.agendado}</div><div class="detail-stat-label">Agendado</div></div>
-      <div class="detail-stat"><div class="detail-stat-val" style="font-size:12px;color:var(--green)">${f.enviadoEm.substring(0,10)}</div><div class="detail-stat-label">Enviado</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" style="color:var(--green)">${f.totalItens ?? itens.length}</div><div class="detail-stat-label">Itens</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" style="color:var(--accent)">${f.totalCaixas ?? '—'}</div><div class="detail-stat-label">Caixas</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" style="font-size:13px;color:var(--muted)">${_envH(f.agendado || '—')}${horario ? `<div style="font-size:11px">${_envH(horario)}</div>` : ''}</div><div class="detail-stat-label">Agendado</div></div>
+      <div class="detail-stat"><div class="detail-stat-val" style="font-size:12px;color:var(--green)">${_envH(String(f.enviadoEm || '').substring(0, 16))}</div><div class="detail-stat-label">Enviado</div></div>
     </div>
-    <div style="background:rgba(62,207,142,.06);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--green);margin-bottom:8px">✈ Full enviado com sucesso · ${f.destino}</div>
-    ${f.criadoEm ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">📅 Criado em <span style="color:var(--text);font-weight:600">${f.criadoEm}</span></div>` : ''}
-    <div class="item-section-title">Itens enviados (${f.itens.length})</div>
-    <div class="item-list">${(f.itens||[]).map(item=>{
-      const av=item.funcionario&&item.funcionario!=='—'?item.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2):'?';
-      return `<div class="item-card done">
-        <div class="item-top"><div><div class="item-name">${item.nome}</div><div class="item-code">${item.codigo||'—'}</div></div><div class="sdot dot-done"></div></div>
-        <div class="item-bottom"><div class="item-func"><div class="prod-avatar ${funcCor(FUNC_INFO[item.funcionario]?.empresa||'')}" style="width:20px;height:20px;font-size:9px">${av}</div><span class="item-func-name">${item.funcionario||'—'}</span></div><div class="item-qty">${item.qtde} cx</div></div>
-      </div>`;}).join('')}
+    <div class="arq-info">
+      ${f.criadoEm ? `<span>📅 Criado <b>${_envH(f.criadoEm)}</b></span>` : ''}
+      ${f.responsavel ? `<span>👤 <b>${_envH(f.responsavel)}</b></span>` : ''}
+      ${un ? `<span>📦 <b>${_envN(un)}</b> unidades</span>` : ''}
     </div>
-    <button class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;padding:8px;margin-top:8px;color:var(--accent);border-color:rgba(255,255,255,.12)" onclick="closeDetail();abrirImpressao('${f.id}')">🖨 Imprimir Comprovante</button>
-    <button class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;padding:8px;margin-top:6px" onclick="reverterEnviado('${f.id}')">↩ Reverter para Pronto</button>`;
+    ${f.obs ? `<div class="arq-obs">📝 ${_envH(f.obs)}</div>` : ''}`;
+  const itensHtml = itens.map(it => {
+    const fr = it.fracoes || [];
+    return `<div class="arq-item">
+      <div class="arq-item-top"><div><div class="item-name">${_envH(it.nome || it.codigo)}</div><div class="item-code">${_envH(it.codigo || '—')}</div></div>
+        <div class="arq-item-q"><b>${_envN(parseInt(it.qtde))} cx</b>${it.unidades ? `<span>${_envN(it.unidades)} un.</span>` : ''}</div></div>
+      <div class="arq-item-meta">${it.funcionario && it.funcionario !== '—' ? `👷 ${_envH(it.funcionario)}` : ''}${it.iniciado_em ? ` · início ${_envDH(it.iniciado_em)}` : ''}${it.concluido_em ? ` · fim ${_envDH(it.concluido_em)}` : ''}${it.status && it.status !== 'done' ? ` · <span style="color:var(--orange)">estava ${_envH(it.status === 'doing' ? 'em produção' : it.status === 'pending' ? 'pendente' : it.status)} ao enviar</span>` : ''}</div>
+      ${fr.length ? `<table class="arq-tab"><tr><th>Quem</th><th>Un.</th><th>Caixas</th><th>Origem</th><th>Status</th><th>Impresso</th><th>Pronto</th></tr>${fr.map(x => `<tr>
+        <td><b>${_envH(x.codigo || '')}</b> ${_envH(x.funcionario || '')}</td><td>${_envN(x.unidades)}</td><td>${x.cx_de ? `${x.cx_de}–${x.cx_ate}` : _envN(x.caixas)}</td>
+        <td>${_envH(x.origem === 'impressao' ? 'impressão' : x.origem === 'china' ? 'veio da China' : x.origem === 'pre' ? 'pré-etiquetado' : (x.origem || '—'))}</td>
+        <td>${_envH(x.status || '—')}</td><td>${_envDH(x.impresso_em)}${x.por ? ' · ' + _envH(x.por) : ''}</td><td>${_envDH(x.pronto_em)}</td></tr>`).join('')}</table>` : ''}
+    </div>`;
+  }).join('');
+  const temHist = (f.statusHist || []).some(x => x && x.em);
+  const hist = temHist ? _etapasDoHist(f.statusHist, false).map(e => `<div class="arq-tl"><b>${_envH(e.status)}</b><span>${_envDH(e.inicio)}</span><span>${e.min != null ? _fmtDur(e.min) : ''}</span></div>`).join('') : '';
+  document.getElementById('detailBody').innerHTML = topo +
+    (hist ? _envSec('⏱ Linha do tempo', hist) : '') +
+    _envSec(`📦 Itens enviados (${itens.length})`, `<div>${itensHtml}</div>`) +
+    `<div id="arqDados"><div class="arq-carregando">Carregando etiquetas, conferência e carregamento…</div></div>
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;padding:8px;margin-top:8px;color:var(--accent);border-color:rgba(255,255,255,.12)" onclick="closeDetail();abrirImpressao('${_envJs(f.id)}')">🖨 Imprimir Comprovante</button>
+    <button class="btn btn-ghost" style="width:100%;justify-content:center;display:flex;padding:8px;margin-top:6px" onclick="reverterEnviado('${_envJs(f.id)}')">↩ Reverter para Pronto</button>`;
   document.getElementById('detailPanel').classList.add('open');
+  // dados guardados no banco com o número do Full
+  const q = (t, cols, ord) => { let x = _sb.from(t).select(cols).eq('full_id', id); if (ord) x = x.order(ord, { ascending: true }); return x; };
+  let etqR, confR, volR, carR, cvR, cxR, prodR;
+  try {
+    [etqR, confR, volR, carR, cvR, cxR, prodR] = await Promise.all([
+      q('full_etiquetas', 'dados,updated_at'), q('full_conferencia', '*', 'created_at'), q('full_conferencia_volumes', 'conferencia_id,envio_id,volume_num,bipado_em', 'bipado_em'),
+      q('full_carregamento', '*', 'created_at'), q('full_carregamento_volumes', 'carregamento_id,envio_id,volume_num,bipado_em', 'bipado_em'),
+      q('full_caixas_shopee', 'n,total,impressoes,impressa_em,por', 'n'), q('prod_data', 'funcionario,caixas,produtos,sku,tempo_min,tempo_real_min,data,inserted_at', 'inserted_at'),
+    ]);
+  } catch (e) { const el = document.getElementById('arqDados'); if (el) el.innerHTML = `<div class="arq-vazio">⚠️ Não consegui carregar os dados guardados: ${_envH(e.message)}</div>`; return; }
+  const el = document.getElementById('arqDados');
+  if (!el || document.getElementById('detailTitle').textContent !== f.id + ' ✈') return;
+  let etqs = []; try { etqs = JSON.parse((etqR.data || [])[0]?.dados || '[]'); } catch (e) {}
+  const confs = confR.data || [], vols = volR.data || [], cars = carR.data || [], cvols = cvR.data || [], cxs = cxR.data || [], prod = prodR.data || [];
+  const partes = [];
+  if (etqs.length) {
+    const tot = etqs.reduce((t, e) => t + (e.total || 0), 0), imp = etqs.reduce((t, e) => t + (e.impressas || 0), 0);
+    partes.push(_envSec('🏷 Etiquetas de produto', `<table class="arq-tab"><tr><th>SKU</th><th>Impressas</th><th>Já etiquetadas</th><th>Código</th></tr>${etqs.map(e => {
+      const ja = (e.ja_etiq || []).reduce((t, x) => t + (x.qtd || 0), 0);
+      const div = (e.divergencias || []);
+      return `<tr><td><b>${_envH(e.sku)}</b>${e.variacao ? ' · ' + _envH(e.variacao) : ''}</td><td>${_envN(Math.max(0, (e.impressas || 0) - ja))} de ${_envN(e.total)}</td><td>${ja ? _envN(ja) : '—'}</td><td>${_envH(e.whs || e.inv || '—')}</td></tr>${div.length ? `<tr><td colspan="4" class="arq-alerta">⚠️ ${div.map(x => `${_envDH(x.em)} · ${_envH(x.por)} bipou <b>${_envH(x.cod)}</b>${x.outroSku ? ' (do SKU ' + _envH(x.outroSku) + ')' : ''} · ${_envN(x.qtd)} etiquetas`).join('<br>')}</td></tr>` : ''}`;
+    }).join('')}</table>`, `${_envN(imp)} de ${_envN(tot)}`));
+  }
+  if (cxs.length) {
+    const imp = cxs.filter(x => x.impressoes > 0);
+    partes.push(_envSec('📦 Etiquetas de caixa Shopee', `<div class="arq-linha">${imp.length} de ${cxs.length} impressas${imp.some(x => x.impressoes > 1) ? ` · reimpressas: ${imp.filter(x => x.impressoes > 1).map(x => x.n).join(', ')}` : ''}</div>`));
+  }
+  if (confs.length) {
+    partes.push(_envSec('✅ Conferência', confs.map(c => {
+      const vs = vols.filter(v => v.conferencia_id === c.id);
+      const esperado = c.total_caixas_manual || c.total_esperado;
+      const ini = vs[0]?.bipado_em, fim = vs[vs.length - 1]?.bipado_em;
+      return `<div class="arq-bloco">
+        <div class="arq-linha"><b>${_envH(c.status || '—')}</b> · volumes bipados <b>${_envN(vs.length)}</b>${esperado ? ` de ${_envN(esperado)}` : ''}${esperado && vs.length !== esperado ? ' <span style="color:var(--red)">⚠️ não bateu</span>' : ''}</div>
+        <div class="arq-linha">NF: <b>${_envH(c.nf_numero || '—')}</b> ${c.nf_bipada ? `bipada ${_envDH(c.nf_bipada_em)}` : '<span style="color:var(--orange)">não bipada</span>'} · Autorização: <b>${_envH(c.aut_numero || '—')}</b> ${c.aut_bipada ? `bipada ${_envDH(c.aut_bipada_em)}` : '<span style="color:var(--orange)">não bipada</span>'}</div>
+        ${vs.length ? `<div class="arq-linha">Primeiro bipe ${_envDH(ini)} · último ${_envDH(fim)}</div>
+        <details><summary>Ver os ${vs.length} volumes</summary><div class="arq-vols">${vs.map(v => `<span title="${_envDH(v.bipado_em)}">${_envH(v.envio_id)}${v.volume_num != null ? '·' + v.volume_num : ''}</span>`).join('')}</div></details>` : ''}
+      </div>`;
+    }).join('')));
+  }
+  if (cars.length) {
+    partes.push(_envSec('🚚 Carregamento', cars.map(c => {
+      const vs = cvols.filter(v => v.carregamento_id === c.id);
+      return `<div class="arq-bloco"><div class="arq-linha"><b>${_envH(c.status || '—')}</b> · ${_envN(vs.length)} volumes no caminhão${c.aut_bipada ? ` · autorização bipada ${_envDH(c.aut_bipada_em)}` : ''}</div>${vs.length ? `<div class="arq-linha">Primeiro ${_envDH(vs[0].bipado_em)} · último ${_envDH(vs[vs.length - 1].bipado_em)}</div>` : ''}</div>`;
+    }).join('')));
+  }
+  if (prod.length) {
+    partes.push(_envSec('👷 Produtividade registrada', `<table class="arq-tab"><tr><th>Quem</th><th>SKU</th><th>Caixas</th><th>Un.</th><th>Tempo</th><th>Quando</th></tr>${prod.map(x => `<tr><td>${_envH(x.funcionario)}</td><td>${_envH(x.sku || '—')}</td><td>${_envN(x.caixas)}</td><td>${_envN(x.produtos)}</td><td>${x.tempo_real_min != null ? _fmtDur(x.tempo_real_min) : x.tempo_min != null ? _fmtDur(x.tempo_min) : '—'}</td><td>${_envDH(x.inserted_at) !== '—' ? _envDH(x.inserted_at) : _envH(x.data)}</td></tr>`).join('')}</table>`));
+  }
+  const semDados = !etqs.length && !confs.length && !cars.length;
+  if (semDados) partes.push(`<div class="arq-vazio">Sem etiquetas, conferência ou carregamento guardados para este envio.${(() => { const g = f.gravadoEm ? new Date(f.gravadoEm) : null; return g && g >= new Date('2026-10-23T00:00:00-03:00') && g < new Date('2026-10-30T00:00:00-03:00'); })() ? ' Este envio foi marcado como enviado entre 23/10 e 29/10/2026, quando um erro da versão anterior apagava esses dados ao enviar — a partir da v68 tudo fica guardado.' : ''}</div>`);
+  el.innerHTML = partes.join('');
 }
 
 async function reverterEnviado(id) {
@@ -5429,17 +5535,19 @@ async function reverterEnviado(id) {
   if (idx === -1) { showToast('⚠️ Full não encontrado'); return; }
   if (!confirm('Reverter ' + id + ' para status Pronto?\nEle voltará para o calendário.')) return;
   const f = FULLS_ENVIADOS[idx];
+  const d = f.dados || {};          // cópia completa (envios a partir da v68) — itens com frações, unidades, horário
   const fullRevertido = {
     id: f.id, empresa: f.empresa, tipo_envio: derivarTipoLabel(f.empresa), marketplace: derivarMarketplace(f.destino),
     destino: f.destino, dateKey: f.agendado||'',
     agendado: f.agendado, responsavel: f.responsavel, criadoEm: f.criadoEm||'',
-    status: 'Pronto', obs: f.obs||'', vol: f.vol||[],
-    itens: (f.itens||[]).map(i=>({...i, avatar: i.funcionario&&i.funcionario!=='—'?i.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?', cor: funcCor(FUNC_INFO[i.funcionario]?.empresa||'') })),
+    status: 'Pronto', obs: f.obs||'', vol: f.vol||[], horario: f.horario||d.horario||'',
+    itens: (d.itens||f.itens||[]).map(i=>({...i, avatar: i.funcionario&&i.funcionario!=='—'?i.funcionario.split(' ').map(p=>p[0]).join('').substring(0,2).toUpperCase():'?', cor: funcCor(FUNC_INFO[i.funcionario]?.empresa||'') })),
   };
   const dia = diaDaSemana(f.agendado);
-  const calEntry = { id: f.id, empresa: f.empresa, dia, destino: f.destino, status: 'Pronto', itens: f.totalItens+'/'+f.totalItens, responsavel: f.responsavel, dateKey: f.agendado||'' };
+  const calEntry = { id: f.id, empresa: f.empresa, dia, destino: f.destino, status: 'Pronto', itens: f.totalItens+'/'+f.totalItens, responsavel: f.responsavel, dateKey: f.agendado||'', horario: fullRevertido.horario };
   const row = { id: f.id, empresa: f.empresa||'', destino: f.destino, agendado: f.agendado||'', criado_em: f.criadoEm||'',
-    responsavel: f.responsavel||'', status: 'Pronto', obs: f.obs||'', vol: f.vol||[], itens: fullRevertido.itens, date_key: f.agendado||'' };
+    responsavel: f.responsavel||'', status: 'Pronto', obs: f.obs||'', vol: f.vol||[], itens: fullRevertido.itens, date_key: f.agendado||'',
+    horario: fullRevertido.horario || null, ...(f.statusHist && f.statusHist.length ? { status_hist: f.statusHist } : {}) };
   const err = await db.reverterEnviado(id, row);
   if (err) { showToast('❌ Não revertido: ' + (err.message||'erro no banco')); return; }
   fullRevertido._snap = _fullSnap(row);
@@ -6659,7 +6767,7 @@ function _saidasGarantirDia(){
 }
 
 // ══ AVISO DE VERSÃO DESATUALIZADA ══
-const APP_VERSAO = 67;
+const APP_VERSAO = 68;
 async function checarVersaoApp(){
   try {
     const { data, error } = await _sb.from('app_versao').select('versao').eq('id', 1).single();
@@ -7774,11 +7882,13 @@ async function moverParaEnviados(id) {
     id: f.id, empresa: f.empresa, destino: f.destino,
     responsavel: f.responsavel, agendado: f.agendado, criadoEm: f.criadoEm||'',
     enviadoEm, totalItens: (f.itens||[]).length, totalCaixas,
-    // guarda o item como estava (status real, tempos) — antes tudo virava "done"
-    itens: (f.itens||[]).map(i=>({nome:i.nome,codigo:i.codigo,qtde:i.qtde,funcionario:i.funcionario||'—',status:i.status||'pending',
-      ...(i.iniciado_em?{iniciado_em:i.iniciado_em}:{}), ...(i.concluido_em?{concluido_em:i.concluido_em}:{})})),
-    obs: f.obs||'',
+    // guarda o item inteiro como estava (status real, tempos, unidades, frações e quem montou)
+    itens: (f.itens||[]).map(i=>({...i, funcionario:i.funcionario||'—', status:i.status||'pending'})),
+    obs: f.obs||'', horario: f.horario||'', vol: f.vol||[],
   };
+  // cópia completa do Full (volta inteira no "Reverter")
+  try { const c = JSON.parse(JSON.stringify(f)); delete c._snap; enviado.dados = c; } catch(e) {}
+  enviado.statusHist = [...(f.statusHist||[]), { status: 'Enviado', em: agora.toISOString() }];   // o banco grava igual (gatilho)
   const err = await db.enviarFull(f, enviado);
   if (err) { showToast('❌ Não foi para Enviados: ' + (err.message||'erro no banco') + ' — o Full continua ativo'); return false; }
   FULLS_ENVIADOS.unshift(enviado);
